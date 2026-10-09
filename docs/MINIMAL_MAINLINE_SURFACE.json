@@ -680,6 +680,7 @@
       "tests/test_issue284_retained_artifact_paths.py",
       "tests/test_issue291_residual_downstream_review.py",
       "tests/test_issue323_cli_wiring.py",
+      "tests/test_issue413_replay_audit.py",
       "tests/test_issue43_full68_harness.py"
     ],
     "validation_harness": [
@@ -778,7 +779,8 @@
       "tests/test_thin_barline_finder.py",
       "tests/test_reviewed_movement_apply.py",
       "tests/test_distribution_surface.py",
-      "tests/test_issue409_failure_contracts.py"
+      "tests/test_issue409_failure_contracts.py",
+      "tests/test_issue413_system_identity.py"
     ]
   },
   "test_support_patterns": [

@@ -734,6 +734,7 @@
       "tests/test_issue212_mmr_unmasked_fallback.py",
       "tests/test_issue213_mmr_one_bar_veto.py",
       "tests/test_issue217_empty_system_output_contract.py",
+      "tests/test_issue218_multistaff_system_grouping.py",
       "tests/test_issue236_review_package_pipeline_connection.py",
       "tests/test_issue236_review_package_source_images.py",
       "tests/test_issue236_selective_correction_rerun.py",

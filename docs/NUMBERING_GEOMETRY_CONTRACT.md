@@ -51,6 +51,27 @@ Existing ratio-based logic remains ratio-based, including divisi/grouping staff
 height ratios, connector density, ghost-start median/staff-height checks, and the
 vertical morphology kernel derived from the actual inter-staff gap.
 
+## Three-or-more-staff divisi support (Issue #218)
+
+`ConnectorAwareSystemBuilder` may attach a voice with no accepted barline
+candidates when generated positive left-connector evidence forms a chain of
+at least three staves. Each new link must stay within the existing ordinary
+staff-height distance limit. Generated connector absence still splits the
+chain; the wider rescue band retains its aligned-barline requirement.
+One/two-staff grouping keeps the existing alignment contract. This prevents
+an isolated empty staff and a spurious positive connector from creating a
+new two-staff system in the accepted corpus.
+
+For systems with at least three staves, a shared measure boundary must either
+span four staff-line spaces within one staff or have aligned candidates on
+at least two distinct staves. Alignment uses the existing `1.2 * unit_size`
+X-deduplication tolerance. Ghost boundaries remain supported. This rejects
+an isolated short note/clef fragment that would otherwise split every voice
+into an extra measure. Single/two-staff numbering is unchanged.
+
+See [the real-score validation](refactors/issue218_real_divisi_validation.md)
+for fixed input contracts and regression results.
+
 ## Fixed-pixel operations intentionally retained
 
 The following fixed pixel values are implementation details rather than musical
@@ -147,3 +168,44 @@ The accepted Issue #264 `_02` replay directory must already exist under
 `ARTIFACT_ROOT/logs/issue264_phase_c_mmr_regression/`. Do not silently
 substitute a newly generated HOMR/support run for the final comparison, because
 that would mix producer/runtime variation into the #267 geometry comparison.
+
+### Short non-staff mask fragments (#218)
+
+`StaffExtractor` checks each accepted component against the original binary mask,
+prior to vertical dilation. It rejects a component only when both conditions hold:
+
+- at most two horizontally persistent row runs (the existing 0.25 coverage floor);
+- the full foreground vertical span is strictly less than two staff-line spaces.
+
+Span and spacing are compared in mask coordinates; target-page scaling does not
+change the decision. Page spacing is preferred, with the existing component-local
+fallback for short staves. Unknown spacing remains accepted. Five visible lines
+are deliberately not required: broken or tilted scan lines must remain usable.
+This shared extractor also supplies connector semantics and MMR support geometry.
+
+A rejected component may disappear from `empty_systems`; it contributes no measures
+or numbering increments. Removal from a numbered system still requires downstream
+membership/count/number/geometry validation, rather than assuming an empty-only change.
+
+### Open intervals clipped by the original image edge (#218)
+
+After grouping, `ClippedSystemEndDetector` may add one logical end boundary at the
+original image width. Phase A and Phase C use the same source image and rule; the
+marker does not participate in staff grouping. A mask extending into a margin
+alone is insufficient. Recovery requires:
+
+- known positive staff-line spacing in source-image coordinates;
+- a trailing region at least four staff spaces wide after the last assigned bar;
+- five thin, regular source-ink line runs in the final one-space strip and the
+  preceding four-space strip (coverage >=0.6, thickness <=0.35 spaces, consecutive
+  spacing 0.75..1.25 spaces, corresponding center displacement <=0.5 spaces);
+- non-horizontal ink inside the five-line span after removing horizontal runs
+  of at least two spaces: a component of height >=0.5 spaces, width >=0.4 spaces
+  and area >=0.25 square spaces. The source-ink threshold is 180.
+
+Blank tails, short post-bar regions, missing/uncertain lines or unknown spacing
+abstain. Missing/mismatched source images also preserve existing behavior.
+The five-line check is positive evidence for this optional clipping recovery;
+it does not become a five-line requirement for accepting staff components.
+The new interval shares the complete system height and consumes one physical
+measure, with ordinary MMR overrides applied by the same numbering path.

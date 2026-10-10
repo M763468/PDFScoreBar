@@ -20,6 +20,7 @@ class ConnectorAwareSystemBuilder(BaseSystemBuilder):
 
         connector_by_pair = self._normalize_connector_evidence(connector_evidence)
         parent = list(range(len(staves)))
+        barline_free_links = []
 
         def find(i):
             if parent[i] != i:
@@ -56,6 +57,13 @@ class ConnectorAwareSystemBuilder(BaseSystemBuilder):
             if has_explicit_connector_evidence and not left_connector_present:
                 continue
 
+            # Defer connector-only links to barline-free voices until a chain
+            # of at least three staves is established. Preserve the existing
+            # one/two-staff alignment contract and the wider-distance guard.
+            if within_distance and left_connector_present and (not s1.barlines or not s2.barlines):
+                barline_free_links.append((i, i + 1))
+                continue
+
             if image is not None:
                 aligned_connection = self._check_aligned_connection(s1, s2, aligned_pairs, image)
                 if aligned_connection and within_distance:
@@ -79,6 +87,21 @@ class ConnectorAwareSystemBuilder(BaseSystemBuilder):
                     and len(aligned_pairs) >= self.CONNECTOR_RESCUE_MIN_ALIGN_COUNT
                 ):
                     union(i, i + 1)
+
+        # Evaluate all deferred links transitively, then retain only links
+        # belonging to a three-or-more-staff group. Explicit connector absence
+        # already excluded links above, so it remains an uncrossable split.
+        original_parent = parent.copy()
+        for i, j in barline_free_links:
+            union(i, j)
+        group_sizes: Dict[int, int] = {}
+        for i in range(len(staves)):
+            root = find(i)
+            group_sizes[root] = group_sizes.get(root, 0) + 1
+        supported_links = [(i, j) for i, j in barline_free_links if group_sizes[find(i)] >= 3]
+        parent = original_parent
+        for i, j in supported_links:
+            union(i, j)
 
         groups: Dict[int, List[Staff]] = {}
         for i in range(len(staves)):

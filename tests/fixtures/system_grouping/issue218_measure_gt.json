@@ -1,0 +1,1417 @@
+{
+  "schema_version": "pdfscore.manual_measure_gt.v1",
+  "annotation_provenance": {
+    "author": "Codex manual visual review, 2026-10-10",
+    "review_state": "single_annotator; available for user review",
+    "method": "Read original unannotated 360-DPI images and system crops with coordinate rulers. No detector output or predicted numbering used to derive labels. Printed stroke centers refined only from raw source ink within manually selected windows. Existing manually reviewed staff membership/centers reused.",
+    "coordinate_space": "360-DPI input image pixels",
+    "retention": "Source PDFs/images remain ignored; source and image SHA-256 are retained here. Review crops and annotation overlays are under logs/issue218/ground-truth/.",
+    "limitations": "This is a small, single-annotator reference, not independently adjudicated corpus GT. Original-score absolute bar numbers are not inferred from selected noncontiguous pages.",
+    "revision": 2,
+    "corrections": [
+      {
+        "revision": 1,
+        "previous_sha256": "b8a12c4f5f97069676dcd5fbf476c5ee0dde185ae1830629c56c176678ddb050",
+        "field": "la-mer/page_009/system_0/shared_boundaries_x/2",
+        "old_x": 1565,
+        "new_x": 1615,
+        "reason": "Original source crop (1450,720,1740,1020) shows x1565 is the last triplet note stem, with a beam and attached notehead. The full-height un-beamed barline is x1615. Corrected after the boundary diagnostic prompted a magnified source review. No measure count, MMR length, number or scoring tolerance changed.",
+        "source_review_crop": "logs/issue218/ground-truth/source-review/la-mer/boundary-1565-review.png",
+        "retained_old_annotation": "logs/issue218/ground-truth/source-review/frozen_measure_gt.json",
+        "retained_old_evaluation": "logs/issue218/ground-truth/evaluation/annotation-v1-report.json"
+      }
+    ]
+  },
+  "evaluation_contract": {
+    "scope": "All six original fixed inputs; no failed case excluded. Three La Mer pages followed in configured order and all three Alizadeh inputs followed in configured order. Crop/full-page overlaps are reported and are not independent samples.",
+    "numbering": "Start at 1 per work and advance by the annotated musical duration of each displayed interval, following the current run input order, without resetting at page 9. This evaluates selected-input numbering, not original-score absolute numbering. Also report page-local numbering to separate upstream offset propagation.",
+    "primary_gates": [
+      "Exact displayed interval count per system",
+      "Exact MMR count for every annotated rest of length >=2, with no extra length>=2 overrides",
+      "Exact final number per spatially matched displayed measure and complete coverage"
+    ],
+    "spatial_matching": "Ordered one-to-one interval matching with positive vertical overlap >=0.5 of the smaller system core and horizontal IoU >=0.8. No index shifting, count-based reassignment or best-shift search. Unmatched predictions/GT remain failures.",
+    "boundary_diagnostic": "Internal shared boundary positions matched one-to-one at <=0.5 of the source staff spacing. First system-left and last system-end delimiters are excluded from this boundary-only diagnostic; all intervals, including right-edge clipped intervals, remain in the primary counting/numbering gates.",
+    "rest_policy": "A printed rest count of 1 consumes one bar and requires no skip override. Numeric rest counts across multiple voices label one shared interval. Sounding whole notes, rhythmic slashes, tremolo strokes and rehearsal digits are not multi-measure rests.",
+    "config_policy": "Original detector/model settings and retained runtime outputs are fixed. This adds a new ground-truth evaluation; earlier topology/regression results are preserved."
+  },
+  "works": [
+    {
+      "id": "la-mer",
+      "source": {
+        "title": "Claude Debussy — La Mer, violoncello part",
+        "work_url": "https://imslp.org/wiki/La_Mer_(Debussy,_Claude)",
+        "url": "https://s9.imslp.org/files/imglnks/usimg/0/0f/IMSLP26369-PMLP06033-Debussy_-_La_Mer_(cello-part)a.pdf",
+        "file_id": "IMSLP26369",
+        "edition": "Durand & Fils, 1909, plate D. & F. 6531; IMSLP lists Kalmus reprint",
+        "sha256": "ad4d88143f68791f99d0e34c38f8672de4aa3e0f002b5c2c3282382b75d4034d"
+      },
+      "input_root": "logs/issue218/la-mer/inputs",
+      "pages": [
+        {
+          "page_id": "page_003",
+          "image_sha256": "1a49f233c1b49c9c617bba70d124ab89a7c036ce3aeef9b21dc4c3f6ffccd1df",
+          "image_size": [
+            3240,
+            4320
+          ],
+          "source_case_contract": "issue218_la_mer.json",
+          "systems": [
+            {
+              "index_0based": 0,
+              "staff_center_y": [
+                501,
+                776
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                180,
+                887,
+                1427,
+                1778,
+                2320,
+                3161
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed_double",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    180,
+                    887
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 1,
+                  "expected_page_local_number": 1
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    887,
+                    1427
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 2,
+                  "expected_page_local_number": 2
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1427,
+                    1778
+                  ],
+                  "duration_bars": 2,
+                  "printed_rest_count": 2,
+                  "expected_run_number": 3,
+                  "expected_page_local_number": 3
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    1778,
+                    2320
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 5,
+                  "expected_page_local_number": 5
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2320,
+                    3161
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 6,
+                  "expected_page_local_number": 6
+                }
+              ],
+              "visual_note": "Rehearsal 7: the shared long rest is marked 2."
+            },
+            {
+              "index_0based": 1,
+              "staff_center_y": [
+                1184,
+                1459
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                178,
+                3232
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    178,
+                    3232
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 7,
+                  "expected_page_local_number": 7
+                }
+              ],
+              "visual_note": "One displayed measure; no internal barline."
+            },
+            {
+              "index_0based": 2,
+              "staff_center_y": [
+                1860,
+                2168
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                176,
+                959,
+                1241,
+                1632,
+                2089,
+                2688,
+                2953,
+                3225
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    176,
+                    959
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 8,
+                  "expected_page_local_number": 8
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    959,
+                    1241
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 9,
+                  "expected_page_local_number": 9
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1241,
+                    1632
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 10,
+                  "expected_page_local_number": 10
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    1632,
+                    2089
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 11,
+                  "expected_page_local_number": 11
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2089,
+                    2688
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 12,
+                  "expected_page_local_number": 12
+                },
+                {
+                  "index_0based": 5,
+                  "x_interval": [
+                    2688,
+                    2953
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 13,
+                  "expected_page_local_number": 13
+                },
+                {
+                  "index_0based": 6,
+                  "x_interval": [
+                    2953,
+                    3225
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 14,
+                  "expected_page_local_number": 14
+                }
+              ],
+              "visual_note": "Seven displayed measures; slash symbols are rhythmic notation, not MMR."
+            },
+            {
+              "index_0based": 3,
+              "staff_center_y": [
+                2581,
+                2858
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                177,
+                818,
+                1187,
+                1447,
+                1700,
+                2069,
+                2440,
+                2805,
+                3028
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed_double",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    177,
+                    818
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 15,
+                  "expected_page_local_number": 15
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    818,
+                    1187
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 16,
+                  "expected_page_local_number": 16
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1187,
+                    1447
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 17,
+                  "expected_page_local_number": 17
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    1447,
+                    1700
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 18,
+                  "expected_page_local_number": 18
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    1700,
+                    2069
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 19,
+                  "expected_page_local_number": 19
+                },
+                {
+                  "index_0based": 5,
+                  "x_interval": [
+                    2069,
+                    2440
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 20,
+                  "expected_page_local_number": 20
+                },
+                {
+                  "index_0based": 6,
+                  "x_interval": [
+                    2440,
+                    2805
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 21,
+                  "expected_page_local_number": 21
+                },
+                {
+                  "index_0based": 7,
+                  "x_interval": [
+                    2805,
+                    3028
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": 1,
+                  "expected_run_number": 22,
+                  "expected_page_local_number": 22
+                }
+              ],
+              "visual_note": "Counted single-bar rest marked 1; following key/time signature is not another measure."
+            },
+            {
+              "index_0based": 4,
+              "staff_center_y": [
+                3293,
+                3573,
+                3854,
+                4133
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                178,
+                992,
+                1541,
+                2318,
+                3223
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    178,
+                    992
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 23,
+                  "expected_page_local_number": 23
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    992,
+                    1541
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 24,
+                  "expected_page_local_number": 24
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1541,
+                    2318
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 25,
+                  "expected_page_local_number": 25
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    2318,
+                    3223
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 26,
+                  "expected_page_local_number": 26
+                }
+              ],
+              "visual_note": "Four shared measures across all four voices; rehearsal 9."
+            }
+          ]
+        },
+        {
+          "page_id": "page_004",
+          "image_sha256": "3f339c7cd2534e1cba8df3c2d9d9bed25b039275b55c16ffdd8bed85b523abb6",
+          "image_size": [
+            3240,
+            4320
+          ],
+          "source_case_contract": "issue218_la_mer.json",
+          "systems": [
+            {
+              "index_0based": 0,
+              "staff_center_y": [
+                561,
+                913,
+                1263,
+                1608
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                130,
+                1292,
+                2198,
+                3191
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    130,
+                    1292
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 27,
+                  "expected_page_local_number": 1
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1292,
+                    2198
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 28,
+                  "expected_page_local_number": 2
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    2198,
+                    3191
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 29,
+                  "expected_page_local_number": 3
+                }
+              ],
+              "visual_note": "Four voices, three shared measures."
+            },
+            {
+              "index_0based": 1,
+              "staff_center_y": [
+                2108,
+                2462,
+                2809,
+                3154
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                129,
+                1113,
+                1720,
+                2152,
+                2579,
+                3178
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    129,
+                    1113
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 30,
+                  "expected_page_local_number": 4
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1113,
+                    1720
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 31,
+                  "expected_page_local_number": 5
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1720,
+                    2152
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 32,
+                  "expected_page_local_number": 6
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    2152,
+                    2579
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 33,
+                  "expected_page_local_number": 7
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2579,
+                    3178
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 34,
+                  "expected_page_local_number": 8
+                }
+              ],
+              "visual_note": "Four voices, five shared measures; whole notes are sounding notes."
+            },
+            {
+              "index_0based": 2,
+              "staff_center_y": [
+                3703,
+                4048
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                128,
+                1114,
+                1917,
+                2514,
+                3077
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed_double",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    128,
+                    1114
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 35,
+                  "expected_page_local_number": 9
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1114,
+                    1917
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 36,
+                  "expected_page_local_number": 10
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1917,
+                    2514
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 37,
+                  "expected_page_local_number": 11
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    2514,
+                    3077
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 38,
+                  "expected_page_local_number": 12
+                }
+              ],
+              "visual_note": "Two voices, four measures; trailing 6/8 signature is not another measure."
+            }
+          ]
+        },
+        {
+          "page_id": "page_009",
+          "image_sha256": "c7e733678d94cac43709a6418413f12012873a7235318fa3b6e1863d2732c52a",
+          "image_size": [
+            3240,
+            4320
+          ],
+          "source_case_contract": "issue218_la_mer.json",
+          "systems": [
+            {
+              "index_0based": 0,
+              "staff_center_y": [
+                841
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                396,
+                1010,
+                1615,
+                2120,
+                2732,
+                3240
+              ],
+              "start_kind": "system_left",
+              "end_kind": "clipped",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    396,
+                    1010
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 39,
+                  "expected_page_local_number": 1
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1010,
+                    1615
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 40,
+                  "expected_page_local_number": 2
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1615,
+                    2120
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 41,
+                  "expected_page_local_number": 3
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    2120,
+                    2732
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 42,
+                  "expected_page_local_number": 4
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2732,
+                    3240
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 43,
+                  "expected_page_local_number": 5
+                }
+              ],
+              "visual_note": "Five visible measure intervals; final interval continues to the clipped right image edge. Movement III begins here."
+            },
+            {
+              "index_0based": 1,
+              "staff_center_y": [
+                1240
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                205,
+                991,
+                1652,
+                2309,
+                2692,
+                3240
+              ],
+              "start_kind": "system_left",
+              "end_kind": "clipped",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    205,
+                    991
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 44,
+                  "expected_page_local_number": 6
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    991,
+                    1652
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 45,
+                  "expected_page_local_number": 7
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1652,
+                    2309
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 46,
+                  "expected_page_local_number": 8
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    2309,
+                    2692
+                  ],
+                  "duration_bars": 5,
+                  "printed_rest_count": 5,
+                  "expected_run_number": 47,
+                  "expected_page_local_number": 9
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2692,
+                    3240
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 52,
+                  "expected_page_local_number": 14
+                }
+              ],
+              "visual_note": "Long rest marked 5 at rehearsal 43. Final visible interval has no printed end bar inside the image."
+            },
+            {
+              "index_0based": 2,
+              "staff_center_y": [
+                1646
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                202,
+                879,
+                1401,
+                1833,
+                2273,
+                2536,
+                2970,
+                3235
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    202,
+                    879
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 53,
+                  "expected_page_local_number": 15
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    879,
+                    1401
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 54,
+                  "expected_page_local_number": 16
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1401,
+                    1833
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 55,
+                  "expected_page_local_number": 17
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    1833,
+                    2273
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 56,
+                  "expected_page_local_number": 18
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2273,
+                    2536
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": 1,
+                  "expected_run_number": 57,
+                  "expected_page_local_number": 19
+                },
+                {
+                  "index_0based": 5,
+                  "x_interval": [
+                    2536,
+                    2970
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 58,
+                  "expected_page_local_number": 20
+                },
+                {
+                  "index_0based": 6,
+                  "x_interval": [
+                    2970,
+                    3235
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": 1,
+                  "expected_run_number": 59,
+                  "expected_page_local_number": 21
+                }
+              ],
+              "visual_note": "Both numeric 1 rests consume one bar each."
+            },
+            {
+              "index_0based": 3,
+              "staff_center_y": [
+                2041,
+                2341,
+                2640
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                203,
+                1095,
+                1742,
+                2463,
+                2841,
+                3230
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    203,
+                    1095
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 60,
+                  "expected_page_local_number": 22
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1095,
+                    1742
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 61,
+                  "expected_page_local_number": 23
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1742,
+                    2463
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 62,
+                  "expected_page_local_number": 24
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    2463,
+                    2841
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 63,
+                  "expected_page_local_number": 25
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2841,
+                    3230
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 64,
+                  "expected_page_local_number": 26
+                }
+              ],
+              "visual_note": "Five shared measures across three voices; final two are sounding whole notes with tremolo strokes."
+            },
+            {
+              "index_0based": 4,
+              "staff_center_y": [
+                3038,
+                3336,
+                3635
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                202,
+                1064,
+                1684,
+                2376,
+                2823,
+                3226
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    202,
+                    1064
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 65,
+                  "expected_page_local_number": 27
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1064,
+                    1684
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 66,
+                  "expected_page_local_number": 28
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1684,
+                    2376
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 67,
+                  "expected_page_local_number": 29
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    2376,
+                    2823
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 68,
+                  "expected_page_local_number": 30
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2823,
+                    3226
+                  ],
+                  "duration_bars": 7,
+                  "printed_rest_count": 7,
+                  "expected_run_number": 69,
+                  "expected_page_local_number": 31
+                }
+              ],
+              "visual_note": "Final long rest marked 7 on each voice at rehearsal 44; counted once for the shared system."
+            },
+            {
+              "index_0based": 5,
+              "staff_center_y": [
+                4045
+              ],
+              "staff_spacing": 24.0,
+              "shared_boundaries_x": [
+                202,
+                883,
+                1331,
+                1775,
+                2175,
+                2578,
+                3240
+              ],
+              "start_kind": "system_left",
+              "end_kind": "clipped",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    202,
+                    883
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 76,
+                  "expected_page_local_number": 38
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    883,
+                    1331
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 77,
+                  "expected_page_local_number": 39
+                },
+                {
+                  "index_0based": 2,
+                  "x_interval": [
+                    1331,
+                    1775
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 78,
+                  "expected_page_local_number": 40
+                },
+                {
+                  "index_0based": 3,
+                  "x_interval": [
+                    1775,
+                    2175
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 79,
+                  "expected_page_local_number": 41
+                },
+                {
+                  "index_0based": 4,
+                  "x_interval": [
+                    2175,
+                    2578
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 80,
+                  "expected_page_local_number": 42
+                },
+                {
+                  "index_0based": 5,
+                  "x_interval": [
+                    2578,
+                    3240
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 81,
+                  "expected_page_local_number": 43
+                }
+              ],
+              "visual_note": "UNIS: six visible intervals. Last interval is clipped at the right image edge."
+            }
+          ]
+        }
+      ],
+      "displayed_intervals": 70,
+      "musical_bar_total": 81
+    },
+    {
+      "id": "alizadeh",
+      "source": {
+        "title": "Akshin Alizadeh, Fourth Symphony (alla Mugham), 2010 Baku scan",
+        "url": "https://musakademiya.musigi-dunya.az/noti/alizade_sim4.pdf",
+        "sha256": "38fd8afe771d09d637f23d7ac32f7a341a00088b94f0264281d740b637aab563",
+        "pdf_page_1based": 4
+      },
+      "input_root": "logs/issue218/real-score/inputs/pipeline",
+      "pages": [
+        {
+          "page_id": "page_001",
+          "image_sha256": "a452de5cd659bb699e8b4d1c409c35a5bba4d09a7e06ad2c4938619c3efd76da",
+          "image_size": [
+            2975,
+            630
+          ],
+          "source_case_contract": "issue218_real_score.json",
+          "systems": [
+            {
+              "index_0based": 0,
+              "staff_center_y": [
+                96,
+                306,
+                513
+              ],
+              "staff_spacing": 17.5,
+              "shared_boundaries_x": [
+                338,
+                1520,
+                2781
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    338,
+                    1520
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 1,
+                  "expected_page_local_number": 1
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1520,
+                    2781
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 2,
+                  "expected_page_local_number": 2
+                }
+              ],
+              "visual_note": "3div crop: tied whole notes, no counted rest."
+            }
+          ]
+        },
+        {
+          "page_id": "page_002",
+          "image_sha256": "b186887088a0aa5d1837491d731eb2501926ef94fbfacac3ddbf8e97c7461348",
+          "image_size": [
+            2975,
+            870
+          ],
+          "source_case_contract": "issue218_real_score.json",
+          "systems": [
+            {
+              "index_0based": 0,
+              "staff_center_y": [
+                126,
+                321,
+                522,
+                726
+              ],
+              "staff_spacing": 17.5,
+              "shared_boundaries_x": [
+                366,
+                1395,
+                2814
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    366,
+                    1395
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 3,
+                  "expected_page_local_number": 1
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1395,
+                    2814
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 4,
+                  "expected_page_local_number": 2
+                }
+              ],
+              "visual_note": "4div crop: tied whole notes, no counted rest."
+            }
+          ]
+        },
+        {
+          "page_id": "page_003",
+          "image_sha256": "6538e5431e444d247df2044f1afd0b386951af92c07b0a750d349bda88b8a003",
+          "image_size": [
+            2975,
+            4210
+          ],
+          "source_case_contract": "issue218_real_score.json",
+          "systems": [
+            {
+              "index_0based": 0,
+              "staff_center_y": [
+                273,
+                501,
+                726,
+                936,
+                1143
+              ],
+              "staff_spacing": 17.5,
+              "shared_boundaries_x": [
+                338,
+                1520,
+                2781
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    338,
+                    1520
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 5,
+                  "expected_page_local_number": 1
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1520,
+                    2781
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 6,
+                  "expected_page_local_number": 2
+                }
+              ],
+              "visual_note": "Five voices, two shared measures; first system contains the 3div crop."
+            },
+            {
+              "index_0based": 1,
+              "staff_center_y": [
+                1632,
+                1869,
+                2100,
+                2286,
+                2487
+              ],
+              "staff_spacing": 17.5,
+              "shared_boundaries_x": [
+                351,
+                1797,
+                2799
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    351,
+                    1797
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 7,
+                  "expected_page_local_number": 3
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1797,
+                    2799
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 8,
+                  "expected_page_local_number": 4
+                }
+              ],
+              "visual_note": "Five voices, two shared measures."
+            },
+            {
+              "index_0based": 2,
+              "staff_center_y": [
+                2988,
+                3219,
+                3456,
+                3651,
+                3852,
+                4056
+              ],
+              "staff_spacing": 17.5,
+              "shared_boundaries_x": [
+                366,
+                1395,
+                2814
+              ],
+              "start_kind": "system_left",
+              "end_kind": "printed",
+              "measures": [
+                {
+                  "index_0based": 0,
+                  "x_interval": [
+                    366,
+                    1395
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 9,
+                  "expected_page_local_number": 5
+                },
+                {
+                  "index_0based": 1,
+                  "x_interval": [
+                    1395,
+                    2814
+                  ],
+                  "duration_bars": 1,
+                  "printed_rest_count": null,
+                  "expected_run_number": 10,
+                  "expected_page_local_number": 6
+                }
+              ],
+              "visual_note": "Six voices, two shared measures; bottom four voices form the 4div crop."
+            }
+          ]
+        }
+      ],
+      "displayed_intervals": 10,
+      "musical_bar_total": 10
+    }
+  ]
+}

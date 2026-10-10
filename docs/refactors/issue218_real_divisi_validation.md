@@ -20,8 +20,8 @@ keeps the pre-existing, visually reviewed full-page topology contract:
 
 All three original 360-DPI, 3240×4320 images are required. Exact staff membership,
 separation from neighboring systems/UNIS, no extra empty systems and full-height
-shared measure boxes are checked. There is no annotated barline or MMR/OCR GT;
-this is not an accuracy claim for every barline or musical measure number.
+shared measure boxes are checked. The original topology contract had no
+barline/MMR GT; the manual reference added later is a separate stronger gate.
 Verification centers are labels from original scan lines, never detector inputs.
 
 Supplementary material: **Akshin Alizadeh, Fourth Symphony (alla Mugham)**,
@@ -39,6 +39,117 @@ The PDF/model artifacts are retained locally under `logs/issue218/`, not in Git.
 The compact [real-detection fixture](../../tests/fixtures/system_grouping/issue218_real_detection.json)
 contains actual Alizadeh model-derived geometry, barlines and connector evidence
 for reproducible lightweight regression, with source/runtime provenance.
+
+## Manual measure/MMR reference and evaluation (2026-10-10)
+
+The user requested source-reviewed ground truth and evaluation after the grouping
+fix. [The manual annotation](../../tests/fixtures/system_grouping/issue218_measure_gt.json)
+now records every displayed measure interval, shared staff membership, numeric
+rest length and expected selected-input number for all six original inputs.
+The final revision is **v2**, SHA-256
+`61166bdd81636aea5e326ecc17913277efccd1b08b20f44cf385612b6c315967`.
+
+Labels were authored by visually reading unannotated original 360-DPI images and
+system crops with coordinate rulers. Printed stroke centers were refined only
+from source ink in manually selected windows; detector outputs did not create
+labels. Existing manually reviewed staff centers were reused. GT contains 70
+La Mer displayed intervals representing 81 musical bars, plus 10 Alizadeh
+intervals/bars. Numeric rests of `2`, `5`, `7` are each one shared interval;
+three numeric `1` rests consume one bar each. Tied whole notes and tremolo/slash
+notation are negative controls. Crop/full-page Alizadeh inputs overlap and must
+not be presented as independent corpus samples.
+
+Numbering follows the existing run: start at 1 for each work and continue through
+its selected inputs. La Mer PDF pages 3, 4 and 9 are noncontiguous and span
+movements, so these labels **are not the original score's absolute bar numbers**.
+The evaluator also reports page-local numbers to distinguish incoming offsets.
+Right-edge clipped intervals remain in counting/numbering GT when their start and
+musical content are visible. They are not dropped to make a detector result pass.
+
+This is a new, stronger evaluation contract; earlier topology/regression results
+remain valid under their original contracts. Primary gates require exact system
+interval counts, all numeric multi-bar rest counts without false positives, and
+correct final numbers with complete spatial coverage. Intervals match one-to-one,
+in order, using horizontal IoU >=0.8 and vertical overlap >=0.5. Internal shared
+boundary diagnostics use the existing 0.5 staff-space tolerance. There is no
+best-index-shift search or compensating threshold change.
+
+| Input | Output / GT intervals | Correct final numbers / GT | Multi-bar rests with exact count |
+| --- | --- | --- | --- |
+| La Mer PDF page 3 | 25 / 25 | 25 / 25 | `2`: correct |
+| La Mer PDF page 4 | 12 / 12 | 12 / 12 | No MMR; no false positive |
+| La Mer PDF page 9 | **32 / 33** | **4 / 33** | `5` and `7`: both correct |
+| Alizadeh 3div. crop | 2 / 2 | 2 / 2 | No MMR; no false positive |
+| Alizadeh 4div. crop | 2 / 2 | 2 / 2 | No MMR; no false positive |
+| Alizadeh complete page | 6 / 6 | 6 / 6 | No MMR; no false positive |
+
+**Current output FAILS the new complete measure/numbering contract.** Of 80 GT
+intervals, 79 are spatially matched (no extra interval); counts match 18/19
+systems. MMR count recall/precision are 3/3 on this small reference. Final numbers
+are correct for 51/80 GT intervals; the unmatched interval remains in the
+denominator. Internal shared boundaries match 60/61, with zero false positives.
+
+The remaining error is La Mer PDF page 9, first system: the final visible interval
+`[2732,3240]` has notes/rests but no final printed bar within the cropped image.
+The output stops at the preceding bar around x2732. GT requires five intervals,
+output has four, so the rest of that page is numbered one bar early. Selected-input
+number 43 is missing; the next system starts at 43 instead of 44. Rest lengths
+are correct, so later MMR skips preserve rather than repair the one-bar offset.
+The same deficit and number errors occur in the pre-fragment-filter `9f0535f`
+outputs; this is a pre-existing boundary/count issue, not a regression caused by
+removing false staff fragments. Production code was not changed for this
+annotation/evaluation request.
+
+### Annotation review and retained corrections
+
+This is single-annotator GT authored by Codex and remains open to user review;
+it is not independently adjudicated ground truth. Original review crops,
+full-page GT overlays and the missing-interval comparison are retained under
+`logs/issue218/ground-truth/{source-review,visual}/`.
+
+Initial GT v1 mistakenly used x1565 for one page-9 boundary: the magnified source
+shows that this is a triplet note stem with a beam and notehead; the un-beamed
+full-height barline is x1615. The boundary diagnostic prompted a second raw-source
+review. Only that geometric coordinate was corrected, including its two adjacent
+interval edges; counts, durations, numbering and matching tolerances were fixed.
+Both versions fail the primary count/numbering gates with the same totals.
+The original annotation hash
+`b8a12c4f5f97069676dcd5fbf476c5ee0dde185ae1830629c56c176678ddb050`,
+`source-review/frozen_measure_gt.json` and
+`evaluation/annotation-v1-report.json` are retained. Revision history is also in
+the committed GT. The old diagnostic was 59 TP, 1 FP, 2 FN; corrected geometry
+is 60 TP, 0 FP, 1 FN. No failed production case was excluded.
+
+### Reproduction and checks
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/verification/evaluate_issue218_measure_gt.py \
+  --run la-mer=logs/issue218/staff-fragments/la-mer/output/la_mer \
+  --run alizadeh=logs/issue218/staff-fragments/alizadeh/output/real_scores \
+  --report logs/issue218/ground-truth/evaluation/current-report.json
+```
+
+The command exits **1** for the observed quality failure and writes all six
+per-page results, unpaired intervals, count/number differences, MMR errors,
+annotation/evaluator/input/output SHA-256 and run-manifest SHA-256.
+`evaluation/pre-fragment-filter-report.json` scores the preceding candidate on
+the same GT and confirms identical counts/MMR/numbers, with the old staff
+membership failures. Source runtime candidate: `421f3496`; immutable image and
+model outputs are the production runs documented below. Neither upstream
+inference nor MMR/OCR is rerun solely to rescore retained, valid final outputs.
+
+Validation: targeted **78 passed** (including three new evaluator guards),
+`make test-fast` **112 passed**, scoped Ruff lint/format, repository-surface
+inventory and `git diff --check` PASS. Logs are under
+`logs/issue218/ground-truth/`. The first evaluator invocation failed before
+scoring because it assumed every MMR override's page index was 0; this was
+corrected to the production zero-based input index and tested explicitly.
+The failed pre-score log remains at `source-review/evaluation.log`.
+
+Fresh GPU smoke/full68 inference are not applicable to this reference/rescoring
+change: production numerical code/config/models are unchanged. Previous GPU
+smoke and 68-page correctness evidence remain recorded below. Independent human
+adjudication and original-score absolute numbering are not claimed.
 
 ## Production changes
 
@@ -66,7 +177,7 @@ See [the geometry contract](../NUMBERING_GEOMETRY_CONTRACT.md).
 Current/future architecture documents were reviewed: process ownership, pipeline
 phases, public surfaces and future service responsibilities are unchanged.
 
-## Current result: conservative staff-fragment removal
+## Staff-fragment result under the original topology contract
 
 The user authorized implementation and validation after reviewing two shape
 experiments. Requiring five approximately equally spaced lines failed: it lost
@@ -140,8 +251,8 @@ also recorded in `validation/audit-report.json`;
 `validation/contract.json` also records its pre-format and final source hashes.
 Fresh full-68 model inference and OCR are omitted because upstream inference is
 unchanged and all numbered MMR input views are exactly preserved. Actual-score
-MMR/OCR is run for all six target inputs. Complete musical MMR accuracy remains
-unscored because annotated MMR GT is unavailable.
+MMR/OCR is run for all six target inputs. At this earlier stage musical MMR accuracy was unscored; the new manual
+reference and stronger evaluation are reported above.
 
 ## Historical result at `9f0535f` (before staff-fragment removal)
 

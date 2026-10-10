@@ -12,8 +12,73 @@ from src.measure_numbering.connector_evidence import SystemConnectorEvidenceExtr
 from src.measure_numbering.numbering import MeasureNumberer
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.types import Barline, BBox, Page, Score, Staff
+from tools.verification.evaluate_issue218_measure_gt import (
+    align_intervals,
+    score_page,
+    validate_gt,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures" / "system_grouping"
+
+
+def test_manual_gt_does_not_shift_indices_to_hide_a_missing_measure():
+    assert align_intervals([[0, 200], [200, 300]], [[0, 100], [100, 200], [200, 300]]) == [(1, 2)]
+
+
+def test_manual_gt_shared_rest_and_page_index_follow_production_override_contract():
+    expected = {
+        "page_id": "page_009",
+        "systems": [
+            {
+                "staff_center_y": [20, 40, 60],
+                "staff_spacing": 2,
+                "shared_boundaries_x": [0, 100, 200],
+                "measures": [
+                    {
+                        "x_interval": [0, 100],
+                        "duration_bars": 5,
+                        "expected_run_number": 10,
+                        "expected_page_local_number": 1,
+                    },
+                    {
+                        "x_interval": [100, 200],
+                        "duration_bars": 1,
+                        "expected_run_number": 15,
+                        "expected_page_local_number": 6,
+                    },
+                ],
+            }
+        ],
+    }
+    page = {
+        "systems": [
+            {
+                "staves": [{"bbox": [0, y - 4, 200, y + 4]} for y in (20, 40, 60)],
+                "measures": [
+                    {"bbox": [0, 16, 100, 64], "number": 10},
+                    {"bbox": [100, 16, 200, 64], "number": 15},
+                ],
+            }
+        ]
+    }
+    overrides = {"measure_overrides": [{"page": 2, "system": 0, "measure": 0, "skip": 4}]}
+    result = score_page(page, expected, overrides, page_index=2)
+    assert result["mmr"]["gt"] == result["mmr"]["pred"] == result["mmr"]["exact_count"] == 1
+    assert result["systems"][0]["numbers_correct"] == 2
+    with pytest.raises(ValueError, match="Invalid or duplicate MMR"):
+        score_page(page, expected, overrides, page_index=0)
+    overrides["measure_overrides"][0]["skip"] = 1
+    result = score_page(page, expected, overrides, page_index=2)
+    assert result["mmr"]["exact_count"] == 0
+    assert result["mmr"]["count_errors"][0]["pred_count"] == 2
+
+
+def test_manual_gt_numbers_must_agree_with_rest_durations():
+    annotation = json.loads((FIXTURES / "issue218_measure_gt.json").read_text())
+    validate_gt(annotation)
+    annotation["works"][0]["pages"][0]["systems"][0]["measures"][3]["expected_run_number"] -= 1
+    with pytest.raises(ValueError, match="numbering disagrees with durations"):
+        validate_gt(annotation)
 
 
 @pytest.fixture(params=[3, 4], ids=["3div", "4div"])

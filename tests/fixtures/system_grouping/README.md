@@ -133,3 +133,29 @@ PYTHONPATH=. .venv_pdf/bin/python tools/verification/verify_issue218_divisi.py v
   --detector-run-dir logs/issue218/la-mer/candidate/la_mer \
   --report logs/issue218/staff-fragments/la-mer/report.json
 ```
+
+## Manual measure and MMR ground truth
+
+[issue218_measure_gt.json](issue218_measure_gt.json) independently annotates all
+six original scans/crops, including shared measure intervals, numeric rest lengths
+and selected-input numbering. It records source hashes, the fixed scoring
+contract, single-annotator status and a documented geometric correction.
+La Mer has 70 displayed intervals / 81 musical bars; Alizadeh has 10 / 10.
+Numeric rest labels `2`, `5`, `7` are shared events, while `1` does not add a skip.
+Numbers start at 1 per selected-input run; they are not original-score absolute
+bar numbers. Alizadeh crop/full-page overlap is explicit.
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/verification/evaluate_issue218_measure_gt.py \
+  --run la-mer=logs/issue218/staff-fragments/la-mer/output/la_mer \
+  --run alizadeh=logs/issue218/staff-fragments/alizadeh/output/real_scores \
+  --report logs/issue218/ground-truth/evaluation/current-report.json
+```
+
+The current result exits **1**: MMR counts are correct on 3/3 rests, but La Mer
+PDF page 9 loses the last visible interval of its first system (5 GT vs 4 output),
+shifting later numbers by one. All 80 GT intervals remain in evaluation; 79 match
+spatially and 51 have correct final numbers. No index-shift search is used.
+See the durable validation report for revision history and the original topology
+contract's separate results. Review overlays are retained under
+`logs/issue218/ground-truth/visual/annotations/`.

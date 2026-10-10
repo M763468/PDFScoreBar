@@ -21,6 +21,8 @@ class StaffExtractor:
     STAFF_LINE_MIN_WIDTH_RATIO = 0.25
     STAFF_SPACING_INLIER_MIN_RATIO = 0.5
     STAFF_SPACING_INLIER_MAX_RATIO = 1.5
+    SHORT_FRAGMENT_MAX_LINE_RUNS = 2
+    SHORT_FRAGMENT_MAX_SPAN_UNITS = 2.0
 
     def __init__(self, min_height: int = 10, min_width_ratio: float = 0.1):
         self.min_height = min_height
@@ -49,6 +51,7 @@ class StaffExtractor:
         for x, y, w, h in self._component_bounds(
             processed, min_width=target_w * self.min_width_ratio
         ):
+            crop = bin_mask[y : y + h, x : x + w]
             component_unit_size = unit_size
             if component_unit_size is None:
                 # Short systems can be extractable even when no staff row spans
@@ -56,8 +59,14 @@ class StaffExtractor:
                 # the accepted component's original-mask crop rather than
                 # lowering the page-wide gate and mistaking system spacing for
                 # staff-line spacing.
-                crop = bin_mask[y : y + h, x : x + w]
                 component_unit_size = self._estimate_unit_size(crop, scale_y=scale_y)
+            if self._is_short_line_fragment(
+                crop,
+                unit_size=(
+                    component_unit_size / scale_y if component_unit_size is not None else None
+                ),
+            ):
+                continue
             bbox = BBox(
                 int(x * scale_x),
                 int(y * scale_y),
@@ -67,6 +76,26 @@ class StaffExtractor:
             staves.append(Staff(bbox=bbox, unit_size=component_unit_size))
 
         return sorted(staves, key=lambda s: s.bbox.y1)
+
+    def _is_short_line_fragment(self, crop: np.ndarray, *, unit_size: Optional[float]) -> bool:
+        """Reject short non-staff marks using original-mask coordinates.
+
+        Hairpins can become staff-sized components after vertical dilation.
+        Require both very few persistent line runs and a raw foreground span
+        below two staff spaces. Do not require five visible lines: real scans
+        can have broken or tilted lines, and unknown spacing remains accepted.
+        """
+        if unit_size is None or unit_size <= 0 or crop.size == 0:
+            return False
+        foreground = crop > 0
+        rows = np.flatnonzero(np.mean(foreground, axis=1) >= self.STAFF_LINE_MIN_WIDTH_RATIO)
+        line_runs = int(rows.size > 0) + int(np.count_nonzero(np.diff(rows) > 1))
+        active = np.flatnonzero(np.any(foreground, axis=1))
+        span = int(active[-1] - active[0]) if active.size else 0
+        return (
+            line_runs <= self.SHORT_FRAGMENT_MAX_LINE_RUNS
+            and span < self.SHORT_FRAGMENT_MAX_SPAN_UNITS * unit_size
+        )
 
     def _component_bounds(
         self, processed: np.ndarray, *, min_width: float

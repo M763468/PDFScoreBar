@@ -115,3 +115,21 @@ fresh source run and preserve the image/barline/staff-mask bytes. Expected
 staff centers are verification labels and are never passed to the pipeline.
 See `docs/refactors/issue218_real_divisi_validation.md` for outcomes, failed
 attempts, runtime identity and regression checks.
+
+The final implementation also rejects short non-staff fragments in the original
+mask: at most two persistent row runs and a foreground span below two staff
+spaces. It preserves uncertain/broken staff masks instead of requiring five
+visible lines. The complete La Mer and Alizadeh contracts now pass after MMR/OCR
+and final numbering. The 68-page corpus preserves all numbered systems and MMR
+crop geometry; removal of 56 empty systems is separately reported as failure
+under the original empty-inclusive JSON-equality contract.
+
+To verify the retained final La Mer replay:
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/verification/verify_issue218_divisi.py verify \
+  --contract tests/fixtures/system_grouping/issue218_la_mer.json \
+  --run-dir logs/issue218/staff-fragments/la-mer/output/la_mer \
+  --detector-run-dir logs/issue218/la-mer/candidate/la_mer \
+  --report logs/issue218/staff-fragments/la-mer/report.json
+```

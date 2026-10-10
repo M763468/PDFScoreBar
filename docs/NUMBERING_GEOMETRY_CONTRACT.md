@@ -168,3 +168,21 @@ The accepted Issue #264 `_02` replay directory must already exist under
 `ARTIFACT_ROOT/logs/issue264_phase_c_mmr_regression/`. Do not silently
 substitute a newly generated HOMR/support run for the final comparison, because
 that would mix producer/runtime variation into the #267 geometry comparison.
+
+### Short non-staff mask fragments (#218)
+
+`StaffExtractor` checks each accepted component against the original binary mask,
+prior to vertical dilation. It rejects a component only when both conditions hold:
+
+- at most two horizontally persistent row runs (the existing 0.25 coverage floor);
+- the full foreground vertical span is strictly less than two staff-line spaces.
+
+Span and spacing are compared in mask coordinates; target-page scaling does not
+change the decision. Page spacing is preferred, with the existing component-local
+fallback for short staves. Unknown spacing remains accepted. Five visible lines
+are deliberately not required: broken or tilted scan lines must remain usable.
+This shared extractor also supplies connector semantics and MMR support geometry.
+
+A rejected component may disappear from `empty_systems`; it contributes no measures
+or numbering increments. Removal from a numbered system still requires downstream
+membership/count/number/geometry validation, rather than assuming an empty-only change.

@@ -105,6 +105,38 @@ class TestNumberingOverrides(unittest.TestCase):
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(10), scale_y=1.0), 10.0)
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(20), scale_y=1.0), 20.0)
 
+    def test_short_fragment_filter_keeps_uncertain_and_full_height_masks(self):
+        extractor = StaffExtractor()
+        mask = np.zeros((60, 100), dtype=np.uint8)
+        mask[10, :] = 255
+        mask[20, :] = 255
+        self.assertTrue(extractor._is_short_line_fragment(mask, unit_size=10.0))
+        self.assertFalse(extractor._is_short_line_fragment(mask, unit_size=None))
+        # The boundary is strict; two lines spanning two staff spaces survive.
+        mask[30, :5] = 255
+        self.assertFalse(extractor._is_short_line_fragment(mask, unit_size=10.0))
+        mask[30, :] = 255
+        self.assertFalse(extractor._is_short_line_fragment(mask, unit_size=20.0))
+
+    def test_extraction_rejects_dilated_hairpin_but_keeps_broken_staff_at_two_scales(self):
+        extractor = StaffExtractor()
+        mask = np.zeros((260, 240), dtype=np.uint8)
+        for row in (20, 30, 40, 50, 60):
+            mask[row, 20:220] = 255
+        # Four surviving lines must remain accepted without a five-line rule.
+        for row in (120, 130, 150, 160):
+            mask[row, 20:220] = 255
+        cv2.line(mask, (30, 220), (210, 226), 255, 1)
+        cv2.line(mask, (30, 232), (210, 226), 255, 1)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "staff_and_hairpin.png"
+            self.assertTrue(cv2.imwrite(str(path), mask))
+            for scale in (1, 2):
+                staves = extractor.extract(path, (240 * scale, 260 * scale))
+                self.assertEqual(len(staves), 2)
+                self.assertEqual([staff.unit_size for staff in staves], [10.0 * scale] * 2)
+                self.assertLess(staves[-1].bbox.y2, 200 * scale)
+
     def test_staff_component_contours_preserve_8_connectivity_and_scan_order(self):
         extractor = StaffExtractor(min_height=10, min_width_ratio=0.05)
         processed = np.zeros((100, 200), dtype=np.uint8)

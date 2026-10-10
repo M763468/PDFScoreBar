@@ -144,6 +144,8 @@ requires an explicit decision in #410; this PR does not make that decision.
 - Focused audit, compact identity, retained replay/PDF, manual-correction, reviewed
   movement and one-bar-veto tests: 64 passed.
 - `make test-fast`: 110 passed.
+- Repository-surface checker and focused surface/distribution tests: pass / 23 passed.
+  The new audit test is registered as `validation_harness`; runtime files are unchanged.
 - Touched Python `ruff check` / `ruff format --check`, compile, CLI `--help` and
   `git diff --check`: pass.
 - Full68 retained rescore: completed; correctness exit 1 for seven local GT errors

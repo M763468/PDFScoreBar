@@ -7,6 +7,7 @@ import numpy as np
 
 from src.common.connector_artifacts import connector_mask_paths_for_numbering
 
+from .clipped_end import ClippedSystemEndDetector
 from .connector_aware_builder import ConnectorAwareSystemBuilder
 from .connector_evidence import SystemConnectorEvidenceExtractor
 from .numbering import MeasureNumberer
@@ -179,6 +180,7 @@ class MeasureNumberingPipeline:
         self.connector_extractor = SystemConnectorEvidenceExtractor()
         self.builder = ConnectorAwareSystemBuilder()
         self.numberer = MeasureNumberer()
+        self.clipped_end_detector = ClippedSystemEndDetector()
 
     def process_page(
         self,
@@ -237,6 +239,9 @@ class MeasureNumberingPipeline:
             image=image,
             connector_evidence=connector_evidence,
         )
+
+        if image is not None and image.shape[:2] == (image_size[1], image_size[0]):
+            self.clipped_end_detector.apply(systems, image)
 
         page = Page(
             systems=systems, page_number=page_number, width=image_size[0], height=image_size[1]

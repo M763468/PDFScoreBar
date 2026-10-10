@@ -40,7 +40,111 @@ The compact [real-detection fixture](../../tests/fixtures/system_grouping/issue2
 contains actual Alizadeh model-derived geometry, barlines and connector evidence
 for reproducible lightweight regression, with source/runtime provenance.
 
-## Manual measure/MMR reference and evaluation (2026-10-10)
+## Clipped last-interval correction (2026-10-10)
+
+The user authorized correcting the deficit found by the manual reference within
+Issue #218. It is a pre-existing one-staff boundary problem, rather than a divisi
+merge failure, but it invalidates final numbering in the original required La Mer
+input set. The reference, all six inputs and scoring tolerances remain fixed.
+The contract was recorded before implementation at
+`logs/issue218/trailing-interval/validation/contract.json`; baseline is
+`15779cd1061c86f3451182907d8c75bc936479f7`.
+
+`ClippedSystemEndDetector` reads the original page ink after system grouping.
+It requires five thin, regularly spaced lines continuing through the final
+staff-space strip and the preceding four spaces, together with musical ink
+inside the staff in a tail at least four spaces wide. Only then does it append
+one shared logical end boundary at the image edge. See the
+[geometry contract](../NUMBERING_GEOMETRY_CONTRACT.md) for all normalized limits.
+Blank margins, empty staff continuations, short post-bar regions, uncertain
+spacing and incomplete line evidence abstain. Staff extraction still accepts
+broken lines; this positive clipping check does not impose a five-line staff
+acceptance rule. The logical end is added after grouping and reconstructed in
+both Phase A and Phase C. Detector/CNN/MMR thresholds, models and routing remain
+unchanged.
+
+Fresh production MMR/OCR and final-numbering runs on the fixed six inputs now
+pass every gate of the unchanged GT v2:
+
+| Input | Output / GT intervals | Correct final numbers / GT | Exact multi-bar rests |
+| --- | --- | --- | --- |
+| La Mer PDF page 3 | 25 / 25 | 25 / 25 | `2` |
+| La Mer PDF page 4 | 12 / 12 | 12 / 12 | None; no false positive |
+| La Mer PDF page 9 | **33 / 33** | **33 / 33** | `5`, `7` |
+| Alizadeh 3div. crop | 2 / 2 | 2 / 2 | None; no false positive |
+| Alizadeh 4div. crop | 2 / 2 | 2 / 2 | None; no false positive |
+| Alizadeh complete page | 6 / 6 | 6 / 6 | None; no false positive |
+
+All **80/80** intervals match spatially and have correct final and page-local
+numbers; counts match **19/19** systems and MMR events match **3/3** with exact
+durations. Internal boundaries match **61 TP, 0 FP, 0 FN**. All six original
+topology gates also pass at Phase A and final output.
+Page 9 first system now has five intervals, including selected-input number 43;
+the next system starts at 44. The original scan and before/after output are shown
+in `logs/issue218/trailing-interval/visual/la-mer-page009-before-after.png`.
+The prior 79/80 interval and 51/80 number failure remains recorded below.
+
+The full68 replay used identical retained images, barlines, staff and connector
+masks with the baseline and candidate pipelines. Baseline output was also checked
+against the already frozen `421f3496` runtime outputs. All **68/68 complete page
+JSONs**, including numbered systems and empty systems, are identical to baseline
+`15779cd1`; all three numbered MMR input views are identical on **68/68**.
+All 68 source image SHA identities and supporting mask/barline hashes are
+recorded in `validation/report.json`. This new correction changes only the
+La Mer page-9 first-system interval in the targeted replay. It does not supersede
+the old 43/68 empty-inclusive failure of the preceding staff-fragment change.
+
+Reproduction (immutable production image for every runtime command):
+
+```bash
+DOCKER_IMAGE=sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc \
+  bash scripts/docker_runtime_validation.sh \
+  --config logs/issue218/trailing-interval/la-mer/config.yaml
+DOCKER_IMAGE=sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc \
+  bash scripts/docker_runtime_validation.sh \
+  --config logs/issue218/trailing-interval/alizadeh/config.yaml
+PYTHONPATH=. .venv_pdf/bin/python tools/verification/evaluate_issue218_measure_gt.py \
+  --run la-mer=logs/issue218/trailing-interval/la-mer/output/la_mer \
+  --run alizadeh=logs/issue218/trailing-interval/alizadeh/output/real_scores \
+  --report logs/issue218/trailing-interval/validation/measure-gt-report.json
+```
+
+Runtime preflight verifies compatibility and model assets. The source SHA hashes
+and baseline/image identity in the reports distinguish the candidate working
+tree from the pre-fix checkout commit recorded by the evaluator. Replay preceded
+a whitespace-only Ruff formatting step; its original source hashes remain
+retained, and fresh production runs/tests used the formatted implementation.
+Focused tests, including clipping recovery, two scales, one/three/four staves,
+MMR index preservation and negative controls: **98 passed** on host Python and
+**98 passed** in the production Python/OpenCV runtime. `make test-fast`:
+**112 passed**. Fresh canonical GPU smoke **PASS: 85/85, zero hard FP/FN/soft
+residuals** is recorded in `logs/issue218/trailing-interval/smoke/`. Reproduce with
+the same immutable image and `--config logs/issue218/trailing-interval/smoke/config.yaml`.
+
+The explicit distribution manifest includes the new runtime module and classifies
+its develop-only regression test. Surface/engine boundary checks pass **18 tests**;
+scoped Ruff lint/format, repository-surface inventory and `git diff --check` pass.
+The replay and its full68 input/support hashes are retained under
+`logs/issue218/trailing-interval/validation/`. Its command is:
+
+```bash
+docker run --rm -v "$PWD":/workspace \
+  -v /home/masaki_muramatsu/ws_PDFScoreBar:/retained:ro -w /workspace \
+  -e PYTHONPATH=/workspace \
+  sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc \
+  /opt/venv_pipeline/bin/python logs/issue218/trailing-interval/validation/replay.py
+```
+
+Fresh full68 detector inference and OCR were not rerun: upstream inference is
+unchanged and every numbered MMR input view is exactly equal. Actual MMR/OCR was
+rerun on all six target inputs. Independent adjudication and original-score
+absolute numbering remain outside the claimed results. This is conservative
+clipping recovery, not a guarantee for other scans with damaged right-edge lines.
+Current and future architecture documents were reviewed; process ownership,
+public artifact schema and service responsibilities are unchanged, so structural
+architecture updates are N/A.
+
+## Historical manual measure/MMR reference and evaluation at `15779cd1` (2026-10-10)
 
 The user requested source-reviewed ground truth and evaluation after the grouping
 fix. [The manual annotation](../../tests/fixtures/system_grouping/issue218_measure_gt.json)
@@ -83,13 +187,13 @@ best-index-shift search or compensating threshold change.
 | Alizadeh 4div. crop | 2 / 2 | 2 / 2 | No MMR; no false positive |
 | Alizadeh complete page | 6 / 6 | 6 / 6 | No MMR; no false positive |
 
-**Current output FAILS the new complete measure/numbering contract.** Of 80 GT
+**The `15779cd1` output FAILS the complete measure/numbering contract.** Of 80 GT
 intervals, 79 are spatially matched (no extra interval); counts match 18/19
 systems. MMR count recall/precision are 3/3 on this small reference. Final numbers
 are correct for 51/80 GT intervals; the unmatched interval remains in the
 denominator. Internal shared boundaries match 60/61, with zero false positives.
 
-The remaining error is La Mer PDF page 9, first system: the final visible interval
+The identified error is La Mer PDF page 9, first system: the final visible interval
 `[2732,3240]` has notes/rests but no final printed bar within the cropped image.
 The output stops at the preceding bar around x2732. GT requires five intervals,
 output has four, so the rest of that page is numbered one bar early. Selected-input

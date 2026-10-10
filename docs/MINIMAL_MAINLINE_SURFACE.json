@@ -129,6 +129,10 @@
       "role": "measure numbering"
     },
     {
+      "pattern": "src/measure_numbering/clipped_end.py",
+      "role": "source-ink clipping evidence for open final measure intervals"
+    },
+    {
       "pattern": "src/measure_numbering/pipeline.py",
       "role": "numbering pipeline"
     },
@@ -724,6 +728,7 @@
       "tests/test_engine_input_safety.py",
       "tests/test_engine_telemetry.py",
       "tests/test_homr_barline_candidates.py",
+      "tests/test_clipped_system_end.py",
       "tests/test_homr_profile.py",
       "tests/test_issue100_runtime_surface.py",
       "tests/test_issue115_runtime_boundaries.py",

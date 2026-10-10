@@ -147,15 +147,19 @@ bar numbers. Alizadeh crop/full-page overlap is explicit.
 
 ```bash
 PYTHONPATH=. .venv_pdf/bin/python tools/verification/evaluate_issue218_measure_gt.py \
-  --run la-mer=logs/issue218/staff-fragments/la-mer/output/la_mer \
-  --run alizadeh=logs/issue218/staff-fragments/alizadeh/output/real_scores \
-  --report logs/issue218/ground-truth/evaluation/current-report.json
+  --run la-mer=logs/issue218/trailing-interval/la-mer/output/la_mer \
+  --run alizadeh=logs/issue218/trailing-interval/alizadeh/output/real_scores \
+  --report logs/issue218/trailing-interval/validation/measure-gt-report.json
 ```
 
-The current result exits **1**: MMR counts are correct on 3/3 rests, but La Mer
-PDF page 9 loses the last visible interval of its first system (5 GT vs 4 output),
-shifting later numbers by one. All 80 GT intervals remain in evaluation; 79 match
-spatially and 51 have correct final numbers. No index-shift search is used.
+The clipped-end correction exits **0**: all 80 intervals and final numbers match,
+and all 3 numeric multi-bar rests have exact counts. The GT v2 hash and scoring
+contract are unchanged. Source-ink clipping evidence recovers La Mer PDF page 9's
+missing final interval, which shifted later numbers by one in `15779cd1`.
+That prior failure (79 spatial matches and 51 correct numbers out of 80) remains
+at `logs/issue218/ground-truth/evaluation/current-report.json`. No index-shift
+search is used. A before/after source comparison is retained at
+`logs/issue218/trailing-interval/visual/la-mer-page009-before-after.png`.
 See the durable validation report for revision history and the original topology
 contract's separate results. Review overlays are retained under
 `logs/issue218/ground-truth/visual/annotations/`.

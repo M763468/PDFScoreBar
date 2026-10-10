@@ -186,3 +186,26 @@ This shared extractor also supplies connector semantics and MMR support geometry
 A rejected component may disappear from `empty_systems`; it contributes no measures
 or numbering increments. Removal from a numbered system still requires downstream
 membership/count/number/geometry validation, rather than assuming an empty-only change.
+
+### Open intervals clipped by the original image edge (#218)
+
+After grouping, `ClippedSystemEndDetector` may add one logical end boundary at the
+original image width. Phase A and Phase C use the same source image and rule; the
+marker does not participate in staff grouping. A mask extending into a margin
+alone is insufficient. Recovery requires:
+
+- known positive staff-line spacing in source-image coordinates;
+- a trailing region at least four staff spaces wide after the last assigned bar;
+- five thin, regular source-ink line runs in the final one-space strip and the
+  preceding four-space strip (coverage >=0.6, thickness <=0.35 spaces, consecutive
+  spacing 0.75..1.25 spaces, corresponding center displacement <=0.5 spaces);
+- non-horizontal ink inside the five-line span after removing horizontal runs
+  of at least two spaces: a component of height >=0.5 spaces, width >=0.4 spaces
+  and area >=0.25 square spaces. The source-ink threshold is 180.
+
+Blank tails, short post-bar regions, missing/uncertain lines or unknown spacing
+abstain. Missing/mismatched source images also preserve existing behavior.
+The five-line check is positive evidence for this optional clipping recovery;
+it does not become a five-line requirement for accepting staff components.
+The new interval shares the complete system height and consumes one physical
+measure, with ordinary MMR overrides applied by the same numbering path.

@@ -1,0 +1,7150 @@
+{
+  "schema_version": "issue415.reviewed_gt.v1",
+  "contract": {
+    "scope": "5 scores / 68 unchanged physical-page topologies; 182 historical fixtures -> 177 reviewed rest events",
+    "primary_checks": [
+      "recognition quality",
+      "recognition-to-applied local increments",
+      "GT-to-final local increments",
+      "page continuity"
+    ],
+    "absolute_numbering_certified": false,
+    "nonzero_page_completeness_certified": false,
+    "gt_changed": false
+  },
+  "reviewed_source_sha256": {
+    "logs/issue409/full68-numbering-20261009/candidate-mmr-gt.json": "1709ea9ce81c5336c458be9bd73fecffc7c262026a1d77a340e7cde298af062e",
+    "logs/issue274_full68_mmr_reuse/issue274_full68_mmr_reuse_geometry_rebased.json": "7ebd3d63c10cd5a900d769e389fc72c93ec3c7ffba174b12dd89e6e6fcefdddc",
+    "tests/fixtures/expected_overrides_page_063.json": "198c3a61472a2b670743559039290ac9fa051aa72cc0cc2c4b019d064baa5198",
+    "tests/fixtures/expected_overrides_page_036.json": "2b3b7a038e3c2d4df6c196c1ba3938037b0a1b775896e7f227cbf3815eff12b8",
+    "tests/fixtures/expected_overrides_page_001.json": "b7f13bdff016772deaacd7995171aa22cd9c2c4f8130c36ddc978e8ecf70e213",
+    "tests/fixtures/expected_overrides_page_033.json": "52a752ca48ffe59a5368e4a29efcc5f3dae2fddcb8edcea646224fb40ef212c1",
+    "tests/fixtures/expected_overrides_page_028.json": "f3bf549b416c465dd85b9291f8c7715daef20537f3c69afa83c780e9c6302784",
+    "tests/fixtures/expected_overrides_page_041.json": "a3b83b98ad43ca4953e6c944e1b1ea3ba96f7bcd0d525b2750929b430942e163",
+    "tests/fixtures/expected_overrides_page_023.json": "029310788ee71e645c85b74e6040f10df4015debf77b40ae875ebd54ce6ee2e0",
+    "tests/fixtures/expected_overrides_page_054.json": "a20f03839422607ed0b29caf4c923b63c13922353ff89e0d7484065d93083440",
+    "tests/fixtures/expected_overrides_page_053.json": "dd12b2cde1a396d321a7b5a5f4bd9ed5aec9048b350ba911d9223e8f848999b9",
+    "tests/fixtures/expected_overrides_page_019.json": "f5920068c1b894fe3e93b70bae5e307cac32c4404381776857079dc98a39c273",
+    "tests/fixtures/expected_overrides_page_032.json": "1c06a8073c2063e7b7c1b9857756cdef586711a76889ab8f3c70d9715adf95f2",
+    "tests/fixtures/expected_overrides_page_015.json": "40233bb9d74d9aa19417b7ee051d9a9a0def912541ad71349536adaf4509faef",
+    "tests/fixtures/expected_overrides_page_024.json": "9658f399f092286ae99389fb937d2b070a91a34380c678ef5cf7064bf5cf73be",
+    "tests/fixtures/expected_overrides_page_035.json": "0261d9f31d93887091eb3c9f3d44f68c27e644a992c1177b31139691c6e25a66",
+    "tests/fixtures/expected_overrides_page_042.json": "538b99a45ac7cd8b172005acb898a4b7d8e01fe284531e9eab8054777eaa9c71",
+    "tests/fixtures/expected_overrides_page_039.json": "d21303b7e831d6ac0a67ab90dfdc905dc33283dc2abad9f8d925a18340c6f3b0",
+    "tests/fixtures/expected_overrides_page_002.json": "731d151826196b4d5f8c1d28dce1fd0f6532cc29a4e5a69d68e7fda995032b1c",
+    "tests/fixtures/expected_overrides_page_013.json": "273a70e197ef55605c4ddb470d652e7741124e6488225f60e812add791905fad",
+    "tests/fixtures/expected_overrides_page_064.json": "25a10bd759416fc29078563782c3542f461e1aa8bb2634ac5d710aa7deac255c",
+    "tests/fixtures/expected_overrides_page_011.json": "f52c72af92bb47ea294c7ce2a6cb953465fd98a749c7253dc59f5fe1eed15a3a",
+    "tests/fixtures/expected_overrides_page_017.json": "6ffb84c6a351cde2b158c8872f193c57397f84fc670f18cf41d1f510e2f173c5",
+    "tests/fixtures/expected_overrides_page_044.json": "e7e588adceafdee16d3f77fba974abfbcda5b611a8d4aa4b56b1072e1f41bf60",
+    "tests/fixtures/expected_overrides_page_065.json": "6de958f3b643cd5c0e12a0f190c4f658df5498ce4899816f3620a51d54055191",
+    "tests/fixtures/expected_overrides_page_058.json": "b843b8d99b6c1219cecd66d023e526266131b9d8e88f0b54202e1b868eb58689",
+    "tests/fixtures/expected_overrides_page_018.json": "9d5d28b5052a1a6424049ed9e5c0c47b27329267d6251e43b45696234cd642b3",
+    "tests/fixtures/expected_overrides_page_037.json": "f09bace91ac48a72c2dc689db92b5b020c1c35045e97b86b977d835698217e21",
+    "tests/fixtures/expected_overrides_page_010.json": "a2a7c8206dcb9bf3f6e80c3ef91c31711da4655458f51da36a2e895a50fa9b1d",
+    "tests/fixtures/expected_overrides_page_038.json": "3196531a0c2c451870bcecd12f4d3e19378e8a59f0218715800d7563a1217c03",
+    "tests/fixtures/expected_overrides_page_049.json": "eeda8216df9a46a8357635e16b1a9949e6e47ec6b6e3daa8cf292fc5a75edf1a",
+    "tests/fixtures/expected_overrides_page_048.json": "74dd5edd6a63cee134fd7ba73c71494b1d7ec60a477fc26a26d96ed5131c0676",
+    "tests/fixtures/expected_overrides_page_040.json": "abb843ec1ab6c7620d43634839818b2374d1fd3cafa39691ce570dea724bc94e",
+    "tests/fixtures/expected_overrides_page_045.json": "ccb51780966a461714b693cc722ff534c2111b480fe1cdc961f64c6af7a1abbc",
+    "tests/fixtures/expected_overrides_page_052.json": "469b1e043dea4f2ea85e29116362b352e1ef6514955861a7cd0083f4c9f1bf65",
+    "tests/fixtures/expected_overrides_page_056.json": "0c24904c4ea890800edc369175ed05c2707c818e0cd1ef03cd4be558261e12ea",
+    "tests/fixtures/expected_overrides_page_026.json": "8a13472b51598665e76af1e777614cae54bbbcce730817f9fef7e23d4092ccad",
+    "tests/fixtures/expected_overrides_page_025.json": "9beb0513138ca8717c01679925358563d0f064d4b703a3783c7a46996f86de7a",
+    "tests/fixtures/expected_overrides_page_029.json": "c705385dc456b96bc366410cfb1e62524b84fed8a1176cadd57cba329a422318",
+    "tests/fixtures/expected_overrides_page_061.json": "c790bac4b3db54206451c48577f3545f1ea0540fe33378fb24e41c68fd5bfc4e",
+    "tests/fixtures/expected_overrides_page_059.json": "681b1b7505f6e833e93dfa5a0b2c9dbd37e6a93cce5f151c49789133f1bdb66f",
+    "tests/fixtures/expected_overrides_page_022.json": "34427e17bfc4c722143d5a290fecc3142f60c42dda74ac28f8e1f2e5ede3e4d5",
+    "tests/fixtures/expected_overrides_page_062.json": "86091ecac03667576baee2db47b2b8549a113a4d1e9bd70560cfa98df6853bde",
+    "tests/fixtures/expected_overrides_page_047.json": "40434edd3dffc0717daf8af5d779e888499910ff928215db8142756a37abb820",
+    "tests/fixtures/expected_overrides_page_046.json": "6bdc952af7270243b9222bc0c46e4dba698057f0544c9fa3e0ab9391df30a8e0",
+    "tests/fixtures/expected_overrides_page_034.json": "6091ce93a5beaa49550eda09433a8f4f18a45060d1aabd13252b5c963b3239dd",
+    "tests/fixtures/expected_overrides_page_016.json": "aaffd71b543d1bf085059d4bb9d79510630fcacf600629142844a175033b79d7",
+    "tests/fixtures/expected_overrides_page_043.json": "8cd6681ab7be44043463bc119ce723bdcbe729586fc63052a936cd1ba87976a6",
+    "tests/fixtures/expected_overrides_page_021.json": "b0142805d651a3e151d4e80662e0a54903cc952b5ef99f563bb15416f48cefb1",
+    "tests/fixtures/expected_overrides_page_009.json": "a3e82da13e6944e1fb5997f6bc08211bc2fe043e132451a1e6639212ab32070c",
+    "tests/fixtures/expected_overrides_page_051.json": "1ed28bc381a819c9800f288be412357f3ac11aebef1c38f9871eee88964adb55",
+    "tests/fixtures/expected_overrides_page_004.json": "367f01ca014349036b8bb3b17b78d5b8dace24ea1284f33f97416acb99c15142",
+    "tests/fixtures/expected_overrides_page_055.json": "1e9ac1f10b507d030b088b232c23afe095e29adefc45178ec66a0336ac772120",
+    "tests/fixtures/expected_overrides_page_012.json": "7cba674415a4a894b27fd0ac8fee860fd3442a5564eb07ed71ca9fa7d63b00d3"
+  },
+  "pages": [
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_001",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 6,
+          "bbox": [
+            308.0,
+            1319.0,
+            1667.0,
+            1504.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 2,
+          "skip": 3,
+          "bbox": [
+            2265.0,
+            1319.0,
+            2816.0,
+            1504.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            2,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            308.0,
+            1319.0,
+            1667.0,
+            1504.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            308.0,
+            1319.0,
+            1667.0,
+            1504.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            2
+          ],
+          "current_key": [
+            0,
+            2
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            2265.0,
+            1319.0,
+            2823.0,
+            1504.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2265.0,
+            1319.0,
+            2816.0,
+            1504.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_002",
+      "events": [
+        {
+          "system": 3,
+          "measure": 1,
+          "skip": 7,
+          "bbox": [
+            1230.0,
+            1806.0,
+            1966.0,
+            1950.0
+          ]
+        },
+        {
+          "system": 3,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1975.0,
+            1806.0,
+            2705.0,
+            1950.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 2,
+          "skip": 2,
+          "bbox": [
+            1973.0,
+            2703.0,
+            2705.0,
+            2881.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            3,
+            1
+          ],
+          "current_key": [
+            3,
+            1
+          ],
+          "skip": 7,
+          "historical_bbox": [
+            1232.0,
+            1806.0,
+            1964.0,
+            1950.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1230.0,
+            1806.0,
+            1966.0,
+            1950.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            2
+          ],
+          "current_key": [
+            3,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1975.0,
+            1806.0,
+            2702.0,
+            1950.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1975.0,
+            1806.0,
+            2705.0,
+            1950.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            2
+          ],
+          "current_key": [
+            5,
+            2
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1975.0,
+            2703.0,
+            2702.0,
+            2881.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1973.0,
+            2703.0,
+            2705.0,
+            2881.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_003",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_004",
+      "events": [
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 2,
+          "bbox": [
+            1945.0,
+            1324.0,
+            2668.0,
+            1482.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 0,
+          "skip": 14,
+          "bbox": [
+            283.0,
+            4087.0,
+            2642.0,
+            4267.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            2,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1945.0,
+            1324.0,
+            2665.0,
+            1482.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1945.0,
+            1324.0,
+            2668.0,
+            1482.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            0
+          ],
+          "current_key": [
+            8,
+            0
+          ],
+          "skip": 14,
+          "historical_bbox": [
+            283.0,
+            4087.0,
+            2642.0,
+            4267.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            283.0,
+            4087.0,
+            2642.0,
+            4267.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_005",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_006",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_007",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_008",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_009",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 2,
+          "bbox": [
+            315.0,
+            439.0,
+            1227.0,
+            593.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            315.0,
+            439.0,
+            1225.0,
+            593.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            315.0,
+            439.0,
+            1227.0,
+            593.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_002",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 2,
+          "bbox": [
+            211.0,
+            756.0,
+            900.0,
+            903.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 1,
+          "skip": 3,
+          "bbox": [
+            768.0,
+            1506.0,
+            1248.0,
+            1655.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 4,
+          "skip": 2,
+          "bbox": [
+            2141.0,
+            3335.0,
+            2705.0,
+            3473.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            211.0,
+            756.0,
+            900.0,
+            903.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            211.0,
+            756.0,
+            900.0,
+            903.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            1
+          ],
+          "current_key": [
+            2,
+            1
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            768.0,
+            1506.0,
+            1246.0,
+            1655.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            768.0,
+            1506.0,
+            1248.0,
+            1655.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            4
+          ],
+          "current_key": [
+            7,
+            4
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2143.0,
+            3335.0,
+            2707.0,
+            3473.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9964539007092199,
+          "current_bbox": [
+            2141.0,
+            3335.0,
+            2705.0,
+            3473.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_003",
+      "events": [
+        {
+          "system": 9,
+          "measure": 4,
+          "skip": 8,
+          "bbox": [
+            2188.0,
+            3711.0,
+            2728.0,
+            3863.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            9,
+            4
+          ],
+          "current_key": [
+            9,
+            4
+          ],
+          "skip": 8,
+          "historical_bbox": [
+            2190.0,
+            3711.0,
+            2728.0,
+            3863.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2188.0,
+            3711.0,
+            2728.0,
+            3863.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_004",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 2,
+          "bbox": [
+            234.0,
+            381.0,
+            919.0,
+            545.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 0,
+          "skip": 4,
+          "bbox": [
+            231.0,
+            757.0,
+            953.0,
+            915.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 0,
+          "skip": 11,
+          "bbox": [
+            238.0,
+            1875.0,
+            1125.0,
+            2014.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 1,
+          "skip": 2,
+          "bbox": [
+            1133.0,
+            1875.0,
+            1929.0,
+            2014.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 2,
+          "skip": 4,
+          "bbox": [
+            1937.0,
+            1875.0,
+            2730.0,
+            2014.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 0,
+          "skip": 4,
+          "bbox": [
+            237.0,
+            2218.0,
+            993.0,
+            2379.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 1,
+          "skip": 2,
+          "bbox": [
+            1001.0,
+            2218.0,
+            1659.0,
+            2379.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            234.0,
+            381.0,
+            919.0,
+            545.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            234.0,
+            381.0,
+            919.0,
+            545.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            1,
+            0
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            231.0,
+            757.0,
+            951.0,
+            915.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            231.0,
+            757.0,
+            953.0,
+            915.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            0
+          ],
+          "current_key": [
+            4,
+            0
+          ],
+          "skip": 11,
+          "historical_bbox": [
+            238.0,
+            1875.0,
+            1125.0,
+            2014.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            238.0,
+            1875.0,
+            1125.0,
+            2014.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            1
+          ],
+          "current_key": [
+            4,
+            1
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1135.0,
+            1875.0,
+            1926.0,
+            2014.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1133.0,
+            1875.0,
+            1929.0,
+            2014.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            2
+          ],
+          "current_key": [
+            4,
+            2
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            1937.0,
+            1875.0,
+            2728.0,
+            2014.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1937.0,
+            1875.0,
+            2730.0,
+            2014.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            0
+          ],
+          "current_key": [
+            5,
+            0
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            237.0,
+            2218.0,
+            993.0,
+            2379.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            237.0,
+            2218.0,
+            993.0,
+            2379.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            1
+          ],
+          "current_key": [
+            5,
+            1
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1002.0,
+            2218.0,
+            1659.0,
+            2379.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1001.0,
+            2218.0,
+            1659.0,
+            2379.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_005",
+      "events": [
+        {
+          "system": 6,
+          "measure": 1,
+          "skip": 4,
+          "bbox": [
+            970.0,
+            2599.0,
+            1659.0,
+            2763.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 3,
+          "skip": 2,
+          "bbox": [
+            2277.0,
+            2978.0,
+            2762.0,
+            3106.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            6,
+            1
+          ],
+          "current_key": [
+            6,
+            1
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            970.0,
+            2599.0,
+            1659.0,
+            2763.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            970.0,
+            2599.0,
+            1659.0,
+            2763.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            3
+          ],
+          "current_key": [
+            7,
+            3
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2279.0,
+            2978.0,
+            2762.0,
+            3106.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2277.0,
+            2978.0,
+            2762.0,
+            3106.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_006",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_007",
+      "events": [
+        {
+          "system": 9,
+          "measure": 4,
+          "skip": 10,
+          "bbox": [
+            2265.0,
+            3699.0,
+            2737.0,
+            3838.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            9,
+            4
+          ],
+          "current_key": [
+            9,
+            4
+          ],
+          "skip": 10,
+          "historical_bbox": [
+            2267.0,
+            3699.0,
+            2739.0,
+            3838.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9957627118644068,
+          "current_bbox": [
+            2265.0,
+            3699.0,
+            2737.0,
+            3838.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_008",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            251.0,
+            415.0,
+            1099.0,
+            544.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 1,
+          "skip": 3,
+          "bbox": [
+            1106.0,
+            415.0,
+            1852.0,
+            544.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 0,
+          "skip": 11,
+          "bbox": [
+            260.0,
+            2594.0,
+            1121.0,
+            2741.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 0,
+          "skip": 3,
+          "bbox": [
+            257.0,
+            2963.0,
+            1114.0,
+            3106.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 1,
+          "skip": 8,
+          "bbox": [
+            1121.0,
+            2963.0,
+            2003.0,
+            3106.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 2,
+          "skip": 3,
+          "bbox": [
+            2010.0,
+            2963.0,
+            2752.0,
+            3106.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            251.0,
+            415.0,
+            1097.0,
+            544.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            251.0,
+            415.0,
+            1099.0,
+            544.0
+          ]
+        },
+        {
+          "historical_key": [
+            0,
+            1
+          ],
+          "current_key": [
+            0,
+            1
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            1108.0,
+            415.0,
+            1850.0,
+            544.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1106.0,
+            415.0,
+            1852.0,
+            544.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            0
+          ],
+          "current_key": [
+            5,
+            0
+          ],
+          "skip": 11,
+          "historical_bbox": [
+            260.0,
+            2594.0,
+            1121.0,
+            2741.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            260.0,
+            2594.0,
+            1121.0,
+            2741.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            0
+          ],
+          "current_key": [
+            6,
+            0
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            257.0,
+            2963.0,
+            1112.0,
+            3106.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            257.0,
+            2963.0,
+            1114.0,
+            3106.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            1
+          ],
+          "current_key": [
+            6,
+            1
+          ],
+          "skip": 8,
+          "historical_bbox": [
+            1123.0,
+            2963.0,
+            2001.0,
+            3106.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1121.0,
+            2963.0,
+            2003.0,
+            3106.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            2
+          ],
+          "current_key": [
+            6,
+            2
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            2010.0,
+            2963.0,
+            2752.0,
+            3106.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2010.0,
+            2963.0,
+            2752.0,
+            3106.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_009",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 3,
+          "bbox": [
+            246.0,
+            401.0,
+            974.0,
+            567.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 7,
+          "bbox": [
+            1320.0,
+            1133.0,
+            1953.0,
+            1302.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 0,
+          "skip": 5,
+          "bbox": [
+            248.0,
+            2571.0,
+            887.0,
+            2746.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            248.0,
+            2983.0,
+            746.0,
+            3113.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 1,
+          "skip": 7,
+          "bbox": [
+            753.0,
+            2983.0,
+            1238.0,
+            3113.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1244.0,
+            2983.0,
+            1699.0,
+            3113.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 5,
+          "skip": 1,
+          "bbox": [
+            2292.0,
+            2983.0,
+            2745.0,
+            3113.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            246.0,
+            401.0,
+            976.0,
+            567.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            246.0,
+            401.0,
+            974.0,
+            567.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 7,
+          "historical_bbox": [
+            1319.0,
+            1133.0,
+            1952.0,
+            1302.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9984202211690363,
+          "current_bbox": [
+            1320.0,
+            1133.0,
+            1953.0,
+            1302.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            0
+          ],
+          "current_key": [
+            6,
+            0
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            248.0,
+            2571.0,
+            887.0,
+            2746.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            248.0,
+            2571.0,
+            887.0,
+            2746.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            0
+          ],
+          "current_key": [
+            7,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            248.0,
+            2983.0,
+            746.0,
+            3113.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            248.0,
+            2983.0,
+            746.0,
+            3113.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            1
+          ],
+          "current_key": [
+            7,
+            1
+          ],
+          "skip": 7,
+          "historical_bbox": [
+            750.0,
+            2983.0,
+            1237.0,
+            3113.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9979381443298969,
+          "current_bbox": [
+            753.0,
+            2983.0,
+            1238.0,
+            3113.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            2
+          ],
+          "current_key": [
+            7,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1241.0,
+            2983.0,
+            1697.0,
+            3113.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9956043956043956,
+          "current_bbox": [
+            1244.0,
+            2983.0,
+            1699.0,
+            3113.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            5
+          ],
+          "current_key": [
+            7,
+            5
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2294.0,
+            2983.0,
+            2743.0,
+            3113.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2292.0,
+            2983.0,
+            2745.0,
+            3113.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_010",
+      "events": [
+        {
+          "system": 6,
+          "measure": 5,
+          "skip": 6,
+          "bbox": [
+            2195.0,
+            2221.0,
+            2718.0,
+            2390.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 1,
+          "skip": 8,
+          "bbox": [
+            753.0,
+            3335.0,
+            1252.0,
+            3478.0
+          ]
+        },
+        {
+          "system": 10,
+          "measure": 5,
+          "skip": 1,
+          "bbox": [
+            2197.0,
+            3704.0,
+            2730.0,
+            3846.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            6,
+            5
+          ],
+          "current_key": [
+            6,
+            5
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2199.0,
+            2221.0,
+            2718.0,
+            2390.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2195.0,
+            2221.0,
+            2718.0,
+            2390.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            1
+          ],
+          "current_key": [
+            9,
+            1
+          ],
+          "skip": 8,
+          "historical_bbox": [
+            753.0,
+            3335.0,
+            1250.0,
+            3478.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            753.0,
+            3335.0,
+            1252.0,
+            3478.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            5
+          ],
+          "current_key": [
+            10,
+            5
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2197.0,
+            3704.0,
+            2728.0,
+            3846.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2197.0,
+            3704.0,
+            2730.0,
+            3846.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_011",
+      "events": [
+        {
+          "system": 0,
+          "measure": 3,
+          "skip": 5,
+          "bbox": [
+            1493.0,
+            378.0,
+            2012.0,
+            531.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 3,
+          "bbox": [
+            1091.0,
+            1123.0,
+            1608.0,
+            1314.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 2,
+          "skip": 7,
+          "bbox": [
+            1104.0,
+            1856.0,
+            1584.0,
+            2006.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 1,
+          "skip": 5,
+          "bbox": [
+            961.0,
+            2924.0,
+            1525.0,
+            3100.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1478.0,
+            3311.0,
+            2007.0,
+            3470.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            3
+          ],
+          "current_key": [
+            0,
+            3
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            1493.0,
+            378.0,
+            2012.0,
+            531.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1493.0,
+            378.0,
+            2012.0,
+            531.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            1093.0,
+            1123.0,
+            1606.0,
+            1314.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1091.0,
+            1123.0,
+            1608.0,
+            1314.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            2
+          ],
+          "current_key": [
+            4,
+            2
+          ],
+          "skip": 7,
+          "historical_bbox": [
+            1106.0,
+            1856.0,
+            1582.0,
+            2006.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1104.0,
+            1856.0,
+            1584.0,
+            2006.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            1
+          ],
+          "current_key": [
+            7,
+            1
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            957.0,
+            2924.0,
+            1523.0,
+            3100.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9964539007092199,
+          "current_bbox": [
+            961.0,
+            2924.0,
+            1525.0,
+            3100.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            2
+          ],
+          "current_key": [
+            8,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1484.0,
+            3311.0,
+            2007.0,
+            3470.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1478.0,
+            3311.0,
+            2007.0,
+            3470.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_012",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_013",
+      "events": [
+        {
+          "system": 1,
+          "measure": 0,
+          "skip": 3,
+          "bbox": [
+            232.0,
+            1135.0,
+            902.0,
+            1653.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 1,
+          "skip": 6,
+          "bbox": [
+            910.0,
+            1135.0,
+            1338.0,
+            1653.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 4,
+          "skip": 6,
+          "bbox": [
+            2207.0,
+            3315.0,
+            2752.0,
+            3848.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            1,
+            0
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            232.0,
+            1135.0,
+            899.0,
+            1286.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            232.0,
+            1135.0,
+            902.0,
+            1653.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            1
+          ],
+          "current_key": [
+            1,
+            1
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            910.0,
+            1135.0,
+            1337.0,
+            1286.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            910.0,
+            1135.0,
+            1338.0,
+            1653.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            0
+          ],
+          "current_key": [
+            1,
+            0
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            235.0,
+            1519.0,
+            900.0,
+            1653.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            232.0,
+            1135.0,
+            902.0,
+            1653.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            1
+          ],
+          "current_key": [
+            1,
+            1
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            912.0,
+            1519.0,
+            1338.0,
+            1653.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            910.0,
+            1135.0,
+            1338.0,
+            1653.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            4
+          ],
+          "current_key": [
+            4,
+            4
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2207.0,
+            3315.0,
+            2752.0,
+            3848.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2207.0,
+            3315.0,
+            2752.0,
+            3848.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_014",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 9,
+          "bbox": [
+            203.0,
+            377.0,
+            1114.0,
+            889.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            1121.0,
+            377.0,
+            1623.0,
+            889.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 3,
+          "skip": 9,
+          "bbox": [
+            1997.0,
+            377.0,
+            2713.0,
+            889.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 3,
+          "skip": 4,
+          "bbox": [
+            1756.0,
+            1127.0,
+            2239.0,
+            1644.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 4,
+          "skip": 2,
+          "bbox": [
+            2246.0,
+            1127.0,
+            2716.0,
+            1644.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 0,
+          "skip": 6,
+          "bbox": [
+            235.0,
+            1841.0,
+            917.0,
+            2371.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 9,
+          "historical_bbox": [
+            203.0,
+            377.0,
+            1114.0,
+            524.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            203.0,
+            377.0,
+            1114.0,
+            889.0
+          ]
+        },
+        {
+          "historical_key": [
+            0,
+            1
+          ],
+          "current_key": [
+            0,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1123.0,
+            377.0,
+            1623.0,
+            524.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1121.0,
+            377.0,
+            1623.0,
+            889.0
+          ]
+        },
+        {
+          "historical_key": [
+            0,
+            3
+          ],
+          "current_key": [
+            0,
+            3
+          ],
+          "skip": 9,
+          "historical_bbox": [
+            1997.0,
+            377.0,
+            2715.0,
+            524.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9972144846796658,
+          "current_bbox": [
+            1997.0,
+            377.0,
+            2713.0,
+            889.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 9,
+          "historical_bbox": [
+            229.0,
+            759.0,
+            1116.0,
+            889.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9977452085682075,
+          "current_bbox": [
+            203.0,
+            377.0,
+            1114.0,
+            889.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            1
+          ],
+          "current_key": [
+            0,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1125.0,
+            759.0,
+            1625.0,
+            889.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.996,
+          "current_bbox": [
+            1121.0,
+            377.0,
+            1623.0,
+            889.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            3
+          ],
+          "current_key": [
+            0,
+            3
+          ],
+          "skip": 9,
+          "historical_bbox": [
+            1999.0,
+            759.0,
+            2716.0,
+            889.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.99581589958159,
+          "current_bbox": [
+            1997.0,
+            377.0,
+            2713.0,
+            889.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            3
+          ],
+          "current_key": [
+            1,
+            3
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            1758.0,
+            1127.0,
+            2237.0,
+            1644.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1756.0,
+            1127.0,
+            2239.0,
+            1644.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            4
+          ],
+          "current_key": [
+            1,
+            4
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2246.0,
+            1127.0,
+            2716.0,
+            1644.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2246.0,
+            1127.0,
+            2716.0,
+            1644.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            0
+          ],
+          "current_key": [
+            2,
+            0
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            235.0,
+            1841.0,
+            916.0,
+            2371.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            235.0,
+            1841.0,
+            917.0,
+            2371.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_015",
+      "events": [
+        {
+          "system": 4,
+          "measure": 4,
+          "skip": 6,
+          "bbox": [
+            2190.0,
+            3317.0,
+            2737.0,
+            3841.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            4,
+            4
+          ],
+          "current_key": [
+            4,
+            4
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2190.0,
+            3317.0,
+            2737.0,
+            3841.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2190.0,
+            3317.0,
+            2737.0,
+            3841.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_016",
+      "events": [
+        {
+          "system": 2,
+          "measure": 3,
+          "skip": 4,
+          "bbox": [
+            2103.0,
+            1876.0,
+            2743.0,
+            2404.0
+          ]
+        },
+        {
+          "system": 3,
+          "measure": 4,
+          "skip": 3,
+          "bbox": [
+            2245.0,
+            2594.0,
+            2747.0,
+            3114.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 0,
+          "skip": 5,
+          "bbox": [
+            241.0,
+            3317.0,
+            1048.0,
+            3857.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            2,
+            3
+          ],
+          "current_key": [
+            2,
+            3
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            2103.0,
+            1876.0,
+            2743.0,
+            2404.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2103.0,
+            1876.0,
+            2743.0,
+            2404.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            4
+          ],
+          "current_key": [
+            3,
+            4
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            2246.0,
+            2594.0,
+            2749.0,
+            3114.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.99800796812749,
+          "current_bbox": [
+            2245.0,
+            2594.0,
+            2747.0,
+            3114.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            0
+          ],
+          "current_key": [
+            4,
+            0
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            241.0,
+            3317.0,
+            1048.0,
+            3857.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            241.0,
+            3317.0,
+            1048.0,
+            3857.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_018",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 4,
+          "bbox": [
+            208.0,
+            767.0,
+            1284.0,
+            897.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            208.0,
+            767.0,
+            1284.0,
+            897.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            208.0,
+            767.0,
+            1284.0,
+            897.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_019",
+      "events": [
+        {
+          "system": 7,
+          "measure": 3,
+          "skip": 6,
+          "bbox": [
+            2052.0,
+            2973.0,
+            2720.0,
+            3105.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            7,
+            3
+          ],
+          "current_key": [
+            7,
+            3
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2054.0,
+            2973.0,
+            2720.0,
+            3105.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2052.0,
+            2973.0,
+            2720.0,
+            3105.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_020",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_021",
+      "events": [
+        {
+          "system": 3,
+          "measure": 1,
+          "skip": 2,
+          "bbox": [
+            844.0,
+            1485.0,
+            1304.0,
+            1661.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 0,
+          "skip": 4,
+          "bbox": [
+            257.0,
+            1862.0,
+            817.0,
+            2014.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 1,
+          "skip": 19,
+          "bbox": [
+            825.0,
+            1862.0,
+            1380.0,
+            2014.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 1,
+          "skip": 9,
+          "bbox": [
+            887.0,
+            3346.0,
+            1382.0,
+            3478.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 5,
+          "skip": 10,
+          "bbox": [
+            2224.0,
+            3701.0,
+            2750.0,
+            3844.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            3,
+            1
+          ],
+          "current_key": [
+            3,
+            1
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            846.0,
+            1485.0,
+            1303.0,
+            1661.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            844.0,
+            1485.0,
+            1304.0,
+            1661.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            0
+          ],
+          "current_key": [
+            4,
+            0
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            257.0,
+            1862.0,
+            816.0,
+            2014.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            257.0,
+            1862.0,
+            817.0,
+            2014.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            1
+          ],
+          "current_key": [
+            4,
+            1
+          ],
+          "skip": 19,
+          "historical_bbox": [
+            827.0,
+            1862.0,
+            1378.0,
+            2014.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            825.0,
+            1862.0,
+            1380.0,
+            2014.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            1
+          ],
+          "current_key": [
+            8,
+            1
+          ],
+          "skip": 9,
+          "historical_bbox": [
+            889.0,
+            3346.0,
+            1380.0,
+            3478.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            887.0,
+            3346.0,
+            1382.0,
+            3478.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            5
+          ],
+          "current_key": [
+            9,
+            5
+          ],
+          "skip": 10,
+          "historical_bbox": [
+            2226.0,
+            3701.0,
+            2750.0,
+            3844.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2224.0,
+            3701.0,
+            2750.0,
+            3844.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_022",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 2,
+          "bbox": [
+            228.0,
+            391.0,
+            997.0,
+            534.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 2,
+          "skip": 6,
+          "bbox": [
+            1393.0,
+            760.0,
+            2139.0,
+            926.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 3,
+          "skip": 2,
+          "bbox": [
+            2146.0,
+            760.0,
+            2726.0,
+            926.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 3,
+          "skip": 9,
+          "bbox": [
+            1992.0,
+            2972.0,
+            2733.0,
+            3108.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 0,
+          "skip": 5,
+          "bbox": [
+            241.0,
+            3707.0,
+            1029.0,
+            3844.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 1,
+          "skip": 3,
+          "bbox": [
+            1034.0,
+            3707.0,
+            1674.0,
+            3844.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 2,
+          "skip": 4,
+          "bbox": [
+            1682.0,
+            3707.0,
+            2326.0,
+            3844.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            228.0,
+            391.0,
+            997.0,
+            534.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            228.0,
+            391.0,
+            997.0,
+            534.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            2
+          ],
+          "current_key": [
+            1,
+            2
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            1395.0,
+            760.0,
+            2137.0,
+            926.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1393.0,
+            760.0,
+            2139.0,
+            926.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            3
+          ],
+          "current_key": [
+            1,
+            3
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2148.0,
+            760.0,
+            2726.0,
+            926.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2146.0,
+            760.0,
+            2726.0,
+            926.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            3
+          ],
+          "current_key": [
+            7,
+            3
+          ],
+          "skip": 9,
+          "historical_bbox": [
+            1993.0,
+            2972.0,
+            2734.0,
+            3108.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9986504723346828,
+          "current_bbox": [
+            1992.0,
+            2972.0,
+            2733.0,
+            3108.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            0
+          ],
+          "current_key": [
+            9,
+            0
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            241.0,
+            3707.0,
+            1027.0,
+            3844.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            241.0,
+            3707.0,
+            1029.0,
+            3844.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            1
+          ],
+          "current_key": [
+            9,
+            1
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            1038.0,
+            3707.0,
+            1674.0,
+            3844.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1034.0,
+            3707.0,
+            1674.0,
+            3844.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            2
+          ],
+          "current_key": [
+            9,
+            2
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            1684.0,
+            3707.0,
+            2322.0,
+            3844.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1682.0,
+            3707.0,
+            2326.0,
+            3844.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_024",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_025",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_001",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 25,
+          "bbox": [
+            552.0,
+            1219.0,
+            1126.0,
+            1791.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 0,
+          "skip": 10,
+          "bbox": [
+            372.0,
+            1901.0,
+            853.0,
+            2138.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 8,
+          "bbox": [
+            1304.0,
+            2252.0,
+            1721.0,
+            2438.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 3,
+          "skip": 11,
+          "bbox": [
+            1722.0,
+            2252.0,
+            2200.0,
+            2438.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 4,
+          "skip": 2,
+          "bbox": [
+            2206.0,
+            2252.0,
+            2529.0,
+            2438.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            2459.0,
+            4308.0,
+            2586.0,
+            4460.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 5,
+          "skip": 4,
+          "bbox": [
+            2595.0,
+            4308.0,
+            3053.0,
+            4460.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 25,
+          "historical_bbox": [
+            552.0,
+            1219.0,
+            1128.0,
+            1791.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            552.0,
+            1219.0,
+            1126.0,
+            1791.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            0
+          ],
+          "current_key": [
+            1,
+            0
+          ],
+          "skip": 10,
+          "historical_bbox": [
+            372.0,
+            1901.0,
+            850.0,
+            2138.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            372.0,
+            1901.0,
+            853.0,
+            2138.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 8,
+          "historical_bbox": [
+            1308.0,
+            2252.0,
+            1719.0,
+            2438.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1304.0,
+            2252.0,
+            1721.0,
+            2438.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            3
+          ],
+          "current_key": [
+            2,
+            3
+          ],
+          "skip": 11,
+          "historical_bbox": [
+            1728.0,
+            2252.0,
+            2200.0,
+            2438.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1722.0,
+            2252.0,
+            2200.0,
+            2438.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            4
+          ],
+          "current_key": [
+            2,
+            4
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2210.0,
+            2252.0,
+            2529.0,
+            2438.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2206.0,
+            2252.0,
+            2529.0,
+            2438.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            4
+          ],
+          "current_key": [
+            8,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2459.0,
+            4308.0,
+            2584.0,
+            4460.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2459.0,
+            4308.0,
+            2586.0,
+            4460.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            5
+          ],
+          "current_key": [
+            8,
+            5
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            2597.0,
+            4308.0,
+            3055.0,
+            4460.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9956331877729258,
+          "current_bbox": [
+            2595.0,
+            4308.0,
+            3053.0,
+            4460.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_002",
+      "events": [
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1433.0,
+            1916.0,
+            1578.0,
+            2128.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 7,
+          "skip": 6,
+          "bbox": [
+            2836.0,
+            1916.0,
+            3130.0,
+            2128.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 6,
+          "skip": 5,
+          "bbox": [
+            2979.0,
+            3035.0,
+            3207.0,
+            3172.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            2,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1436.0,
+            1916.0,
+            1578.0,
+            2128.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1433.0,
+            1916.0,
+            1578.0,
+            2128.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            7
+          ],
+          "current_key": [
+            2,
+            7
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2840.0,
+            1916.0,
+            3130.0,
+            2128.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2836.0,
+            1916.0,
+            3130.0,
+            2128.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            6
+          ],
+          "current_key": [
+            5,
+            6
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            2981.0,
+            3035.0,
+            3207.0,
+            3172.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2979.0,
+            3035.0,
+            3207.0,
+            3172.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_003",
+      "events": [
+        {
+          "system": 1,
+          "measure": 9,
+          "skip": 31,
+          "bbox": [
+            2768.0,
+            981.0,
+            3007.0,
+            1158.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 0,
+          "skip": 5,
+          "bbox": [
+            398.0,
+            1350.0,
+            836.0,
+            1506.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 2,
+          "bbox": [
+            1003.0,
+            1350.0,
+            1199.0,
+            1506.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 5,
+          "skip": 31,
+          "bbox": [
+            2380.0,
+            1350.0,
+            2660.0,
+            1506.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 6,
+          "skip": 3,
+          "bbox": [
+            2678.0,
+            1350.0,
+            2893.0,
+            1506.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 7,
+          "skip": 8,
+          "bbox": [
+            2909.0,
+            1350.0,
+            3218.0,
+            1506.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 5,
+          "skip": 10,
+          "bbox": [
+            2880.0,
+            2962.0,
+            3218.0,
+            3127.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            9
+          ],
+          "current_key": [
+            1,
+            9
+          ],
+          "skip": 31,
+          "historical_bbox": [
+            2770.0,
+            981.0,
+            3007.0,
+            1158.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2768.0,
+            981.0,
+            3007.0,
+            1158.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            0
+          ],
+          "current_key": [
+            2,
+            0
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            398.0,
+            1350.0,
+            832.0,
+            1506.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            398.0,
+            1350.0,
+            836.0,
+            1506.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1005.0,
+            1350.0,
+            1199.0,
+            1506.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1003.0,
+            1350.0,
+            1199.0,
+            1506.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            5
+          ],
+          "current_key": [
+            2,
+            5
+          ],
+          "skip": 31,
+          "historical_bbox": [
+            2382.0,
+            1350.0,
+            2663.0,
+            1506.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9928571428571429,
+          "current_bbox": [
+            2380.0,
+            1350.0,
+            2660.0,
+            1506.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            6
+          ],
+          "current_key": [
+            2,
+            6
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            2667.0,
+            1350.0,
+            2895.0,
+            1506.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2678.0,
+            1350.0,
+            2893.0,
+            1506.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            7
+          ],
+          "current_key": [
+            2,
+            7
+          ],
+          "skip": 8,
+          "historical_bbox": [
+            2899.0,
+            1350.0,
+            3218.0,
+            1506.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2909.0,
+            1350.0,
+            3218.0,
+            1506.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            5
+          ],
+          "current_key": [
+            6,
+            5
+          ],
+          "skip": 10,
+          "historical_bbox": [
+            2884.0,
+            2962.0,
+            3218.0,
+            3127.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2880.0,
+            2962.0,
+            3218.0,
+            3127.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_004",
+      "events": [
+        {
+          "system": 6,
+          "measure": 7,
+          "skip": 1,
+          "bbox": [
+            2421.0,
+            2574.0,
+            2544.0,
+            2721.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 8,
+          "skip": 7,
+          "bbox": [
+            2553.0,
+            2574.0,
+            2729.0,
+            2721.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            357.0,
+            2910.0,
+            696.0,
+            3302.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            1767.0,
+            3837.0,
+            1921.0,
+            4237.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            6,
+            7
+          ],
+          "current_key": [
+            6,
+            7
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2423.0,
+            2574.0,
+            2542.0,
+            2721.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2421.0,
+            2574.0,
+            2544.0,
+            2721.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            8
+          ],
+          "current_key": [
+            6,
+            8
+          ],
+          "skip": 7,
+          "historical_bbox": [
+            2553.0,
+            2574.0,
+            2729.0,
+            2721.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2553.0,
+            2574.0,
+            2729.0,
+            2721.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            0
+          ],
+          "current_key": [
+            7,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            357.0,
+            2910.0,
+            697.0,
+            3302.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            357.0,
+            2910.0,
+            696.0,
+            3302.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            4
+          ],
+          "current_key": [
+            9,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1769.0,
+            3837.0,
+            1923.0,
+            4237.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.987012987012987,
+          "current_bbox": [
+            1767.0,
+            3837.0,
+            1921.0,
+            4237.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_005",
+      "events": [
+        {
+          "system": 1,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            874.0,
+            990.0,
+            1082.0,
+            1137.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 4,
+          "skip": 6,
+          "bbox": [
+            2292.0,
+            1909.0,
+            2588.0,
+            2053.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 6,
+          "skip": 5,
+          "bbox": [
+            3018.0,
+            1909.0,
+            3230.0,
+            2053.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            2
+          ],
+          "current_key": [
+            1,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            876.0,
+            990.0,
+            1082.0,
+            1137.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            874.0,
+            990.0,
+            1082.0,
+            1137.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            4
+          ],
+          "current_key": [
+            4,
+            4
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2296.0,
+            1909.0,
+            2586.0,
+            2053.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2292.0,
+            1909.0,
+            2588.0,
+            2053.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            6
+          ],
+          "current_key": [
+            4,
+            6
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            3020.0,
+            1909.0,
+            3227.0,
+            2053.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            3018.0,
+            1909.0,
+            3230.0,
+            2053.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_006",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 11,
+          "bbox": [
+            458.0,
+            670.0,
+            942.0,
+            848.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            3012.0,
+            1251.0,
+            3208.0,
+            1412.0
+          ]
+        },
+        {
+          "system": 11,
+          "measure": 3,
+          "skip": 5,
+          "bbox": [
+            2149.0,
+            4044.0,
+            2274.0,
+            4222.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 11,
+          "historical_bbox": [
+            458.0,
+            670.0,
+            942.0,
+            848.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            458.0,
+            670.0,
+            942.0,
+            848.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            4
+          ],
+          "current_key": [
+            2,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            3012.0,
+            1251.0,
+            3203.0,
+            1412.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            3012.0,
+            1251.0,
+            3208.0,
+            1412.0
+          ]
+        },
+        {
+          "historical_key": [
+            11,
+            3
+          ],
+          "current_key": [
+            11,
+            3
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            2147.0,
+            4044.0,
+            2277.0,
+            4222.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2149.0,
+            4044.0,
+            2274.0,
+            4222.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_007",
+      "events": [
+        {
+          "system": 12,
+          "measure": 5,
+          "skip": 7,
+          "bbox": [
+            2948.0,
+            4143.0,
+            3207.0,
+            4301.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            12,
+            5
+          ],
+          "current_key": [
+            12,
+            5
+          ],
+          "skip": 7,
+          "historical_bbox": [
+            2948.0,
+            4143.0,
+            3209.0,
+            4301.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2948.0,
+            4143.0,
+            3207.0,
+            4301.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_008",
+      "events": [
+        {
+          "system": 7,
+          "measure": 2,
+          "skip": 8,
+          "bbox": [
+            1833.0,
+            3125.0,
+            2145.0,
+            3285.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            8,
+            2
+          ],
+          "current_key": [
+            7,
+            2
+          ],
+          "skip": 8,
+          "historical_bbox": [
+            1835.0,
+            3125.0,
+            2145.0,
+            3285.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1833.0,
+            3125.0,
+            2145.0,
+            3285.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_009",
+      "events": [
+        {
+          "system": 10,
+          "measure": 3,
+          "skip": 3,
+          "bbox": [
+            3050.0,
+            4090.0,
+            3211.0,
+            4229.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            12,
+            3
+          ],
+          "current_key": [
+            10,
+            3
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            3053.0,
+            4090.0,
+            3209.0,
+            4229.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            3050.0,
+            4090.0,
+            3211.0,
+            4229.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_010",
+      "events": [
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 3,
+          "bbox": [
+            1714.0,
+            1242.0,
+            1919.0,
+            1381.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            3,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            1719.0,
+            1242.0,
+            1916.0,
+            1381.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1714.0,
+            1242.0,
+            1919.0,
+            1381.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_001",
+      "events": [
+        {
+          "system": 7,
+          "measure": 3,
+          "skip": 5,
+          "bbox": [
+            2083.0,
+            3110.0,
+            2305.0,
+            3272.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 6,
+          "skip": 3,
+          "bbox": [
+            3005.0,
+            3110.0,
+            3219.0,
+            3272.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 0,
+          "skip": 2,
+          "bbox": [
+            421.0,
+            3399.0,
+            841.0,
+            3596.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 2,
+          "skip": 2,
+          "bbox": [
+            1137.0,
+            3399.0,
+            1354.0,
+            3596.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 4,
+          "skip": 4,
+          "bbox": [
+            1692.0,
+            3399.0,
+            1897.0,
+            3596.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            7,
+            3
+          ],
+          "current_key": [
+            7,
+            3
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            2082.0,
+            3110.0,
+            2303.0,
+            3272.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.995475113122172,
+          "current_bbox": [
+            2083.0,
+            3110.0,
+            2305.0,
+            3272.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            6
+          ],
+          "current_key": [
+            7,
+            6
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            3007.0,
+            3110.0,
+            3216.0,
+            3272.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            3005.0,
+            3110.0,
+            3219.0,
+            3272.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            0
+          ],
+          "current_key": [
+            8,
+            0
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            421.0,
+            3399.0,
+            840.0,
+            3596.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            421.0,
+            3399.0,
+            841.0,
+            3596.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            2
+          ],
+          "current_key": [
+            8,
+            2
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1135.0,
+            3399.0,
+            1352.0,
+            3596.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9907834101382489,
+          "current_bbox": [
+            1137.0,
+            3399.0,
+            1354.0,
+            3596.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            4
+          ],
+          "current_key": [
+            8,
+            4
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            1691.0,
+            3399.0,
+            1897.0,
+            3596.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1692.0,
+            3399.0,
+            1897.0,
+            3596.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_002",
+      "events": [
+        {
+          "system": 10,
+          "measure": 5,
+          "skip": 1,
+          "bbox": [
+            2700.0,
+            3729.0,
+            2803.0,
+            3931.0
+          ]
+        },
+        {
+          "system": 11,
+          "measure": 7,
+          "skip": 4,
+          "bbox": [
+            2979.0,
+            4062.0,
+            3207.0,
+            4237.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            11,
+            5
+          ],
+          "current_key": [
+            10,
+            5
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2698.0,
+            3729.0,
+            2805.0,
+            3931.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2700.0,
+            3729.0,
+            2803.0,
+            3931.0
+          ]
+        },
+        {
+          "historical_key": [
+            12,
+            7
+          ],
+          "current_key": [
+            11,
+            7
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            2979.0,
+            4062.0,
+            3205.0,
+            4237.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2979.0,
+            4062.0,
+            3207.0,
+            4237.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_003",
+      "events": [
+        {
+          "system": 0,
+          "measure": 2,
+          "skip": 3,
+          "bbox": [
+            1379.0,
+            565.0,
+            1598.0,
+            749.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 3,
+          "skip": 2,
+          "bbox": [
+            1605.0,
+            565.0,
+            1820.0,
+            749.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 5,
+          "skip": 3,
+          "bbox": [
+            2129.0,
+            565.0,
+            2445.0,
+            749.0
+          ]
+        },
+        {
+          "system": 10,
+          "measure": 3,
+          "skip": 1,
+          "bbox": [
+            1901.0,
+            3738.0,
+            2020.0,
+            3920.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            0,
+            2
+          ],
+          "current_key": [
+            0,
+            2
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            1379.0,
+            565.0,
+            1594.0,
+            749.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1379.0,
+            565.0,
+            1598.0,
+            749.0
+          ]
+        },
+        {
+          "historical_key": [
+            0,
+            3
+          ],
+          "current_key": [
+            0,
+            3
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1602.0,
+            565.0,
+            1822.0,
+            749.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1605.0,
+            565.0,
+            1820.0,
+            749.0
+          ]
+        },
+        {
+          "historical_key": [
+            0,
+            5
+          ],
+          "current_key": [
+            0,
+            5
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            2128.0,
+            565.0,
+            2445.0,
+            749.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2129.0,
+            565.0,
+            2445.0,
+            749.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            3
+          ],
+          "current_key": [
+            10,
+            3
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1903.0,
+            3738.0,
+            2020.0,
+            3920.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1901.0,
+            3738.0,
+            2020.0,
+            3920.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_004",
+      "events": [
+        {
+          "system": 11,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            780.0,
+            4079.0,
+            889.0,
+            4276.0
+          ]
+        },
+        {
+          "system": 11,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            1530.0,
+            4079.0,
+            1640.0,
+            4276.0
+          ]
+        },
+        {
+          "system": 11,
+          "measure": 7,
+          "skip": 1,
+          "bbox": [
+            2307.0,
+            4079.0,
+            2404.0,
+            4276.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            10,
+            1
+          ],
+          "current_key": [
+            11,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            784.0,
+            4079.0,
+            889.0,
+            4276.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            780.0,
+            4079.0,
+            889.0,
+            4276.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            4
+          ],
+          "current_key": [
+            11,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1530.0,
+            4079.0,
+            1638.0,
+            4276.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1530.0,
+            4079.0,
+            1640.0,
+            4276.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            7
+          ],
+          "current_key": [
+            11,
+            7
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2307.0,
+            4079.0,
+            2404.0,
+            4276.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2307.0,
+            4079.0,
+            2404.0,
+            4276.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_005",
+      "events": [
+        {
+          "system": 6,
+          "measure": 3,
+          "skip": 2,
+          "bbox": [
+            1968.0,
+            2494.0,
+            2145.0,
+            2679.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 5,
+          "skip": 2,
+          "bbox": [
+            2529.0,
+            2494.0,
+            2720.0,
+            2679.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            8,
+            3
+          ],
+          "current_key": [
+            6,
+            3
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1969.0,
+            2494.0,
+            2145.0,
+            2679.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1968.0,
+            2494.0,
+            2145.0,
+            2679.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            5
+          ],
+          "current_key": [
+            6,
+            5
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2529.0,
+            2494.0,
+            2715.0,
+            2679.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2529.0,
+            2494.0,
+            2720.0,
+            2679.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_006",
+      "events": [
+        {
+          "system": 4,
+          "measure": 6,
+          "skip": 1,
+          "bbox": [
+            2336.0,
+            1768.0,
+            2448.0,
+            1963.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 9,
+          "skip": 1,
+          "bbox": [
+            3084.0,
+            1768.0,
+            3192.0,
+            1963.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1183.0,
+            2033.0,
+            1291.0,
+            2252.0
+          ]
+        },
+        {
+          "system": 10,
+          "measure": 4,
+          "skip": 2,
+          "bbox": [
+            2336.0,
+            3479.0,
+            2474.0,
+            3718.0
+          ]
+        },
+        {
+          "system": 10,
+          "measure": 6,
+          "skip": 2,
+          "bbox": [
+            2764.0,
+            3479.0,
+            2902.0,
+            3718.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            4,
+            6
+          ],
+          "current_key": [
+            4,
+            6
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2340.0,
+            1768.0,
+            2445.0,
+            1963.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2336.0,
+            1768.0,
+            2448.0,
+            1963.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            9
+          ],
+          "current_key": [
+            4,
+            9
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            3084.0,
+            1768.0,
+            3190.0,
+            1963.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            3084.0,
+            1768.0,
+            3192.0,
+            1963.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            2
+          ],
+          "current_key": [
+            5,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1185.0,
+            2033.0,
+            1286.0,
+            2252.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1183.0,
+            2033.0,
+            1291.0,
+            2252.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            4
+          ],
+          "current_key": [
+            10,
+            4
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2334.0,
+            3479.0,
+            2472.0,
+            3718.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9855072463768116,
+          "current_bbox": [
+            2336.0,
+            3479.0,
+            2474.0,
+            3718.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            6
+          ],
+          "current_key": [
+            10,
+            6
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2763.0,
+            3479.0,
+            2902.0,
+            3718.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2764.0,
+            3479.0,
+            2902.0,
+            3718.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_001",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            486.0,
+            1592.0,
+            1056.0,
+            1759.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 5,
+          "skip": 1,
+          "bbox": [
+            2380.0,
+            1592.0,
+            2710.0,
+            1759.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            206.0,
+            1997.0,
+            906.0,
+            2141.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            486.0,
+            1592.0,
+            1053.0,
+            1759.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            486.0,
+            1592.0,
+            1056.0,
+            1759.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            5
+          ],
+          "current_key": [
+            0,
+            5
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2384.0,
+            1592.0,
+            2704.0,
+            1759.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2380.0,
+            1592.0,
+            2710.0,
+            1759.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            0
+          ],
+          "current_key": [
+            1,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            206.0,
+            1997.0,
+            901.0,
+            2141.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            206.0,
+            1997.0,
+            906.0,
+            2141.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_002",
+      "events": [
+        {
+          "system": 5,
+          "measure": 3,
+          "skip": 2,
+          "bbox": [
+            2060.0,
+            2669.0,
+            2363.0,
+            2830.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 4,
+          "skip": 6,
+          "bbox": [
+            2370.0,
+            2669.0,
+            2736.0,
+            2830.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 5,
+          "skip": 1,
+          "bbox": [
+            2737.0,
+            2669.0,
+            2982.0,
+            2830.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 6,
+          "skip": 4,
+          "bbox": [
+            2989.0,
+            2669.0,
+            3482.0,
+            2830.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1140.0,
+            4436.0,
+            1460.0,
+            4576.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            1849.0,
+            4436.0,
+            2236.0,
+            4576.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            6,
+            3
+          ],
+          "current_key": [
+            5,
+            3
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2062.0,
+            2669.0,
+            2361.0,
+            2830.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2060.0,
+            2669.0,
+            2363.0,
+            2830.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            4
+          ],
+          "current_key": [
+            5,
+            4
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2370.0,
+            2669.0,
+            2732.0,
+            2830.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2370.0,
+            2669.0,
+            2736.0,
+            2830.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            5
+          ],
+          "current_key": [
+            5,
+            5
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2742.0,
+            2669.0,
+            2982.0,
+            2830.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2737.0,
+            2669.0,
+            2982.0,
+            2830.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            6
+          ],
+          "current_key": [
+            5,
+            6
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            2989.0,
+            2669.0,
+            3479.0,
+            2830.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2989.0,
+            2669.0,
+            3482.0,
+            2830.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            2
+          ],
+          "current_key": [
+            9,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1142.0,
+            4436.0,
+            1455.0,
+            4576.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1140.0,
+            4436.0,
+            1460.0,
+            4576.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            4
+          ],
+          "current_key": [
+            9,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1852.0,
+            4436.0,
+            2232.0,
+            4576.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1849.0,
+            4436.0,
+            2236.0,
+            4576.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_003",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_004",
+      "events": [
+        {
+          "system": 0,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            911.0,
+            471.0,
+            1368.0,
+            621.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 3,
+          "skip": 1,
+          "bbox": [
+            1761.0,
+            1354.0,
+            2277.0,
+            1496.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            1
+          ],
+          "current_key": [
+            0,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            911.0,
+            471.0,
+            1368.0,
+            621.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            911.0,
+            471.0,
+            1368.0,
+            621.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            3
+          ],
+          "current_key": [
+            2,
+            3
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1761.0,
+            1354.0,
+            2275.0,
+            1496.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1761.0,
+            1354.0,
+            2277.0,
+            1496.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_005",
+      "events": [
+        {
+          "system": 0,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            892.0,
+            431.0,
+            1580.0,
+            590.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1581.0,
+            431.0,
+            2208.0,
+            590.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 4,
+          "skip": 2,
+          "bbox": [
+            2935.0,
+            2955.0,
+            3385.0,
+            3459.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            731.0,
+            3753.0,
+            1444.0,
+            3918.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            1
+          ],
+          "current_key": [
+            0,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            894.0,
+            431.0,
+            1576.0,
+            590.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            892.0,
+            431.0,
+            1580.0,
+            590.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            2
+          ],
+          "current_key": [
+            0,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1586.0,
+            431.0,
+            2204.0,
+            590.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1581.0,
+            431.0,
+            2208.0,
+            590.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            4
+          ],
+          "current_key": [
+            5,
+            4
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2933.0,
+            2955.0,
+            3381.0,
+            3459.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9955357142857143,
+          "current_bbox": [
+            2935.0,
+            2955.0,
+            3385.0,
+            3459.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            1
+          ],
+          "current_key": [
+            6,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            733.0,
+            3753.0,
+            1439.0,
+            3918.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            731.0,
+            3753.0,
+            1444.0,
+            3918.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_007",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 4,
+          "bbox": [
+            486.0,
+            872.0,
+            1072.0,
+            1039.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            3004.0,
+            1341.0,
+            3451.0,
+            1479.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 2,
+          "skip": 2,
+          "bbox": [
+            1835.0,
+            1782.0,
+            2204.0,
+            1935.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            2726.0,
+            3087.0,
+            3038.0,
+            3248.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1662.0,
+            3970.0,
+            2022.0,
+            4133.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 2,
+          "skip": 9,
+          "bbox": [
+            1635.0,
+            4346.0,
+            2064.0,
+            4574.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            1
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            669.0,
+            872.0,
+            1070.0,
+            1039.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            486.0,
+            872.0,
+            1072.0,
+            1039.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            4
+          ],
+          "current_key": [
+            1,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            3010.0,
+            1341.0,
+            3449.0,
+            1479.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            3004.0,
+            1341.0,
+            3451.0,
+            1479.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            2
+          ],
+          "current_key": [
+            2,
+            2
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1840.0,
+            1782.0,
+            2204.0,
+            1935.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1835.0,
+            1782.0,
+            2204.0,
+            1935.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            4
+          ],
+          "current_key": [
+            5,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2730.0,
+            3087.0,
+            3033.0,
+            3248.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2726.0,
+            3087.0,
+            3038.0,
+            3248.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            2
+          ],
+          "current_key": [
+            7,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1667.0,
+            3970.0,
+            2020.0,
+            4133.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1662.0,
+            3970.0,
+            2022.0,
+            4133.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            2
+          ],
+          "current_key": [
+            8,
+            2
+          ],
+          "skip": 9,
+          "historical_bbox": [
+            1639.0,
+            4346.0,
+            2062.0,
+            4574.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1635.0,
+            4346.0,
+            2064.0,
+            4574.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_008",
+      "events": [
+        {
+          "system": 3,
+          "measure": 1,
+          "skip": 2,
+          "bbox": [
+            997.0,
+            1782.0,
+            1334.0,
+            1945.0
+          ]
+        },
+        {
+          "system": 3,
+          "measure": 3,
+          "skip": 5,
+          "bbox": [
+            1650.0,
+            1782.0,
+            2049.0,
+            1945.0
+          ]
+        },
+        {
+          "system": 3,
+          "measure": 4,
+          "skip": 5,
+          "bbox": [
+            2050.0,
+            1782.0,
+            2451.0,
+            1945.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 7,
+          "skip": 4,
+          "bbox": [
+            2893.0,
+            2223.0,
+            3283.0,
+            2363.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 0,
+          "skip": 5,
+          "bbox": [
+            235.0,
+            2663.0,
+            908.0,
+            2843.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            4,
+            1
+          ],
+          "current_key": [
+            3,
+            1
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            999.0,
+            1782.0,
+            1329.0,
+            1945.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            997.0,
+            1782.0,
+            1334.0,
+            1945.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            3
+          ],
+          "current_key": [
+            3,
+            3
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            1651.0,
+            1782.0,
+            2046.0,
+            1945.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1650.0,
+            1782.0,
+            2049.0,
+            1945.0
+          ]
+        },
+        {
+          "historical_key": [
+            4,
+            4
+          ],
+          "current_key": [
+            3,
+            4
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            2055.0,
+            1782.0,
+            2450.0,
+            1945.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2050.0,
+            1782.0,
+            2451.0,
+            1945.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            7
+          ],
+          "current_key": [
+            4,
+            7
+          ],
+          "skip": 4,
+          "historical_bbox": [
+            2891.0,
+            2223.0,
+            3279.0,
+            2363.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.9948453608247423,
+          "current_bbox": [
+            2893.0,
+            2223.0,
+            3283.0,
+            2363.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            0
+          ],
+          "current_key": [
+            5,
+            0
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            235.0,
+            2663.0,
+            904.0,
+            2843.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            235.0,
+            2663.0,
+            908.0,
+            2843.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_009",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            219.0,
+            425.0,
+            634.0,
+            623.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 1,
+          "skip": 5,
+          "bbox": [
+            635.0,
+            425.0,
+            1060.0,
+            623.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            553.0,
+            878.0,
+            998.0,
+            1033.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 0,
+          "skip": 6,
+          "bbox": [
+            217.0,
+            3985.0,
+            965.0,
+            4129.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            219.0,
+            425.0,
+            631.0,
+            623.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            219.0,
+            425.0,
+            634.0,
+            623.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            1
+          ],
+          "current_key": [
+            0,
+            1
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            640.0,
+            425.0,
+            1056.0,
+            623.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            635.0,
+            425.0,
+            1060.0,
+            623.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            1
+          ],
+          "current_key": [
+            1,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            556.0,
+            878.0,
+            995.0,
+            1033.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            553.0,
+            878.0,
+            998.0,
+            1033.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            0
+          ],
+          "current_key": [
+            8,
+            0
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            217.0,
+            3985.0,
+            962.0,
+            4129.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            217.0,
+            3985.0,
+            965.0,
+            4129.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_010",
+      "events": [
+        {
+          "system": 5,
+          "measure": 3,
+          "skip": 7,
+          "bbox": [
+            2807.0,
+            2657.0,
+            3477.0,
+            2841.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            6,
+            3
+          ],
+          "current_key": [
+            5,
+            3
+          ],
+          "skip": 7,
+          "historical_bbox": [
+            2812.0,
+            2657.0,
+            3475.0,
+            2841.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2807.0,
+            2657.0,
+            3477.0,
+            2841.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_011",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_013",
+      "events": [
+        {
+          "system": 1,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            221.0,
+            1283.0,
+            927.0,
+            1530.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            911.0,
+            2673.0,
+            1429.0,
+            2834.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            2,
+            0
+          ],
+          "current_key": [
+            1,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            221.0,
+            1283.0,
+            927.0,
+            1530.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            221.0,
+            1283.0,
+            927.0,
+            1530.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            1
+          ],
+          "current_key": [
+            4,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            911.0,
+            2673.0,
+            1431.0,
+            2834.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            911.0,
+            2673.0,
+            1429.0,
+            2834.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_014",
+      "events": [
+        {
+          "system": 0,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1544.0,
+            444.0,
+            2018.0,
+            607.0
+          ]
+        },
+        {
+          "system": 2,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            242.0,
+            1329.0,
+            799.0,
+            1488.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 0,
+          "skip": 1,
+          "bbox": [
+            244.0,
+            2210.0,
+            679.0,
+            2394.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 1,
+          "skip": 5,
+          "bbox": [
+            680.0,
+            2210.0,
+            1190.0,
+            2394.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 4,
+          "skip": 6,
+          "bbox": [
+            2896.0,
+            2651.0,
+            3481.0,
+            2822.0
+          ]
+        },
+        {
+          "system": 8,
+          "measure": 5,
+          "skip": 1,
+          "bbox": [
+            3010.0,
+            3999.0,
+            3481.0,
+            4210.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            2
+          ],
+          "current_key": [
+            0,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1546.0,
+            444.0,
+            2015.0,
+            607.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1544.0,
+            444.0,
+            2018.0,
+            607.0
+          ]
+        },
+        {
+          "historical_key": [
+            3,
+            0
+          ],
+          "current_key": [
+            2,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            242.0,
+            1329.0,
+            794.0,
+            1488.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            242.0,
+            1329.0,
+            799.0,
+            1488.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            0
+          ],
+          "current_key": [
+            4,
+            0
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            244.0,
+            2210.0,
+            675.0,
+            2394.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            244.0,
+            2210.0,
+            679.0,
+            2394.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            1
+          ],
+          "current_key": [
+            4,
+            1
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            684.0,
+            2210.0,
+            1189.0,
+            2394.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            680.0,
+            2210.0,
+            1190.0,
+            2394.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            4
+          ],
+          "current_key": [
+            5,
+            4
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2900.0,
+            2651.0,
+            3477.0,
+            2822.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2896.0,
+            2651.0,
+            3481.0,
+            2822.0
+          ]
+        },
+        {
+          "historical_key": [
+            9,
+            5
+          ],
+          "current_key": [
+            8,
+            5
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            3012.0,
+            3999.0,
+            3479.0,
+            4210.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            3010.0,
+            3999.0,
+            3481.0,
+            4210.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_015",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_016",
+      "events": [
+        {
+          "system": 0,
+          "measure": 2,
+          "skip": 1,
+          "bbox": [
+            1572.0,
+            450.0,
+            1910.0,
+            627.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            1945.0,
+            882.0,
+            2417.0,
+            1045.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 0,
+          "skip": 5,
+          "bbox": [
+            500.0,
+            3550.0,
+            1196.0,
+            3713.0
+          ]
+        },
+        {
+          "system": 5,
+          "measure": 5,
+          "skip": 3,
+          "bbox": [
+            2947.0,
+            3550.0,
+            3360.0,
+            3713.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            2
+          ],
+          "current_key": [
+            0,
+            2
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1572.0,
+            450.0,
+            1908.0,
+            627.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1572.0,
+            450.0,
+            1910.0,
+            627.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            4
+          ],
+          "current_key": [
+            1,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            1950.0,
+            882.0,
+            2417.0,
+            1045.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1945.0,
+            882.0,
+            2417.0,
+            1045.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            0
+          ],
+          "current_key": [
+            5,
+            0
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            500.0,
+            3550.0,
+            1193.0,
+            3713.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            500.0,
+            3550.0,
+            1196.0,
+            3713.0
+          ]
+        },
+        {
+          "historical_key": [
+            6,
+            5
+          ],
+          "current_key": [
+            5,
+            5
+          ],
+          "skip": 3,
+          "historical_bbox": [
+            2945.0,
+            3550.0,
+            3360.0,
+            3713.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2947.0,
+            3550.0,
+            3360.0,
+            3713.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_017",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 6,
+          "bbox": [
+            237.0,
+            425.0,
+            1070.0,
+            628.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            237.0,
+            425.0,
+            1067.0,
+            628.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            237.0,
+            425.0,
+            1070.0,
+            628.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_018",
+      "events": [
+        {
+          "system": 6,
+          "measure": 0,
+          "skip": 2,
+          "bbox": [
+            250.0,
+            2937.0,
+            835.0,
+            3104.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            7,
+            0
+          ],
+          "current_key": [
+            6,
+            0
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            250.0,
+            2937.0,
+            831.0,
+            3104.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            250.0,
+            2937.0,
+            835.0,
+            3104.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_019",
+      "events": [
+        {
+          "system": 0,
+          "measure": 0,
+          "skip": 2,
+          "bbox": [
+            219.0,
+            460.0,
+            711.0,
+            623.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 2,
+          "skip": 2,
+          "bbox": [
+            1236.0,
+            460.0,
+            1585.0,
+            623.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            2110.0,
+            460.0,
+            2372.0,
+            623.0
+          ]
+        },
+        {
+          "system": 0,
+          "measure": 5,
+          "skip": 6,
+          "bbox": [
+            2373.0,
+            460.0,
+            2764.0,
+            623.0
+          ]
+        },
+        {
+          "system": 1,
+          "measure": 4,
+          "skip": 1,
+          "bbox": [
+            2758.0,
+            880.0,
+            3466.0,
+            1041.0
+          ]
+        },
+        {
+          "system": 4,
+          "measure": 4,
+          "skip": 5,
+          "bbox": [
+            2139.0,
+            2214.0,
+            2959.0,
+            2369.0
+          ]
+        },
+        {
+          "system": 6,
+          "measure": 3,
+          "skip": 2,
+          "bbox": [
+            2133.0,
+            3085.0,
+            2700.0,
+            3250.0
+          ]
+        },
+        {
+          "system": 9,
+          "measure": 1,
+          "skip": 1,
+          "bbox": [
+            927.0,
+            4409.0,
+            1511.0,
+            4576.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            1,
+            0
+          ],
+          "current_key": [
+            0,
+            0
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            219.0,
+            460.0,
+            708.0,
+            623.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            219.0,
+            460.0,
+            711.0,
+            623.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            2
+          ],
+          "current_key": [
+            0,
+            2
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            1242.0,
+            460.0,
+            1581.0,
+            623.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            1236.0,
+            460.0,
+            1585.0,
+            623.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            4
+          ],
+          "current_key": [
+            0,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2116.0,
+            460.0,
+            2368.0,
+            623.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2110.0,
+            460.0,
+            2372.0,
+            623.0
+          ]
+        },
+        {
+          "historical_key": [
+            1,
+            5
+          ],
+          "current_key": [
+            0,
+            5
+          ],
+          "skip": 6,
+          "historical_bbox": [
+            2377.0,
+            460.0,
+            2763.0,
+            623.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2373.0,
+            460.0,
+            2764.0,
+            623.0
+          ]
+        },
+        {
+          "historical_key": [
+            2,
+            4
+          ],
+          "current_key": [
+            1,
+            4
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2759.0,
+            880.0,
+            3461.0,
+            1041.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2758.0,
+            880.0,
+            3466.0,
+            1041.0
+          ]
+        },
+        {
+          "historical_key": [
+            5,
+            4
+          ],
+          "current_key": [
+            4,
+            4
+          ],
+          "skip": 5,
+          "historical_bbox": [
+            2139.0,
+            2214.0,
+            2956.0,
+            2369.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2139.0,
+            2214.0,
+            2959.0,
+            2369.0
+          ]
+        },
+        {
+          "historical_key": [
+            7,
+            3
+          ],
+          "current_key": [
+            6,
+            3
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2139.0,
+            3085.0,
+            2701.0,
+            3250.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 0.998220640569395,
+          "current_bbox": [
+            2133.0,
+            3085.0,
+            2700.0,
+            3250.0
+          ]
+        },
+        {
+          "historical_key": [
+            10,
+            1
+          ],
+          "current_key": [
+            9,
+            1
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            929.0,
+            4409.0,
+            1506.0,
+            4576.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            927.0,
+            4409.0,
+            1511.0,
+            4576.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_020",
+      "events": [
+        {
+          "system": 3,
+          "measure": 3,
+          "skip": 1,
+          "bbox": [
+            2209.0,
+            1797.0,
+            2829.0,
+            1939.0
+          ]
+        },
+        {
+          "system": 7,
+          "measure": 5,
+          "skip": 2,
+          "bbox": [
+            2812.0,
+            3563.0,
+            3489.0,
+            3730.0
+          ]
+        }
+      ],
+      "historical_mappings": [
+        {
+          "historical_key": [
+            4,
+            3
+          ],
+          "current_key": [
+            3,
+            3
+          ],
+          "skip": 1,
+          "historical_bbox": [
+            2209.0,
+            1797.0,
+            2826.0,
+            1939.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2209.0,
+            1797.0,
+            2829.0,
+            1939.0
+          ]
+        },
+        {
+          "historical_key": [
+            8,
+            5
+          ],
+          "current_key": [
+            7,
+            5
+          ],
+          "skip": 2,
+          "historical_bbox": [
+            2813.0,
+            3563.0,
+            3484.0,
+            3730.0
+          ],
+          "method": "historical_center_in_current_bbox",
+          "overlap_score": 1.0,
+          "current_bbox": [
+            2812.0,
+            3563.0,
+            3489.0,
+            3730.0
+          ]
+        }
+      ],
+      "full_page_missing_event_review": "not_certified"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_021",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_022",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_023",
+      "events": [],
+      "historical_mappings": [],
+      "full_page_missing_event_review": "zero_fixture_page_reviewed"
+    }
+  ]
+}

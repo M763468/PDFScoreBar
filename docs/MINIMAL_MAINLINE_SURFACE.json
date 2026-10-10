@@ -694,6 +694,7 @@
       "tests/test_issue315_production_model_artifact_contract.py",
       "tests/test_issue329_model_artifact_contract.py",
       "tests/test_issue355_trusted_accuracy_smoke.py",
+      "tests/test_issue415_numbering_audit.py",
       "tests/test_model_artifacts.py",
       "tests/test_verify_detector_full68.py"
     ],

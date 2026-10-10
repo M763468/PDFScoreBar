@@ -26,6 +26,10 @@ class MeasureNumberer:
     ) -> int:
         """
         Numbers all pages and systems in a score sequentially.
+        Override and boundary system indices address the compact ``systems``
+        array in score_to_dict, not positions in Page.systems (which also holds
+        empty systems). Resolve visibility from fresh, uncorrected geometry so
+        the contract also holds on a newly reconstructed Phase-C Page.
         Returns the next available measure number.
         """
         current_number = start_number
@@ -43,7 +47,11 @@ class MeasureNumberer:
                 ov_map[key] = ov
 
         for p_idx, page in enumerate(score.pages):
-            for s_idx, system in enumerate(page.systems):
+            s_idx = 0
+            for system in page.systems:
+                base_next_number = self.number_system(system, current_number)
+                if not system.measures:
+                    continue
                 boundary_key = (p_idx, s_idx)
                 if boundary_key in boundary_resets:
                     current_number = boundary_resets[boundary_key]
@@ -52,7 +60,11 @@ class MeasureNumberer:
                 sys_ov = {
                     m_idx: ov for (p, s, m_idx), ov in ov_map.items() if p == p_idx and s == s_idx
                 }
-                current_number = self.number_system(system, current_number, overrides=sys_ov)
+                if sys_ov or boundary_key in boundary_resets:
+                    current_number = self.number_system(system, current_number, overrides=sys_ov)
+                else:
+                    current_number = base_next_number
+                s_idx += 1
 
         unknown_boundaries = set(boundary_resets) - applied_boundaries
         if unknown_boundaries:
@@ -69,6 +81,7 @@ class MeasureNumberer:
         Creates Measure objects for a single system and assigns numbers.
         Returns the next start number.
         """
+        system.measures = []
         if not system.staves:
             return start_number
 
@@ -120,7 +133,6 @@ class MeasureNumberer:
 
         # 4. Iterate intervals to create Measures
         current_number = start_number
-        system.measures = []
 
         if not sorted_barlines:
             pass

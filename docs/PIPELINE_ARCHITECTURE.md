@@ -335,6 +335,15 @@ Phase C still materializes `numbering_final.json`: it reloads the accepted barli
 staff mask, reconstructs the page object with the normal `MeasureNumberingPipeline`, and
 applies the merged MMR/user measure overrides before optional overlay rendering.
 
+MMR/manual overrides and movement boundaries use zero-based indices in the compact
+`numbering_base.json` / `numbering_final.json` `systems` array. Internal `Page.systems`
+also retains empty systems; Phase C resolves visibility from uncorrected measure geometry
+before applying corrections, so empty systems never consume a public system index. Page
+indices remain batch-global at merge time and are rebased to zero for per-page numbering.
+Final metadata records `system_index_contract: compact_nonempty_systems.v1`; cached final
+artifacts without that marker are rebuilt because their corrections may target a different
+physical system. This contract is shared by the combined JSON and final PDF row labels.
+
 This normal finalization is distinct from the **removed legacy MMR-specific second
 numbering rebuild**. The removed path existed only to prepare separate Phase-B/MMR geometry
 and could diverge from Phase A. Current MMR support instead reuses the Phase-A topology.

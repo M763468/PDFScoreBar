@@ -1,0 +1,331 @@
+{
+  "schema_version": "issue415.row_start_samples.v1",
+  "scope": "18 independently adjudicated row starts on 6 original-page contexts; not exhaustive absolute numbering GT",
+  "production_reset_changed": false,
+  "samples": [
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_001",
+      "system": 0,
+      "expected_row_start": 1,
+      "source_image": "data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_001.png",
+      "source_sha256": "bb1734ba1622a9b413d9b34e8b5183ab3b9a4f67f8eaa907a06fdfafd2ca5c9b",
+      "first_measure_bbox": [
+        308,
+        1319,
+        1667,
+        1504
+      ],
+      "basis": "作品開始。第1段は7小節休符+通常1小節+4小節休符+通常1小節=12。第2段通常4小節。四角囲み1/2/3はリハーサル番号。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-01.png"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_001",
+      "system": 1,
+      "expected_row_start": 13,
+      "source_image": "data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_001.png",
+      "source_sha256": "bb1734ba1622a9b413d9b34e8b5183ab3b9a4f67f8eaa907a06fdfafd2ca5c9b",
+      "first_measure_bbox": [
+        300,
+        1768,
+        1211,
+        1992
+      ],
+      "basis": "作品開始。第1段は7小節休符+通常1小節+4小節休符+通常1小節=12。第2段通常4小節。四角囲み1/2/3はリハーサル番号。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-01.png"
+    },
+    {
+      "score": "Shostakovich-Festival_Overture_Va",
+      "page": "page_001",
+      "system": 2,
+      "expected_row_start": 17,
+      "source_image": "data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_001.png",
+      "source_sha256": "bb1734ba1622a9b413d9b34e8b5183ab3b9a4f67f8eaa907a06fdfafd2ca5c9b",
+      "first_measure_bbox": [
+        300,
+        2227,
+        1232,
+        2443
+      ],
+      "basis": "作品開始。第1段は7小節休符+通常1小節+4小節休符+通常1小節=12。第2段通常4小節。四角囲み1/2/3はリハーサル番号。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-01.png"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_002",
+      "system": 0,
+      "expected_row_start": 1,
+      "source_image": "data/evaluation2/images/Shostakovich-Sym5-Va/page_002.png",
+      "source_sha256": "dcb117ff4a995393b0c02aa79bb00a436daa2dea1538c2c70ea0d40dfec8f4f4",
+      "first_measure_bbox": [
+        211,
+        756,
+        900,
+        903
+      ],
+      "basis": "左余白の印刷された小節番号1・7・11を直接読む。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-02.png"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_002",
+      "system": 1,
+      "expected_row_start": 7,
+      "source_image": "data/evaluation2/images/Shostakovich-Sym5-Va/page_002.png",
+      "source_sha256": "dcb117ff4a995393b0c02aa79bb00a436daa2dea1538c2c70ea0d40dfec8f4f4",
+      "first_measure_bbox": [
+        212,
+        1127,
+        831,
+        1273
+      ],
+      "basis": "左余白の印刷された小節番号1・7・11を直接読む。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-02.png"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_002",
+      "system": 2,
+      "expected_row_start": 11,
+      "source_image": "data/evaluation2/images/Shostakovich-Sym5-Va/page_002.png",
+      "source_sha256": "dcb117ff4a995393b0c02aa79bb00a436daa2dea1538c2c70ea0d40dfec8f4f4",
+      "first_measure_bbox": [
+        214,
+        1506,
+        761,
+        1655
+      ],
+      "basis": "左余白の印刷された小節番号1・7・11を直接読む。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-02.png"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_001",
+      "system": 0,
+      "expected_row_start": 1,
+      "source_image": "data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_001.png",
+      "source_sha256": "5c176fe8092d88822dc9ce26fa8fa9cba735119b14458aea793564f4724cb107",
+      "first_measure_bbox": [
+        552,
+        1219,
+        1126,
+        1791
+      ],
+      "basis": "第1段26小節休符に通常6小節、次段11小節休符に通常4小節。27/28の印刷番号が26休符後の通常小節位置を支持。上下divisiを重複加算しない。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-03.png"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_001",
+      "system": 1,
+      "expected_row_start": 33,
+      "source_image": "data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_001.png",
+      "source_sha256": "5c176fe8092d88822dc9ce26fa8fa9cba735119b14458aea793564f4724cb107",
+      "first_measure_bbox": [
+        372,
+        1901,
+        853,
+        2138
+      ],
+      "basis": "第1段26小節休符に通常6小節、次段11小節休符に通常4小節。27/28の印刷番号が26休符後の通常小節位置を支持。上下divisiを重複加算しない。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-03.png"
+    },
+    {
+      "score": "Sibelius-Violin_Concerto-Viola",
+      "page": "page_001",
+      "system": 2,
+      "expected_row_start": 48,
+      "source_image": "data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_001.png",
+      "source_sha256": "5c176fe8092d88822dc9ce26fa8fa9cba735119b14458aea793564f4724cb107",
+      "first_measure_bbox": [
+        379,
+        2252,
+        890,
+        2438
+      ],
+      "basis": "第1段26小節休符に通常6小節、次段11小節休符に通常4小節。27/28の印刷番号が26休符後の通常小節位置を支持。上下divisiを重複加算しない。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-03.png"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_001",
+      "system": 0,
+      "expected_row_start": 1,
+      "source_image": "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
+      "source_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+      "first_measure_bbox": [
+        527,
+        1170,
+        1291,
+        1341
+      ],
+      "basis": "第I楽章冒頭を1とし、第1段・第2段の小節線間をそれぞれ5小節として原画像で数える。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-04.png"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_001",
+      "system": 1,
+      "expected_row_start": 6,
+      "source_image": "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
+      "source_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+      "first_measure_bbox": [
+        407,
+        1457,
+        1150,
+        1609
+      ],
+      "basis": "第I楽章冒頭を1とし、第1段・第2段の小節線間をそれぞれ5小節として原画像で数える。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-04.png"
+    },
+    {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_001",
+      "system": 2,
+      "expected_row_start": 11,
+      "source_image": "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
+      "source_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+      "first_measure_bbox": [
+        407,
+        1718,
+        1128,
+        1896
+      ],
+      "basis": "第I楽章冒頭を1とし、第1段・第2段の小節線間をそれぞれ5小節として原画像で数える。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-04.png"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_001",
+      "system": 0,
+      "expected_row_start": 1,
+      "source_image": "data/evaluation2/images/Va__Prokofiev_Symphony5/page_001.png",
+      "source_sha256": "a9a89a9699c345480c466f6163e5926191f416dfd79b6e5b68fe31ec236d00c1",
+      "first_measure_bbox": [
+        486,
+        1592,
+        1056,
+        1759
+      ],
+      "basis": "第I楽章冒頭を1とし、第1段は2小節休符×2+通常5=9、第2段は2小節休符+通常5=7。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-05.png"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_001",
+      "system": 1,
+      "expected_row_start": 10,
+      "source_image": "data/evaluation2/images/Va__Prokofiev_Symphony5/page_001.png",
+      "source_sha256": "a9a89a9699c345480c466f6163e5926191f416dfd79b6e5b68fe31ec236d00c1",
+      "first_measure_bbox": [
+        206,
+        1997,
+        906,
+        2141
+      ],
+      "basis": "第I楽章冒頭を1とし、第1段は2小節休符×2+通常5=9、第2段は2小節休符+通常5=7。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-05.png"
+    },
+    {
+      "score": "Va__Prokofiev_Symphony5",
+      "page": "page_001",
+      "system": 2,
+      "expected_row_start": 17,
+      "source_image": "data/evaluation2/images/Va__Prokofiev_Symphony5/page_001.png",
+      "source_sha256": "a9a89a9699c345480c466f6163e5926191f416dfd79b6e5b68fe31ec236d00c1",
+      "first_measure_bbox": [
+        206,
+        2402,
+        712,
+        2559
+      ],
+      "basis": "第I楽章冒頭を1とし、第1段は2小節休符×2+通常5=9、第2段は2小節休符+通常5=7。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-05.png"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_012",
+      "system": 0,
+      "expected_row_start": 1,
+      "source_image": "data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+      "source_sha256": "d86497ccc3c4be15ce8bcd6711738847ca9936892b3171928497d4ee8ac6ac0e",
+      "first_measure_bbox": [
+        229,
+        414,
+        895,
+        912
+      ],
+      "basis": "第III楽章の左余白に1・6・11が印刷。四角囲み75/76はリハーサル番号。楽章内番号として読む。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-06.png"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_012",
+      "system": 1,
+      "expected_row_start": 6,
+      "source_image": "data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+      "source_sha256": "d86497ccc3c4be15ce8bcd6711738847ca9936892b3171928497d4ee8ac6ac0e",
+      "first_measure_bbox": [
+        232,
+        1132,
+        878,
+        1652
+      ],
+      "basis": "第III楽章の左余白に1・6・11が印刷。四角囲み75/76はリハーサル番号。楽章内番号として読む。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-06.png"
+    },
+    {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_012",
+      "system": 2,
+      "expected_row_start": 11,
+      "source_image": "data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+      "source_sha256": "d86497ccc3c4be15ce8bcd6711738847ca9936892b3171928497d4ee8ac6ac0e",
+      "first_measure_bbox": [
+        240,
+        1862,
+        889,
+        2384
+      ],
+      "basis": "第III楽章の左余白に1・6・11が印刷。四角囲み75/76はリハーサル番号。楽章内番号として読む。",
+      "numbering_convention": "movement_local",
+      "review_status": "original_image_inspected_2026_10_10",
+      "local_visual": "logs/issue415/implementation/number-sample-06.png"
+    }
+  ]
+}

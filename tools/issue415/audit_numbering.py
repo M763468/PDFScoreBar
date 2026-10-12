@@ -160,6 +160,10 @@ def resolve(base: Path, relative: str) -> Path:
 def materialized_path(path: Path, repo: Path) -> Path:
     """Translate retained Docker /workspace symlinks for host-side read-only use."""
     target = path.resolve()
+    # Container-native files already name the correct checkout. Only a resolved
+    # symlink outside it can require the host translation of /workspace.
+    if target == path.absolute() or target.is_relative_to(repo.resolve()):
+        return target
     if target.is_relative_to("/workspace"):
         return repo / target.relative_to("/workspace")
     return target

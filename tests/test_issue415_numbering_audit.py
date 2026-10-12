@@ -107,6 +107,36 @@ def test_host_translation_of_retained_workspace_symlink(tmp_path):
     assert materialized_path(link, repo) == repo / "data/source.png"
 
 
+@pytest.mark.parametrize("repo_name", ["/workspace", "/workspace/PDFScoreBar"])
+def test_container_native_paths_are_not_rebased_twice(repo_name, monkeypatch):
+    from pathlib import Path
+
+    repo = Path(repo_name)
+    path = repo / "logs/retained/source.png"
+    # Model container paths without requiring writes outside the pytest sandbox.
+    monkeypatch.setattr(Path, "resolve", lambda self: self.absolute())
+    assert materialized_path(path, repo) == path
+
+
+def test_symlink_within_nested_workspace_checkout_preserves_native_target(monkeypatch):
+    from pathlib import Path
+
+    repo = Path("/workspace/PDFScoreBar")
+    link = repo / "logs/retained/source.png"
+    target = repo / "data/source.png"
+    monkeypatch.setattr(Path, "resolve", lambda self: target if self == link else self.absolute())
+    assert materialized_path(link, repo) == target
+
+
+def test_ordinary_workspace_path_outside_checkout_is_not_a_retained_symlink(monkeypatch):
+    from pathlib import Path
+
+    repo = Path("/workspace/PDFScoreBar")
+    path = Path("/workspace/shared/source.png")
+    monkeypatch.setattr(Path, "resolve", lambda self: self.absolute())
+    assert materialized_path(path, repo) == path
+
+
 def system(y, count=2):
     return System(
         staves=[

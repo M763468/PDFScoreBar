@@ -1,5 +1,38 @@
 # Issue #218: real 3div./4div. validation
 
+## Baseline-relative regression clarification (2026-10-14)
+
+The user requires preserving the existing full68 quality when adding 3div./4div.
+support. The reference for that requirement is the accepted develop-lineage #413
+output, not the intermediate #218 candidate that removed 56 empty detections.
+These comparisons must not be mixed.
+
+Direct comparison of all 68 retained final page outputs with that actual accepted
+reference gives **zero added numbered systems, zero added empty diagnostic
+entries, and exact numbered output equality on 68/68 pages**. The only complete-page
+JSON difference is deletion of the already present, source-confirmed empty
+hairpin on Sibelius Viola/page_009. Thus **67/68 means 67 matching pages and one
+page with a diagnostic deletion**, not 67 failed pages or new false positives.
+The strict complete-JSON gate remains **FAIL**; it has not been replaced with a
+different pass criterion.
+
+The 55 regions restored after P2 were present in the accepted baseline. That
+restoration reduces removal relative to the intermediate 56-deletion experiment;
+it does not add 55 detections relative to develop. The original reference's
+numbered systems contain at most two staves. The connector-only rescue and shared
+boundary support checks are limited to groups of at least three staves, preserving
+the existing one/two-staff rules. General fragment rejection remains an additional
+change with its own diagnostic difference and reduced-line regression guards.
+
+The same saved source/detector/MMR artifacts were used; full68 numerical evidence
+and its original limitations remain those reported below. This is regression
+comparison of retained outputs, not new absolute musical GT accuracy for the
+entire corpus. The direct page-level comparison is retained at
+`logs/issue218/baseline-clarification-20261014/comparison.json`.
+No numerical implementation, model, threshold, input set or acceptance tolerance
+was changed for this clarification. Review still separates original divisi
+acceptance from additional repairs; no merge is authorized by this observation.
+
 ## Latest candidate: reduced-line staff protection after external review (2026-10-13)
 
 The requested external review of `584b28fe` found

@@ -1,6 +1,67 @@
 # Issue #218: real 3div./4div. validation
 
-## Scope and pre-merge assessment (2026-10-13)
+## Latest candidate: reduced-line staff protection after external review (2026-10-13)
+
+The requested external review of `584b28fe` found
+[P2: preserve legitimate reduced-line percussion staves](https://github.com/M763468/PDFScoreBar/pull/417#discussion_r4259743144).
+The previous short-span/two-run rule fails this contract: a mask containing one
+five-line staff, one one-line staff and one two-line staff yields only the
+five-line staff. That reproduced failure is retained at
+`logs/issue218/reduced-staff-review-20261013/baseline-repro.log`. The prior candidate's
+passing divisi/numbering checks do not make its percussion behavior correct.
+
+The filter now additionally requires positive opposing line trajectories in the
+original mask. Column runs must supply two line centers across at least two staff
+spaces horizontally and at least one space worth of sampled columns. Each fitted
+branch must move at least 0.25 spaces, in opposite directions. See the updated
+[geometry contract](../NUMBERING_GEOMETRY_CONTRACT.md). Genuine one-line and
+parallel two-line notation, including tilted, curved and incomplete masks, is
+kept. Ambiguous non-staff ink is also kept. The parameters and all existing
+inputs/GT/gates were fixed before evaluating this separately recorded candidate;
+no detector/model/GT/tolerance was retuned.
+
+Mixed-page extraction and numbering now retain all three staves and produce six
+correct shared physical measures at both resolutions. The existing known-hairpin
+and broken-staff regression remains passing. On the original six actual-score
+inputs, fresh production MMR/OCR and final numbering still pass the original
+topology gates and unchanged GT v2: **80/80 intervals/numbers, 19/19 system counts,
+3/3 exact MMR**.
+
+On all 68 original corpus pages, **629 fixed input hashes** are verified before
+and after the equivalent-input replay. Numbered Phase-A/Phase-C geometry and all
+three numbered MMR views remain identical to the same #413-corrected baseline.
+All **3,287 physical measures** have correct recognized-to-applied skip increments,
+with zero application errors. Isolated clipped-end recovery still preserves
+**68/68 complete JSONs and MMR views**. This is a separate component comparison.
+
+The raw empty-inclusive result of the new fragment candidate is **67/68 FAIL**:
+it removes **one empty hairpin system on Sibelius Viola/page_009**. Of the previous
+56 removals, 55 are now conservatively retained: the mask alone does not provide
+enough opposing-trajectory evidence to remove them while preserving reduced-line
+notation. Their earlier original-image classification remains valid; retaining
+ambiguous mask detections is an intentional precision/recall choice, not a claim
+that they are real staves. No numbered system is added or removed on the corpus.
+The earlier **43/68 FAIL, 56 empty removals on 25 pages** remains the result of
+`584b28fe`, not the new candidate. Neither raw equality failure is renamed a pass.
+
+The merge decision now concerns the single current empty diagnostic deletion,
+not all 56 historical deletions. Technical recommendation: accept the one
+source-confirmed hairpin deletion and the explicitly conservative abstention;
+final output-contract acceptance remains a merge decision. Original #218 divisi
+acceptance, related fixes and the independent clipped-end addition remain distinct.
+PR #417 stays one candidate as requested; no automatic merge or Issue closure.
+
+Focused #218/#413/#217/page-rebase checks: **132 passed on host and 132 in the
+production Python/OpenCV runtime**; `make test-fast`: **112 passed**. Fresh
+canonical GPU smoke: **85/85 PASS**, zero hard FP/FN/soft residuals. Scoped Ruff,
+repository-surface inventory and `git diff --check` pass. Per-run provenance is under
+`logs/issue218/reduced-staff-review-20261013/`. This uses the same immutable image
+and commands as the preceding assessment, substituting that artifact root.
+Current/new source hashes and the frozen candidate contract are in `contract.json`;
+`validation/replay-report.json` records all per-page raw and semantic differences.
+No fresh full68 detector/OCR inference or independent GT adjudication is claimed.
+
+## Historical scope and pre-merge assessment at `584b28fe` (2026-10-13)
 
 The owner's [Issue scope decision](https://github.com/M763468/PDFScoreBar/issues/218#issuecomment-6146986300)
 and [PR review decision](https://github.com/M763468/PDFScoreBar/pull/417#issuecomment-6146995772)

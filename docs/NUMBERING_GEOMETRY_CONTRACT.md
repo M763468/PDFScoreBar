@@ -172,16 +172,29 @@ that would mix producer/runtime variation into the #267 geometry comparison.
 ### Short non-staff mask fragments (#218)
 
 `StaffExtractor` checks each accepted component against the original binary mask,
-prior to vertical dilation. It rejects a component only when both conditions hold:
+prior to vertical dilation. It rejects a component only when all conditions hold:
 
 - at most two horizontally persistent row runs (the existing 0.25 coverage floor);
-- the full foreground vertical span is strictly less than two staff-line spaces.
+- the full foreground vertical span is strictly less than two staff-line spaces;
+- Original-mask column runs provide positive evidence of two opposing line
+  trajectories: at least one staff-space worth of columns with exactly two runs,
+  spanning at least two spaces horizontally. Least-squares fits to their upper
+  and lower centers must have opposite slope signs, with each fitted trajectory
+  moving at least 0.25 spaces over that support span.
 
 Span and spacing are compared in mask coordinates; target-page scaling does not
 change the decision. Page spacing is preferred, with the existing component-local
 fallback for short staves. Unknown spacing remains accepted. Five visible lines
 are deliberately not required: broken or tilted scan lines must remain usable.
 This shared extractor also supplies connector semantics and MMR support geometry.
+
+One-line and parallel two-line staves, including tilted/curved or broken masks,
+remain accepted. Few rows and a short span alone are not evidence of a non-staff
+component: legitimate percussion uses reduced-line notation. Ambiguous scan
+borders, beams and incomplete hairpin masks also remain accepted. This explicit
+abstention is preferred to dropping legitimate staff geometry. The earlier #218
+candidate using only the first two conditions failed this percussion contract;
+its 56 empty removals and old 43/68 exact-JSON failure remain historical results.
 
 A rejected component may disappear from `empty_systems`; it contributes no measures
 or numbering increments. Removal from a numbered system still requires downstream

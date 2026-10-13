@@ -24,6 +24,9 @@ class StaffExtractor:
     STAFF_SPACING_INLIER_MAX_RATIO = 1.5
     SHORT_FRAGMENT_MAX_LINE_RUNS = 2
     SHORT_FRAGMENT_MAX_SPAN_UNITS = 2.0
+    CONVERGENCE_MIN_COLUMNS_UNITS = 1.0
+    CONVERGENCE_MIN_WIDTH_UNITS = 2.0
+    CONVERGENCE_MIN_BRANCH_SHIFT_UNITS = 0.25
 
     def __init__(self, min_height: int = 10, min_width_ratio: float = 0.1):
         self.min_height = min_height
@@ -82,9 +85,11 @@ class StaffExtractor:
         """Reject short non-staff marks using original-mask coordinates.
 
         Hairpins can become staff-sized components after vertical dilation.
-        Require both very few persistent line runs and a raw foreground span
-        below two staff spaces. Do not require five visible lines: real scans
-        can have broken or tilted lines, and unknown spacing remains accepted.
+        Few rows and short height alone also describe legitimate percussion
+        staves. Require positive evidence of two opposing line trajectories
+        before rejecting a short component. Straight/parallel reduced-line
+        staves and uncertain masks remain accepted, including curved or tilted
+        parallel lines. This conservatively retains ambiguous non-staff marks.
         """
         if unit_size is None or unit_size <= 0 or crop.size == 0:
             return False
@@ -96,6 +101,42 @@ class StaffExtractor:
         return (
             line_runs <= self.SHORT_FRAGMENT_MAX_LINE_RUNS
             and span < self.SHORT_FRAGMENT_MAX_SPAN_UNITS * unit_size
+            and self._has_opposing_line_trajectories(foreground, unit_size=unit_size)
+        )
+
+    def _has_opposing_line_trajectories(self, foreground: np.ndarray, *, unit_size: float) -> bool:
+        """Distinguish a converging/diverging pair from one/two-line staves.
+
+        Use original-mask column runs, not the dilated component box. A single
+        line has no paired runs; parallel lines retain the same slope even if
+        the scan bends. Missing/connected columns are ignored, and too little
+        paired support abstains instead of implying a non-staff component.
+        """
+        columns, upper, lower = [], [], []
+        for x in range(foreground.shape[1]):
+            rows = np.flatnonzero(foreground[:, x])
+            if not rows.size:
+                continue
+            runs = np.split(rows, np.flatnonzero(np.diff(rows) > 1) + 1)
+            if len(runs) == 2:
+                columns.append(x)
+                upper.append((runs[0][0] + runs[0][-1]) / 2)
+                lower.append((runs[1][0] + runs[1][-1]) / 2)
+        if len(columns) < max(2, self.CONVERGENCE_MIN_COLUMNS_UNITS * unit_size):
+            return False
+        width = columns[-1] - columns[0]
+        if width < self.CONVERGENCE_MIN_WIDTH_UNITS * unit_size:
+            return False
+        centered_x = np.asarray(columns, dtype=float) - np.mean(columns)
+        denominator = float(np.dot(centered_x, centered_x))
+        shifts = [
+            float(np.dot(centered_x, np.asarray(values) - np.mean(values))) / denominator * width
+            for values in (upper, lower)
+        ]
+        return (
+            shifts[0] * shifts[1] < 0
+            and min(abs(shift) for shift in shifts)
+            >= self.CONVERGENCE_MIN_BRANCH_SHIFT_UNITS * unit_size
         )
 
     def _component_bounds(

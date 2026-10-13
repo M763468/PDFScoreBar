@@ -12,6 +12,10 @@ mapping, OCR backend addition, new crop geometry or threshold change.
 
 Staff support remains primary. Only a tie between leading values, with CNN
 probability above the existing threshold, uses spatial score to select a leader.
+For a measure narrower than the existing
+100px boundary, tied leaders rejected by the existing >20 count guard cannot
+displace an admissible tied leader. This applies to masked and fallback OCR; an
+unambiguous high-count majority retains the original rejection policy.
 When any such staff ambiguity occurs, a strict majority supported by at least two
 valid preprocessing results can select its best-scored representative. Otherwise
 maximum-score variant selection remains authoritative. Low-CNN staff ordering,
@@ -88,7 +92,8 @@ would not be a justified generic improvement.
 | Global preprocessing majority | 168 / 3 / 6 / 0 | 859 | 149.25 | Reject: 3 new errors despite111→4 recovery |
 | Both unguarded policies | 169 / 3 / 5 / 0 | 831 | 147.21 | Reject: wrong-skip gate fails |
 | Staff tie with scoped corroboration | 171 / 3 / 3 / 0 | 829 | 140.68 | Pass Full68 and bounded controls |
-| Actual changed source | 171 / 3 / 3 / 0 | 829 | 134.71 | All pages semantically equal to validated candidate |
+| Initial changed source | 171 / 3 / 3 / 0 | 829 | 134.71 | All pages semantically equal to validated candidate |
+| Review revision: preserve admissible tied leaders | 171 / 3 / 3 / 0 | 829 | 142.13 | All68 pages semantically equal to initial changed source |
 
 The global-majority regressions are Sym5/page_010 s9m1 (9→6),
 ProkofievSym1/page_003 s0m2 (4→41), and page_005 s6m5 (3→98).
@@ -124,6 +129,24 @@ Sibelius4→111. Manual `set_measure_span` can supply the visually reviewed coun
 manual suppress/precedence tests pass. No manual corrections were inserted into
 these metrics, and this work does not certify the real release-candidate GUI flow.
 
+## PR review revision
+
+[Review r4260666741](https://github.com/M763468/PDFScoreBar/pull/420#discussion_r4260666741)
+identified an untested narrow-measure tie: a higher-score79 could reject the
+whole variant despite an admissible4. The masked and fallback paths now select
+among admissible tied leaders before spatial ranking. The original100px/>20
+guard and non-tied majority rejection are unchanged. Unit/integration tests
+cover both paths, all-rejected ties and the width boundary. The integration
+test reproduces missing detections in both paths on pre-review source
+`1d15641`, then passes on the corrected source.
+
+The revision is evaluated separately in `full68/source_review_r4260666741/` and
+`controls-review.json`, under the original contracts. Full68 semantic predictions
+are identical to the initial changed source, with829 OCR calls. All65 controls
+complete successfully with0 new regressions, the same10 shared focused failures,
+and the corrected4 in all5 views. Earlier results and harness failures remain
+visible; the review control runner completed its JSON normally.
+
 ## Downstream and validation
 
 The actual new MMR predictions are applied through production final numbering
@@ -135,15 +158,21 @@ unchanged; no movement reset is inserted, and absolute numbering is uncertified.
 
 The downstream runner initially violated the package-relative source-image contract.
 It was corrected by staging byte-identical images within its own package; no MMR
-or upstream inference was repeated. Both attempted and completed logs are retained.
+or upstream inference was repeated. Both attempted and completed logs are retained. The review revision preserves
+all68 semantic override sets and all downstream inputs, so the completed final
+numbering/PDF evidence is reused; equivalence is recorded in
+`review-downstream-equivalence.json`.
 
-- Focused OCR aggregation/fallback/one-bar/support/manual/system-identity tests:86 pass.
+- Initial focused tests:86 pass. Review-revision focused OCR aggregation/fallback/
+  one-bar/support/manual/system-identity tests:91 pass (including narrow-measure
+  masked/fallback regression tests and rejection-boundary checks).
 - `make test-fast`:110 pass; touched Ruff/format/diff checks pass.
 - Full68 MMR-only evaluation:171/3/3/0, zero-fixture16/0; frozen input hashes rechecked.
 - Bounded comparative controls:65 cases, zero new regressions; shared failures above.
 - Downstream:68 pages/3287 measures, application0, GT6, PDF68/637.
 - Canonical Docker/GPU pipeline/accuracy smoke: PASS, detector85/85 with hardFP0/FN0/soft0, recorded under
-  `logs/issue414/gpu-smoke-20261013/`; numerical settings equal the maintained
+  `logs/issue414/gpu-smoke-20261013/`, and repeated successfully for the review
+  revision under `logs/issue414/gpu-smoke-review-20261014/`; numerical settings equal the maintained
   smoke, with only output destinations changed to keep artifacts issue-scoped.
 - Full SR/HOMR/detector evaluation is not repeated: geometry/models are unchanged;
   the affected full68 MMR path and downstream final outputs are evaluated directly.

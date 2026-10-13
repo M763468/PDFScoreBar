@@ -1169,13 +1169,19 @@ class MMRProcessor:
             evidence,
         )
 
-    def _select_staff_value(self, results, prob):
+    def _select_staff_value(self, results, prob, measure_width=None):
         """Keep staff support primary; break high-CNN ties by spatial score."""
         counts = Counter(result[0] for result in results)
         support = max(counts.values())
         leaders = {value for value, count in counts.items() if count == support}
         tied = len(leaders) > 1
         if tied and prob > self.threshold:
+            # A rejected high count must not displace an admissible tied leader.
+            # Preserve the existing rejection of an unambiguous staff majority.
+            if measure_width is not None and measure_width < 100:
+                admissible = {value for value in leaders if value <= 20}
+                if admissible:
+                    leaders = admissible
             value = max(
                 (result for result in results if result[0] in leaders),
                 key=lambda result: result[1],
@@ -1243,7 +1249,7 @@ class MMRProcessor:
 
             valid_results = [r for r in stave_results if r[0] is not None]
             if valid_results:
-                current_num, tied = self._select_staff_value(valid_results, prob)
+                current_num, tied = self._select_staff_value(valid_results, prob, x2 - x1)
                 had_staff_conflict |= tied
 
                 if not (current_num > 20 and (x2 - x1) < 100):
@@ -1313,7 +1319,7 @@ class MMRProcessor:
                         fallback_results.append((num, score, dbg))
 
                 if fallback_results:
-                    current_num, tied = self._select_staff_value(fallback_results, prob)
+                    current_num, tied = self._select_staff_value(fallback_results, prob, x2 - x1)
                     had_staff_conflict |= tied
                     if not (current_num > 20 and (x2 - x1) < 100):
                         _, best_score, best_dbg = max(

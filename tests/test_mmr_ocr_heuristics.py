@@ -34,6 +34,62 @@ class TestMMROCRHeuristics(unittest.TestCase):
         results = [(4, 10.0, "a"), (4, 12.0, "b"), (79, 100.0, "minority")]
         self.assertEqual(processor._select_staff_value(results, 0.99), (4, False))
 
+    def test_narrow_measure_tie_preserves_admissible_leader(self):
+        processor = MMRProcessor(Path("unused"), object(), classifier=object(), ocr_engine=self.ocr)
+        results = [(4, 10.0, "rest"), (79, 100.0, "artifact")]
+        self.assertEqual(processor._select_staff_value(results, 0.99, 99), (4, True))
+        self.assertEqual(processor._select_staff_value(results, 0.99, 100), (79, True))
+        self.assertEqual(
+            processor._select_staff_value([(79, 100.0, "a"), (37, 90.0, "b")], 0.99, 99),
+            (79, True),
+        )
+        self.assertEqual(
+            processor._select_staff_value(results + [(79, 90.0, "majority")], 0.99, 99),
+            (79, False),
+        )
+
+    def test_narrow_measure_keeps_valid_staff_reading_in_masked_and_fallback_paths(self):
+        class StaffOCR:
+            enable_rotation_tta = False
+
+            def __init__(self, masked_missing):
+                self.calls = 0
+                self.results = (
+                    [(None, 0.0, "")] * 6 + [(4, 10.0, "rest"), (79, 100.0, "artifact")]
+                    if masked_missing
+                    else [(4, 10.0, "rest"), (79, 100.0, "artifact")] * 3
+                )
+                self.results += [(None, 0.0, "")] * 4
+
+            def mask_hbar_candidates(self, image, *_args):
+                return image
+
+            def preprocess_variant(self, image, **_kwargs):
+                return image
+
+            def ocr_engine(self, _image):
+                result = self.results[self.calls]
+                self.calls += 1
+                return [result], None
+
+            def select_best_candidate(self, raw, _width, _height):
+                return raw[0]
+
+        image = np.zeros((400, 200, 3), dtype=np.uint8)
+        system = {"staves": [{"bbox": [0, 60, 200, 100]}, {"bbox": [0, 240, 200, 280]}]}
+        for masked_missing in (False, True):
+            with self.subTest(masked_missing=masked_missing):
+                ocr = StaffOCR(masked_missing)
+                processor = MMRProcessor(
+                    Path("unused"), object(), classifier=object(), ocr_engine=ocr
+                )
+                result = processor._detect_number_with_evidence_once(
+                    image, system, 20, 40, 110, 300, 0.99, 200, 400
+                )
+                self.assertEqual((result[0], result[1], result[3]), (4, 10.0, 0))
+                self.assertEqual(ocr.calls, 8 if masked_missing else 6)
+                self.assertIn("unmasked_fallback" if masked_missing else "standard", result[2])
+
     def test_staff_tie_only_compares_leaders_and_preserves_low_cnn_policy(self):
         processor = MMRProcessor(Path("unused"), object(), classifier=object(), ocr_engine=self.ocr)
         results = [

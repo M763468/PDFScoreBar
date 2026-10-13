@@ -1,0 +1,94 @@
+{
+  "source": {
+    "title": "Claude Debussy — La Mer, violoncello part",
+    "work_url": "https://imslp.org/wiki/La_Mer_(Debussy,_Claude)",
+    "url": "https://s9.imslp.org/files/imglnks/usimg/0/0f/IMSLP26369-PMLP06033-Debussy_-_La_Mer_(cello-part)a.pdf",
+    "file_id": "IMSLP26369",
+    "edition": "Durand & Fils, 1909, plate D. & F. 6531; IMSLP lists Kalmus reprint",
+    "sha256": "ad4d88143f68791f99d0e34c38f8672de4aa3e0f002b5c2c3282382b75d4034d"
+  },
+  "dpi": 360,
+  "renderer": "src.pdf_to_images",
+  "acceptance": "Existing 2026-10-09 visual topology contract: all three full pages; exact staff membership and system separation, including return to 2div./UNIS. No barline accuracy or MMR/OCR ground truth is available. Staff centers come from original scan lines and are only verification labels, never detector/builder inputs.",
+  "cases": [
+    {
+      "name": "I: rehearsal 9, four cello groups; preceding 2div systems",
+      "page_id": "page_003",
+      "pdf_page_1based": 3,
+      "printed_page": 4,
+      "image_sha256": "1a49f233c1b49c9c617bba70d124ab89a7c036ce3aeef9b21dc4c3f6ffccd1df",
+      "expected_system_staff_counts": [
+        2,
+        2,
+        2,
+        2,
+        4
+      ],
+      "expected_staff_center_y": [
+        501,
+        776,
+        1184,
+        1459,
+        1860,
+        2168,
+        2581,
+        2858,
+        3293,
+        3573,
+        3854,
+        4133
+      ]
+    },
+    {
+      "name": "I: continuation of rehearsal 9; return to 2div at rehearsal 10",
+      "page_id": "page_004",
+      "pdf_page_1based": 4,
+      "printed_page": 5,
+      "image_sha256": "3f339c7cd2534e1cba8df3c2d9d9bed25b039275b55c16ffdd8bed85b523abb6",
+      "expected_system_staff_counts": [
+        4,
+        4,
+        2
+      ],
+      "expected_staff_center_y": [
+        561,
+        913,
+        1263,
+        1608,
+        2108,
+        2462,
+        2809,
+        3154,
+        3703,
+        4048
+      ]
+    },
+    {
+      "name": "III: DIV. en 3 between rehearsals 43 and 44; UNIS before 45",
+      "page_id": "page_009",
+      "pdf_page_1based": 9,
+      "printed_page": 10,
+      "image_sha256": "c7e733678d94cac43709a6418413f12012873a7235318fa3b6e1863d2732c52a",
+      "expected_system_staff_counts": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        1
+      ],
+      "expected_staff_center_y": [
+        841,
+        1240,
+        1646,
+        2041,
+        2341,
+        2640,
+        3038,
+        3336,
+        3635,
+        4045
+      ]
+    }
+  ]
+}

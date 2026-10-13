@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 from src.measure_numbering.numbering import MeasureNumberer
-from src.measure_numbering.pipeline import StaffExtractor
+from src.measure_numbering.pipeline import MeasureNumberingPipeline, StaffExtractor
 from src.measure_numbering.types import Barline, BBox, Page, Score, Staff, System
 
 
@@ -104,6 +104,92 @@ class TestNumberingOverrides(unittest.TestCase):
 
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(10), scale_y=1.0), 10.0)
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(20), scale_y=1.0), 20.0)
+
+    def test_short_fragment_filter_keeps_uncertain_and_full_height_masks(self):
+        extractor = StaffExtractor()
+        mask = np.zeros((60, 100), dtype=np.uint8)
+        mask[10, :] = 255
+        mask[20, :] = 255
+        # Two parallel lines are legitimate percussion notation, not sufficient
+        # evidence for removing an extracted staff.
+        self.assertFalse(extractor._is_short_line_fragment(mask, unit_size=10.0))
+        self.assertFalse(extractor._is_short_line_fragment(mask, unit_size=None))
+        # The boundary is strict; two lines spanning two staff spaces survive.
+        mask[30, :5] = 255
+        self.assertFalse(extractor._is_short_line_fragment(mask, unit_size=10.0))
+        mask[30, :] = 255
+        self.assertFalse(extractor._is_short_line_fragment(mask, unit_size=20.0))
+
+    def test_extraction_rejects_dilated_hairpin_but_keeps_broken_staff_at_two_scales(self):
+        extractor = StaffExtractor()
+        mask = np.zeros((260, 240), dtype=np.uint8)
+        for row in (20, 30, 40, 50, 60):
+            mask[row, 20:220] = 255
+        # Four surviving lines must remain accepted without a five-line rule.
+        for row in (120, 130, 150, 160):
+            mask[row, 20:220] = 255
+        cv2.line(mask, (30, 220), (210, 226), 255, 1)
+        cv2.line(mask, (30, 232), (210, 226), 255, 1)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "staff_and_hairpin.png"
+            self.assertTrue(cv2.imwrite(str(path), mask))
+            for scale in (1, 2):
+                staves = extractor.extract(path, (240 * scale, 260 * scale))
+                self.assertEqual(len(staves), 2)
+                self.assertEqual([staff.unit_size for staff in staves], [10.0 * scale] * 2)
+                self.assertLess(staves[-1].bbox.y2, 200 * scale)
+
+    def test_extraction_and_numbering_keep_reduced_line_percussion_in_mixed_page(self):
+        mask = np.zeros((260, 240), dtype=np.uint8)
+        for row in (20, 30, 40, 50, 60, 130, 210, 220):
+            mask[row, 20:220] = 255
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "mixed_percussion_staff.png"
+            cv2.imwrite(str(path), mask)
+            for scale in (1, 2):
+                with self.subTest(scale=scale):
+                    pipe = MeasureNumberingPipeline()
+                    # The five-line staff provides the page-wide spacing. Both
+                    # shorter percussion components must survive that context.
+                    staves = pipe.extractor.extract(path, (240 * scale, 260 * scale))
+                    self.assertEqual(len(staves), 3)
+                    self.assertEqual([s.unit_size for s in staves], [10.0 * scale] * 3)
+                    bars = [
+                        [x * scale, y1 * scale, (x + 2) * scale, y2 * scale]
+                        for y1, y2 in ((20, 60), (120, 140), (210, 220))
+                        for x in (20, 120, 218)
+                    ]
+                    page = pipe.process_page(
+                        bars,
+                        path,
+                        (240 * scale, 260 * scale),
+                        assume_one_staff_per_system=True,
+                    )
+                    self.assertEqual(pipe.numberer.number_score(Score(pages=[page])), 7)
+                    self.assertEqual([len(s.measures) for s in page.systems], [2, 2, 2])
+                    self.assertEqual(
+                        [m.number for s in page.systems for m in s.measures], list(range(1, 7))
+                    )
+
+    def test_fragment_filter_keeps_tilted_curved_and_incomplete_parallel_lines(self):
+        extractor = StaffExtractor()
+        for scale in (1, 2):
+            for count in (1, 2):
+                for shape in ("flat", "tilted", "curved", "broken"):
+                    with self.subTest(scale=scale, lines=count, shape=shape):
+                        mask = np.zeros((60 * scale, 180 * scale), dtype=np.uint8)
+                        for x in range(mask.shape[1]):
+                            if shape == "broken" and 60 * scale <= x < 100 * scale:
+                                continue
+                            offset = x // 30 if shape == "tilted" else 0
+                            if shape == "curved":
+                                offset = round(3 * scale * np.sin(x / mask.shape[1] * np.pi))
+                            for line in range(count):
+                                y = 15 * scale + line * 10 * scale + offset
+                                mask[y : y + scale, x] = 255
+                        self.assertFalse(
+                            extractor._is_short_line_fragment(mask, unit_size=10 * scale)
+                        )
 
     def test_staff_component_contours_preserve_8_connectivity_and_scan_order(self):
         extractor = StaffExtractor(min_height=10, min_width_ratio=0.05)

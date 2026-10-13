@@ -1,0 +1,108 @@
+{
+  "source": {
+    "title": "Akshin Alizadeh, Fourth Symphony (alla Mugham), 2010 Baku scan",
+    "url": "https://musakademiya.musigi-dunya.az/noti/alizade_sim4.pdf",
+    "sha256": "38fd8afe771d09d637f23d7ac32f7a341a00088b94f0264281d740b637aab563",
+    "pdf_page_1based": 4
+  },
+  "dpi": 360,
+  "annotation_provenance": "Manual visual annotation of five-line staff centers in the original 120-DPI PDF-page-4 preview; mapped to each 360-DPI rendered/cropped input. Used only for scoring, never as detector input.",
+  "cases": [
+    {
+      "name": "3div",
+      "page_id": "page_001",
+      "crop_pdf_points": [
+        0.0,
+        126.0,
+        595.2,
+        252.0
+      ],
+      "image_sha256": "a452de5cd659bb699e8b4d1c409c35a5bba4d09a7e06ad2c4938619c3efd76da",
+      "expected_system_staff_counts": [
+        3
+      ],
+      "expected_staff_center_y": [
+        96,
+        306,
+        513
+      ],
+      "expected_measures_per_system": [
+        2
+      ]
+    },
+    {
+      "name": "4div",
+      "page_id": "page_002",
+      "crop_pdf_points": [
+        0.0,
+        666.0,
+        595.2,
+        840.0
+      ],
+      "image_sha256": "b186887088a0aa5d1837491d731eb2501926ef94fbfacac3ddbf8e97c7461348",
+      "expected_system_staff_counts": [
+        4
+      ],
+      "expected_staff_center_y": [
+        126,
+        321,
+        522,
+        726
+      ],
+      "expected_measures_per_system": [
+        2
+      ]
+    },
+    {
+      "name": "fullpage",
+      "page_id": "page_003",
+      "crop_pdf_points": [
+        0.0,
+        0.0,
+        595.0,
+        842.0
+      ],
+      "image_sha256": "6538e5431e444d247df2044f1afd0b386951af92c07b0a750d349bda88b8a003",
+      "expected_system_staff_counts": [
+        5,
+        5,
+        6
+      ],
+      "expected_staff_center_y": [
+        273,
+        501,
+        726,
+        936,
+        1143,
+        1632,
+        1869,
+        2100,
+        2286,
+        2487,
+        2988,
+        3219,
+        3456,
+        3651,
+        3852,
+        4056
+      ],
+      "expected_measures_per_system": [
+        2,
+        2,
+        2
+      ]
+    }
+  ],
+  "expected_final_numbers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ]
+}

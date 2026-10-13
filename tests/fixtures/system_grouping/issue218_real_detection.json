@@ -1,0 +1,918 @@
+{
+  "provenance": {
+    "source_commit": "8340a808",
+    "source": {
+      "title": "Akshin Alizadeh, Fourth Symphony (alla Mugham), 2010 Baku scan",
+      "url": "https://musakademiya.musigi-dunya.az/noti/alizade_sim4.pdf",
+      "sha256": "38fd8afe771d09d637f23d7ac32f7a341a00088b94f0264281d740b637aab563",
+      "pdf_page_1based": 4
+    },
+    "detector_reference": "configs/dense_full_pipeline.yaml",
+    "runtime_image_id": "sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc",
+    "description": "Actual fresh model outputs from the original score scan, before Issue #218 production fixes. No hand-authored staff geometry or connector presence."
+  },
+  "cases": [
+    {
+      "name": "3div",
+      "page_id": "page_001",
+      "crop_pdf_points": [
+        0.0,
+        126.0,
+        595.2,
+        252.0
+      ],
+      "image_sha256": "a452de5cd659bb699e8b4d1c409c35a5bba4d09a7e06ad2c4938619c3efd76da",
+      "expected_system_staff_counts": [
+        3
+      ],
+      "expected_staff_center_y": [
+        96,
+        306,
+        513
+      ],
+      "expected_measures_per_system": [
+        2
+      ],
+      "image_size": [
+        2975,
+        630
+      ],
+      "staves": [
+        {
+          "bbox": [
+            316,
+            26,
+            2792,
+            148
+          ],
+          "unit_size": 14.45
+        },
+        {
+          "bbox": [
+            342,
+            219,
+            2791,
+            356
+          ],
+          "unit_size": 14.45
+        },
+        {
+          "bbox": [
+            321,
+            442,
+            2792,
+            575
+          ],
+          "unit_size": 14.45
+        }
+      ],
+      "barlines": [
+        [
+          353,
+          62,
+          357,
+          77
+        ],
+        [
+          353,
+          87,
+          357,
+          94
+        ],
+        [
+          353,
+          101,
+          357,
+          108
+        ],
+        [
+          353,
+          119,
+          357,
+          126
+        ],
+        [
+          355,
+          101,
+          359,
+          108
+        ],
+        [
+          355,
+          119,
+          359,
+          126
+        ],
+        [
+          356,
+          533,
+          360,
+          541
+        ],
+        [
+          370,
+          533,
+          374,
+          541
+        ],
+        [
+          1515,
+          101,
+          1518,
+          108
+        ],
+        [
+          1518,
+          51,
+          1522,
+          523
+        ],
+        [
+          1580,
+          54,
+          1584,
+          77
+        ],
+        [
+          2780,
+          40,
+          2787,
+          526
+        ],
+        [
+          2780,
+          54,
+          2784,
+          77
+        ],
+        [
+          2780,
+          87,
+          2784,
+          94
+        ],
+        [
+          2780,
+          101,
+          2784,
+          108
+        ],
+        [
+          2783,
+          238,
+          2787,
+          249
+        ]
+      ],
+      "connector_evidence": {
+        "staff_pairs": [
+          {
+            "staff_pair": [
+              0,
+              1
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              1,
+              2
+            ],
+            "left_connector_present": true
+          }
+        ]
+      },
+      "source_mask_sha256": {
+        "symbols": "0e93c742b8d4292e386f9fda7e8db7b8fac73b9ef7cf5051cebef0c971afab07",
+        "brace_dot": "15ccda89e5834b1c2f61d8421797f76ac9bc87667bcaf9f9dfa339d9c474e97e"
+      },
+      "staff_mask_sha256": "a2b8bdb609104b3f97ad581a3a11bef32dcf483857b6c576d2651a3fb39f0045"
+    },
+    {
+      "name": "4div",
+      "page_id": "page_002",
+      "crop_pdf_points": [
+        0.0,
+        666.0,
+        595.2,
+        840.0
+      ],
+      "image_sha256": "b186887088a0aa5d1837491d731eb2501926ef94fbfacac3ddbf8e97c7461348",
+      "expected_system_staff_counts": [
+        4
+      ],
+      "expected_staff_center_y": [
+        126,
+        321,
+        522,
+        726
+      ],
+      "expected_measures_per_system": [
+        2
+      ],
+      "image_size": [
+        2975,
+        870
+      ],
+      "staves": [
+        {
+          "bbox": [
+            349,
+            52,
+            2822,
+            172
+          ],
+          "unit_size": 9.5
+        },
+        {
+          "bbox": [
+            373,
+            240,
+            2825,
+            373
+          ],
+          "unit_size": 9.5
+        },
+        {
+          "bbox": [
+            376,
+            440,
+            2828,
+            573
+          ],
+          "unit_size": 9.5
+        },
+        {
+          "bbox": [
+            356,
+            657,
+            2829,
+            786
+          ],
+          "unit_size": 9.5
+        }
+      ],
+      "barlines": [
+        [
+          1394,
+          75,
+          1397,
+          284
+        ],
+        [
+          1396,
+          261,
+          1401,
+          347
+        ],
+        [
+          1398,
+          462,
+          1404,
+          549
+        ],
+        [
+          1400,
+          580,
+          1404,
+          763
+        ],
+        [
+          1401,
+          652,
+          1405,
+          763
+        ],
+        [
+          2812,
+          61,
+          2816,
+          349
+        ],
+        [
+          2812,
+          261,
+          2816,
+          347
+        ],
+        [
+          2816,
+          462,
+          2820,
+          549
+        ],
+        [
+          2817,
+          241,
+          2818,
+          565
+        ],
+        [
+          2819,
+          500,
+          2823,
+          742
+        ],
+        [
+          2819,
+          652,
+          2823,
+          763
+        ]
+      ],
+      "connector_evidence": {
+        "staff_pairs": [
+          {
+            "staff_pair": [
+              0,
+              1
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              1,
+              2
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              2,
+              3
+            ],
+            "left_connector_present": true
+          }
+        ]
+      },
+      "source_mask_sha256": {
+        "symbols": "a8236202a0b218547636a3b5841bd4679b2827e41aba5b66d862171e1a64d61b",
+        "brace_dot": "3b041f55b3fc01a4244ec9bce5127d49e7b7ad2417412f8fd6e795073eeeee34"
+      },
+      "staff_mask_sha256": "59c73eaada6b601bc90ecaeec23de537c2dbaa7d7c28bcf58b89dbd4083d6fac"
+    },
+    {
+      "name": "fullpage",
+      "page_id": "page_003",
+      "crop_pdf_points": [
+        0.0,
+        0.0,
+        595.0,
+        842.0
+      ],
+      "image_sha256": "6538e5431e444d247df2044f1afd0b386951af92c07b0a750d349bda88b8a003",
+      "expected_system_staff_counts": [
+        5,
+        5,
+        6
+      ],
+      "expected_staff_center_y": [
+        273,
+        501,
+        726,
+        936,
+        1143,
+        1632,
+        1869,
+        2100,
+        2286,
+        2487,
+        2988,
+        3219,
+        3456,
+        3651,
+        3852,
+        4056
+      ],
+      "expected_measures_per_system": [
+        2,
+        2,
+        2
+      ],
+      "image_size": [
+        2975,
+        4210
+      ],
+      "staves": [
+        {
+          "bbox": [
+            336,
+            211,
+            2789,
+            337
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            330,
+            427,
+            2789,
+            559
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            316,
+            651,
+            2792,
+            779
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            342,
+            850,
+            2791,
+            985
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            321,
+            1071,
+            2791,
+            1208
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            350,
+            1582,
+            2798,
+            1705
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            345,
+            1811,
+            2803,
+            1928
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            332,
+            2022,
+            2805,
+            2142
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            355,
+            2211,
+            2806,
+            2345
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            335,
+            2416,
+            2809,
+            2568
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            356,
+            2933,
+            2815,
+            3059
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            367,
+            3154,
+            2818,
+            3282
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            349,
+            3382,
+            2820,
+            3502
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            373,
+            3570,
+            2825,
+            3703
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            376,
+            3772,
+            2829,
+            3905
+          ],
+          "unit_size": 12.196428571428571
+        },
+        {
+          "bbox": [
+            358,
+            3988,
+            2831,
+            4117
+          ],
+          "unit_size": 12.196428571428571
+        }
+      ],
+      "barlines": [
+        [
+          1385,
+          2965,
+          1391,
+          3033
+        ],
+        [
+          1389,
+          3186,
+          1395,
+          3254
+        ],
+        [
+          1394,
+          3391,
+          1398,
+          3470
+        ],
+        [
+          1394,
+          3405,
+          1395,
+          3614
+        ],
+        [
+          1395,
+          3591,
+          1400,
+          3678
+        ],
+        [
+          1511,
+          241,
+          1512,
+          317
+        ],
+        [
+          1515,
+          468,
+          1519,
+          526
+        ],
+        [
+          1517,
+          241,
+          1518,
+          313
+        ],
+        [
+          1518,
+          681,
+          1519,
+          1153
+        ],
+        [
+          1518,
+          729,
+          1522,
+          854
+        ],
+        [
+          1519,
+          681,
+          1520,
+          1153
+        ],
+        [
+          1523,
+          1048,
+          1524,
+          1171
+        ],
+        [
+          1789,
+          1607,
+          1793,
+          1682
+        ],
+        [
+          1792,
+          1826,
+          1793,
+          1906
+        ],
+        [
+          1794,
+          2051,
+          1800,
+          2114
+        ],
+        [
+          1796,
+          2185,
+          1800,
+          2420
+        ],
+        [
+          2776,
+          231,
+          2777,
+          306
+        ],
+        [
+          2778,
+          231,
+          2779,
+          306
+        ],
+        [
+          2780,
+          468,
+          2784,
+          526
+        ],
+        [
+          2780,
+          670,
+          2781,
+          793
+        ],
+        [
+          2780,
+          729,
+          2784,
+          854
+        ],
+        [
+          2781,
+          231,
+          2782,
+          306
+        ],
+        [
+          2781,
+          670,
+          2782,
+          793
+        ],
+        [
+          2783,
+          674,
+          2784,
+          1156
+        ],
+        [
+          2783,
+          1048,
+          2787,
+          1156
+        ],
+        [
+          2786,
+          674,
+          2787,
+          1156
+        ],
+        [
+          2787,
+          1596,
+          2788,
+          1672
+        ],
+        [
+          2788,
+          1596,
+          2789,
+          1672
+        ],
+        [
+          2790,
+          1819,
+          2791,
+          1895
+        ],
+        [
+          2791,
+          1596,
+          2792,
+          1672
+        ],
+        [
+          2793,
+          1819,
+          2795,
+          1895
+        ],
+        [
+          2794,
+          2043,
+          2795,
+          2173
+        ],
+        [
+          2796,
+          1819,
+          2797,
+          1895
+        ],
+        [
+          2798,
+          2043,
+          2801,
+          2451
+        ],
+        [
+          2801,
+          2199,
+          2805,
+          2508
+        ],
+        [
+          2805,
+          2948,
+          2809,
+          3024
+        ],
+        [
+          2808,
+          3171,
+          2809,
+          3247
+        ],
+        [
+          2809,
+          2952,
+          2810,
+          3024
+        ],
+        [
+          2810,
+          3391,
+          2816,
+          3470
+        ],
+        [
+          2812,
+          3391,
+          2813,
+          3679
+        ],
+        [
+          2812,
+          3591,
+          2816,
+          3678
+        ],
+        [
+          2817,
+          3571,
+          2818,
+          3895
+        ],
+        [
+          2818,
+          3571,
+          2819,
+          3895
+        ]
+      ],
+      "connector_evidence": {
+        "staff_pairs": [
+          {
+            "staff_pair": [
+              0,
+              1
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              1,
+              2
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              2,
+              3
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              3,
+              4
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              4,
+              5
+            ],
+            "left_connector_present": false
+          },
+          {
+            "staff_pair": [
+              5,
+              6
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              6,
+              7
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              7,
+              8
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              8,
+              9
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              9,
+              10
+            ],
+            "left_connector_present": false
+          },
+          {
+            "staff_pair": [
+              10,
+              11
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              11,
+              12
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              12,
+              13
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              13,
+              14
+            ],
+            "left_connector_present": true
+          },
+          {
+            "staff_pair": [
+              14,
+              15
+            ],
+            "left_connector_present": true
+          }
+        ]
+      },
+      "source_mask_sha256": {
+        "symbols": "589755cd428d24b203d7b672c0c8822f19597a5519a3fbe5449bc3d4228f4971",
+        "brace_dot": "e6fce956d1e091874d0e4b843685072759f4a0e497f6212939a2fe7c0d924125"
+      },
+      "staff_mask_sha256": "e49768c4e86b89713125ded892a9035ab219fd1533add5f39ef407d035349b50"
+    }
+  ]
+}

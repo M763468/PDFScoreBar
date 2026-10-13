@@ -118,20 +118,23 @@ attempts, runtime identity and regression checks.
 
 The final implementation also rejects short non-staff fragments in the original
 mask: at most two persistent row runs and a foreground span below two staff
-spaces. It preserves uncertain/broken staff masks instead of requiring five
-visible lines. The complete La Mer and Alizadeh contracts now pass after MMR/OCR
-and final numbering. The 68-page corpus preserves all numbered systems and MMR
-crop geometry; removal of 56 empty systems is separately reported as failure
-under the original empty-inclusive JSON-equality contract.
+spaces additionally require two opposing line trajectories. One-line and parallel
+two-line percussion, including tilted/curved/broken masks, remain accepted.
+See `docs/NUMBERING_GEOMETRY_CONTRACT.md` for the normalized limits. The complete
+La Mer and Alizadeh contracts pass after MMR/OCR and final numbering. The 68-page
+corpus preserves all numbered systems and MMR crop geometry. The current filter
+removes one empty system, so raw empty-inclusive equality is **67/68 FAIL**.
+The earlier 56 removals and **43/68 FAIL** remain historical; 55 ambiguous mask
+components are now kept to protect legitimate reduced-line notation.
 
 To verify the retained final La Mer replay:
 
 ```bash
 PYTHONPATH=. .venv_pdf/bin/python tools/verification/verify_issue218_divisi.py verify \
   --contract tests/fixtures/system_grouping/issue218_la_mer.json \
-  --run-dir logs/issue218/staff-fragments/la-mer/output/la_mer \
+  --run-dir logs/issue218/reduced-staff-review-20261013/la-mer/output/la_mer \
   --detector-run-dir logs/issue218/la-mer/candidate/la_mer \
-  --report logs/issue218/staff-fragments/la-mer/report.json
+  --report logs/issue218/reduced-staff-review-20261013/la-mer/topology-report.json
 ```
 
 ## Manual measure and MMR ground truth
@@ -147,9 +150,9 @@ bar numbers. Alizadeh crop/full-page overlap is explicit.
 
 ```bash
 PYTHONPATH=. .venv_pdf/bin/python tools/verification/evaluate_issue218_measure_gt.py \
-  --run la-mer=logs/issue218/trailing-interval/la-mer/output/la_mer \
-  --run alizadeh=logs/issue218/trailing-interval/alizadeh/output/real_scores \
-  --report logs/issue218/trailing-interval/validation/measure-gt-report.json
+  --run la-mer=logs/issue218/reduced-staff-review-20261013/la-mer/output/la_mer \
+  --run alizadeh=logs/issue218/reduced-staff-review-20261013/alizadeh/output/real_scores \
+  --report logs/issue218/reduced-staff-review-20261013/validation/measure-gt-report.json
 ```
 
 The clipped-end correction exits **0**: all 80 intervals and final numbers match,

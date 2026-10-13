@@ -61,6 +61,12 @@ Current/new source hashes and the frozen candidate contract are in `contract.jso
 `validation/replay-report.json` records all per-page raw and semantic differences.
 No fresh full68 detector/OCR inference or independent GT adjudication is claimed.
 
+External Codex re-review of the corrected numerical commit `b4ba164594` completed
+on 2026-10-13 with no major issues and no new inline findings. Both prior P1/P2
+threads were resolved after verification. The subsequent fixture README update
+documents the same unchanged implementation and the current 67/68 raw result;
+it does not rerun or replace numerical evidence.
+
 ## Historical scope and pre-merge assessment at `584b28fe` (2026-10-13)
 
 The owner's [Issue scope decision](https://github.com/M763468/PDFScoreBar/issues/218#issuecomment-6146986300)

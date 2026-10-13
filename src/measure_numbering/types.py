@@ -123,7 +123,12 @@ def _serialize_measure(measure):
 
 
 def score_to_dict(score) -> dict:
-    """Convert a Score object tree into the numbering JSON contract."""
+    """Convert a Score object tree into the numbering JSON contract.
+
+    ``systems`` contains only systems with measures, in Page.systems order.
+    Its zero-based compact index is the identity used by MMR/manual overrides
+    and movement boundaries. Empty systems have no address in that namespace.
+    """
     data = {"pages": []}
     for page in score.pages:
         page_data = {

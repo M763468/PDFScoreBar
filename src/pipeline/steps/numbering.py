@@ -14,6 +14,7 @@ from src.pipeline.utils.images import load_image_size
 
 MOVEMENT_BOUNDARY_SCHEMA_VERSION = "issue268.movement_boundaries.v1"
 FINAL_NUMBERING_SCHEMA_VERSION = "issue268.final_numbering.v1"
+SYSTEM_INDEX_CONTRACT = "compact_nonempty_systems.v1"
 
 
 def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any]:
@@ -34,7 +35,8 @@ def load_movement_boundary_payload(raw_input: Any) -> Dict[str, Any]:
     """Load and validate explicit, resolved movement boundaries.
 
     The payload is intentionally detector-independent. Page and system indices
-    are zero-based and refer to the ordered pipeline input. A boundary is an
+    are zero-based: pages refer to the ordered pipeline input and systems to
+    the compact nonempty ``systems`` array in numbering JSON. A boundary is an
     instruction to reset immediately before the selected system; it is not
     inferred from page breaks, barlines, or ``MeasureAttribute.set_number``.
     """
@@ -147,6 +149,7 @@ def final_numbering_metadata(
     """Build additive metadata shared by page-level final artifacts."""
     return {
         "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+        "system_index_contract": SYSTEM_INDEX_CONTRACT,
         "page_index": page_index,
         "start_number": start_number,
         "next_number": next_number,
@@ -175,6 +178,10 @@ def persisted_final_next_number(
     if not isinstance(metadata, dict):
         return None
     if metadata.get("schema_version") != FINAL_NUMBERING_SCHEMA_VERSION:
+        return None
+    # Pre-#413 artifacts can contain misapplied overrides even when their
+    # starting number and movement boundaries match. Rebuild them once.
+    if metadata.get("system_index_contract") != SYSTEM_INDEX_CONTRACT:
         return None
     if metadata.get("start_number") != expected_start_number:
         return None

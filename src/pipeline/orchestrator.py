@@ -40,6 +40,7 @@ from src.pipeline.steps.barlines import (
 from src.pipeline.steps.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.steps.numbering import (
     FINAL_NUMBERING_SCHEMA_VERSION,
+    SYSTEM_INDEX_CONTRACT,
     empty_numbering_payload,
     final_numbering_metadata,
     load_movement_boundary_payload,
@@ -430,6 +431,7 @@ class PipelineOrchestrator:
                     "pages": final_pages,
                     "numbering_metadata": {
                         "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+                        "system_index_contract": SYSTEM_INDEX_CONTRACT,
                         "start_number": 1,
                         "next_number": (
                             page_metadata[-1].get("next_number")

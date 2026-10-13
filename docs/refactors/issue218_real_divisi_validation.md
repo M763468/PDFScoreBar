@@ -1,5 +1,91 @@
 # Issue #218: real 3div./4div. validation
 
+## Scope and pre-merge assessment (2026-10-13)
+
+The owner's [Issue scope decision](https://github.com/M763468/PDFScoreBar/issues/218#issuecomment-6146986300)
+and [PR review decision](https://github.com/M763468/PDFScoreBar/pull/417#issuecomment-6146995772)
+retain the original acceptance criteria. PR #417 remains one review candidate;
+the right-edge repair is an independent addition, not a retroactive requirement
+of the original divisi Issue. Implementation authorization and final acceptance
+of an output-contract change are separate decisions.
+
+| Scope | Evidence and technical result | Acceptance status |
+| --- | --- | --- |
+| Original #218: real 3div./4div., adjacent connectors, transitive grouping, false-merge guard, retained fixture/regression | Alizadeh real 3/4-voice crops and complete page; La Mer 3/4-voice systems. Generated positive links merge transitively; each explicit absent link splits without bypass; neighboring systems stay separate. Synthetic image/mask fixtures and compact actual-model fixture are retained. All six original Phase-A/final topology gates pass. | Original requirements verified |
+| Closely related additions: barline-free voice retention and false shared boundaries | Six-staff Alizadeh system retains its barline-free last voice; a short isolated note fragment no longer adds a shared interval. Positive evidence, ordinary-distance and explicit-absence guards remain. | Technical checks pass; reviewed separately from fixture coverage |
+| Closely related addition: conservative non-staff fragment removal | Numbered geometry/MMR input views remain unchanged on 68 pages. Removal changes empty metadata on 25 pages: 56 empty systems disappear, so the original complete-JSON equality remains **43/68 FAIL**. | Technical recommendation: accept the confirmed non-staff deletions; explicit merge acceptance of this output-contract change remains pending |
+| Independent addition: clipped final interval in La Mer page 9's one-staff system | Fixed supplemental GT: 80/80 intervals/numbers, 19/19 system counts, 3/3 exact MMR. Isolated end recovery has 68/68 complete-JSON equality against the immediately preceding baseline. | Technical checks pass; additional scope and its limitations remain explicit |
+
+The original 68-page result is not repaired or superseded by the isolated
+clipped-end comparison. No input, annotation, tolerance or detector/model setting
+was changed for this review.
+
+### Integration with the current develop baseline
+
+`develop` at `9183de38` contains the accepted #413 compact-system identity fix.
+It was merged into this topic branch at
+`2dddfd59788ad44fc6f71cbedf7829711f83881e`; `develop` and `main` were not modified.
+Both empty-fragment variants now use the same corrected #413 numberer, keeping
+recognition indices stable even when empty systems disappear.
+
+The predeclared review contract and all evidence are retained under
+`logs/issue218/comment-review-20261013/`. A new equivalent-input replay verifies
+all **629 canonical input hashes before and after execution** using the unchanged
+#413 inventory. It compares the current extractor with the pre-fragment
+`9f0535f` extractor, and independently disables/enables only clipped-end recovery.
+All 68 final numbered systems exactly match the accepted #413 corrected replay.
+At all **3,287 physical measures**, including page transitions and final successors,
+recognized skips equal the actual numbering increments: **zero application errors**.
+Numbered Phase-A/Phase-C geometry and all three numbered MMR views match on
+**68/68** for fragment removal; isolated clipped-end complete JSON and MMR views
+also match on **68/68**. The empty-inclusive comparison still reports **43/68 FAIL**.
+These are recognition-application checks, not a claim that retained OCR counts
+are musically correct; #413's known recognition limitations remain.
+
+All **56** removed empty detections were inspected on original scan crops, with
+source hashes and per-box classifications retained in
+`empty-review/inventory.json`: **44 scan borders, 7 hairpins, 4 note beams and
+1 slur**. None is a five-line staff. This is a single-annotator review and supports
+the technical recommendation to accept deletion. Only empty diagnostic entries
+are removed; numbered system identities, counts, geometry and corrected final
+numbers remain. `empty_systems` consumers will observe fewer diagnostic regions,
+so final merge acceptance must explicitly accept that change. Coding authorization
+alone is not recorded as that acceptance.
+
+Fresh production MMR/OCR on all six original inputs and the unchanged GT v2 pass:
+**80/80** intervals and final/page-local numbers, **19/19** counts, **3/3** exact
+MMR and all original topology gates. Fresh canonical GPU smoke passes **85/85**
+with zero hard FP/FN/soft residuals. Focused #218/#413/#217/page-rebase checks pass
+**130 tests on host and 130 in the production runtime**; `make test-fast` passes
+**112**. Repository surface, scoped Ruff lint/format and `git diff --check` pass.
+The production image remains
+`sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc`,
+verified by canonical preflight. Two replay launch failures preceded scoring:
+historical `/workspace` symlinks needed resolution in the read-only `/retained`
+mount, and Git is absent from the production image. All fixed hashes were kept;
+the host records the commit and committed source hashes. Failed launch logs remain
+retained and are not test passes.
+
+The latest integrated source was locally reviewed for connector split guards,
+resolution normalization, source-evidence clipping, grouping-before-end insertion,
+compact system identity and distribution selection. No further implementation
+change was identified. The earlier P1 manifest registration is present and the
+surface checker passes; its GitHub thread was resolved after verification.
+The external Codex review still targets `8d8a1f5`; a new external review is not
+claimed by these local checks.
+
+Runtime commands reuse the three configurations under the review root with
+`scripts/docker_runtime_validation.sh`; topology/GT commands are the same as
+below with `comment-review-20261013` replacing `trailing-interval`. Full68 uses
+the retained `validation/replay.py` in the same immutable image, with this checkout
+at `/workspace` and the main artifact checkout read-only at `/retained`.
+No fresh full68 detector/OCR inference was run: its predictions and numbered MMR
+inputs are unchanged. Full68 PDF rendering was not repeated: corrected numbered
+JSON and source images match the #413 reference; this review checks final JSON
+application semantics. Independent annotation adjudication remains unperformed.
+The original Issue stays open until its requirements and acceptance of the
+additional changes are both confirmed at merge review.
+
 ## Materials and frozen contracts
 
 Primary material: **Claude Debussy, La Mer, violoncello part**, IMSLP26369,
@@ -281,7 +367,7 @@ See [the geometry contract](../NUMBERING_GEOMETRY_CONTRACT.md).
 Current/future architecture documents were reviewed: process ownership, pipeline
 phases, public surfaces and future service responsibilities are unchanged.
 
-## Staff-fragment result under the original topology contract
+## Historical staff-fragment result under the original topology contract
 
 The user authorized implementation and validation after reviewing two shape
 experiments. Requiring five approximately equally spaced lines failed: it lost
@@ -289,7 +375,7 @@ experiments. Requiring five approximately equally spaced lines failed: it lost
 Alizadeh input. That failed candidate remains retained; its criterion was not
 relaxed and relabeled a pass.
 
-The accepted implementation rejects only components with at most two persistent
+The implemented candidate rejects only components with at most two persistent
 row runs **and** an undilated foreground span strictly below two staff spaces.
 Unknown spacing, larger components and broken five-line masks remain accepted.
 It applies automatically to numbering, connector semantics and MMR support;
@@ -305,11 +391,13 @@ there are no score-specific coordinates or manual overrides in production.
 | Existing 68 pages, MMR support | Numbered geometry for primary, implicit-start alternate and fallback views: **68/68 PASS** |
 | Original 68-page JSON equality including empty systems | **43/68; FAIL under the old contract**. 56 empty systems removed on 25 pages |
 
-The revised contract explicitly permits short non-staff components to disappear,
-including empty systems, as authorized by the user's request to implement the
-reviewed proposal. It still requires preservation of every numbered system in
-the existing corpus and the unchanged complete-page La Mer contract. The old
-JSON-equality failure is reported separately; no failing input is excluded.
+The 2026-10-10 experiment contract permitted short non-staff components to
+disappear, including empty systems, within the authorized implementation and
+validation work. It required preservation of every numbered corpus system and
+the unchanged complete-page La Mer contract. This experimental permission is not
+final merge acceptance of changed empty diagnostic output: the owner's
+2026-10-13 comment requires that separate decision, as recorded above. The old
+JSON-equality failure remains reported; no failing input is excluded.
 
 The La Mer page-3 hairpin was a third staff inside a real two-voice system; page 9
 had an independent empty hairpin system. Removing them preserves physical measure

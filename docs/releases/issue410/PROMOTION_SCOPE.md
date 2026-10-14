@@ -4,6 +4,7 @@
 関連Issueの統合内容、証拠の適用範囲、release受入契約の記録。
 2026-10-15にGitHubのIssue/PR、source、manifest、Git refsを照合した。
 本記録は初回昇格の準備であり、候補のrelease受入やmain更新の完了記録ではない。
+実装後の固定candidate・GPU/PDF/実GUI/補正後の検証は[2026-10-15検証記録](VALIDATION_20261015.md)を参照する。
 
 ## 昇格元と配布対象
 
@@ -68,13 +69,13 @@ sourceに根拠のある改善は、音楽的な番号付けと必要なconsumer
 
 | 項目 | promotionでの位置づけ | 現在ある証拠 / 新候補で必要な証拠 |
 | --- | --- | --- |
-| 正確な選択・dependency/reference/content hash・provenance | 必須gate | 今回の105-file静的抽出はPASS。固定SHAからGit candidateを作る仕組みとcandidate自身のclean-checkout検証が必要 |
-| Docker build/install、canonical GPU preflight、通常PDF | 必須gate | #409/#414/#218の既存成功は引継ぎ資料。新candidateで利用者ガイドの実行経路を検証する |
+| 正確な選択・dependency/reference/content hash・provenance | 必須gate | 固定SHAから独立Git candidateを2回生成、同じcommitとclean-checkout検査PASS。最終accepted developのfreezeは別途必要 |
+| Docker build/install、canonical GPU preflight、通常PDF | 必須gate | 今回candidateでDocker build、GPU preflight、新規1ページPDFと公開review launcherを検証PASS。host browserの直接到達には環境制約あり |
 | compact system identity、manual優先、page rebasing、連続性、PDF整合 | 必須gate | #413/#415の決定的testsと保持replayを再利用し、新candidateのsource identitiesと結び付ける |
-| canonical 360 DPI smoke | 対象scopeの回帰gate | 引継ぎ契約85/85、hard FP0/FN0/soft0。入力・設定・model・matcherを固定しcandidateを検証する |
+| canonical 360 DPI smoke | 対象scopeの回帰gate | 85/85、hard FP0/FN0/soft0。今回は数値source/config/modelがaccepted developと同じため#414の保持証拠をidentity照合付きで再利用。新規360 DPI評価とは区別する |
 | #218幾何 | 対象scopeの回帰gate | 元six-input topology、80/80 interval/番号、19/19 system数、3/3 MMR、reduced-line保護を維持。確認済みhairpin削除は採用 |
-| MMR残存6件の実GUI発見・保存・適用 | 初回release必須gate | 内部testsや事前入力JSONでは代替不可。未実施 |
-| 補正後の局所加算・後続段頭/次ページ・実PDF独立照合 | 初回release必須gate | 自動/手動結果を分け、原譜面から数えた値と確認する。未実施 |
+| MMR残存6件の実GUI発見・保存・適用 | 初回release必須gate | 補正前の原GUI画像、6件のフォーム操作/保存/適用/PDF取得を確認。既知位置を手掛かりにしたagent検証であり、利用者の自力発見や全ページ確認の認証は残る |
+| 補正後の局所加算・後続段頭/次ページ・実PDF独立照合 | 初回release必須gate | 6加算、19ページ962物理小節の下流差分、実PDF pixel19ページ、download一致を確認。全絶対番号のGT認証ではない |
 | Festival anchor、Sym5 III reset、小節線残差のdisposition | 初回release必須gate | 後述の未裁定を解消し、残る限界と安全な補正可否を明示する |
 | 人手確認の負担とリスクのaccept/hold | 初回release必須判断 | 見落とし、読めない数字、誤/欠小節線、未指定resetを含めて記録する。未決定 |
 | Full68自動MMR TP171/FN3/誤読3/FP0、小節線TP3535/FP11/FN32 | 品質の報告値と比較元 | 手動補正後の結果にすり替えない。各変更の回帰契約は維持し、昇格時に既知限界を明記する |
@@ -107,8 +108,9 @@ Full68の上流推論を毎回繰り返す契約にはしない。同一入力�
 
 Festival/page001の旧[#415サンプル](../../../tools/issue415/row_start_samples.json)は13/17だが、
 保持4枠への休符補正7+1+4+1は合計13で、開始1なら後続段頭14/18となる。
-旧basisの「合計12」は算術上不整合。原譜面と番号規約から再裁定するまで13/17も14/18も
-認証済みanchorにはしない。新旧根拠を保存し、sample変更が必要なら別の明示的なGT版として扱う。
+旧basisの「合計12」は算術上不整合。今回、原GUI画像と原譜面を再読し、4枠の合計13、
+次段14/18を実補正PDFでも確認した。旧sampleは変更せず、新旧根拠を保存した。
+sampleの変更は別の明示的なGT reviewで扱う。具体的証拠は[検証記録](VALIDATION_20261015.md)を参照する。
 
 Sym5/page012 IIIの印刷番号1/6/11と保持score-wide番号567/572/577は、movement-localと
 score-wideの規約を区別する。reviewed resetを実workflowで扱い、休符誤読の帳尻合わせには使わない。

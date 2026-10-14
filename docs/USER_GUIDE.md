@@ -43,6 +43,10 @@ directory under the output root. Its `final/` directory contains the numbered PD
 records status, warnings, artifact hashes, and source provenance. Review-required status
 means the generated result needs user attention.
 
+Before using the numbered PDF, open the job's review application and follow the
+[rest-count inspection procedure](#check-and-correct-multi-measure-rests), even
+when the job succeeded without warnings. Job success is not a completed score review.
+
 The local adapter binds the review handoff to a relocated retained-source manifest and
 records the original manifest hash. The same preparation runs when opening a retained
 local job.
@@ -68,6 +72,44 @@ confirm any supplied movement-boundary evidence and finalize it before applying.
 The application shows recorded and pending edits separately. Generate the corrected PDF
 through the application, wait for completion, and use its result link to open/download it.
 Pending edits and errors must be resolved before applying.
+
+### Check and correct multi-measure rests
+
+Treat automatic numbering as a draft to review before use. Compare **every printed
+multi-measure-rest count on every page** with the application's measure count. An
+unflagged result or a high recognition confidence does not establish a correct count.
+Missed rests appear as ordinary measures with count 1; checking only detected rests
+or warning-marked results will miss these errors. A boxed rehearsal number near a
+rest can also be mistaken for its count.
+
+1. Open the review application for the job as shown above. Use **Inspect all measures**
+   (**全小節を確認**) in **Check multi-measure rests** (**複数小節休符を確認**).
+   This selects the multi-measure-rest task and opens the current page's full measure
+   list, including count-1 measures. Repeat the inspection on every page.
+2. Read the original printed rest digit on the score. Zoom in or hide the overlays
+   if they obscure it. Select its physical measure on the canvas or in the list;
+   the selection shows the page, system, measure and original/current counts.
+   Visible system/measure indices start at 1 and are locations, not musical numbers.
+3. Choose **Set rest measure count** (**複数小節休符の小節数を設定**), enter the
+   printed count, choose **Add change** (**修正を追加**), then **Save changes**
+   (**変更を保存**). Use the same operation for a missed rest shown as 1 and a
+   misread rest. If a normal measure was falsely treated as a multi-measure rest,
+   choose **Do not treat as multi-measure rest** instead. Do not reset a movement
+   or insert barlines merely to compensate for a rest-count error.
+4. Generate and open the corrected PDF. Check the corrected rest's increment,
+   subsequent row starts, and the next page start against independently counted
+   score numbers. A change from an incorrect 37 to a printed 7 shifts later numbers
+   by -30 until a separately specified numbering reset; checking only the edited
+   box will miss downstream effects.
+5. Retain the complete job and its saved changes and application attempt. A saved
+   edit or successful PDF generation confirms persistence/application, not musical
+   correctness. If a rest cannot be read, located or corrected reliably, leave its
+   result unaccepted and report the page/location and the problem for follow-up.
+
+This workflow depends on visual review; it does not guarantee that every error is
+automatically flagged or that no rest is overlooked. Movement resets and barline
+errors require their own review and corrections. Use the corrected output only
+after those numbering checks also pass.
 
 Corrections stay under the review package's `corrections/` directory. Each apply attempt
 stores immutable input copies and consumed-input provenance under `application_runs/`.

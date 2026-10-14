@@ -8,6 +8,62 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_rest_review_entry_includes_misses_and_unflagged_reads_without_rewriting_edits():
+    script = r"""
+const fs = require('fs'), vm = require('vm'), assert = require('assert/strict');
+const rows = [], pending = new Set(['barline_construction']);
+const edits = [{page:0, system:0, measure:2, op:'set_measure_span', measure_span:4}];
+const context = {
+  window: {}, Map, Set,
+  typeSelect: {value:'barline_construction'}, opSelect: {value:'remove_barline', appendChild(node){this.value ||= node.value;}},
+  selectedItemIndex: 1, currentType: () => context.typeSelect.value,
+  currentOp: () => context.opSelect.value,
+  releaseTransientInteraction(){},
+  pageValue: () => 0, selectedMeasureKey: () => null,
+  measureKey: (p,s,m) => `${p}:${s}:${m}`,
+  displayIndex: value => value + 1,
+  itemsForCurrentPage: type => type === 'mmr_measure_span' ? edits : [],
+  // Include a missed rest (no OCR override), an unflagged high-confidence
+  // wrong count, and an already edited measure. None may be hidden by this route.
+  measures: [0,1,2].map(measure => ({system:0, measure})),
+  baseMmrOverrides: [{page:0,system:0,measure:1,skip:36,confidence:.999}],
+  itemList: {appendChild(node){rows.push(node);}},
+  dirtyTypes: pending,
+  details: {open:false},
+  document: {createElement: () => ({}), getElementById: () => context.details},
+  selectMeasure: measure => {context.selected = measure;},
+};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync('tools/review_correction/strings.js','utf8'), context);
+context.window.ReviewStrings = context.window.ReviewStringCatalogs.en;
+context.reviewerCopy = (key, args) => JSON.stringify(args);
+const source = fs.readFileSync('tools/review_correction/app.js','utf8');
+for (const [start,end] of [
+  ['function baseMmrMap(', 'function updateSelectionMeta('],
+  ['function renderMmrRows(', 'function movementCandidateAt('],
+  ['function updateOps(', 'function updateControlState('],
+  ['function startRestCountReview(', 'function switchPage('],
+]) vm.runInContext(source.slice(source.indexOf(start),source.indexOf(end)), context);
+Object.defineProperty(context.opSelect, 'innerHTML', {set(){this.value = '';}});
+context.updateControlState = () => {rows.length = 0; context.renderMmrRows();};
+const before = JSON.stringify(edits);
+context.startRestCountReview();
+assert.equal(context.typeSelect.value, 'mmr_measure_span');
+assert.equal(context.opSelect.value, 'set_measure_span');
+assert(context.details.open);
+assert.equal(rows.length, 3);
+assert.deepEqual(rows.map(row => JSON.parse(row.textContent).effective), [1,37,4]);
+assert.equal(JSON.stringify(edits), before);
+assert(pending.has('barline_construction'));
+rows[0].onclick();
+assert.equal(context.selected.measure, 0, 'missed rest must remain selectable');
+"""
+    result = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20
+    )
+    assert result.returncode == 0, result.stderr
+
+
 @pytest.mark.parametrize("scenario", ["save_edit", "navigation_edit", "export", "export_error"])
 def test_user_adapter_keeps_async_state_contract(scenario):
     script = r"""

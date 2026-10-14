@@ -182,3 +182,110 @@ The case/dataset/model bytes and generated outputs remain outside Git under
 full-pipeline inference. Release acceptance and remaining OCR/barline/reset limits
 still require explicit disposition in #410; one rest correction is not complete
 automatic musical correctness.
+
+## Residual disposition: manual discovery and correction before release
+
+The six residuals remain **unresolved recognition errors**, not GT exclusions or
+completed fixes. #414 can conclude its bounded improvement and first-loss diagnosis
+after this PR is accepted; that does not accept those six errors for release. We do
+not create another OCR investigation without a concrete new hypothesis. Their
+product disposition belongs to #410: a visually reviewed, manually corrected
+workflow, with promotion held if users cannot reliably find or correct the errors.
+
+All six passed the classifier threshold. Neither a low-confidence filter nor the
+absence of a warning is a sufficient discovery policy. The supported user route is
+[the user guide's rest-review procedure](../../USER_GUIDE.md#check-and-correct-multi-measure-rests):
+open the job's review handoff, use the always-visible **Inspect all measures**
+entry, compare every printed multi-measure rest on every page, and include count-1
+measures where recognition missed the rest. The entry opens the existing full
+measure list and correction task; it does not silently insert known-case values or
+claim to flag all errors. Source score images can be zoomed and overlays hidden.
+
+The following is a developer acceptance inventory for the retained corpus. GUI
+system/measure columns use **one-based physical locations**, not musical measure
+numbers. JSON keys remain zero-based. Values must be visually rediscovered in the
+actual candidate, rather than prefilled from this table during a discovery check.
+These locations describe the frozen retained geometry. Re-identify the printed
+rest after regenerating or editing barlines; do not blindly reuse old indices.
+
+| score / page image | JSON s/m | GUI system/measure | Original displayed count | Printed count to record |
+| --- | --- | --- | ---: | ---: |
+| Festival / page_001 | 0/0 | 1/1 | 37 | 7 |
+| Festival / page_001 | 0/2 | 1/3 | 1 (missed rest) | 4 |
+| Festival / page_002 | 3/2 | 4/3 | 7 | 2 |
+| Festival / page_004 | 2/2 | 3/3 | 1 (missed rest) | 3 |
+| Festival / page_009 | 0/0 | 1/1 | 1 (missed rest) | 3 |
+| Sibelius / page_003 | 2/6 | 3/7 | 111 | 4 |
+
+For each location, select the actual physical measure, choose **Set rest measure
+count**, enter the printed value, **Add change**, then **Save changes**. This same
+operation handles both missed and misread rests. Record the page/location, observed
+digit and reason. Generate and open the corrected PDF; inspect the corrected local
+increment and later row/page starts, including the next page. Keep the job,
+correction file and immutable application attempt/consumed-input provenance.
+Saving an edit or displaying a current/successful PDF is not a musical acceptance
+decision. Never retune thresholds, change GT, insert a movement reset or remove a
+measure solely to hide an OCR counting discrepancy.
+
+### #410 promotion gate and required evidence
+
+This PR adds the visible route and durable policy. It does **not** supply a completed
+clean release-candidate GUI acceptance run for the six locations. Before main
+promotion, #410 must:
+
+1. Materialize an isolated candidate from the then-accepted develop SHA and retain
+   its manifest/config/model identities. Run the public review entrypoint from
+   that distribution, without developer/GT tooling or undeclared develop files.
+2. Demonstrate discovery in the real GUI for all six locations by reading the
+   original score, including three count-1 misses and unflagged/high-confidence
+   errors. Retain observations/screenshots, selected physical indices, original
+   and corrected counts. Check the general per-page inspection instruction in
+   English and Japanese; a prefilled correction JSON is not discovery evidence.
+3. Record/save the six edits, apply them through the user application, and retain
+   successful attempt IDs and consumed corrections. Verify local increments and
+   downstream row/page starts in final JSON **and the actual corrected PDF**
+   against independent score counting. Keep automatic and manually corrected
+   results separate; automatic metrics remain TP171/FN3/wrong3/FP0.
+4. Independently resolve movement/reset conventions and barline residuals. In
+   particular, reconcile Festival's independently recorded13/17 row starts, and
+   Sym5 III's1/6/11, with the corrected geometry and numbering; rest corrections
+   alone do not certify those absolute anchors. Do not redefine an anchor merely
+   to match generated output.
+5. Record an explicit accept/hold decision for a product that requires human
+   score review, including the risk of overlooked rests, uncertain digits,
+   missing/extra barlines and unspecified movement resets. Confirm whether the
+   inspection effort and remaining risk are acceptable for the supported use.
+
+A concrete unresolved cross-check is Festival/page_001: retained geometry has
+four physical boxes in its first row. Correcting its two rest counts alone gives
+spans7,1,4,1 (sum13), hence row starts14/18 from start1. The #415 independent
+samples currently record13/17; their written basis also lists7+1+4+1 but labels
+the sum12. This arithmetic/anchor inconsistency must be adjudicated from the
+score and numbering convention in #410 before accepting absolute numbering.
+It is not resolved by changing a reset or excluding a measure to force13/17.
+The existing sample data, GT and automatic results remain unchanged here; the
+calculation is a retained-geometry cross-check, not a completed GUI/PDF run.
+
+If any known rest cannot be found, selected or corrected safely, downstream
+numbering fails independent checks, or review is impractical, **hold main
+promotion**. State the observed obstacle and scope a concrete UX improvement or
+new technical hypothesis with acceptance criteria. Closing #414, a successful
+pipeline/smoke, CI success or a passing internal manual-precedence test cannot
+substitute for this decision. #410 remains open until its own gate is satisfied.
+
+### Validation of the manual-review route
+
+Review-client/server, English/Japanese copy and isolated distribution checks:
+46 tests pass; `make test-fast`:110 pass. JavaScript syntax, touched-test Ruff,
+format, repository surface and whitespace checks pass. The route regression
+includes a count-1 miss, an unflagged high-confidence misread and an existing
+manual correction; all stay visible/selectable and other pending edits survive.
+The guide and assets use existing shipped paths, with no GT/developer dependency.
+
+The numerical MMR module, model, geometry and configuration are unchanged by this
+UI/documentation revision. Prior Full68, bounded controls, downstream and GPU
+evidence is retained without repeating inference. Real browser discovery and
+correction of the six locations on a frozen clean release candidate, and the
+independent absolute-number decision, remain required #410 work. Client contract
+tests or packaged-asset checks are not substitutes for that user acceptance run.
+Local command/log/hash records are under `logs/issue414/manual-review-20261014/`.

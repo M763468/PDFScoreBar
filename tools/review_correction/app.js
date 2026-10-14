@@ -1385,6 +1385,13 @@ function blurActiveControl() {
   if (active && typeof active.blur === "function") active.blur();
 }
 
+function startRestCountReview() {
+  releaseTransientInteraction();
+  typeSelect.value = "mmr_measure_span";
+  updateOps();
+  document.getElementById("resultDetails").open = true;
+}
+
 function switchPage(nextIndex) {
   if (nextIndex === currentIndex) return;
   waitForMovementSaves()
@@ -1454,6 +1461,11 @@ exportMovementBtn.onclick = (event) => {
 helpBtn.onclick = () => {
   helpPanel.open = true;
   helpPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+document.getElementById("reviewRestCountsBtn").onclick = (event) => {
+  event.currentTarget.blur();
+  startRestCountReview();
 };
 
 typeSelect.onchange = updateOps;

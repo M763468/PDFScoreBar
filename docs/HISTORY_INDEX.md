@@ -79,6 +79,7 @@ Start with:
 
 - [Issue #94](https://github.com/M763468/PDFScoreBar/issues/94) for the distilled early numbering/MMR milestones and investigation history
 - [`docs/refactors/issue94/MMR_CURRENT_STATE.md`](refactors/issue94/MMR_CURRENT_STATE.md) for the maintained/scoped MMR current-state analysis and later 68-page evaluation
+- [`docs/refactors/issue414/MMR_STAFF_CONSENSUS.md`](refactors/issue414/MMR_STAFF_CONSENSUS.md) for staff-tie OCR aggregation, retained Full68 comparisons and preserved rejected candidates
 - [`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) only when a compact legacy milestone summary is useful; exact former diary prose is in Git history
 - [`docs/refactors/issue194/`](refactors/issue194/)
 - [`docs/refactors/issue201/`](refactors/issue201/)

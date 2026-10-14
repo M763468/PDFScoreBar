@@ -77,6 +77,13 @@
     </main>
     <aside id="context">
       <button id="helpBtn" hidden type="button" data-copy="details">Details</button>
+      <section class="panel" id="restReviewGuide">
+        <h2 data-copy="restReview.title">Check multi-measure rests</h2>
+        <p class="small" data-copy="restReview.check">Compare every printed rest count with its measure span. Missed rests may be shown as 1, and misreads may have no warning.</p>
+        <button id="reviewRestCountsBtn" class="btn" type="button" data-copy="restReview.open">Inspect all measures</button>
+        <p class="small" data-copy="restReview.edit">Select a measure, enter its printed rest count, add the change, and save. Hide overlays or zoom in to read the score.</p>
+        <p class="small" data-copy="restReview.verify">Generate the corrected PDF and compare subsequent row and page starts with the score. Successful generation does not certify correct numbering.</p>
+      </section>
       <section class="panel">
         <h2 data-copy="task">Correction task</h2>
         <div class="row"><label><span data-copy="taskType">Correction type</span>

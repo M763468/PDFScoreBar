@@ -23,6 +23,143 @@ class TestMMROCRHeuristics(unittest.TestCase):
     def setUp(self):
         self.ocr = MMROCREngine(ocr_engine=object())
 
+    def test_staff_tie_prefers_spatial_score_without_staff_order_bias(self):
+        processor = MMRProcessor(Path("unused"), object(), classifier=object(), ocr_engine=self.ocr)
+        results = [(79, -25.0, "boxed rehearsal"), (4, 10.0, "rest")]
+        self.assertEqual(processor._select_staff_value(results, 0.99), (4, True))
+        self.assertEqual(processor._select_staff_value(list(reversed(results)), 0.99), (4, True))
+
+    def test_staff_majority_is_primary_even_when_minority_score_is_higher(self):
+        processor = MMRProcessor(Path("unused"), object(), classifier=object(), ocr_engine=self.ocr)
+        results = [(4, 10.0, "a"), (4, 12.0, "b"), (79, 100.0, "minority")]
+        self.assertEqual(processor._select_staff_value(results, 0.99), (4, False))
+
+    def test_narrow_measure_tie_preserves_admissible_leader(self):
+        processor = MMRProcessor(Path("unused"), object(), classifier=object(), ocr_engine=self.ocr)
+        results = [(4, 10.0, "rest"), (79, 100.0, "artifact")]
+        self.assertEqual(processor._select_staff_value(results, 0.99, 99), (4, True))
+        self.assertEqual(processor._select_staff_value(results, 0.99, 100), (79, True))
+        self.assertEqual(
+            processor._select_staff_value([(79, 100.0, "a"), (37, 90.0, "b")], 0.99, 99),
+            (79, True),
+        )
+        self.assertEqual(
+            processor._select_staff_value(results + [(79, 90.0, "majority")], 0.99, 99),
+            (79, False),
+        )
+
+    def test_narrow_measure_keeps_valid_staff_reading_in_masked_and_fallback_paths(self):
+        class StaffOCR:
+            enable_rotation_tta = False
+
+            def __init__(self, masked_missing):
+                self.calls = 0
+                self.results = (
+                    [(None, 0.0, "")] * 6 + [(4, 10.0, "rest"), (79, 100.0, "artifact")]
+                    if masked_missing
+                    else [(4, 10.0, "rest"), (79, 100.0, "artifact")] * 3
+                )
+                self.results += [(None, 0.0, "")] * 4
+
+            def mask_hbar_candidates(self, image, *_args):
+                return image
+
+            def preprocess_variant(self, image, **_kwargs):
+                return image
+
+            def ocr_engine(self, _image):
+                result = self.results[self.calls]
+                self.calls += 1
+                return [result], None
+
+            def select_best_candidate(self, raw, _width, _height):
+                return raw[0]
+
+        image = np.zeros((400, 200, 3), dtype=np.uint8)
+        system = {"staves": [{"bbox": [0, 60, 200, 100]}, {"bbox": [0, 240, 200, 280]}]}
+        for masked_missing in (False, True):
+            with self.subTest(masked_missing=masked_missing):
+                ocr = StaffOCR(masked_missing)
+                processor = MMRProcessor(
+                    Path("unused"), object(), classifier=object(), ocr_engine=ocr
+                )
+                result = processor._detect_number_with_evidence_once(
+                    image, system, 20, 40, 110, 300, 0.99, 200, 400
+                )
+                self.assertEqual((result[0], result[1], result[3]), (4, 10.0, 0))
+                self.assertEqual(ocr.calls, 8 if masked_missing else 6)
+                self.assertIn("unmasked_fallback" if masked_missing else "standard", result[2])
+
+    def test_staff_tie_only_compares_leaders_and_preserves_low_cnn_policy(self):
+        processor = MMRProcessor(Path("unused"), object(), classifier=object(), ocr_engine=self.ocr)
+        results = [
+            (3, 10.0, "a"),
+            (3, 11.0, "b"),
+            (4, 20.0, "c"),
+            (4, 21.0, "d"),
+            (79, 100.0, "minority"),
+        ]
+        self.assertEqual(processor._select_staff_value(results, 0.99), (4, True))
+        for prob in (0.1, 0.5):
+            self.assertEqual(processor._select_staff_value(results, prob), (3, True))
+
+    def test_conflicting_staff_choices_need_preprocessing_corroboration(self):
+        results = [(4, 9.8, "standard"), (17, 11.8, "no_dilate"), (4, 9.3, "heavy")]
+        self.assertEqual(MMRProcessor._select_variant_result(results, True), results[0])
+        # Global voting would regress correctly selected ordinary/single-staff
+        # cases. Preserve maximum score when no staff conflict occurred.
+        self.assertEqual(MMRProcessor._select_variant_result(results, False), results[1])
+
+    def test_staff_conflict_without_strict_variant_majority_keeps_maximum_score(self):
+        for results in (
+            [(4, 9.0, "a")],
+            [(4, 9.0, "a"), (17, 11.0, "b")],
+            [(4, 9.0, "a"), (17, 11.0, "b"), (4, 8.0, "c"), (17, 7.0, "d")],
+        ):
+            self.assertEqual(
+                MMRProcessor._select_variant_result(results, True),
+                max(results, key=lambda result: result[1]),
+            )
+
+    def test_two_staff_ocr_does_not_return_isolated_high_score_artifact(self):
+        class StaffOCR:
+            enable_rotation_tta = False
+
+            def __init__(self):
+                self.calls = 0
+                self.results = [
+                    (79, -25.0, "upper"),
+                    (4, 10.0, "lower"),
+                    (79, -25.0, "upper"),
+                    (17, 12.0, "artifact"),
+                    (79, -25.0, "upper"),
+                    (4, 9.0, "lower"),
+                ]
+
+            def mask_hbar_candidates(self, image, *_args):
+                return image
+
+            def preprocess_variant(self, image, **_kwargs):
+                return image
+
+            def ocr_engine(self, _image):
+                result = self.results[self.calls]
+                self.calls += 1
+                return [result], None
+
+            def select_best_candidate(self, raw, _width, _height):
+                return raw[0]
+
+        ocr = StaffOCR()
+        processor = MMRProcessor(Path("unused"), object(), classifier=object(), ocr_engine=ocr)
+        image = np.zeros((400, 200, 3), dtype=np.uint8)
+        system = {"staves": [{"bbox": [0, 60, 200, 100]}, {"bbox": [0, 240, 200, 280]}]}
+        number, score, _debug, evidence = processor._detect_number_with_evidence(
+            image, system, 20, 40, 180, 300, 0.99, 200, 400
+        )
+        self.assertEqual((number, score, evidence), (4, 10.0, 0))
+        self.assertEqual(ocr.calls, 6)
+
     def test_blacklisted_text_without_digits_is_rejected(self):
         num, score, debug = self.ocr.select_best_candidate(
             [[_box(40, 25, 60, 75), "con sord.", 0.99]],

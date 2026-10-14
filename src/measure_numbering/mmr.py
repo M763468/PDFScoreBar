@@ -1169,6 +1169,40 @@ class MMRProcessor:
             evidence,
         )
 
+    def _select_staff_value(self, results, prob, measure_width=None):
+        """Keep staff support primary; break high-CNN ties by spatial score."""
+        counts = Counter(result[0] for result in results)
+        support = max(counts.values())
+        leaders = {value for value, count in counts.items() if count == support}
+        tied = len(leaders) > 1
+        if tied and prob > self.threshold:
+            # A rejected high count must not displace an admissible tied leader.
+            # Preserve the existing rejection of an unambiguous staff majority.
+            if measure_width is not None and measure_width < 100:
+                admissible = {value for value in leaders if value <= 20}
+                if admissible:
+                    leaders = admissible
+            value = max(
+                (result for result in results if result[0] in leaders),
+                key=lambda result: result[1],
+            )[0]
+        else:
+            value = counts.most_common(1)[0][0]
+        return value, tied
+
+    @staticmethod
+    def _select_variant_result(results, had_staff_conflict):
+        """Corroborate ambiguous staff choices without changing ordinary OCR."""
+        if had_staff_conflict:
+            votes = Counter(result[0] for result in results)
+            value, support = votes.most_common(1)[0]
+            if support >= 2 and support > len(results) / 2:
+                return max(
+                    (result for result in results if result[0] == value),
+                    key=lambda result: result[1],
+                )
+        return max(results, key=lambda result: result[1])
+
     def _detect_number_with_evidence_once(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         variants = [("standard", 0)]
         if prob > self.threshold:
@@ -1179,6 +1213,7 @@ class MMRProcessor:
                 )
 
         variant_results = []
+        had_staff_conflict = False
         one_bar_evidences = {}
 
         for mode, angle in variants:
@@ -1214,8 +1249,8 @@ class MMRProcessor:
 
             valid_results = [r for r in stave_results if r[0] is not None]
             if valid_results:
-                counts = Counter([r[0] for r in valid_results])
-                current_num = counts.most_common(1)[0][0]
+                current_num, tied = self._select_staff_value(valid_results, prob, x2 - x1)
+                had_staff_conflict |= tied
 
                 if not (current_num > 20 and (x2 - x1) < 100):
                     _, best_score, best_dbg = max(
@@ -1284,8 +1319,8 @@ class MMRProcessor:
                         fallback_results.append((num, score, dbg))
 
                 if fallback_results:
-                    counts = Counter([r[0] for r in fallback_results])
-                    current_num = counts.most_common(1)[0][0]
+                    current_num, tied = self._select_staff_value(fallback_results, prob, x2 - x1)
+                    had_staff_conflict |= tied
                     if not (current_num > 20 and (x2 - x1) < 100):
                         _, best_score, best_dbg = max(
                             [r for r in fallback_results if r[0] == current_num],
@@ -1301,7 +1336,9 @@ class MMRProcessor:
         if not variant_results:
             return None, 0, "", one_bar_evidence_count
 
-        found_number, best_score, best_debug = max(variant_results, key=lambda x: x[1])
+        found_number, best_score, best_debug = self._select_variant_result(
+            variant_results, had_staff_conflict
+        )
         return found_number, best_score, best_debug, one_bar_evidence_count
 
     def _draw_debug(self, img, x1, y1, x2, y2, status, text, details):

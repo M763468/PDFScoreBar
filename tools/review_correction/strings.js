@@ -1,5 +1,11 @@
 /* Controlled reviewer copy for the English and Japanese application surfaces. */
 const reviewEnglish = {
+  restReview: {
+    title: "Check multi-measure rests", open: "Inspect all measures",
+    check: "Compare every printed rest count with its measure span. Missed rests may be shown as 1, and misreads may have no warning.",
+    edit: "Select a measure, enter its printed rest count, add the change, and save. Hide overlays or zoom in to read the score.",
+    verify: "Generate the corrected PDF and compare subsequent row and page starts with the score. Successful generation does not certify correct numbering.",
+  },
   language: "Language",
   aria: {language: "Language", pages: "Result pages", display: "Score display", canvas: "Score review canvas"},
   ui: {
@@ -127,6 +133,12 @@ const reviewEnglish = {
 };
 
 const reviewJapanese = {
+  restReview: {
+    title: "複数小節休符を確認", open: "全小節を確認",
+    check: "原譜面の休符数字を一つずつ小節数と照合してください。未検出の休符は小節数1と表示され、誤読にも警告が出ないことがあります。",
+    edit: "小節を選び、原譜面の休符数字を入力し、修正を追加して保存します。重ね表示を隠すか拡大して数字を確認してください。",
+    verify: "修正済みPDFを生成し、後続の段頭・ページ頭の番号を原譜面と照合してください。生成成功は番号の正しさを保証しません。",
+  },
   language: "言語",
   aria: {language: "表示言語", pages: "結果ページ", display: "楽譜の表示", canvas: "楽譜確認キャンバス"},
   ui: {

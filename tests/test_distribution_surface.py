@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tools.materialize_distribution import check_tree, materialize, selected_files
+from tools.materialize_distribution import PROVENANCE, check_tree, materialize, selected_files
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -85,7 +85,10 @@ def test_materializer_rejects_existing_output_and_symlink(tmp_path):
         materialize(source, tmp_path / "isolated")
 
 
-@pytest.mark.parametrize("path", ["../secret", "/absolute", "src/**", "a/../b", "a//b"])
+@pytest.mark.parametrize(
+    "path",
+    ["../secret", "/absolute", "src/**", "a/../b", "a//b", ".git/config", PROVENANCE],
+)
 def test_manifest_rejects_non_exact_or_unsafe_paths(path):
     data = {
         k: []

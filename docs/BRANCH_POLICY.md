@@ -33,6 +33,20 @@ For a `develop -> main` promotion PR, include at minimum:
 
 Do not embed one issue's acceptance numbers as a permanent repository-wide rule. If a specific issue defines a canonical contract, apply that contract in the promotion PR for the relevant promotion cycle and cite the issue or PR where the contract was accepted.
 
+For the first minimal-distribution promotion, see the
+[#410 scope and acceptance record](releases/issue410/PROMOTION_SCOPE.md), including
+the distinction between semantic regression gates and diagnostic JSON differences.
+
+Use versioned, disposable `release/<cycle>-rc<N>` candidate branches. Generate each
+candidate from frozen source and main commit identities with
+`tools/release_candidate.py`; its only parent is the selected main commit and its
+tree contains the manifest-selected distribution plus generated provenance.
+The tool creates an independent local repository and never updates shared branches.
+Its static validation is preparation evidence, not release acceptance or permission
+to merge. Record runtime, correction and semantic acceptance against that exact
+candidate commit before opening a promotion PR to main. Changed candidates require
+a new identity and validation of the affected gates.
+
 ## Documentation precedence
 
 `AGENTS.md` is the operational entry point for AI agents. Agents must read this document through the `AGENTS.md` reference before starting issue work or opening PRs.

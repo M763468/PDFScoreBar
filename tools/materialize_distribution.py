@@ -8,6 +8,7 @@ import ast
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -35,6 +36,8 @@ def selected_files(data: dict) -> list[str]:
                 or ".." in pure.parts
                 or str(pure) != path
                 or any(c in path for c in "*?[")
+                or any(part.lower() == ".git" for part in pure.parts)
+                or path == PROVENANCE
                 or not entry.get("role")
             ):
                 raise ValueError(f"Invalid exact distribution entry: {entry}")
@@ -48,7 +51,9 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def check_tree(root: Path, *, verify_provenance: bool = True) -> list[str]:
+def check_tree(
+    root: Path, *, verify_provenance: bool = True, git_checkout: bool = False
+) -> list[str]:
     data = json.loads((root / MANIFEST).read_text(encoding="utf-8"))
     selected = set(selected_files(data))
     errors = []
@@ -129,11 +134,18 @@ def check_tree(root: Path, *, verify_provenance: bool = True) -> list[str]:
                     not (root / path).is_file() or digest(root / path) != expected
                 ):
                     errors.append(f"Distribution content hash mismatch: {path}")
-            actual = {
-                p.relative_to(root).as_posix()
-                for p in root.rglob("*")
-                if p.is_file() and "__pycache__" not in p.parts
-            }
+            actual = set()
+            for directory, dirs, files in os.walk(root, followlinks=False):
+                parent = Path(directory)
+                if git_checkout and parent == root:
+                    dirs[:] = [name for name in dirs if name != ".git"]
+                    files = [name for name in files if name != ".git"]
+                for name in dirs + files:
+                    path = parent / name
+                    if path.is_symlink():
+                        errors.append(f"Unsafe candidate symlink: {path.relative_to(root)}")
+                dirs[:] = [name for name in dirs if name != "__pycache__"]
+                actual.update((parent / name).relative_to(root).as_posix() for name in files)
             if actual != selected | {PROVENANCE}:
                 errors.append(
                     f"Unexpected candidate files: {sorted(actual - selected - {PROVENANCE})}"
@@ -188,6 +200,7 @@ def main() -> int:
     build.add_argument("--source", type=Path, default=ROOT)
     check = commands.add_parser("check")
     check.add_argument("root", type=Path)
+    check.add_argument("--git-checkout", action="store_true", help="Exclude only root Git metadata")
     args = parser.parse_args()
     try:
         if args.command == "materialize":
@@ -196,7 +209,7 @@ def main() -> int:
                 f"Materialized {len(result['files'])} files from {result['source_commit']} (dirty={result['source_dirty']})"
             )
         else:
-            errors = check_tree(args.root.resolve())
+            errors = check_tree(args.root.resolve(), git_checkout=args.git_checkout)
             if errors:
                 raise ValueError("\n".join(errors))
             print("Isolated distribution dependency/reference/content check passed")

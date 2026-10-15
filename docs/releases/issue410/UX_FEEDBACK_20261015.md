@@ -119,3 +119,11 @@ canonical detector accuracy smokeは再実行していない。元の固定候�
 エラーや修正を記録していない。保存テストは別コピーで実行した。
 表示のみの変更なので、新たなGPU実行、全件推論、PDF再生成の数値評価は不要と判断し実行していない。
 rc2の数値・実PDF検証はその候補に紐づけて保持する。
+
+整理後の固定sourceは `b75ddf7d27886ba68721e3083106b256c42b5930`、独立rc3は
+`622ad2cf92992a20afeae23a18200e933c96c9dd`（105ファイル）。候補生成・clean checkoutの
+独立checkはPASS。実Chromiumの同じ操作確認もrc3を起動して再実行しPASSした。
+`candidate-rc3.json`、`candidate-check.log`、`browser-final.log` に記録する。
+2026-10-16に完了を確認し、起動スクリプトを `/tmp/pdfscorebar-issue410-b75ddf7d-rc3` へ更新した。
+利用者の修正・PDF23ファイルは全件ハッシュ一致、`handoff-validation.json` に保持する。
+新しいDockerイメージは未構築で、rc3固有のDocker/GPU gateは昇格用イメージ作成時の確認として残す。

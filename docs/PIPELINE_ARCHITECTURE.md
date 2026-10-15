@@ -73,7 +73,10 @@ PDF or persisted page images
                  -> OMR-DLN on the same persisted x4 image
             -> hybrid consensus
        -> dense candidate/probe reconstruction
-       -> CNN scoring
+       -> staff-local CNN candidate normalization (maintained_original only)
+            -> split multi-staff boxes; supplement original HOMR pieces with SR-or-OMR consensus
+            -> preserve original probe row seeds and connector-mask evidence
+       -> CNN scoring + strict staff-stroke duplicate suppression
   -> page filtering / user barline corrections
   -> Phase A physical grouping + numbering_base
        -> maintained original-image staff geometry
@@ -86,6 +89,16 @@ PDF or persisted page images
   -> Phase C final numbering / optional overlay
   -> manifest / review-package materialization when configured
 ```
+
+The staff-stroke adapter runs after dense generation, filtering and rescue. It splits
+only boxes intersecting at least two extracted staves by two staff units each; single-staff
+connector tails remain unchanged. Added original-HOMR pieces pass the existing SR-or-OMR
+IoU > 0.5 consensus before actual CNN inference. Post-CNN duplicate suppression uses
+X-center distance <= 0.1 median extracted staff unit and vertical overlap >= 0.8,
+retaining the numbering-compatible canonical geometry and its own CNN score. This is
+separate from logical time-boundary merging. Per-page normalization and suppression
+sidecars preserve the source hashes and representatives. No GT or evaluation data enters
+this runtime step. See `tools/issue416/IMPLEMENTATION.md` for the fixed-input validation.
 
 `pdf_to_images` is currently in-process inside `PipelineOrchestrator` when enabled. The
 verified dense route itself requires persisted page image files; it rejects in-memory-only

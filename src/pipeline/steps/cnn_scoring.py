@@ -15,6 +15,7 @@ from torchvision import models, transforms
 from tqdm import tqdm
 
 from src.common.barline_geometry import barline_iou, barline_vertical_overlap
+from src.common.barline_strokes import deduplicate_staff_strokes
 from src.pipeline.core import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
@@ -265,6 +266,7 @@ def _score_directory(
     input_image_scale: float = 1.0,
     apply_nms_enabled: bool = True,
     in_memory_images: Dict[str, Any] | None = None,
+    stroke_unit_size: float | None = None,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
@@ -393,9 +395,13 @@ def _score_directory(
     if apply_nms_enabled:
         apply_nms(candidate_objects_for_filter)
 
-    filtered_boxes = [
-        item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
-    ]
+    accepted = [item for item in candidate_objects_for_filter if item["score"] >= threshold]
+    if stroke_unit_size is not None:
+        accepted, suppressed = deduplicate_staff_strokes(accepted, unit_size=stroke_unit_size)
+        (run_dir / "pipeline2_no_peak_stroke_dedup.json").write_text(
+            json.dumps({"unit_size": stroke_unit_size, "suppressed": suppressed}, indent=2) + "\n"
+        )
+    filtered_boxes = [item["bbox"] for item in accepted]
 
     (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
     (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
@@ -421,6 +427,7 @@ def run_cnn_scoring_batch(
     candidate_rescale_factor: Optional[float] = None,
     apply_nms_enabled: bool = True,
     in_memory_images: Dict[str, Any] | None = None,
+    stroke_dedup_units: Dict[str, float] | None = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -451,6 +458,7 @@ def run_cnn_scoring_batch(
             input_image_scale=input_image_scale,
             apply_nms_enabled=apply_nms_enabled,
             in_memory_images=in_memory_images,
+            stroke_unit_size=(stroke_dedup_units or {}).get(str(img_path)),
         ):
             processed += 1
     return processed

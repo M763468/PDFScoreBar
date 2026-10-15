@@ -1,5 +1,8 @@
 # PR #422 指摘対応と本番経路の再検証
 
+最新は末尾の「追加inline対応（round 2）」と [review_round2_validation.json](review_round2_validation.json)。
+以下の初回指摘対応とその検証記録も保持する。
+
 2026-10-15。対象は `cecdd5db42dda72b7e909e675f35a616acfe8dfe` への2件のinline review。
 両方を明確な修正要求と分類し、同じPRで対応する。
 
@@ -96,3 +99,42 @@ Full68のSR/HOMR再推論とraw/filter/rescueの再生成は、当該source/conf
 新しい実percussion資料の精度は未検証で、P2は有効な単線maskと混在controlによる互換性検証に限る。
 GUI/公開API/process/依存関係は変更なし。current architectureの省略条件を追記し、future architectureは更新不要。
 今回の数値改善を#410等のmain昇格条件には追加しない。
+
+
+## 追加inline対応（round 2）
+
+対象commitは`43a8b7fdefe293231f77d338ee8e3662ab5431d3`。
+2026-10-15の追加2件を具体的な修正要求と分類し、対応した。
+
+- [P1: composite stemのprobe identity](https://github.com/M763468/PDFScoreBar/pull/422#discussion_r4284449671):
+  inventoryは`images/OtherScore_page_001.png`を論理ラベル`OtherScore/page_001`へ分けるが、
+  実際のprobe rescueは画像の親/stemから`eval2_images_OtherScore_page_001`へ出力する。
+  adapterもproducerと同じ`build_probe_run_id(image)`を使い、論理ラベルからディレクトリを組み立てない。
+  以前のcomposite testはadapterが期待するtargetを手で作っていたため問題を隠していた。
+  実inventory writer→実probe rescue→adapter→本番CNN呼び出しへ置き換え、絶対/相対画像で確認する。
+  合成testのCNNモデルだけは固定陽性モデルへ差し替え、探索・パス接続・監査出力を検査する。
+- [P2: 空候補の監査](https://github.com/M763468/PDFScoreBar/pull/422#discussion_r4284449683):
+  通常採点、空候補、有効cropなしを共通writerへ集約した。
+  dedup有効なら空でも`{unit_size: ..., suppressed: []}`を上書きし、無効なら古いsidecarを除去する。
+  以前の監査結果がある同じrun_dirで再実行する4通りのcontrolを追加した。
+
+固定条件は`logs/issue416/review-422-round2-20261015/contract.json`に実行前記録。
+GT3567、matcher、staff-unit tolerance、CNN閾値、モデルとimageは変更しない。
+保持raw/filter/rescueとproducerはそのまま使い、全68ページでadapterと相対imagesの本番CNNをCUDA再実行する。
+全正規化候補・予測・番号base・sidecar数を既存の採用候補と比較する。
+
+- 対象pytest **57 PASS**、`make test-fast` **114 PASS**。
+- Ruff check/formatとrepository surface **PASS**。
+- fresh PDF/GPU accuracy smoke **PASS**: GT85/TP85/hard FP0/FN0/soft0、重複整理sidecar 1/1。
+- Full68 **TP3560/FP0/FN7/soft121**、物理小節数 **3287**、重複整理sidecar **68/68**。
+  全予測・番号baseが以前の採用候補と一致し、967保持入力hashと68ページの入力identityも同一。
+- したがってMMR/support/実最終番号とPDFの既存等価性・pixel検証を再利用する。
+  残るFN7件の受容判断と既知のMMR課題を変更しない。
+
+保持rootはworktree内`logs/issue416/review-422-round2-20261015/`。
+`github/`, `contract.json`, `provenance.json`, `validate_relative.py`, `candidate/report.json`,
+`gates.json`, `input-equivalence.json`, `smoke.yaml`, `smoke.log`と軽量test logsを保持。
+今回比較のparentは前回検証済みの保持出力であり、parentモデルの再推論は行っていない。
+新規CNN候補と本番CNNは全68で実行し、producer/SR/HOMRとraw/filter/rescueの全68再生成は変更がなく省略した。
+前回から継承したcontractのparent比較は、この有効な保持baselineとの比較である。
+future architectureは責務/process/public API変更がなく更新不要。#410等のmain昇格条件を追加しない。

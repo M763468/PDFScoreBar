@@ -201,30 +201,95 @@ def test_scoring_preserves_raw_scores_and_default_behavior(tmp_path):
     )
 
 
-def test_composite_image_uses_producer_support_identity(tmp_path, monkeypatch):
-    inv, support, target, image, _ = fixture_inputs(tmp_path, monkeypatch)
-    renamed = image.with_name("OtherScore_page_001.png")
+@pytest.mark.parametrize("relative_image", [False, True])
+def test_composite_image_probe_adapter_cnn_connection(tmp_path, monkeypatch, relative_image):
+    import shutil
+
+    import torch
+
+    from src.pipeline.detection.dense_orchestrator import DetectorOrchestrator
+    from src.pipeline.detector_routes.dense_full_pipeline import regenerate_probe_rescue_candidates
+    from src.pipeline.steps import cnn_scoring
+
+    _, support, _, image, _ = fixture_inputs(tmp_path, monkeypatch)
+    renamed = tmp_path / "images/OtherScore_page_001.png"
+    renamed.parent.mkdir()
     image.rename(renamed)
-    record = json.loads(inv.read_text())
-    record["records"][0].update(image=str(renamed), score="OtherScore")
-    inv.write_text(json.dumps(record))
+    # Use the real inventory writer and probe producer. Do not fabricate the
+    # adapter's candidate directory: that hid the previous run-ID mismatch.
+    hybrid = tmp_path / "hybrid"
+    baseline = hybrid / "baseline/batch" / renamed.stem
+    baseline.parent.mkdir(parents=True)
+    shutil.move(str(tmp_path / "baseline"), baseline)
+    (baseline / "page_001_detections.json").rename(baseline / f"{renamed.stem}_detections.json")
+    for suffix in ["staff_mask", "clef_mask"]:
+        shutil.copyfile(tmp_path / "staff.png", baseline / f"{renamed.stem}_{suffix}.png")
+    hybrid_results = hybrid / "hybrid_results"
+    hybrid_results.mkdir()
+    seeds = [[60, 10, 64, 50], [60, 80, 64, 120]]
+    (hybrid_results / f"{renamed.stem}_hybrid.json").write_text(json.dumps(seeds))
     result = json.loads(support.read_text())
     result["image"] = str(renamed)
-    new_support = support.parent.parent / renamed.stem / "result.json"
-    new_support.parent.mkdir()
+    new_support = hybrid / "current_support" / renamed.parent.name / renamed.stem / "result.json"
+    new_support.parent.mkdir(parents=True)
     new_support.write_text(json.dumps(result))
-    baseline = tmp_path / "baseline"
-    (baseline / "page_001_detections.json").rename(baseline / f"{renamed.stem}_detections.json")
-    new_target = (
-        target.parent.parent / build_probe_run_id(renamed, score_name="OtherScore") / target.name
+    monkeypatch.chdir(tmp_path)
+    image_arg = renamed.relative_to(tmp_path) if relative_image else renamed
+    detector = DetectorOrchestrator(
+        config={
+            "detection": {
+                "homr_profile": "maintained_original",
+                "detector_route": "dense_full_pipeline",
+                "cnn_model_manifest": "manifest.json",
+                "cnn_threshold": 0.5,
+                "cnn_apply_nms": False,
+            }
+        },
+        images=[image_arg],
+        run_id="test",
+        run_dir=tmp_path / "run",
+        dry_run=False,
     )
-    new_target.parent.mkdir()
-    target.rename(new_target)
+    detector.hybrid_output_dir = hybrid
+    inventory, _ = detector._write_dense_inventory()
+    record = json.loads(inventory.read_text())["records"][0]
+    assert (record["score"], record["page"]) == ("OtherScore", "page_001")
+    filtered = tmp_path / "filtered"
+    seed_path = filtered / record["score"] / record["page"] / "pipeline2_no_peak_candidates.json"
+    seed_path.parent.mkdir(parents=True)
+    seed_path.write_text(json.dumps(seeds))
+    probe = regenerate_probe_rescue_candidates(
+        image_paths=[image_arg], filtered_root=filtered, route_root=tmp_path / "route"
+    )
+    candidate_files = list(probe.glob("*/pipeline2_no_peak_candidates.json"))
+    assert len(candidate_files) == 1
+    target = candidate_files[0]
+    assert target.parent.name == "eval2_images_OtherScore_page_001"
     units = prepare_staff_stroke_candidates(
-        inventory=inv, hybrid_root=tmp_path / "hybrid", probe_root=tmp_path / "probe"
+        inventory=inventory, hybrid_root=hybrid, probe_root=probe
     )
-    assert units == {str(renamed): 10}
-    assert [20, 80, 24, 120] in json.loads(new_target.read_text())
+    assert units == {str(renamed.resolve()): 10}
+    assert [20, 80, 24, 120] in json.loads(target.read_text())
+
+    class Positive(torch.nn.Module):
+        def forward(self, x):
+            return torch.ones((len(x), 1))
+
+    model_path = tmp_path / "model.pth"
+    model_path.touch()
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(
+        "src.pipeline.detection.dense_orchestrator._resolve_verified_cnn_artifact",
+        lambda *args, **kwargs: model_path,
+    )
+    monkeypatch.setattr(cnn_scoring, "_load_model", lambda *args: Positive())
+    detector._dense_route = SimpleNamespace(filtered_root=filtered)
+    detector.probe_output_dir = probe
+    detector._staff_stroke_units = units
+    detector._run_cnn_scoring()
+    assert json.loads(target.with_name("pipeline2_no_peak_scored.json").read_text())
+    assert json.loads(target.with_name("pipeline2_no_peak_filtered_cnn.json").read_text())
+    assert target.with_name("pipeline2_no_peak_stroke_dedup.json").is_file()
 
 
 @pytest.mark.parametrize("profile, expected_calls", [("maintained_original", 1), ("stage_e", 0)])
@@ -353,3 +418,41 @@ def test_real_one_line_percussion_mask_does_not_abort(tmp_path, monkeypatch):
     assert target.read_bytes() == before
     audit = json.loads(target.with_name("pipeline2_no_peak_staff_strokes.json").read_text())
     assert audit["status"] == "no_staff_unit_size"
+
+
+@pytest.mark.parametrize("candidates", [[], [None, [1, 2, 3]]])
+@pytest.mark.parametrize("stroke_unit_size", [10, None])
+def test_empty_scoring_replaces_or_clears_previous_dedup_audit(
+    tmp_path, candidates, stroke_unit_size
+):
+    import torch
+
+    from src.pipeline.steps.cnn_scoring import _score_directory
+
+    image = tmp_path / "page.png"
+    cv2.imwrite(str(image), np.full((140, 200, 3), 255, np.uint8))
+    (tmp_path / "pipeline2_no_peak_candidates.json").write_text(json.dumps(candidates))
+    audit = tmp_path / "pipeline2_no_peak_stroke_dedup.json"
+    audit.write_text(json.dumps({"unit_size": 999, "suppressed": [{"bbox": [1, 2, 3, 4]}]}))
+
+    class MustNotRun(torch.nn.Module):
+        def forward(self, x):
+            pytest.fail("Empty pages must not invoke CNN inference")
+
+    assert _score_directory(
+        run_dir=tmp_path,
+        image_path=image,
+        model=MustNotRun(),
+        gpu_norm=torch.nn.Identity(),
+        threshold=0.5,
+        device=torch.device("cpu"),
+        batch_size=4,
+        apply_nms_enabled=False,
+        stroke_unit_size=stroke_unit_size,
+    )
+    for name in ["pipeline2_no_peak_scored.json", "pipeline2_no_peak_filtered_cnn.json"]:
+        assert json.loads((tmp_path / name).read_text()) == []
+    if stroke_unit_size is None:
+        assert not audit.exists()
+    else:
+        assert json.loads(audit.read_text()) == {"unit_size": 10, "suppressed": []}

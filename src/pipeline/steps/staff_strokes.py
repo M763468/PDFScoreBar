@@ -32,7 +32,9 @@ def prepare_staff_stroke_candidates(
         height, width = image.shape[:2]
         mask = Path(record["staff_mask"])
         staves = StaffExtractor().extract(mask, (width, height))
-        run_id = build_probe_run_id(image_path, score_name=record["score"])
+        # Rescue and CNN use the image's parent/stem, while inventory labels
+        # may split a composite stem into a different logical score/page.
+        run_id = build_probe_run_id(image_path)
         target = probe_root / run_id / "pipeline2_no_peak_candidates.json"
         source_bytes = target.read_bytes()
         original_candidates = json.loads(source_bytes)

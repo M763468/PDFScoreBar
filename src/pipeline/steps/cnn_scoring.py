@@ -248,6 +248,29 @@ def apply_nms(
     return kept
 
 
+def _write_scoring_results(
+    *,
+    run_dir: Path,
+    scored_results: List[Dict[str, Any]],
+    accepted: List[Dict[str, Any]],
+    stroke_unit_size: float | None,
+) -> None:
+    """Write one consistent result/audit contract, including empty pages."""
+    audit_path = run_dir / "pipeline2_no_peak_stroke_dedup.json"
+    if stroke_unit_size is not None:
+        accepted, suppressed = deduplicate_staff_strokes(accepted, unit_size=stroke_unit_size)
+        audit_path.write_text(
+            json.dumps({"unit_size": stroke_unit_size, "suppressed": suppressed}, indent=2) + "\n"
+        )
+    else:
+        # A rerun without stroke dedup must not retain an earlier run's audit.
+        audit_path.unlink(missing_ok=True)
+    (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
+    (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
+        json.dumps([item["bbox"] for item in accepted], indent=2)
+    )
+
+
 def _score_directory(
     *,
     run_dir: Path,
@@ -283,8 +306,9 @@ def _score_directory(
         return False
 
     if not candidates:
-        (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps([], indent=2))
-        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(json.dumps([], indent=2))
+        _write_scoring_results(
+            run_dir=run_dir, scored_results=[], accepted=[], stroke_unit_size=stroke_unit_size
+        )
         return True
 
     from src.pipeline.utils.images import load_image
@@ -339,8 +363,9 @@ def _score_directory(
         valid_boxes.append(box)
 
     if not batch_tensors:
-        (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps([], indent=2))
-        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(json.dumps([], indent=2))
+        _write_scoring_results(
+            run_dir=run_dir, scored_results=[], accepted=[], stroke_unit_size=stroke_unit_size
+        )
         return True
 
     score_chunks: List[np.ndarray] = []
@@ -396,16 +421,11 @@ def _score_directory(
         apply_nms(candidate_objects_for_filter)
 
     accepted = [item for item in candidate_objects_for_filter if item["score"] >= threshold]
-    if stroke_unit_size is not None:
-        accepted, suppressed = deduplicate_staff_strokes(accepted, unit_size=stroke_unit_size)
-        (run_dir / "pipeline2_no_peak_stroke_dedup.json").write_text(
-            json.dumps({"unit_size": stroke_unit_size, "suppressed": suppressed}, indent=2) + "\n"
-        )
-    filtered_boxes = [item["bbox"] for item in accepted]
-
-    (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
-    (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
-        json.dumps(filtered_boxes, indent=2)
+    _write_scoring_results(
+        run_dir=run_dir,
+        scored_results=scored_results,
+        accepted=accepted,
+        stroke_unit_size=stroke_unit_size,
     )
     return True
 

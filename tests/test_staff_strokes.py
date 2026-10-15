@@ -202,19 +202,35 @@ def test_scoring_preserves_raw_scores_and_default_behavior(tmp_path):
 
 
 @pytest.mark.parametrize("relative_image", [False, True])
-def test_composite_image_probe_adapter_cnn_connection(tmp_path, monkeypatch, relative_image):
+@pytest.mark.parametrize("symlink_kind", [None, "directory", "file"])
+def test_composite_image_probe_adapter_cnn_connection(
+    tmp_path, monkeypatch, relative_image, symlink_kind
+):
     import shutil
 
     import torch
 
     from src.pipeline.detection.dense_orchestrator import DetectorOrchestrator
-    from src.pipeline.detector_routes.dense_full_pipeline import regenerate_probe_rescue_candidates
+    from src.pipeline.detector_routes.dense_full_pipeline import (
+        load_route_image_paths,
+        regenerate_probe_rescue_candidates,
+    )
     from src.pipeline.steps import cnn_scoring
 
     _, support, _, image, _ = fixture_inputs(tmp_path, monkeypatch)
     renamed = tmp_path / "images/OtherScore_page_001.png"
     renamed.parent.mkdir()
     image.rename(renamed)
+    if symlink_kind:
+        alias = tmp_path / "alias"
+        if symlink_kind == "directory":
+            alias.symlink_to(renamed.parent, target_is_directory=True)
+        else:
+            alias.mkdir()
+            stored = renamed.with_name("stored.png")
+            renamed.rename(stored)
+            (alias / renamed.name).symlink_to(stored)
+        renamed = alias / renamed.name
     # Use the real inventory writer and probe producer. Do not fabricate the
     # adapter's candidate directory: that hid the previous run-ID mismatch.
     hybrid = tmp_path / "hybrid"
@@ -229,7 +245,7 @@ def test_composite_image_probe_adapter_cnn_connection(tmp_path, monkeypatch, rel
     seeds = [[60, 10, 64, 50], [60, 80, 64, 120]]
     (hybrid_results / f"{renamed.stem}_hybrid.json").write_text(json.dumps(seeds))
     result = json.loads(support.read_text())
-    result["image"] = str(renamed)
+    result["image"] = str(renamed.resolve())
     new_support = hybrid / "current_support" / renamed.parent.name / renamed.stem / "result.json"
     new_support.parent.mkdir(parents=True)
     new_support.write_text(json.dumps(result))
@@ -251,20 +267,25 @@ def test_composite_image_probe_adapter_cnn_connection(tmp_path, monkeypatch, rel
         dry_run=False,
     )
     detector.hybrid_output_dir = hybrid
-    inventory, _ = detector._write_dense_inventory()
+    inventory, exclude = detector._write_dense_inventory()
     record = json.loads(inventory.read_text())["records"][0]
     assert (record["score"], record["page"]) == ("OtherScore", "page_001")
+    assert record["image"] == str(renamed.absolute())
+    # Reconstruction consumes the inventory paths, not the original image list.
+    # Resolving here would silently change the producer's directory/stem again.
+    route_images = load_route_image_paths(inventory=inventory, exclude=exclude, expected_pages=1)
+    assert route_images == [renamed.absolute()]
     filtered = tmp_path / "filtered"
     seed_path = filtered / record["score"] / record["page"] / "pipeline2_no_peak_candidates.json"
     seed_path.parent.mkdir(parents=True)
     seed_path.write_text(json.dumps(seeds))
     probe = regenerate_probe_rescue_candidates(
-        image_paths=[image_arg], filtered_root=filtered, route_root=tmp_path / "route"
+        image_paths=route_images, filtered_root=filtered, route_root=tmp_path / "route"
     )
     candidate_files = list(probe.glob("*/pipeline2_no_peak_candidates.json"))
     assert len(candidate_files) == 1
     target = candidate_files[0]
-    assert target.parent.name == "eval2_images_OtherScore_page_001"
+    assert target.parent.name == f"eval2_{renamed.parent.name}_OtherScore_page_001"
     units = prepare_staff_stroke_candidates(
         inventory=inventory, hybrid_root=hybrid, probe_root=probe
     )

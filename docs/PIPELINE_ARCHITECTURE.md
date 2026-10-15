@@ -101,8 +101,11 @@ sidecars preserve the source hashes and representatives. No GT or evaluation dat
 this runtime step. CNN lookup resolves relative, absolute and symlink image paths to
 the same unit-map identity. Probe directories use the image parent/stem identity
 consistently through rescue, the adapter and CNN, including composite score/page stems;
-logical inventory score/page labels do not select the adapter directory. Successful empty
-CNN results also write an empty suppression audit when deduplication is enabled, and
+logical inventory score/page labels do not select the adapter directory.
+The inventory makes image paths absolute without resolving symlinks, preserving the
+producer's parent/stem for support, rescue and CNN output locations; the unit-map lookup
+still resolves the file identity. Successful empty CNN results also write an empty
+suppression audit when deduplication is enabled, and
 reruns with deduplication disabled remove stale suppression sidecars.
 A page containing any accepted staff without an estimated
 unit (including one-line percussion notation) keeps its original candidates and skips

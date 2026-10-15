@@ -210,7 +210,10 @@ class DetectorOrchestrator:
                 {
                     "score": score,
                     "page": page,
-                    "image": str(image.resolve()),
+                    # Support, probe and CNN output directories use the input
+                    # parent/stem. Keep symlink aliases while making the path
+                    # independent of the inventory consumer's working directory.
+                    "image": str(image.absolute()),
                     "hybrid_predictions": str(hybrid.resolve()),
                     "staff_mask": str(staff_mask.resolve()),
                     "clef_mask": str(clef_mask.resolve()),

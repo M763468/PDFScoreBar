@@ -8,6 +8,41 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_compact_save_status_keeps_errors_visible_and_details_open_on_refresh():
+    script = r"""
+const fs = require('fs'), vm = require('vm'), assert = require('assert/strict');
+const node = () => ({children:[],textContent:'',open:false,
+  appendChild(child){this.children.push(child);},replaceChildren(){this.children=[];}});
+const panel=node(), details=node();
+const context={window:{},panel,latestState:null,currentPage:{},pageValue:()=>0,
+  document:{createElement:node,getElementById:id=>id==='correctionStateDetails'?details:id==='statePanel'?{}:null},
+  CustomEvent:function(name, init){this.detail=init.detail;}};
+context.window.dispatchEvent=()=>{};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync('tools/review_correction/strings.js','utf8'),context);
+const source=fs.readFileSync('tools/review_correction/correction_state.js','utf8');
+vm.runInContext(source.slice(source.indexOf('  function render(state)'),source.indexOf('  async function refresh()')),context);
+const state={package:{status:'mixed',counts:{pending:1,recorded:1,error:1}},states:[
+  {page:0,correction_type:'mmr_measure_span',edit_status:'pending',recording_status:'recorded'},
+  {page:0,correction_type:'barline_construction',edit_status:'none',recording_status:'recorded',error:'disk full'},
+  {page:1,correction_type:'mmr_measure_span',edit_status:'none',recording_status:'recorded'},
+]};
+context.render(state);
+assert.equal(panel.children.length,2,'summary and error remain visible');
+assert(panel.children[1].textContent.includes('disk full'));
+assert.equal(details.children.length,1,'only current-page routine detail is folded');
+assert(panel.children[0].textContent.includes('1 '+context.window.ReviewStrings.state.pending));
+details.open=true;
+context.render(state);
+assert(details.open,'polling must not close expanded details');
+assert.equal(details.children.length,1,'polling must replace rather than duplicate rows');
+"""
+    result = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_canvas_hit_testing_uses_rendered_size_for_both_axes():
     script = r"""
 const fs = require('fs'), vm = require('vm'), assert = require('assert/strict');

@@ -1,5 +1,11 @@
 /* Controlled reviewer copy for the English and Japanese application surfaces. */
 const reviewEnglish = {
+  taskSummary: {
+    mmr_measure_span: "Enter the printed rest count for the selected measure.",
+    barline_construction: "Add a divider to split a measure, or remove one to join measures.",
+    measure_construction: "Count an excluded interval as a measure.",
+    movement_boundary: "Restart at 1 before the selected system. Boundaries save immediately.",
+  },
   pan: "Move page", fitPage: "Fit page",
   saveScope: "This page is also saved when you change pages. PDF generation applies saved changes from every page.",
   listHeadings: {mmr_measure_span: "Measures on this page", barline_construction: "Recorded barline edits", measure_construction: "Intervals marked as measures", movement_boundary: "Movement boundaries on this page"},
@@ -10,6 +16,7 @@ const reviewEnglish = {
     movement_boundary: "Select the first system of the new movement. Numbering restarts at 1 before that system. Manual boundaries are saved immediately and included in PDF generation.",
   },
   restReview: {
+    reminder: "Check printed rest counts even when no warning is shown.",
     title: "Check multi-measure rests", open: "Inspect all measures",
     check: "Compare every printed rest count with its measure span. Missed rests may be shown as 1, and misreads may have no warning.",
     edit: "Select a measure, enter its printed rest count, add the change, and save. Hide overlays or zoom in to read the score.",
@@ -58,6 +65,7 @@ const reviewEnglish = {
     failure: "Corrected PDF needs attention", requestFailed: "Generation request failed",
   },
   state: {
+    details: "Save details",
     heading: "Correction status", pending: "unsaved", recorded: "recorded", errors: "errors", unavailable: "Correction status unavailable",
     page: "Page", source: "Source", result: "Corrected result",
     types: {mmr_measure_span: "Multi-measure rest", measure_construction: "Count existing interval", barline_construction: "Barline", movement_boundary: "Movement boundary"},
@@ -142,6 +150,12 @@ const reviewEnglish = {
 };
 
 const reviewJapanese = {
+  taskSummary: {
+    mmr_measure_span: "選択した休符の数字を、小節数に入力します。",
+    barline_construction: "区切りの追加で小節を分割し、削除で結合します。",
+    measure_construction: "除外されていた区間を、小節として数えます。",
+    movement_boundary: "選択した段から小節番号を1に戻します。境界は追加と同時に保存します。",
+  },
   pan: "ページを移動", fitPage: "ページ全体を表示",
   saveScope: "ページ移動時にも自動保存します。PDF生成には全ページの保存済み修正を反映します。",
   listHeadings: {mmr_measure_span: "このページの小節一覧", barline_construction: "記録した小節線の修正", measure_construction: "小節として数える区間", movement_boundary: "このページの楽章境界"},
@@ -152,6 +166,7 @@ const reviewJapanese = {
     movement_boundary: "新しい楽章の最初の段を選びます。その段から小節番号を1に戻します。手動の境界は追加と同時に保存し、PDF生成に反映します。",
   },
   restReview: {
+    reminder: "警告がなくても、原譜の休符数字を確認してください。",
     title: "複数小節休符を確認", open: "全小節を確認",
     check: "原譜面の休符数字を一つずつ小節数と照合してください。未検出の休符は小節数1と表示され、誤読にも警告が出ないことがあります。",
     edit: "小節を選び、原譜面の休符数字を入力し、修正を追加して保存します。重ね表示を隠すか拡大して数字を確認してください。",
@@ -198,6 +213,7 @@ const reviewJapanese = {
     requestFailed: "生成リクエストに失敗しました。",
   },
   state: {
+    details: "保存状況の詳細",
     heading: "修正状況", pending: "未保存", recorded: "記録済み", errors: "エラー",
     unavailable: "修正状況を取得できません。", page: "ページ", source: "元の結果", result: "修正済み結果",
     types: {mmr_measure_span: "複数小節休符（MMR）", measure_construction: "区間を小節として数える", barline_construction: "小節線", movement_boundary: "楽章境界"},

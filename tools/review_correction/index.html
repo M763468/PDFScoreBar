@@ -7,6 +7,7 @@
   <style>
     :root { color-scheme: light; font: 14px/1.4 system-ui, sans-serif; color: #17212b; background: #f3f5f7; }
     * { box-sizing: border-box; }
+    [hidden] { display:none !important; }
     body { margin: 0; height: 100vh; min-height: 560px; display: grid; grid-template-rows: auto minmax(0,1fr); }
     button, select, input { font: inherit; }
     .btn { padding: 7px 11px; border: 1px solid #bcc7d1; border-radius: 6px; background: #fff; color: #17212b; cursor: pointer; }
@@ -41,7 +42,7 @@
     #statePanel p { margin:5px 0; } #statePanel strong { color:#344553; }
     #itemList { max-height:23vh; overflow:auto; border:1px solid #e5eaee; }
     details { margin-top:10px; } summary { cursor:pointer; color:#425563; font-weight:600; }
-    .movement-guide, .movement-status { margin-top:7px; padding:8px; border:1px solid #ead994; border-radius:5px; background:#fff9df; font-size:12px; }
+    .movement-guide, .movement-status { margin-top:7px; padding:8px; border-radius:5px; background:#f3f6f8; font-size:12px; }
     .legend { display:flex; flex-wrap:wrap; gap:6px 10px; font-size:11px; color:#536473; } .dot { width:9px;height:9px;display:inline-block;border:1px solid #555; }
     #applyBtn { background:#126da8; color:white; border-color:#126da8; }
     @media(max-width:900px) { #workspace { grid-template-columns:140px minmax(0,1fr); } #context { grid-column:1/-1; border:0; border-top:1px solid #d9e0e6; max-height:42vh; } body { height:auto; min-height:100vh; grid-template-rows:auto auto; } #main { height:65vh; } }
@@ -91,13 +92,6 @@
     </main>
     <aside id="context">
       <button id="helpBtn" hidden type="button" data-copy="details">Details</button>
-      <section class="panel" id="restReviewGuide">
-        <h2 data-copy="restReview.title">Check multi-measure rests</h2>
-        <p class="small" data-copy="restReview.check">Compare every printed rest count with its measure span. Missed rests may be shown as 1, and misreads may have no warning.</p>
-        <button id="reviewRestCountsBtn" class="btn" type="button" data-copy="restReview.open">Inspect all measures</button>
-        <p class="small" data-copy="restReview.edit">Select a measure, enter its printed rest count, add the change, and save. Hide overlays or zoom in to read the score.</p>
-        <p class="small" data-copy="restReview.verify">Generate the corrected PDF and compare subsequent row and page starts with the score. Successful generation does not certify correct numbering.</p>
-      </section>
       <section class="panel">
         <h2 data-copy="task">Correction task</h2>
         <div class="row"><label><span data-copy="taskType">Correction type</span>
@@ -109,31 +103,43 @@
           </select>
         </label></div>
         <p id="taskHelp" class="small"></p>
-        <div class="row"><label><span data-copy="operation">Change</span><select id="opSelect"></select></label></div>
+        <div id="selectionMeta" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
+        <div class="row" id="operationRow"><label><span data-copy="operation">Change</span><select id="opSelect"></select></label></div>
         <div class="row" id="measureSpanRow"><label><span data-copy="measureSpan">Measure span</span> <input id="measureSpanInput" type="number" min="1" value="2" /></label></div>
+        <div id="movementBoundaryPanel" style="display:none">
+          <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" data-copy-placeholder="ui.systemPlaceholder" /></label></div>
+          <div class="movement-status" id="movementTargetMeta" data-copy="ui.noSystemSelected">No system selected.</div>
+          <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
+        </div>
         <div class="row" id="actionRow">
           <button id="selectModeBtn" class="btn active" data-copy="select">Select target</button>
           <button id="drawModeBtn" class="btn" data-copy="draw">Draw barline</button>
           <button id="addItemBtn" class="btn" data-copy="stage">Record change</button>
           <button id="deleteItemBtn" class="btn" disabled data-copy="remove">Remove recorded change</button>
         </div>
-        <div id="movementBoundaryPanel" style="display:none">
-          <div class="movement-guide" data-copy="ui.movementPrompt">Choose a system to review its movement boundary.</div>
-          <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" data-copy-placeholder="ui.systemPlaceholder" /></label></div>
-          <div class="movement-status" id="movementTargetMeta" data-copy="ui.noSystemSelected">No system selected.</div>
-          <div class="movement-status" id="movementPageStatus"></div>
-          <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
-        </div>
         <div class="row" id="reasonRow"><label><span data-copy="reason">Reason</span> <input id="reasonInput" type="text" value="manual correction" data-copy-default="ui.reasonDefault" /></label></div>
-        <div id="selectionMeta" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
+      </section>
+      <section class="panel" id="restReviewGuide">
+        <button id="reviewRestCountsBtn" class="btn" type="button" data-copy="restReview.open">Inspect all measures</button>
+        <p class="small" data-copy="restReview.reminder">Check printed rest counts even when no warning is shown.</p>
       </section>
       <section class="panel" id="statePanel" aria-live="polite">
         <h2 data-copy="status">Correction status</h2>
         <div id="correctionStatePanel" data-copy="stateLoading">Loading correction status…</div>
         <p id="applicationStatus" data-copy="result.loading">Result status is loading.</p>
+        <details><summary data-copy="state.details">Save details</summary><div id="correctionStateDetails"></div></details>
       </section>
       <details class="panel" id="resultDetails"><summary id="itemListHeading" data-copy="currentChanges">Measures on this page</summary><div id="itemList"></div></details>
       <details class="panel" id="helpPanel"><summary data-copy="details">Editing tips</summary>
+        <p id="taskHelpDetails" class="small"></p>
+        <div id="restReviewInstructions">
+          <h2 data-copy="restReview.title">Check multi-measure rests</h2>
+          <p class="small" data-copy="restReview.check">Compare every printed rest count with its measure span. Missed rests may be shown as 1, and misreads may have no warning.</p>
+          <p class="small" data-copy="restReview.edit">Select a measure, enter its printed rest count, add the change, and save. Hide overlays or zoom in to read the score.</p>
+          <p class="small" data-copy="restReview.verify">Generate the corrected PDF and compare subsequent row and page starts with the score. Successful generation does not certify correct numbering.</p>
+        </div>
+        <p class="small" data-copy="ui.movementPrompt">Choose a system to review its movement boundary.</p>
+        <div class="small" id="movementPageStatus"></div>
         <p class="small" data-copy="help.pages">Visible page, system, and measure numbers start at 1. Saved correction indices keep their existing format.</p>
         <p class="small" data-copy="help.overlays">Selected objects and active drafts remain visible when overlays are hidden. Barlines can be selected or drawn; other changes use the selected score target.</p>
         <p class="small" data-copy="help.movement">Movement decisions apply before the selected system. Movement decisions are saved immediately.</p>

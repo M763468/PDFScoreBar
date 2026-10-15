@@ -203,8 +203,14 @@ function updateControlState() {
   const op = currentOp();
   const movementMode = type === "movement_boundary";
   const barlineMode = type === "barline_construction";
-  document.getElementById("taskHelp").textContent = window.ReviewStrings.taskHelp[type];
+  document.getElementById("taskHelp").textContent = window.ReviewStrings.taskSummary[type];
+  document.getElementById("taskHelpDetails").textContent = window.ReviewStrings.taskHelp[type];
   document.getElementById("restReviewGuide").hidden = type !== "mmr_measure_span";
+  document.getElementById("restReviewInstructions").hidden = type !== "mmr_measure_span";
+  document.getElementById("operationRow").hidden =
+    type === "measure_construction" || (movementMode && !currentPage?.movement_boundary_evidence);
+  selectionMeta.hidden = movementMode;
+  movementPageStatus.hidden = !movementMode;
 
   measureSpanRow.style.display =
     type === "mmr_measure_span" && op === "set_measure_span" ? "flex" : "none";
@@ -456,13 +462,9 @@ function updateMovementTargetMeta() {
   } else {
     const bounds = systemBounds(system);
     const state = movementStateAt(system);
-    const clicked =
-      selectedMeasure && String(selectedMeasure.system) === String(system)
-        ? ` ${reviewerCopy("ui.selectedMeasure", {measure: displayIndex(selectedMeasure.measure)})}`
-        : "";
-    const status = state ? ` ${reviewerCopy("ui.currentState", {state: state.label})}` : ` ${window.ReviewStrings.ui.noBoundaryState}`;
+    const status = state ? ` ${reviewerCopy("ui.currentState", {state: state.label})}` : "";
     movementTargetMeta.textContent = bounds
-      ? `${reviewerCopy("ui.targetBefore", {system: displayIndex(system)})}${clicked}${status}`
+      ? `${reviewerCopy("ui.targetBefore", {system: displayIndex(system)})}${status}`
       : reviewerCopy("ui.missingSystem", {system: displayIndex(system)});
   }
 

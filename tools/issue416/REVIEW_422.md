@@ -1,6 +1,6 @@
 # PR #422 指摘対応と本番経路の再検証
 
-最新は末尾の「追加inline対応（round 2）」と [review_round2_validation.json](review_round2_validation.json)。
+最新は末尾の「追加inline対応（round 3）」と [review_round3_validation.json](review_round3_validation.json)。
 以下の初回指摘対応とその検証記録も保持する。
 
 2026-10-15。対象は `cecdd5db42dda72b7e909e675f35a616acfe8dfe` への2件のinline review。
@@ -138,3 +138,57 @@ GT3567、matcher、staff-unit tolerance、CNN閾値、モデルとimageは変更
 新規CNN候補と本番CNNは全68で実行し、producer/SR/HOMRとraw/filter/rescueの全68再生成は変更がなく省略した。
 前回から継承したcontractのparent比較は、この有効な保持baselineとの比較である。
 future architectureは責務/process/public API変更がなく更新不要。#410等のmain昇格条件を追加しない。
+
+
+## 追加inline対応（round 3）
+
+2026-10-16。[P2: symlink入力のsupport identity](https://github.com/M763468/PDFScoreBar/pull/422#discussion_r4284824551)
+を修正要求として対応した。検証対象は `b51c9f6f17de05785e7dfcde8aafa197d58a2f70`。
+
+inventoryの画像パスは絶対化しつつsymlinkを保持し、probe/rescue/adapter/CNNが同じ親/stemを使う。
+一方、supportの保存先は元の画像パスを使うin-process producerと、画像を解決してから動く
+source-page workerで異なる。adapterは元パスと解決後パスの既知の2か所だけを確認し、
+同じ解決先をまとめた結果が一意であること、completed/current HOMR実行済みであること、
+payloadの画像identityが一致することを要求する。異なるresultが両方に存在する場合は停止する。
+
+最初の候補 `82ef0e1f` はinventoryだけを修正したため、fresh symlink smokeで失敗した。
+SRは`current_support/images/...`へ出力されたが、ページworkerのsupport結果は
+`current_support/actual_images/.../result.json`にあり、adapterがalias側だけを探して停止した。
+この失敗をPASSとして扱わず、`smoke.log`、`smoke/`、`attempt-inventory-only-contract.json`
+に保持した。最終候補の検証は新しいrun IDと`smoke-fixed/`で実行する。
+
+- 実inventory writer→inventory reader→実probe rescue→adapter→本番CNN呼び出しを検査する。
+  絶対/相対、通常/ディレクトリsymlink/ファイルsymlink、元/解決後supportの12通り。
+  合成テストのCNNのみ固定陽性CPUモデルに置換する。
+- supportなし・異なるresultが2個・同じresultへのsymlinkの3 controlを追加する。
+  元の画像identity不一致controlも継続する。修正前のinventoryでは追加directory test 2件が失敗することを確認した。
+- 対象pytest **70 PASS**、`make test-fast` **114 PASS**、Ruff check/format、repository surface、diff check **PASS**。
+- 固定Full68を別名ディレクトリsymlink経由で本番inventory writerとadapterへ渡し、
+  全cropを同じ固定CUDA modelで再推論する。**TP3560/FP0/FN7/soft121、小節数3287**。
+  全68ページで正規化候補・予測・番号baseが既存の採用候補と一致し、sidecar **68/68**。
+  normalizationの6入力のhash値も全ページ一致し、保持入力 **967 hash**も一致する。
+- 最終候補のfresh PDF/GPU smokeは、実`inputs/images`を`actual_images`へのsymlinkとして事前作成し、
+  空のtargetへfresh renderして全producer、raw/filter/rescue、CNN、MMR、番号処理を実行する。
+  **GT85/TP85/hard FP0/FN0/soft0、sidecar 1/1**。inventoryのalias保持とworkerのresolved supportも確認する。
+
+固定GT/matcher/tolerance/CNN閾値/model/imageと元の受容条件は変更しない。
+Full68のSR/HOMRおよびraw/filter/rescue再生成は、入力・producerに変更がなく、保持候補と
+6入力hashが等しいため省略した。新inventory/adapter/CNNは全68で実行し、
+fresh smokeでは全producerを新規実行した。全予測・番号baseの厳密な一致に基づき、既存の
+all68 MMR/final numbering/PDF検証を再利用する。残FN7、既知のMMR6件・row sample不一致5件の
+扱いを変更しない。新たなmain昇格条件は追加しない。
+
+保持rootはworktree内`logs/issue416/review-422-round3-20261016/`。
+`contract.json`、`provenance.json`、`validate_symlink.py`、`candidate/report.json`、`gates.json`、
+`retained-inputs.json`、`smoke-fixed.yaml`、`smoke-fixed.log`、`smoke-fixed/`とtest logsを保持。
+実行環境とモデルのread-only mountはround 2と同じ固定digest。Full68はoriginal repoを
+`/workspace`へ、active worktreeを`PYTHONPATH`へ設定する。smokeはactive worktreeを`/workspace`へmountする。
+
+```text
+/opt/venv_pipeline/bin/python -u /workspace/.worktrees/issue416/logs/issue416/review-422-round3-20261016/validate_symlink.py
+DOCKER_IMAGE=<round 2と同じ固定image> DOCKER_EXTRA_ARGS=<同じdata/model RO mountsとcache指定> \
+  bash scripts/docker_runtime_validation.sh --config logs/issue416/review-422-round3-20261016/smoke-fixed.yaml
+```
+
+sourceと実行commitの対応は記録生成時に`git show <reviewed_commit>:<path>`のSHA-256でも検査する。
+process/責務/public API変更がないためfuture architectureの更新は不要。

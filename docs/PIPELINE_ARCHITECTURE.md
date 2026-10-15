@@ -103,8 +103,11 @@ the same unit-map identity. Probe directories use the image parent/stem identity
 consistently through rescue, the adapter and CNN, including composite score/page stems;
 logical inventory score/page labels do not select the adapter directory.
 The inventory makes image paths absolute without resolving symlinks, preserving the
-producer's parent/stem for support, rescue and CNN output locations; the unit-map lookup
-still resolves the file identity. Successful empty CNN results also write an empty
+caller's parent/stem for rescue and CNN output locations. Support metadata can use that
+identity or the resolved identity used inside disposable source-page workers; the adapter
+requires exactly one physical result at these known locations and checks its image and
+completion status. The unit-map lookup still resolves the file identity.
+Successful empty CNN results also write an empty
 suppression audit when deduplication is enabled, and
 reruns with deduplication disabled remove stale suppression sidecars.
 A page containing any accepted staff without an estimated

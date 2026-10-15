@@ -152,6 +152,41 @@ def test_wrong_support_identity_fails_without_replacing_candidates(tmp_path, mon
     assert target.read_bytes() == before
 
 
+@pytest.mark.parametrize("support_case", ["missing", "ambiguous", "same_physical_result"])
+def test_symlink_support_requires_one_physical_verified_result(tmp_path, monkeypatch, support_case):
+    import shutil
+
+    inv, support, target, image, _ = fixture_inputs(tmp_path, monkeypatch)
+    alias = tmp_path / "alias"
+    alias.symlink_to(image.parent, target_is_directory=True)
+    alias_image = alias / image.name
+    data = json.loads(inv.read_text())
+    data["records"][0]["image"] = str(alias_image)
+    inv.write_text(json.dumps(data))
+    renamed = target.parent.with_name(build_probe_run_id(alias_image))
+    target.parent.rename(renamed)
+    target = renamed / target.name
+    before = target.read_bytes()
+    other = support.parents[2] / alias.name / image.stem / "result.json"
+    if support_case == "missing":
+        support.unlink()
+    else:
+        other.parent.mkdir(parents=True)
+        if support_case == "ambiguous":
+            shutil.copyfile(support, other)
+        else:
+            other.symlink_to(support)
+    kwargs = dict(inventory=inv, hybrid_root=tmp_path / "hybrid", probe_root=tmp_path / "probe")
+    if support_case == "same_physical_result":
+        assert prepare_staff_stroke_candidates(**kwargs) == {str(image.resolve()): 10}
+    else:
+        error = FileNotFoundError if support_case == "missing" else ValueError
+        match = "Missing current-x4" if support_case == "missing" else "Ambiguous current-x4"
+        with pytest.raises(error, match=match):
+            prepare_staff_stroke_candidates(**kwargs)
+        assert target.read_bytes() == before
+
+
 def test_blank_page_preserves_candidates_without_inventing_units(tmp_path, monkeypatch):
     inv, _, target, _, _ = fixture_inputs(tmp_path, monkeypatch, regions=[])
     before = target.read_bytes()
@@ -203,8 +238,9 @@ def test_scoring_preserves_raw_scores_and_default_behavior(tmp_path):
 
 @pytest.mark.parametrize("relative_image", [False, True])
 @pytest.mark.parametrize("symlink_kind", [None, "directory", "file"])
+@pytest.mark.parametrize("support_identity", ["original", "resolved"])
 def test_composite_image_probe_adapter_cnn_connection(
-    tmp_path, monkeypatch, relative_image, symlink_kind
+    tmp_path, monkeypatch, relative_image, symlink_kind, support_identity
 ):
     import shutil
 
@@ -246,7 +282,14 @@ def test_composite_image_probe_adapter_cnn_connection(
     (hybrid_results / f"{renamed.stem}_hybrid.json").write_text(json.dumps(seeds))
     result = json.loads(support.read_text())
     result["image"] = str(renamed.resolve())
-    new_support = hybrid / "current_support" / renamed.parent.name / renamed.stem / "result.json"
+    producer_image = renamed.resolve() if support_identity == "resolved" else renamed
+    new_support = (
+        hybrid
+        / "current_support"
+        / producer_image.parent.name
+        / producer_image.stem
+        / "result.json"
+    )
     new_support.parent.mkdir(parents=True)
     new_support.write_text(json.dumps(result))
     monkeypatch.chdir(tmp_path)

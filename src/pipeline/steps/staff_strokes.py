@@ -15,6 +15,22 @@ from src.pipeline.core import build_probe_run_id
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
 
 
+def _support_result_path(hybrid_root: Path, image_path: Path) -> Path:
+    # In-process producers retain the caller's alias; disposable source-page
+    # workers resolve it before invoking support. Accept only these two known
+    # identities, with exactly one physical result, and verify its payload below.
+    expected = [
+        hybrid_root / "current_support" / image.parent.name / image.stem / "result.json"
+        for image in (image_path, image_path.resolve())
+    ]
+    present = {path.resolve(): path for path in expected if path.is_file()}
+    if not present:
+        raise FileNotFoundError(f"Missing current-x4 support result: {expected}")
+    if len(present) != 1:
+        raise ValueError(f"Ambiguous current-x4 support results: {list(present)}")
+    return next(iter(present.values()))
+
+
 def prepare_staff_stroke_candidates(
     *, inventory: Path, hybrid_root: Path, probe_root: Path
 ) -> dict[str, float]:
@@ -64,15 +80,7 @@ def prepare_staff_stroke_candidates(
         ]
         image_key = str(image_path.resolve())
         units[image_key] = float(median(s.unit_size for s in regions))
-        # Match the producer's filesystem identity, including composite stems;
-        # inventory score/page labels can differ from the actual parent/stem.
-        support_path = (
-            hybrid_root
-            / "current_support"
-            / image_path.parent.name
-            / image_path.stem
-            / "result.json"
-        )
+        support_path = _support_result_path(hybrid_root, image_path)
         support = json.loads(support_path.read_text())
         if support.get("status") != "completed" or not support.get("current_homr_executed"):
             raise ValueError(f"Current-x4 support is not verified complete: {support_path}")

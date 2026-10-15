@@ -1,5 +1,5 @@
 {
-  "reviewed_commit": "43a8b7fdefe293231f77d338ee8e3662ab5431d3",
+  "reviewed_commit": "0c89ce87b50558f9c1de5a7f82c5669fa08f10e4",
   "provenance": {
     "parent_commit": "43a8b7fdefe293231f77d338ee8e3662ab5431d3",
     "runner_sha256": "e1e543b324caf322ce9afc6b3d28b1402a5cbf0473fb77bca6c5fe4637281746",
@@ -49,7 +49,7 @@
       "runtime": "sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc",
       "no_threshold_model_gt_change": true,
       "baseline_and_candidate": "Regenerate dense raw/filter/rescue from same retained current-run producer outputs; score ALL candidates in same CUDA image; do not reuse component CNN decisions. Compare existing canonical correctness and smoke without excluding failures.",
-      "reviewed_commit": "43a8b7fdefe293231f77d338ee8e3662ab5431d3",
+      "reviewed_commit": "0c89ce87b50558f9c1de5a7f82c5669fa08f10e4",
       "review_gates": {
         "relative_public_cnn_route_pages": 68,
         "dedup_sidecars": 68,
@@ -63,7 +63,8 @@
       },
       "reuse": "Raw/filter/rescue producers unchanged; use retained unnormalized candidates and producer outputs, regenerate staff adapter and execute production _run_cnn_scoring with relative images. Compare parent batch implementation and candidate on identical normalized candidates and GPU model. Reuse MMR/PDF only after exact base equivalence.",
       "synthetic_gates": "Real inventory -> real probe rescue -> adapter -> production CNN with composite names, absolute/relative images. Empty/no-valid-crop clears stale audit or writes suppressed:[]."
-    }
+    },
+    "reviewed_commit": "0c89ce87b50558f9c1de5a7f82c5669fa08f10e4"
   },
   "candidate": {
     "gt": 3567,

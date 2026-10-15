@@ -84,6 +84,7 @@ def test_build_manual_gui_config_maps_handoff_to_current_gui_config(tmp_path):
             "mmr": "pages/page_003/mmr_overrides.json",
             "barlines": "pages/page_003/barlines_review.json",
             "review_overlay": "pages/page_003/review_overlay.png",
+            "movement_boundary_resolved_output": "corrections/movement_boundaries.json",
         }
     ]
     assert "_staging" not in json.dumps(config)

@@ -155,6 +155,21 @@ the evidence artifact identity in `provenance`.
 
 ### Review-package workflow
 
+The normal correction screen also accepts explicit manual boundaries without
+attaching a detector evidence artifact. Select **Movement boundary**, choose the
+first system of the new movement, and confirm the boundary. The decision saves
+immediately and resolves to a package-local `corrections/movement_boundaries.json`
+with `source: manual`, `reset_number: 1`, and the saved review artifact's SHA-256.
+Generating the corrected PDF consumes that resolution for all pages. Removing a
+recorded manual boundary updates the resolution immediately. Candidate absence
+does not create a no-boundary decision. Only explicit boundary records reset the
+number; ordinary page breaks continue numbering.
+
+If saving the resolution fails after saving the review, application rejects the
+stale pair until the review is saved successfully. Both paths remain constrained
+to the review package. Older handoffs receive the same default resolved-output
+destination when loaded; attaching synthetic detection evidence is unnecessary.
+
 Issue #346 extends the existing manual-correction review package and GUI rather
 than introducing a separate movement editor. Generate the Issue #333 evidence
 artifact as described below, then attach it to an existing

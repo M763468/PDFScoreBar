@@ -8,6 +8,32 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_canvas_hit_testing_uses_rendered_size_for_both_axes():
+    script = r"""
+const fs = require('fs'), vm = require('vm'), assert = require('assert/strict');
+const source = fs.readFileSync('tools/review_correction/app.js', 'utf8');
+const context = {
+  canvas: {width:1200, height:900,
+    getBoundingClientRect: () => ({left:200, top:100, width:600, height:300})},
+  viewScale: .25, viewOffset: {x:30, y:15},
+};
+vm.createContext(context);
+for (const name of ['canvasPoint','canvasToImg']) {
+  const match = source.match(new RegExp('function ' + name + '\\([\\s\\S]*?\\n}'));
+  vm.runInContext(match[0], context);
+}
+for (const [x, y] of [[100,100],[900,2800]]) {
+  const event = {clientX:200+(x*.25+30)/2, clientY:100+(y*.25+15)/3};
+  const hit = context.canvasToImg(context.canvasPoint(event));
+  assert(Math.abs(hit.x-x)<1e-9); assert(Math.abs(hit.y-y)<1e-9);
+}
+"""
+    result = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_rest_review_entry_includes_misses_and_unflagged_reads_without_rewriting_edits():
     script = r"""
 const fs = require('fs'), vm = require('vm'), assert = require('assert/strict');

@@ -5,6 +5,7 @@
 2026-10-15にGitHubのIssue/PR、source、manifest、Git refsを照合した。
 本記録は初回昇格の準備であり、候補のrelease受入やmain更新の完了記録ではない。
 実装後の固定candidate・GPU/PDF/実GUI/補正後の検証は[2026-10-15検証記録](VALIDATION_20261015.md)を参照する。
+その後の利用者の手動受入、番号規約とGUI改善は[手動受入の指摘と修正](UX_FEEDBACK_20261015.md)を参照する。
 
 ## 昇格元と配布対象
 

@@ -24,7 +24,7 @@ def test_review_surface_separates_navigation_display_task_and_result_state():
         assert f'id="{element_id}"' in html
     assert html.index('id="navigation"') < html.index('id="main"') < html.index('id="context"')
     assert 'id="correctionStatePanel"' in html and 'id="applicationStatus"' in html
-    assert html.index('id="correctionStatePanel"') < html.index('id="applicationControls"')
+    assert html.index('id="applicationControls"') < html.index('id="workspace"')
 
 
 def test_review_scripts_load_in_dependency_order_and_keep_legacy_canvas_hooks():

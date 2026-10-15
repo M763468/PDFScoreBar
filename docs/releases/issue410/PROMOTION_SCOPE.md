@@ -7,6 +7,33 @@
 実装後の固定candidate・GPU/PDF/実GUI/補正後の検証は[2026-10-15検証記録](VALIDATION_20261015.md)を参照する。
 その後の利用者の手動受入、番号規約とGUI改善は[手動受入の指摘と修正](UX_FEEDBACK_20261015.md)を参照する。
 
+## Phase A / Bと完了条件
+
+進行順序は[#410の2026-10-15方針コメント](https://github.com/M763468/PDFScoreBar/issues/410#issuecomment-6193750642)
+に従う。「機構実装の受入」「実配布candidateの受入」「main昇格完了」を別々に記録し、
+#410はmain昇格の完了までOPENとする。
+
+**Phase A: release infrastructure → develop。** 候補生成tool、manifest、検査、CI、branch policyと
+配布review/correctionの改善をdevelop向けの[PR #423](https://github.com/M763468/PDFScoreBar/pull/423)で扱う。
+PR reviewとGitHub CIを通して統合し、この段階の完了は機構実装の受入として記録する。
+topic branchから生成した準備candidateやローカル検証を、最終release受入へ読み替えない。
+
+**Phase B: initial release → main。** [PR #422](https://github.com/M763468/PDFScoreBar/pull/422)の
+review・採否・developへの統合後に、必要修正を含むthen-current accepted develop SHAをfreezeする。
+manifest/config/model identitiesを固定して新たなversioned `release/*-rcN`を生成し、
+その候補自身のclean checkout、配布tree、Docker/GPU/PDF/GUI、意味的番号、既知限界を検証する。
+小節線の幾何変更で物理位置や番号へ影響があり得るため、以前の補正位置・結果を無条件に流用しない。
+変更の影響を受けるgateを再検証し、候補に対するaccept/holdを明記する。
+
+最終candidateで確認する判断には、残存MMR6件の発見・補正と確認負担、Sym5 IIIのreset、
+Festival旧sampleの13/17と原画像・算術・実PDFの14/18の正式review、#416残差の下流影響と
+安全な補正可否を含める。完全JSON一致だけを要求せず、改善の根拠とconsumer契約を確認する。
+先行した利用者の操作確認と、最終candidateに対する正式な手動受入を区別して残す。
+
+candidate受入後は`release/* → main`専用PRを用意し、manifest選択外の旧mainファイルが
+残らないことをtree差分で確認する。全受入結果を提示し、利用者の明示的な最終承認を得てから
+mainへのmerge/push/tagを行う。候補identityが変われば、影響するgateを再検証する。
+
 ## 昇格元と配布対象
 
 | 項目 | 確認したidentity / 意味 |

@@ -65,7 +65,7 @@ Current correction semantics include, as applicable to the current workflow:
 - MMR measure-span correction and suppression;
 - measure-construction correction such as forcing a measure;
 - barline construction add/remove correction;
-- package-local movement-boundary review when movement evidence is attached.
+- package-local manual movement boundaries, with optional detector evidence for candidate review.
 
 The current detailed operating contract remains
 [`manual_correction_review_package.md`](manual_correction_review_package.md). Future machine

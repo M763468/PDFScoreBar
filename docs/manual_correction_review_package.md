@@ -114,8 +114,15 @@ workflow starts from the package-local `review/manual_correction_input.json` han
 
 ### Optional movement-boundary evidence
 
-When movement-boundary review is needed, keep the same review package and attach
-the review-only Issue #333 evidence artifact:
+Manual boundaries are available in the normal review package without detector evidence.
+Choose **Movement boundary**, select the first system of the new movement, and confirm
+the boundary. The decision and package-local resolved input save immediately; numbering
+restarts at 1 before that system when **Generate corrected PDF** is used. Removing a
+manual boundary also updates the resolved input. The saved review hash binds that input
+to the current decisions; failed or stale saves must be resolved before applying them.
+
+To review detector suggestions, keep the same review package and attach the review-only
+Issue #333 evidence artifact:
 
 ```bash
 python -m tools.movement_boundary_review attach \
@@ -125,7 +132,7 @@ python -m tools.movement_boundary_review attach \
 
 The attach step copies the evidence into the package and records package-local
 paths in the handoff. It does not approve any candidate or change numbering.
-The existing GUI then exposes a **Movement boundary** correction type. A
+The **Movement boundary** correction type then also displays detector candidates. A
 movement boundary always means **immediately before the target system**: the
 first measure of that system starts the new movement. Reviewers can click
 anywhere inside a system to target it; direct 1-based system entry remains
@@ -143,8 +150,10 @@ numbering run and does not change the score currently displayed in the GUI.
 
 ### Manual GUI quick guide
 
-The user application places page navigation at the top, score display controls beside the canvas,
-and correction tasks, saved/result status, and action buttons in the right context panel.
+The user application places the page list on the left, **Save this page** and
+**Generate corrected PDF** at the top, and correction tasks and saved/result status in
+the right context panel. Page changes save pending edits automatically; PDF generation
+uses saved corrections from all pages. Zoomed pages can be dragged in **Move page** mode.
 
 Initial overlay state:
 
@@ -173,14 +182,15 @@ Typical correction flow for MMR/barline/measure corrections:
 
 1. Choose a correction task and change in the right context panel.
 2. Select the target object; barline editing additionally exposes Select/Draw modes.
-3. Create an edit and inspect the pending change in both the canvas and **Current page changes**.
+3. Create an edit and inspect the pending change in the canvas and the task-specific list.
 4. Clear the edit if the pending change is not wanted.
-5. Use **Save changes** to record these correction types.
+5. Use **Save this page** to record these correction types.
 
 Movement-boundary review is deliberately simpler: select a system, confirm
 **boundary** or **no boundary**, and the decision is saved immediately. After
 all suggested boundaries are reviewed, use **Finish movement review** to create
-the boundary data consumed by the next numbering run.
+the boundary data consumed by the next numbering run. For manual boundaries without
+evidence, this resolution is saved with each decision and no separate finish step is required.
 
 Visible Page / System / Measure identifiers are **1-based** for reviewer readability. Persisted
 correction targets keep the existing internal **0-based** indices; the GUI must not translate the
@@ -237,8 +247,8 @@ review/corrections/
 ```
 
 These are GUI staging files. Movement-boundary decisions do not use the
-stage-then-save interaction; each decision is saved immediately. When movement
-evidence is attached, the GUI also uses:
+stage-then-save interaction; each decision is saved immediately. The GUI also uses
+the following paths (the evidence file is present only when attached):
 
 ```text
 review/
@@ -249,11 +259,12 @@ review/
 ```
 
 `movement_boundaries_review.json` retains explicit accepted/rejected/manual
-review actions. **Finish movement review** writes
+review actions. For candidate review, **Finish movement review** writes
 `movement_boundaries.json` as `issue268.movement_boundaries.v1`, containing
 only confirmed boundaries. Checked no-boundary locations stay in the review
 record and are not numbering inputs. This finalization step does not rerun
-numbering or alter the score shown in the review GUI.
+numbering or alter the score shown in the review GUI. Without evidence, each manual
+decision directly updates the same resolved output with the saved review hash.
 
 The pipeline consumes canonical:
 
@@ -362,8 +373,8 @@ Run the package-scoped server in the maintained Python runtime with the dependen
 python3 tools/review_correction/server.py --handoff /path/to/run/review/manual_correction_input.json
 ```
 
-Record edits first. Movement decisions save immediately; finish movement review before applying
-those decisions. Choose **Generate corrected PDF** to invoke the authoritative retained-artifact
+Record edits first. Movement decisions save immediately; when detector evidence is attached,
+finish movement review before applying those decisions. Choose **Generate corrected PDF** to invoke the authoritative retained-artifact
 engine and explicitly generate the final PDF. The browser polls application state while this runs.
 A PDF link appears only after both the corrected engine run and final PDF succeed. Changing or
 removing recorded corrections makes the previous result stale; its link remains available and is
@@ -379,7 +390,7 @@ does not overwrite the recorded corrections. The final deliverable is `corrected
 review/application evidence remains outside that directory. `GET /api/result` serves only the last
 successful PDF after checking its stored content identity.
 
-The engine validates finalized movement data against saved review decisions and evidence. An older
+The engine validates finalized movement data against saved review decisions and any attached evidence. An older
 finalization, or saved decisions that have not been finalized, produces an actionable failure instead
 of silently ignoring the latest movement review. When no reviewed movement data exists, source-run
 movement inputs retain their existing meaning; unresolved candidates do not become resets.

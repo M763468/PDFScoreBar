@@ -256,3 +256,100 @@ def test_adapter_wiring_is_limited_to_maintained_dense_route(
     detector._run_dense_route()
     assert adapter.call_count == expected_calls
     assert detector._staff_stroke_units == ({"image": 10} if expected_calls else None)
+
+
+@pytest.mark.parametrize("image_form", ["absolute", "relative", "symlink"])
+def test_batch_scoring_resolves_units_and_writes_dedup_audit(tmp_path, monkeypatch, image_form):
+    import torch
+
+    from src.pipeline.steps import cnn_scoring
+
+    image = tmp_path / "score/page_001.png"
+    image.parent.mkdir()
+    cv2.imwrite(str(image), np.full((140, 200, 3), 255, np.uint8))
+    monkeypatch.chdir(tmp_path)
+    if image_form == "relative":
+        image_arg = image.relative_to(tmp_path)
+    elif image_form == "symlink":
+        alias = tmp_path / "alias"
+        alias.symlink_to(image.parent, target_is_directory=True)
+        image_arg = alias / image.name
+    else:
+        image_arg = image
+    folder = tmp_path / "probe" / build_probe_run_id(image_arg, score_name="score")
+    folder.mkdir(parents=True)
+    boxes = [[20, 10, 24, 50], [21, 10, 24, 50], [20, 80, 24, 120]]
+    (folder / "pipeline2_no_peak_candidates.json").write_text(json.dumps(boxes))
+
+    class Positive(torch.nn.Module):
+        def forward(self, x):
+            return torch.ones((len(x), 1))
+
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(cnn_scoring, "_resolve_model_path", lambda _: tmp_path / "model")
+    monkeypatch.setattr(cnn_scoring, "_load_model", lambda *args: Positive())
+    assert (
+        cnn_scoring.run_cnn_scoring_batch(
+            probe_output_root=folder.parent,
+            images=[image_arg],
+            score_name="score",
+            model_path=None,
+            threshold=0.5,
+            apply_nms_enabled=False,
+            stroke_dedup_units={str(image.resolve()): 10},
+        )
+        == 1
+    )
+    assert json.loads((folder / "pipeline2_no_peak_filtered_cnn.json").read_text()) == [
+        boxes[0],
+        boxes[2],
+    ]
+    audit = json.loads((folder / "pipeline2_no_peak_stroke_dedup.json").read_text())
+    assert audit == {
+        "unit_size": 10,
+        "suppressed": [{"bbox": boxes[1], "representative": boxes[0]}],
+    }
+
+
+@pytest.mark.parametrize("mixed", [False, True])
+def test_unknown_staff_unit_preserves_whole_page_and_records_reason(tmp_path, monkeypatch, mixed):
+    unknown = SimpleNamespace(bbox=(0, 80, 200, 120), unit_size=None)
+    inv, _, target, _, _ = fixture_inputs(
+        tmp_path, monkeypatch, regions=([STAVES[0]] if mixed else []) + [unknown]
+    )
+    before = target.read_bytes()
+    assert (
+        prepare_staff_stroke_candidates(
+            inventory=inv, hybrid_root=tmp_path / "hybrid", probe_root=tmp_path / "probe"
+        )
+        == {}
+    )
+    assert target.read_bytes() == before
+    audit = json.loads(target.with_name("pipeline2_no_peak_staff_strokes.json").read_text())
+    assert audit["status"] == "no_staff_unit_size"
+    assert audit["staff_count"] == (2 if mixed else 1)
+    assert audit["unestimated_staff_count"] == 1
+
+
+def test_real_one_line_percussion_mask_does_not_abort(tmp_path, monkeypatch):
+    from src.measure_numbering.pipeline import StaffExtractor
+
+    extract = StaffExtractor.extract
+    inv, _, target, _, _ = fixture_inputs(tmp_path, monkeypatch)
+    monkeypatch.setattr(StaffExtractor, "extract", extract)
+    mask = np.zeros((140, 200), np.uint8)
+    cv2.line(mask, (10, 50), (190, 50), 255, 2)
+    mask_path = tmp_path / "staff.png"
+    cv2.imwrite(str(mask_path), mask)
+    staves = StaffExtractor().extract(mask_path, (200, 140))
+    assert len(staves) == 1 and staves[0].unit_size is None
+    before = target.read_bytes()
+    assert (
+        prepare_staff_stroke_candidates(
+            inventory=inv, hybrid_root=tmp_path / "hybrid", probe_root=tmp_path / "probe"
+        )
+        == {}
+    )
+    assert target.read_bytes() == before
+    audit = json.loads(target.with_name("pipeline2_no_peak_staff_strokes.json").read_text())
+    assert audit["status"] == "no_staff_unit_size"

@@ -31,22 +31,24 @@ def prepare_staff_stroke_candidates(
             raise FileNotFoundError(image_path)
         height, width = image.shape[:2]
         mask = Path(record["staff_mask"])
-        regions = [
-            StaffRegion((s.bbox.x1, s.bbox.y1, s.bbox.x2, s.bbox.y2), s.unit_size)
-            for s in StaffExtractor().extract(mask, (width, height))
-        ]
+        staves = StaffExtractor().extract(mask, (width, height))
         run_id = build_probe_run_id(image_path, score_name=record["score"])
         target = probe_root / run_id / "pipeline2_no_peak_candidates.json"
         source_bytes = target.read_bytes()
         original_candidates = json.loads(source_bytes)
-        if not regions:
-            # Blank/non-staff pages are filtered downstream. Preserve their
-            # detector output and do not invent a unit for duplicate handling.
+        unestimated = sum(s.unit_size is None for s in staves)
+        if not staves or unestimated:
+            # One-line percussion staves are valid even without measurable
+            # spacing. Preserve the entire page, including mixed known/unknown
+            # staves: splitting only known regions could lose another voice.
+            # Blank/non-staff pages are filtered downstream.
             target.with_name("pipeline2_no_peak_staff_strokes.json").write_text(
                 json.dumps(
                     {
                         "schema_version": "pipeline.staff_strokes.v1",
-                        "status": "no_staff_geometry",
+                        "status": "no_staff_unit_size" if unestimated else "no_staff_geometry",
+                        "staff_count": len(staves),
+                        "unestimated_staff_count": unestimated,
                         "source_candidates_sha256": hashlib.sha256(source_bytes).hexdigest(),
                         "source_count": len(original_candidates),
                     },
@@ -55,7 +57,11 @@ def prepare_staff_stroke_candidates(
                 + "\n"
             )
             continue
-        units[str(image_path)] = float(median(s.unit_size for s in regions))
+        regions = [
+            StaffRegion((s.bbox.x1, s.bbox.y1, s.bbox.x2, s.bbox.y2), s.unit_size) for s in staves
+        ]
+        image_key = str(image_path.resolve())
+        units[image_key] = float(median(s.unit_size for s in regions))
         # Match the producer's filesystem identity, including composite stems;
         # inventory score/page labels can differ from the actual parent/stem.
         support_path = (
@@ -98,7 +104,7 @@ def prepare_staff_stroke_candidates(
             "source_candidates_sha256": hashlib.sha256(source_bytes).hexdigest(),
             "source_count": len(original_candidates),
             "normalized_count": len(candidates),
-            "unit_size": units[str(image_path)],
+            "unit_size": units[image_key],
             "changes": changes,
             "agreed_seeds": agreed,
             "input_sha256": {

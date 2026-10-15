@@ -458,7 +458,7 @@ def run_cnn_scoring_batch(
             input_image_scale=input_image_scale,
             apply_nms_enabled=apply_nms_enabled,
             in_memory_images=in_memory_images,
-            stroke_unit_size=(stroke_dedup_units or {}).get(str(img_path)),
+            stroke_unit_size=(stroke_dedup_units or {}).get(str(img_path.resolve())),
         ):
             processed += 1
     return processed

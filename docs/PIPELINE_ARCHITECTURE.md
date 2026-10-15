@@ -98,7 +98,12 @@ X-center distance <= 0.1 median extracted staff unit and vertical overlap >= 0.8
 retaining the numbering-compatible canonical geometry and its own CNN score. This is
 separate from logical time-boundary merging. Per-page normalization and suppression
 sidecars preserve the source hashes and representatives. No GT or evaluation data enters
-this runtime step. See `tools/issue416/IMPLEMENTATION.md` for the fixed-input validation.
+this runtime step. CNN lookup resolves relative, absolute and symlink image paths to
+the same unit-map identity. A page containing any accepted staff without an estimated
+unit (including one-line percussion notation) keeps its original candidates and skips
+this adapter and stroke deduplication; its sidecar records `no_staff_unit_size` rather
+than inventing a geometric threshold. This also preserves unknown voices on mixed pages.
+See `tools/issue416/IMPLEMENTATION.md` for the fixed-input validation.
 
 `pdf_to_images` is currently in-process inside `PipelineOrchestrator` when enabled. The
 verified dense route itself requires persisted page image files; it rejects in-memory-only

@@ -1,0 +1,144 @@
+{
+  "reviewed_commit": "cecdd5db42dda72b7e909e675f35a616acfe8dfe",
+  "provenance": {
+    "parent_commit": "cecdd5db42dda72b7e909e675f35a616acfe8dfe",
+    "runner_sha256": "15fae15813ed7628a2fea64c099334d08e40ada56a67623da39ca5f09fa14cd5",
+    "model_sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+    "parent_cnn_sha256": "ea65ab290fd7e5f08cfd2ec4e9dcdad62533f69b4f77ead8195c307cf2156670",
+    "source_files": {
+      "src/pipeline/steps/staff_strokes.py": "11946dacf222f03ddb2d6fae73dad0cd5dd30732a3f7efa14f1b29e2db025ed1",
+      "src/pipeline/steps/cnn_scoring.py": "c484733279ea00b6f47e8645b6337c69c74edc987be9b64749f76d769d0f4797"
+    },
+    "device": "NVIDIA GeForce RTX 4060",
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0",
+    "python": "3.12.15 (main, Oct  1 2026, 15:41:07) [GCC 11.4.0]",
+    "contract": {
+      "source_base": "016e181861270f1adc753778ef71422fa51f2716",
+      "scope": "PR422 P1 canonical image-key lookup and P2 valid unknown-unit staff preservation",
+      "fixed_detector": {
+        "pages": 68,
+        "gt": 3567,
+        "baseline_tp": 3535,
+        "baseline_fp": 11,
+        "baseline_fn": 32,
+        "baseline_soft": 100,
+        "matcher": "center_anchor",
+        "vov": 0.5,
+        "xdist_unit_ratio": 0.5,
+        "cnn_threshold": 0.4965248107910156
+      },
+      "candidate_gates": {
+        "tp_at_least": 3560,
+        "fp": 0,
+        "fn_at_most": 7,
+        "no_new_per_page_hard_fp_fn": true,
+        "count": 3287,
+        "preserve_expected_system_membership": true
+      },
+      "downstream": {
+        "mmr_tp": 171,
+        "mmr_fn": 3,
+        "mmr_wrong": 3,
+        "mmr_fp": 0,
+        "application_errors": 0,
+        "continuity_errors": 0,
+        "known_local_gt_errors": 6,
+        "known_row_sample_mismatches": 5
+      },
+      "residual_disposition": "Seven stroke-level residuals accepted for this focused fix if every original location retains its physical time boundary and current numbering; no unattended-perfect-numbering or main promotion claim. Keep independent GT strokes and all FN counts.",
+      "runtime": "sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc",
+      "no_threshold_model_gt_change": true,
+      "baseline_and_candidate": "Regenerate dense raw/filter/rescue from same retained current-run producer outputs; score ALL candidates in same CUDA image; do not reuse component CNN decisions. Compare existing canonical correctness and smoke without excluding failures.",
+      "reviewed_commit": "cecdd5db42dda72b7e909e675f35a616acfe8dfe",
+      "review_gates": {
+        "relative_public_cnn_route_pages": 68,
+        "dedup_sidecars": 68,
+        "unknown_unit_pages_in_full68": 0,
+        "exact_prior_candidate_predictions": true,
+        "exact_prior_numbering_base": true,
+        "hard_fp": 0,
+        "fn": 7,
+        "soft": 121,
+        "physical_measures": 3287
+      },
+      "reuse": "Raw/filter/rescue producers unchanged; use retained unnormalized candidates and producer outputs, regenerate staff adapter and execute production _run_cnn_scoring with relative images. Compare parent batch implementation and candidate on identical normalized candidates and GPU model. Reuse MMR/PDF only after exact base equivalence.",
+      "synthetic_gates": "relative/absolute/symlink batch lookup; real one-line percussion and mixed known/unknown units preserve all candidate bytes without invented units",
+      "parent_relative_expected": {
+        "gt": 3567,
+        "pred": 3817,
+        "tp": 3560,
+        "fp": 0,
+        "fn": 7,
+        "soft": 257
+      }
+    }
+  },
+  "parent_relative": {
+    "gt": 3567,
+    "pred": 3817,
+    "tp": 3560,
+    "fp": 0,
+    "fn": 7,
+    "soft": 257
+  },
+  "candidate": {
+    "gt": 3567,
+    "pred": 3681,
+    "tp": 3560,
+    "fp": 0,
+    "fn": 7,
+    "soft": 121
+  },
+  "gates": {
+    "passed": true,
+    "pages": 68,
+    "relative_production_cnn_route": true,
+    "normalized_candidates_equal": true,
+    "predictions_equal": true,
+    "numbering_base_equal": true,
+    "dedup_sidecars": 68,
+    "unknown_unit_pages": 0,
+    "mmr_pdf_reuse": "All exact base/predictions plus unchanged support producer and downstream code; retain prior all68 final/support equivalence and pixel-verified PDFs."
+  },
+  "input_equivalence": {
+    "passed": true,
+    "retained_hashes": 967,
+    "normalization_input_hash_equivalence_pages": 68
+  },
+  "physical_measures": 3287,
+  "fresh_smoke": {
+    "status": "passed",
+    "run_dir": "/workspace/logs/issue416/review-422-20261015/smoke/issue416_review422_smoke",
+    "page_key": "Va_Prokofiev_Symphony1/page_001",
+    "input_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+    "source_pdf_sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41",
+    "prediction_count": 85,
+    "gt_count": 85,
+    "matched": 85,
+    "hard_fp_count": 0,
+    "fn_count": 0,
+    "soft_count": 0,
+    "barlines_json": "/workspace/logs/issue416/review-422-20261015/smoke/issue416_review422_smoke/intermediate/dense_full_pipeline_route/dense_candidate_reconstruction/probe_rescue_candidates/eval2_images_page_001/pipeline2_no_peak_filtered_cnn.json"
+  },
+  "fresh_smoke_dedup_sidecars": 1,
+  "previous_smoke_dedup_sidecars": 0,
+  "checks": {
+    "targeted_pytest": 52,
+    "test_fast": 114,
+    "ruff_check": "passed",
+    "ruff_format": "passed",
+    "repository_surface": "passed"
+  },
+  "evidence_root": "logs/issue416/review-422-20261015",
+  "evidence_sha256": {
+    "parent_relative/report.json": "1e513b0e8c0e01e10a83c7430c4b649a7cb3ef77866d7b821b78c2e084d2d2cc",
+    "candidate/report.json": "5ba11faa83d963144cfee2b680cd4c8ac215b03039a79ad36095d8f28007cf9d",
+    "gates.json": "cb93215a35c440e98b9e1323cb15587a882925ed97faf20b7d270b176280f3bd",
+    "input-equivalence.json": "7db39d60c3910f361d96ec2c956def90c62d812c8c1ec742af3a38c136b811af",
+    "smoke/issue416_review422_smoke/detector_accuracy_smoke_summary.json": "d45f70f750efb5abb3c9ed912d67322e9ccbfc6e00362e5b08a826d4357f3012",
+    "smoke/issue416_review422_smoke/intermediate/dense_full_pipeline_route/dense_candidate_reconstruction/probe_rescue_candidates/eval2_images_page_001/pipeline2_no_peak_stroke_dedup.json": "61e65d0c9cebf44fd89065f259cf7b0d585dfe7dd6d3b1a70af4708a3405f083"
+  },
+  "mmr_pdf_reuse": "All68 prediction/base exact and 967 retained hashes plus 68 input identities unchanged. Prior MMR support/final numbering equivalence and pixel-verified PDFs remain valid.",
+  "unknown_staff_compatibility": "Real one-line mask and mixed controls; no unknown-unit pages in fixed Full68. Preserve original candidate bytes with explicit no_staff_unit_size audit, no inferred fallback."
+}

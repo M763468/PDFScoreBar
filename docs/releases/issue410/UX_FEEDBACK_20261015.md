@@ -45,3 +45,43 @@ Sym5 IIIの規約と実譜面での適用確認、最終accepted developから�
 
 元の候補・評価記録は [VALIDATION_20261015.md](VALIDATION_20261015.md) に保持する。
 今回の変更後の候補は識別子を新しくし、変更したGUI・手動境界経路を再検証する。
+
+## 固定した修正後候補と最終検証
+
+| 項目 | 結果 |
+| --- | --- |
+| source commit | `cf2ff0359920593d1de55ad31f1448b8934c2b1d` |
+| 独立candidate commit | `7dedc4025a5059cbd1f39e458c4c80ecde6d87f1` |
+| candidate tree | `3c3f2c215079d4ea9d05837f6f398fb7a2748817` |
+| 配布ファイル | 105。manifest schema 3と選択対象を維持 |
+| Docker image | `pdfscore_issue410_rc2`、`sha256:d43a048c5bdda223a9c2e0bd56a78edbdc24e8fa06bba2b8ed56ca7a6c93b959` |
+| source fingerprint | `fcf33675f3c23df34d4780af03ecb2ac3ea826ae9318d2215d1f173c01a6fef5` |
+| 対象・engine-contract・配布テスト | `final-tests.log`: 210 PASS。UI/保存状態/適用/楽章境界/既存manual corrections/候補生成を含む |
+| `make test-fast PYTHON=.../.venv_pdf/bin/python` | 114 PASS。`test-fast.log`、`validation/test_fast.log` |
+| Ruff check / format、Node構文、surface check、diff check | PASS |
+| 候補生成・独立check | PASS。`candidate-rc2.json`、`candidate-check.log`。release acceptedはfalseのまま |
+| 候補だけからのDocker build / 公開preflight | PASS。source fingerprint一致、RTX4060/CUDA/ONNX CUDA、errorsなし |
+| 固定候補の実Chromium | PASS。3画面幅、最下段クリック、ズーム・ドラッグ、手動境界と新しいPDF生成attemptの完了を確認 |
+| 613小節・10ページ実PDFの意味検証 | PASS。最終`attempt_0003`、`semantic-verification.json`。downloadと今回の生成PDFも一致 |
+| 利用者の修正/PDF保持 | PASS、14ファイルのSHA-256一致 |
+
+固定候補は `/tmp/pdfscorebar-issue410-cf2ff035-rc2`。
+既存の `logs/issue410/manual-review/20261015/launch.sh` はこの候補を指すよう更新した。
+起動中の利用者の旧サーバーは停止していない。Ctrl+Cの後、同じlauncherで再起動すると
+既存の休符修正を保持したまま更新画面を使える。
+
+Sibeliusの手動操作は、6ページと7ページの先頭段を選び、修正種別「楽章境界」で
+「この段の前を楽章境界にする」を押し、上部の「修正済みPDFを生成」を押す。
+境界は即時保存され、休符修正と一緒に適用される。Festivalには境界を追加しない。
+
+検証側の失敗も保持する。最初の座標unit testは浮動小数点の丸めを厳密等値で判定して失敗し、
+計算誤差だけを許すassertへ修正した。最初の候補checkは検証用Pythonの生成した
+`__pycache__`でclean条件に失敗し、今回生成されたbytecodeだけを除いて再checkした。
+生成完了の最初のbrowser待機は同一内容の旧成功PDFを拾い得たため、新attempt識別子と
+生成中状態の解消を待つよう修正し、最終attemptでPDF取得・意味検証をやり直した。
+
+変更範囲はreview UI、handoff解決と明示的manual resetの保存・消費契約である。
+検出器、モデル、MMR認識、幾何・閾値・入力集合は変更していないため、新規のFull68推論や
+canonical detector accuracy smokeは再実行していない。元の固定候補の通常PDF/GPU/Full68由来の
+証拠を保持し、今回影響する保存・番号伝播は対象テストと保持全10ページの実PDFで検証した。
+修正後の操作性に対する利用者確認はまだ取得していない。

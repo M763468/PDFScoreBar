@@ -138,6 +138,7 @@ class DetectorOrchestrator:
         self.hybrid_output_dir: Path | None = None
         self.probe_output_dir: Path | None = None
         self._dense_route: Any | None = None
+        self._staff_stroke_units: dict[str, float] | None = None
 
         if self.detector_route != DENSE_ROUTE_NAME:
             raise ValueError(
@@ -209,7 +210,10 @@ class DetectorOrchestrator:
                 {
                     "score": score,
                     "page": page,
-                    "image": str(image.resolve()),
+                    # Support, probe and CNN output directories use the input
+                    # parent/stem. Keep symlink aliases while making the path
+                    # independent of the inventory consumer's working directory.
+                    "image": str(image.absolute()),
                     "hybrid_predictions": str(hybrid.resolve()),
                     "staff_mask": str(staff_mask.resolve()),
                     "clef_mask": str(clef_mask.resolve()),
@@ -266,6 +270,14 @@ class DetectorOrchestrator:
             probe_x_domain_kwargs=get_probe_x_domain_kwargs(self.det_cfg),
             collect_probe_stats=bool(self.det_cfg.get("probe_scan_collect_stats", False)),
         )
+        if self.homr_profile == "maintained_original":
+            from src.pipeline.steps.staff_strokes import prepare_staff_stroke_candidates
+
+            self._staff_stroke_units = prepare_staff_stroke_candidates(
+                inventory=inventory,
+                hybrid_root=self.hybrid_output_dir,
+                probe_root=self._dense_route.probe_rescue_root,
+            )
         summary = self._dense_route.execution_summary or {}
         return {
             "commands": [
@@ -343,6 +355,7 @@ class DetectorOrchestrator:
                 bands_from=bands_from,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
                 apply_nms_enabled=False,
+                stroke_dedup_units=self._staff_stroke_units,
                 in_memory_images=self.in_memory_images,
             )
         return {

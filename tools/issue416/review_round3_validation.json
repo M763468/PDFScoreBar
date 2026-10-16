@@ -1,0 +1,140 @@
+{
+  "reviewed_commit": "b51c9f6f17de05785e7dfcde8aafa197d58a2f70",
+  "provenance": {
+    "candidate_commit": "b51c9f6f17de05785e7dfcde8aafa197d58a2f70",
+    "runner_sha256": "8241984baa00791c78a5e817e814e22fa87bc3d708fb413154f0d82e7fe7583b",
+    "model_sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+    "source_files": {
+      "src/pipeline/detection/dense_orchestrator.py": "f3b0f70b49ebe7ff9f381d741156169c52f6f6919b50cf3eccac4631ff3ed822",
+      "src/pipeline/steps/staff_strokes.py": "6b2a70bbd8162cabc19234e3da653a5571c2e8c285ddf293146565893a0d6edf",
+      "src/pipeline/steps/cnn_scoring.py": "cf3002bf514de076c8e7032d258002271254bd628ad46744abfa19ddbfb51384"
+    },
+    "device": "NVIDIA GeForce RTX 4060",
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0",
+    "python": "3.12.15 (main, Oct  1 2026, 15:41:07) [GCC 11.4.0]",
+    "contract": {
+      "candidate_commit": "b51c9f6f17de05785e7dfcde8aafa197d58a2f70",
+      "scope": "Preserve symlink aliases for probe/CNN and require one verified support result at alias/resolved producer locations; all68 alias GPU CNN and fresh symlink PDF/GPU pipeline",
+      "fixed_contract": {
+        "source_base": "016e181861270f1adc753778ef71422fa51f2716",
+        "fixed_detector": {
+          "pages": 68,
+          "gt": 3567,
+          "baseline_tp": 3535,
+          "baseline_fp": 11,
+          "baseline_fn": 32,
+          "baseline_soft": 100,
+          "matcher": "center_anchor",
+          "vov": 0.5,
+          "xdist_unit_ratio": 0.5,
+          "cnn_threshold": 0.4965248107910156
+        },
+        "candidate_gates": {
+          "tp_at_least": 3560,
+          "fp": 0,
+          "fn_at_most": 7,
+          "no_new_per_page_hard_fp_fn": true,
+          "count": 3287,
+          "preserve_expected_system_membership": true
+        },
+        "downstream": {
+          "mmr_tp": 171,
+          "mmr_fn": 3,
+          "mmr_wrong": 3,
+          "mmr_fp": 0,
+          "application_errors": 0,
+          "continuity_errors": 0,
+          "known_local_gt_errors": 6,
+          "known_row_sample_mismatches": 5
+        },
+        "residual_disposition": "Seven stroke-level residuals accepted for this focused fix if every original location retains its physical time boundary and current numbering; no unattended-perfect-numbering or main promotion claim. Keep independent GT strokes and all FN counts.",
+        "runtime": "sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc",
+        "no_threshold_model_gt_change": true
+      },
+      "full68_expected": {
+        "gt": 3567,
+        "pred": 3681,
+        "tp": 3560,
+        "fp": 0,
+        "fn": 7,
+        "soft": 121,
+        "physical_measures": 3287
+      },
+      "exact_predictions_and_numbering_base_pages": 68,
+      "dedup_sidecars": 68,
+      "smoke_expected": {
+        "gt": 85,
+        "tp": 85,
+        "hard_fp": 0,
+        "fn": 0,
+        "soft": 0
+      },
+      "reuse": "Full68 reuses unchanged unnormalized raw/filter/rescue and producer support bytes on the identical images; regenerate inventory and adapter, score all crops on CUDA; support aliases retain byte-identical declared outputs. Fresh smoke executes all producers through a symlink directory. MMR/PDF evidence reused only after exact all68 prediction/base equivalence."
+    }
+  },
+  "candidate": {
+    "gt": 3567,
+    "pred": 3681,
+    "tp": 3560,
+    "fp": 0,
+    "fn": 7,
+    "soft": 121
+  },
+  "physical_measures": 3287,
+  "gates": {
+    "passed": true,
+    "pages": 68,
+    "symlink_inventory_pages": 68,
+    "relative_production_cnn_route": true,
+    "normalized_candidates_equal": true,
+    "normalization_input_hashes_equal": true,
+    "predictions_equal": true,
+    "numbering_base_equal": true,
+    "dedup_sidecars": 68,
+    "physical_measures": 3287
+  },
+  "fresh_smoke": {
+    "status": "passed",
+    "run_dir": "/workspace/logs/issue416/review-422-round3-20261016/smoke-fixed/issue416_review422_round3_fixed_smoke",
+    "page_key": "Va_Prokofiev_Symphony1/page_001",
+    "input_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+    "source_pdf_sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41",
+    "prediction_count": 85,
+    "gt_count": 85,
+    "matched": 85,
+    "hard_fp_count": 0,
+    "fn_count": 0,
+    "soft_count": 0,
+    "barlines_json": "/workspace/logs/issue416/review-422-round3-20261016/smoke-fixed/issue416_review422_round3_fixed_smoke/intermediate/dense_full_pipeline_route/dense_candidate_reconstruction/probe_rescue_candidates/eval2_images_page_001/pipeline2_no_peak_filtered_cnn.json"
+  },
+  "fresh_smoke_symlink_inventory": true,
+  "fresh_smoke_dedup_sidecars": 1,
+  "checks": {
+    "targeted_pytest": 70,
+    "test_fast": 114,
+    "parent_directory_symlink_regressions_reproduced": 2,
+    "ruff_check": "passed",
+    "ruff_format": "passed",
+    "repository_surface": "passed",
+    "retained_input_hashes": 967
+  },
+  "failed_attempt": {
+    "candidate_commit": "82ef0e1f798c5c9093737fe70bc9997869287a03",
+    "status": "failed",
+    "log": "logs/issue416/review-422-round3-20261016/smoke.log",
+    "reason": "Inventory aliases alone are insufficient: the disposable source-page worker resolves the input before writing support, leaving only current_support/actual_images/.../result.json. This failure led to unique original/resolved support lookup in the final candidate."
+  },
+  "evidence_root": "logs/issue416/review-422-round3-20261016",
+  "evidence_sha256": {
+    "contract.json": "accf125b9e284e01b7b0ad69c399d4eabe0bc91a979f68734eee69241a553243",
+    "validate_symlink.py": "8241984baa00791c78a5e817e814e22fa87bc3d708fb413154f0d82e7fe7583b",
+    "candidate/report.json": "8b452c16bb6224698fc485125aefff5eede62b3cf57fcfcdcbc3bbbd90ba0a7c",
+    "gates.json": "095031795e0bf9883274b94143e50de97e09615edff9f55953f60bc9187fe67c",
+    "retained-inputs.json": "08198535bbc3052fc50eddb96434def5a0d2a3bc96b63dbf95d54ce1d14bfb77",
+    "smoke-fixed/issue416_review422_round3_fixed_smoke/detector_accuracy_smoke_summary.json": "f54f84ad54f0e438fc418142638715b3a09cac8525f0fd05df13d1e7a239e8da",
+    "smoke-fixed/issue416_review422_round3_fixed_smoke/intermediate/dense_full_pipeline_route/dense_candidate_reconstruction/probe_rescue_candidates/eval2_images_page_001/pipeline2_no_peak_stroke_dedup.json": "61e65d0c9cebf44fd89065f259cf7b0d585dfe7dd6d3b1a70af4708a3405f083"
+  },
+  "reuse": "Full68 reuses unchanged unnormalized candidates and producer output bytes for identical images; all68 regenerate the real inventory and staff adapter, then execute the production relative-image CUDA CNN route. Fresh symlink PDF smoke executes all producers, raw/filter/rescue, CNN, MMR and numbering. Prior all68 MMR/final numbering/PDF evidence remains valid after exact all68 predictions and numbering-base equivalence. No parent model inference rerun.",
+  "limits": "Directory/file symlink connection tests use a deterministic CPU CNN stub. Full68 directory aliases and fresh symlink-directory smoke use the real verified CUDA model. Existing seven stroke FN, six local MMR errors and five row-sample mismatches remain; no perfect-numbering or main-promotion gate claim."
+}

@@ -2,26 +2,36 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-import cv2
 import torch
 from tqdm import tqdm
 
-from src.common.barline_evaluation import (
-    BARLINE_DEFAULT_MIN_WIDTH,
-    BARLINE_X_MARGIN,
-    BARLINE_Y_MARGIN,
-)
-from src.pipeline.core.config import get_nested
+from src.pdf_to_images import normalise_pages
+from src.pipeline.core import ensure_dir, get_nested, load_json, score_to_dict, write_json
 from src.pipeline.core.manifest import build_manifest
 from src.pipeline.detection import (
     resolve_barlines_and_masks_config,
     resolve_paths_from_detection,
     run_detection_step,
 )
+from src.pipeline.engine_telemetry import TelemetryRecorder
+from src.pipeline.review.manual_correction_materializer import (
+    materialize_manual_correction_review_package,
+)
+from src.pipeline.review.pipeline_review import (
+    ReviewPackageConfig as _ReviewPackageConfig,
+)
+from src.pipeline.review.pipeline_review import (
+    resolve_review_package_config,
+    resolved_for_manifest,
+    validate_review_package_prerequisites,
+)
+from src.pipeline.steps import numbering_phases
 from src.pipeline.steps.barlines import (
     apply_barline_overrides,
     merge_measure_overrides,
@@ -29,11 +39,23 @@ from src.pipeline.steps.barlines import (
 )
 from src.pipeline.steps.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.steps.numbering import (
+    FINAL_NUMBERING_SCHEMA_VERSION,
+    SYSTEM_INDEX_CONTRACT,
     empty_numbering_payload,
+    final_numbering_metadata,
+    load_movement_boundary_payload,
+    movement_boundaries_for_page,
+    persisted_final_next_number,
+    rebase_mmr_overrides_to_page_local,
+    reject_movement_boundaries_on_excluded_pages,
     run_mmr_batch,
 )
-from src.pipeline.utils.images import collect_images, resolve_page_ids
-from src.pipeline.utils.io import ensure_dir, load_json, score_to_dict, write_json
+from src.pipeline.steps.numbering_phases import NumberingPhaseServices
+from src.pipeline.utils.images import (
+    collect_images,
+    resolve_page_ids,
+    resolve_source_page_references,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +77,7 @@ class PipelineOrchestrator:
         validate_only: bool = False,
         skip_existing: bool = False,
         debug: bool = False,
+        telemetry: TelemetryRecorder | None = None,
     ):
         self.config = config
         self.run_id = run_id
@@ -63,6 +86,9 @@ class PipelineOrchestrator:
         self.validate_only = validate_only
         self.skip_existing = skip_existing
         self.debug = debug
+        self.telemetry = telemetry
+        self._movement_boundaries: Dict[str, Any] | None = None
+        self._barline_override_payload: Dict[str, Any] | None = None
 
         self.intermediate_dir = run_dir / "intermediate"
         self.outputs_dir = run_dir / "outputs"
@@ -71,7 +97,93 @@ class PipelineOrchestrator:
         self._persistence = _PIPELINE_PERSISTENCE
         self._mmr_persistence = _MMR_PERSISTENCE
 
-    def _build_pdf_command(self) -> List[str]:
+    def _telemetry_stage(self, stage_id: str, *, detail_code: str | None = None):
+        if self.telemetry is None:
+            return nullcontext()
+        return self.telemetry.stage(stage_id, detail_code=detail_code)
+
+    def _telemetry_progress(
+        self,
+        stage_id: str,
+        *,
+        page_number: int | None = None,
+        completed_units: int | None = None,
+        total_units: int | None = None,
+        unit: str | None = None,
+        detail_code: str | None = None,
+    ) -> None:
+        if self.telemetry is None:
+            return
+        self.telemetry.progress(
+            stage_id,
+            page_number=page_number,
+            completed_units=completed_units,
+            total_units=total_units,
+            unit=unit,
+            detail_code=detail_code,
+        )
+
+    def _validate_input_prerequisites(
+        self,
+    ) -> tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+        """Validate required external inputs before input_validation completes."""
+        self._validate_review_package_prerequisites()
+
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        render_pdf = bool(get_nested(self.config, "steps", "pdf_to_images", default=False))
+        if render_pdf:
+            pdf_path = get_nested(self.config, "inputs", "pdf_path")
+            if not pdf_path:
+                raise ValueError("inputs.pdf_path is required when pdf_to_images is enabled.")
+            skip_render = (
+                self.skip_existing
+                and (self.run_dir / "inputs" / "images").exists()
+                and list((self.run_dir / "inputs" / "images").glob("*.png"))
+            )
+            if not skip_render and not self.dry_run and not Path(pdf_path).is_file():
+                raise FileNotFoundError(f"PDF input not found: {pdf_path}")
+        else:
+            self._validate_external_image_inputs(pdf_opts)
+
+        user_overrides_path = get_nested(self.config, "inputs", "measure_overrides")
+        user_overrides_payload = (
+            load_json(Path(user_overrides_path)) if user_overrides_path else None
+        )
+
+        barline_overrides_path = get_nested(self.config, "inputs", "barline_overrides")
+        self._barline_override_payload = (
+            load_json(Path(barline_overrides_path)) if barline_overrides_path else None
+        )
+
+        movement_boundaries = load_movement_boundary_payload(
+            get_nested(self.config, "inputs", "movement_boundaries")
+        )
+        return user_overrides_payload, movement_boundaries
+
+    def _validate_external_image_inputs(self, pdf_opts: Dict[str, Any]) -> None:
+        """Mirror collect_images discovery without staging/copying external files."""
+        output_dir = self.run_dir / "inputs" / "images"
+        image_glob = pdf_opts.get("image_glob", "page_*.png")
+        external_dir = pdf_opts.get("output_dir")
+
+        if not output_dir.exists():
+            if external_dir:
+                output_dir = Path(external_dir)
+            else:
+                raise ValueError(
+                    "PDF images not found. Enable pdf_to_images or specify output_dir."
+                )
+
+        images = sorted(Path(output_dir).glob(image_glob))
+        if not images and external_dir:
+            external_path = Path(external_dir)
+            images = sorted(external_path.glob(image_glob))
+            output_dir = external_path
+        if not images:
+            raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
+
+    def _run_pdf_to_images(self) -> tuple[str, list[int]] | None:
+        """Step 1: Convert PDF to images in-process and retain exact source identity."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
         if not pdf_path:
@@ -80,46 +192,65 @@ class PipelineOrchestrator:
         output_dir = self.run_dir / "inputs" / "images"
         ensure_dir(output_dir)
 
-        from src.pipeline.core.python_env import get_pipeline_python
-
-        python_cmd = get_pipeline_python("pdf_to_images")
-
-        cmd = python_cmd + [
-            "src/pdf_to_images.py",
-            "--pdf",
-            str(pdf_path),
-            "--output-dir",
-            str(output_dir),
-        ]
-        if pdf_opts.get("dpi") is not None:
-            cmd += ["--dpi", str(pdf_opts["dpi"])]
-        if pdf_opts.get("pages"):
-            cmd += ["--pages", str(pdf_opts["pages"])]
-        if pdf_opts.get("target_width") is not None:
-            cmd += ["--target-width", str(pdf_opts["target_width"])]
-        if pdf_opts.get("target_height") is not None:
-            cmd += ["--target-height", str(pdf_opts["target_height"])]
-        if pdf_opts.get("interpolation"):
-            cmd += ["--interpolation", str(pdf_opts["interpolation"])]
-        if pdf_opts.get("prefix"):
-            cmd += ["--prefix", str(pdf_opts["prefix"])]
-        if pdf_opts.get("format"):
-            cmd += ["--format", str(pdf_opts["format"])]
-
-        cmd.append("--overwrite")
-
-        if pdf_opts.get("alpha"):
-            cmd.append("--alpha")
-        return cmd
-
-    def _run_command(self, cmd: List[str]) -> None:
         if self.dry_run:
-            logger.info(f"Executing (dry-run): {' '.join(cmd)}")
-            return
+            logger.info(f"Executing (dry-run): render_pdf {pdf_path} -> {output_dir}")
+            return None
 
-        from src.pipeline.core.subprocess_utils import run_with_logging
+        import fitz
 
-        run_with_logging(cmd)
+        pdf_path = Path(pdf_path)
+        source_bytes = pdf_path.read_bytes()
+        source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+        with fitz.open(stream=source_bytes, filetype="pdf") as doc:
+            pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
+
+        logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
+        from src.pdf_to_images import render_pdf_to_memory
+        from src.pipeline.utils.images import get_image_cache
+
+        def report_render_progress(completed: int, _source_page_index: int) -> None:
+            self._telemetry_progress(
+                "pdf_render",
+                page_number=completed,
+                completed_units=completed,
+                total_units=len(pages),
+                unit="page",
+                detail_code="pdf_render.page_prepared",
+            )
+
+        rendered = render_pdf_to_memory(
+            pdf_path,
+            dpi=float(pdf_opts.get("dpi", 300.0)),
+            pages=pages,
+            keep_alpha=bool(pdf_opts.get("alpha", False)),
+            target_width=pdf_opts.get("target_width"),
+            target_height=pdf_opts.get("target_height"),
+            interpolation=str(pdf_opts.get("interpolation", "area")),
+            source_bytes=source_bytes,
+            on_page_rendered=report_render_progress if self.telemetry is not None else None,
+        )
+
+        cache = get_image_cache()
+        prefix = str(pdf_opts.get("prefix", "page"))
+        fmt = str(pdf_opts.get("format", "png"))
+
+        persist_to_disk = self._should_persist_pdf_images(pdf_opts)
+
+        for page_index, image in rendered:
+            stem = f"{prefix}_{page_index + 1:03d}"
+
+            # Cache only if we are NOT persisting to disk (to save memory)
+            if not persist_to_disk:
+                cache[stem] = image
+
+            # Optionally write to disk for debug/persistence
+            if persist_to_disk:
+                from src.pdf_to_images import save_image
+
+                destination = output_dir / f"{stem}.{fmt}"
+                save_image(destination, image, fmt=fmt)
+
+        return source_sha256, pages
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
@@ -129,9 +260,23 @@ class PipelineOrchestrator:
             page_runs.append(input_runs.get(page_id, page_id))
         return page_runs
 
+    def _should_persist_pdf_images(self, pdf_opts: Dict[str, Any]) -> bool:
+        """Return whether rendered PDF pages must be written to run_dir images."""
+        return (
+            self.debug
+            or self._review_package_config().enabled
+            or ("output_dir" not in pdf_opts)
+            or (pdf_opts.get("output_dir") is not None)
+        )
+
     def run(self, page_limit: Optional[int] = None) -> Path:
         """Executes the full pipeline."""
+        with self._telemetry_stage("input_validation"):
+            user_overrides_payload, movement_boundaries = self._validate_input_prerequisites()
         commands: List[List[str]] = []
+        pdf_rendered_this_run = False
+        rendered_source_sha256: str | None = None
+        rendered_source_pages: list[int] | None = None
 
         if get_nested(self.config, "steps", "pdf_to_images", default=False):
             if (
@@ -141,15 +286,36 @@ class PipelineOrchestrator:
             ):
                 logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
             else:
-                pdf_cmd = self._build_pdf_command()
-                commands.append(pdf_cmd)
-                self._run_command(pdf_cmd)
+                with self._telemetry_stage("pdf_render"):
+                    render_provenance = self._run_pdf_to_images()
+                commands.append(["inprocess:pdf_to_images"])
+                if render_provenance is not None:
+                    rendered_source_sha256, rendered_source_pages = render_provenance
+                    pdf_rendered_this_run = True
 
         logger.info("Collecting images...")
-        images = collect_images(self.config, self.run_dir)
+        from src.pipeline.utils.images import get_image_cache
+
+        mem_images = get_image_cache()
+
+        # Determine if we skipped disk write during pdf_to_images
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        persist_to_disk = self._should_persist_pdf_images(pdf_opts)
+
+        # Only pass in_memory_images to collect_images if we actually used the cache (i.e. did not persist)
+        images = collect_images(
+            self.config, self.run_dir, in_memory_images=mem_images if not persist_to_disk else None
+        )
         if page_limit is not None:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
+        source_page_references = resolve_source_page_references(
+            self.config,
+            images,
+            rendered_this_run=pdf_rendered_this_run,
+            rendered_source_sha256=rendered_source_sha256,
+            rendered_source_pages=rendered_source_pages,
+        )
         logger.info(f"Collected {len(images)} images.")
 
         run_detection = get_nested(self.config, "steps", "detection", default=False)
@@ -163,9 +329,19 @@ class PipelineOrchestrator:
                     self.config["detection"] = {}
                 self.config["detection"]["probe_skip_existing"] = True
 
-            det_result = run_detection_step(
-                self.config, images, page_ids, self.run_id, self.run_dir, dry_run=self.dry_run
-            )
+            with self._telemetry_stage(
+                "score_detection",
+                detail_code="detection.source_generation_and_scoring",
+            ):
+                det_result = run_detection_step(
+                    self.config,
+                    images,
+                    page_ids,
+                    self.run_id,
+                    self.run_dir,
+                    dry_run=self.dry_run,
+                    in_memory_images=mem_images if not persist_to_disk else None,
+                )
             commands.extend(det_result["commands"])
             probe_output_dir = det_result["probe_output_dir"]
             hybrid_output_dir = det_result["hybrid_output_dir"]
@@ -190,63 +366,187 @@ class PipelineOrchestrator:
             self.config, page_ids, images, resolved, excluded_indices
         )
 
-        user_overrides_path = get_nested(self.config, "inputs", "measure_overrides")
-        user_overrides_payload = None
-        if user_overrides_path:
-            user_overrides_payload = load_json(Path(user_overrides_path))
+        for boundary in movement_boundaries["boundaries"]:
+            if boundary["page"] >= len(page_ids):
+                raise ValueError(
+                    "Movement boundary page is outside the ordered pipeline input: "
+                    f"{boundary['page']} >= {len(page_ids)}"
+                )
+        reject_movement_boundaries_on_excluded_pages(
+            movement_boundaries,
+            {index - 1 for index in excluded_indices if 1 <= index <= len(page_ids)},
+        )
 
         # Phase A: Base Numbering & Barline Correction
-        res_a = self.run_base_numbering_and_barline_correction(
-            page_ids, images, resolved, excluded_page_ids
-        )
+        with self._telemetry_stage("measure_construction"):
+            res_a = self.run_base_numbering_and_barline_correction(
+                page_ids, images, resolved, excluded_page_ids
+            )
         page_ctx = res_a["page_ctx"]
         numbering_base_paths = res_a["numbering_base_paths"]
         barline_override_stats = res_a["barline_override_stats"]
 
         # Phase B: MMR Batch Detection
-        self.run_mmr_batch_detection(page_ids, excluded_page_ids, page_ctx)
+        mmr_page_ctx = page_ctx
+        detector_route = str(
+            get_nested(self.config, "detection", "detector_route", default="standard")
+        )
+        if (
+            get_nested(self.config, "steps", "mmr_overrides", default=False)
+            and not self.dry_run
+            and not self.validate_only
+            and detector_route == "dense_full_pipeline"
+        ):
+            from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
+
+            mmr_page_ctx = build_mmr_page_context(self, page_ids, excluded_page_ids, page_ctx)
+        with self._telemetry_stage("measure_number_recognition"):
+            self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
 
         # Phase C: Final Numbering & Overlays
-        numbering_final_paths = self.run_final_numbering_and_overlays(
-            page_ids, excluded_page_ids, page_ctx, user_overrides_payload
-        )
+        self._movement_boundaries = movement_boundaries
+        with self._telemetry_stage("numbering"):
+            numbering_final_paths = self.run_final_numbering_and_overlays(
+                page_ids, excluded_page_ids, page_ctx, user_overrides_payload
+            )
 
-        # Post-processing: Combine results
-        if len(numbering_base_paths) > 1 and not self.dry_run and not self.validate_only:
-            combined_base = {
-                "pages": [
-                    page for path in numbering_base_paths for page in load_json(path)["pages"]
-                ]
-            }
-            write_json(self.intermediate_dir / "numbering_base.json", combined_base)
+        with self._telemetry_stage("artifact_materialization"):
+            # Post-processing: Combine results
+            if len(numbering_base_paths) > 1 and not self.dry_run and not self.validate_only:
+                combined_base = {
+                    "pages": [
+                        page for path in numbering_base_paths for page in load_json(path)["pages"]
+                    ]
+                }
+                write_json(self.intermediate_dir / "numbering_base.json", combined_base)
 
-        if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
-            combined_final = {
-                "pages": [
+            if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
+                final_pages = [
                     page for path in numbering_final_paths for page in load_json(path)["pages"]
                 ]
-            }
-            write_json(self.outputs_dir / "numbering_final.json", combined_final)
+                page_metadata = [
+                    load_json(path).get("numbering_metadata") for path in numbering_final_paths
+                ]
+                combined_final = {
+                    "pages": final_pages,
+                    "numbering_metadata": {
+                        "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+                        "system_index_contract": SYSTEM_INDEX_CONTRACT,
+                        "start_number": 1,
+                        "next_number": (
+                            page_metadata[-1].get("next_number")
+                            if isinstance(page_metadata[-1], dict)
+                            else None
+                        ),
+                        "movement_boundaries": movement_boundaries["boundaries"],
+                        "pages": page_metadata,
+                    },
+                }
+                write_json(self.outputs_dir / "numbering_final.json", combined_final)
 
-        if not self.dry_run:
-            write_json(self.run_dir / "filters.json", {"pages": page_statuses})
+            if not self.dry_run:
+                write_json(self.run_dir / "filters.json", {"pages": page_statuses})
 
-            manifest = build_manifest(
-                self.config,
-                run_id=self.run_id,
-                run_dir=self.run_dir,
-                images=images,
-                page_ids=page_ids,
-                page_runs=page_runs,
-                resolved=resolved,
-                commands=commands,
-                page_statuses=page_statuses,
-                barline_override_stats=barline_override_stats,
-            )
-            write_json(self.run_dir / "manifest.json", manifest)
-            logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
+                manifest_resolved = self._resolved_for_manifest(
+                    page_ids=page_ids,
+                    resolved=resolved,
+                    page_ctx=page_ctx,
+                )
+                manifest = build_manifest(
+                    self.config,
+                    run_id=self.run_id,
+                    run_dir=self.run_dir,
+                    images=images,
+                    page_ids=page_ids,
+                    page_runs=page_runs,
+                    resolved=manifest_resolved,
+                    commands=commands,
+                    page_statuses=page_statuses,
+                    barline_override_stats=barline_override_stats,
+                    source_page_references=source_page_references,
+                )
+                write_json(self.run_dir / "manifest.json", manifest)
+                logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
+                self._materialize_review_package_if_requested(page_ids, excluded_page_ids)
 
         return self.run_dir
+
+    def _materialize_review_package_if_requested(
+        self,
+        page_ids: List[str],
+        excluded_page_ids: Set[str],
+    ) -> Path | None:
+        """Materialize the manual-correction review package when enabled."""
+        review_config = self._review_package_config()
+        if not review_config.enabled:
+            return None
+
+        if self.dry_run or self.validate_only:
+            logger.info(
+                "Skipping manual correction review package materialization for dry-run "
+                "or validate-only execution."
+            )
+            return None
+
+        review_page_ids = [page_id for page_id in page_ids if page_id not in excluded_page_ids]
+        if not review_page_ids:
+            logger.info(
+                "Skipping manual correction review package materialization: no non-excluded pages."
+            )
+            return None
+
+        materialize_manual_correction_review_package(
+            run_root=self.run_dir,
+            review_root=review_config.review_root,
+            pages=review_page_ids,
+            source_pipeline_command=review_config.source_pipeline_command,
+            overwrite=review_config.overwrite,
+        )
+        logger.info(f"Wrote manual correction review package to {review_config.review_root}")
+        return review_config.review_root
+
+    def _review_package_config(self) -> _ReviewPackageConfig:
+        return resolve_review_package_config(self.config, self.run_dir)
+
+    def _validate_review_package_prerequisites(self) -> None:
+        validate_review_package_prerequisites(self.config, self._review_package_config())
+
+    def _resolved_for_manifest(
+        self,
+        *,
+        page_ids: List[str],
+        resolved: List[Dict[str, Any]],
+        page_ctx: Dict[str, Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        return resolved_for_manifest(
+            review_enabled=self._review_package_config().enabled,
+            page_ids=page_ids,
+            resolved=resolved,
+            page_ctx=page_ctx,
+        )
+
+    def _numbering_phase_services(self) -> NumberingPhaseServices:
+        """Keep established module-level operation hooks effective for every phase."""
+        return NumberingPhaseServices(
+            apply_barline_overrides=apply_barline_overrides,
+            merge_measure_overrides=merge_measure_overrides,
+            normalize_barlines=normalize_barlines,
+            empty_numbering_payload=empty_numbering_payload,
+            final_numbering_metadata=final_numbering_metadata,
+            load_movement_boundary_payload=load_movement_boundary_payload,
+            movement_boundaries_for_page=movement_boundaries_for_page,
+            persisted_final_next_number=persisted_final_next_number,
+            rebase_mmr_overrides_to_page_local=rebase_mmr_overrides_to_page_local,
+            reject_movement_boundaries_on_excluded_pages=reject_movement_boundaries_on_excluded_pages,
+            run_mmr_batch=run_mmr_batch,
+            ensure_dir=ensure_dir,
+            load_json=load_json,
+            score_to_dict=score_to_dict,
+            write_json=write_json,
+            tqdm=tqdm,
+            torch=torch,
+            logger=logger,
+        )
 
     def run_base_numbering_and_barline_correction(
         self,
@@ -256,150 +556,14 @@ class PipelineOrchestrator:
         excluded_page_ids: Set[str],
     ) -> Dict[str, Any]:
         """Phase A: Base Numbering & Barline Correction."""
-        from src.measure_numbering.pipeline import MeasureNumberingPipeline
-
-        if "numbering_pipeline" not in self._persistence:
-            self._persistence["numbering_pipeline"] = MeasureNumberingPipeline()
-        numbering_pipeline = self._persistence["numbering_pipeline"]
-
-        numbering_base_paths: List[Path] = []
-        barline_override_stats: Dict[str, Dict[str, int]] = {}
-        page_ctx: Dict[str, Dict[str, Any]] = {}
-
-        apply_barlines = get_nested(self.config, "steps", "apply_barline_overrides", default=False)
-        barline_overrides_path = get_nested(self.config, "inputs", "barline_overrides")
-        barline_override_payload = None
-        if barline_overrides_path:
-            barline_override_payload = load_json(Path(barline_overrides_path))
-
-        barline_override_cfg = (
-            get_nested(self.config, "inputs", "barline_overrides_config", default={}) or {}
+        return numbering_phases.run_base_numbering_and_barline_correction(
+            self,
+            page_ids,
+            images,
+            resolved,
+            excluded_page_ids,
+            services=self._numbering_phase_services(),
         )
-        barline_iou_threshold = float(barline_override_cfg.get("iou_threshold", 0.5))
-        barline_min_width = int(barline_override_cfg.get("min_width", BARLINE_DEFAULT_MIN_WIDTH))
-        barline_x_margin = int(barline_override_cfg.get("x_margin", BARLINE_X_MARGIN))
-        barline_y_margin = int(barline_override_cfg.get("y_margin", BARLINE_Y_MARGIN))
-
-        step_numbering = get_nested(self.config, "steps", "numbering_base", default=False)
-        force_single_system = bool(
-            get_nested(self.config, "numbering", "force_single_system", default=False)
-        )
-
-        for index, (page_id, image_path, resolved_item) in tqdm(
-            enumerate(zip(page_ids, images, resolved), start=1),
-            total=len(page_ids),
-            desc="Phase A: Base Numbering",
-            unit="page",
-        ):
-            page_intermediate = self.intermediate_dir / page_id
-            page_outputs = self.outputs_dir / page_id
-            ensure_dir(page_intermediate)
-            ensure_dir(page_outputs)
-
-            page_ctx[page_id] = {
-                "index": index,
-                "image_path": image_path,
-                "resolved": resolved_item,
-                "intermediate_dir": page_intermediate,
-                "outputs_dir": page_outputs,
-            }
-
-            if page_id in excluded_page_ids:
-                empty_base = page_intermediate / "numbering_base.json"
-                numbering_base_paths.append(empty_base)
-                page_ctx[page_id]["numbering_base"] = empty_base
-                if not self.dry_run:
-                    write_json(empty_base, empty_numbering_payload(index, image_path))
-                barline_override_stats[page_id] = {
-                    "removed": 0,
-                    "added": 0,
-                    "remove_requests": 0,
-                    "unmatched_remove": 0,
-                }
-                continue
-
-            # 1. Barline Correction
-            barlines_path = Path(resolved_item["barlines_json"])
-            if apply_barlines:
-                corrected_path = page_intermediate / "barlines_corrected.json"
-                if barline_override_payload and isinstance(
-                    barline_override_payload.get("barline_overrides", []), list
-                ):
-                    raw_barlines = load_json(barlines_path)
-                    barlines_list = normalize_barlines(raw_barlines)
-                    corrected, stats = apply_barline_overrides(
-                        barlines_list,
-                        barline_override_payload.get("barline_overrides", []),
-                        page_index=index - 1,
-                        iou_threshold=barline_iou_threshold,
-                        min_width=barline_min_width,
-                        x_margin=barline_x_margin,
-                        y_margin=barline_y_margin,
-                    )
-                    barline_override_stats[page_id] = stats
-                    if not self.dry_run and self.debug:
-                        write_json(corrected_path, corrected)
-                    page_ctx[page_id]["corrected_barlines"] = corrected
-                else:
-                    if not self.dry_run and self.debug and barlines_path.exists():
-                        corrected_path.write_text(barlines_path.read_text())
-                    if barlines_path.exists():
-                        page_ctx[page_id]["corrected_barlines"] = load_json(barlines_path)
-                    barline_override_stats[page_id] = {
-                        "removed": 0,
-                        "added": 0,
-                        "remove_requests": 0,
-                        "unmatched_remove": 0,
-                    }
-                barlines_path = corrected_path
-            else:
-                barline_override_stats[page_id] = {
-                    "removed": 0,
-                    "added": 0,
-                    "remove_requests": 0,
-                    "unmatched_remove": 0,
-                }
-            page_ctx[page_id]["barlines_path"] = barlines_path
-
-            # 2. Base Numbering
-            numbering_base = page_intermediate / "numbering_base.json"
-            numbering_base_paths.append(numbering_base)
-            page_ctx[page_id]["numbering_base"] = numbering_base
-
-            if step_numbering and not self.validate_only:
-                if self.skip_existing and numbering_base.exists():
-                    logger.info(f"Skipping numbering_base for {page_id}: file exists.")
-                else:
-                    if not self.dry_run:
-                        if "corrected_barlines" in page_ctx[page_id]:
-                            barline_boxes = page_ctx[page_id]["corrected_barlines"]
-                        else:
-                            raw_barlines = load_json(Path(resolved_item["barlines_json"]))
-                            barline_boxes = normalize_barlines(raw_barlines)
-
-                        img_ref = cv2.imread(str(image_path))
-                        h, w = img_ref.shape[:2]
-
-                        page_obj = numbering_pipeline.process_page(
-                            barline_boxes,
-                            Path(resolved_item["staff_mask"]),
-                            (w, h),
-                            page_number=index,
-                            assume_one_staff_per_system=force_single_system,
-                            image=img_ref,
-                        )
-                        from src.measure_numbering.types import Score
-
-                        temp_score = Score()
-                        temp_score.pages.append(page_obj)
-                        numbering_pipeline.numberer.number_score(temp_score, start_number=1)
-                        write_json(numbering_base, score_to_dict(temp_score))
-
-        return {
-            "page_ctx": page_ctx,
-            "numbering_base_paths": numbering_base_paths,
-            "barline_override_stats": barline_override_stats,
-        }
 
     def run_mmr_batch_detection(
         self,
@@ -408,79 +572,9 @@ class PipelineOrchestrator:
         page_ctx: Dict[str, Dict[str, Any]],
     ) -> None:
         """Phase B: MMR Batch Detection."""
-        step_mmr = get_nested(self.config, "steps", "mmr_overrides", default=False)
-        if not step_mmr or self.validate_only:
-            return
-
-        enable_rotation_tta = bool(
-            get_nested(self.config, "mmr", "enable_rotation_tta", default=False)
+        return numbering_phases.run_mmr_batch_detection(
+            self, page_ids, excluded_page_ids, page_ctx, services=self._numbering_phase_services()
         )
-        model_path = get_nested(self.config, "mmr", "model_path")
-        model_path = Path(model_path) if model_path else None
-        debug_root = get_nested(self.config, "mmr", "debug_root")
-        debug_root = Path(debug_root) if debug_root else None
-
-        mmr_input_pages = []
-        mmr_input_images = []
-        mmr_output_paths = []
-
-        for page_id in page_ids:
-            if page_id in excluded_page_ids:
-                continue
-            ctx = page_ctx[page_id]
-            numbering_base = ctx["numbering_base"]
-            overrides_mmr = ctx["intermediate_dir"] / "overrides_mmr.json"
-
-            if self.skip_existing and overrides_mmr.exists():
-                logger.info(f"Skipping MMR preparation for {page_id}: file exists.")
-                continue
-
-            if not self.dry_run and numbering_base.exists():
-                mmr_input_pages.append(load_json(numbering_base))
-                mmr_input_images.append(ctx["image_path"])
-                mmr_output_paths.append(overrides_mmr)
-            else:
-                logger.warning(f"MMR skipped for {page_id} because numbering_base.json is missing.")
-
-        if mmr_input_pages:
-            logger.info(f"Running MMR batch for {len(mmr_input_pages)} pages...")
-            if not model_path:
-                raise ValueError("mmr.model_path is required for MMR step.")
-
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            from src.measure_numbering.mmr import MMRClassifier, MMROCREngine
-
-            classifier_key = ("classifier", str(model_path), str(device))
-            if classifier_key not in self._mmr_persistence:
-                logger.info(
-                    f"Initializing persistent MMRClassifier with model: {model_path} on {device}"
-                )
-                self._mmr_persistence[classifier_key] = MMRClassifier(model_path, device)
-
-            ocr_key = ("ocr_engine", enable_rotation_tta)
-            if ocr_key not in self._mmr_persistence:
-                logger.info(
-                    f"Initializing persistent MMROCREngine (RapidOCR) with rotation_tta={enable_rotation_tta}"
-                )
-                self._mmr_persistence[ocr_key] = MMROCREngine(
-                    enable_rotation_tta=enable_rotation_tta
-                )
-
-            run_mmr_batch(
-                pages_data=mmr_input_pages,
-                image_paths=mmr_input_images,
-                output_paths=mmr_output_paths,
-                model_path=model_path,
-                device=device,
-                enable_rotation_tta=enable_rotation_tta,
-                debug_root=debug_root,
-                classifier=self._mmr_persistence[classifier_key],
-                ocr_engine=self._mmr_persistence[ocr_key],
-            )
-            if device.type == "cuda":
-                torch.cuda.empty_cache()
-        else:
-            logger.info("No pages to process for MMR batch.")
 
     def run_final_numbering_and_overlays(
         self,
@@ -488,93 +582,15 @@ class PipelineOrchestrator:
         excluded_page_ids: Set[str],
         page_ctx: Dict[str, Dict[str, Any]],
         user_overrides_payload: Optional[Dict[str, Any]],
+        movement_boundaries: Optional[Dict[str, Any]] = None,
     ) -> List[Path]:
         """Phase C: Final Numbering & Overlays."""
-        step_mmr = get_nested(self.config, "steps", "mmr_overrides", default=False)
-        step_apply = get_nested(self.config, "steps", "apply_measure_overrides", default=False)
-        step_overlay = get_nested(self.config, "steps", "overlay", default=False)
-        apply_barlines = get_nested(self.config, "steps", "apply_barline_overrides", default=False)
-        force_single_system = bool(
-            get_nested(self.config, "numbering", "force_single_system", default=False)
+        return numbering_phases.run_final_numbering_and_overlays(
+            self,
+            page_ids,
+            excluded_page_ids,
+            page_ctx,
+            user_overrides_payload,
+            movement_boundaries,
+            services=self._numbering_phase_services(),
         )
-
-        numbering_final_paths: List[Path] = []
-        numbering_pipeline = self._persistence.get("numbering_pipeline")
-
-        for page_id in tqdm(page_ids, desc="Phase C: Final Numbering", unit="page"):
-            ctx = page_ctx[page_id]
-            page_intermediate = ctx["intermediate_dir"]
-            page_outputs = ctx["outputs_dir"]
-            index = ctx["index"]
-            image_path = ctx["image_path"]
-            resolved_item = ctx["resolved"]
-
-            if page_id in excluded_page_ids:
-                if (step_apply or step_overlay) and not self.validate_only:
-                    empty_final = page_outputs / "numbering_final.json"
-                    numbering_final_paths.append(empty_final)
-                    if not self.dry_run:
-                        write_json(empty_final, empty_numbering_payload(index, image_path))
-                continue
-
-            mmr_overrides_payload = None
-            if step_mmr and not self.validate_only:
-                overrides_mmr = page_intermediate / "overrides_mmr.json"
-                if not self.dry_run and overrides_mmr.exists():
-                    mmr_overrides_payload = load_json(overrides_mmr)
-
-            if (step_apply or step_overlay) and not self.validate_only:
-                overrides_payload = merge_measure_overrides(
-                    mmr_overrides_payload, user_overrides_payload
-                )
-                if not self.dry_run and self.debug:
-                    write_json(page_intermediate / "overrides_combined.json", overrides_payload)
-
-                final_json = page_outputs / "numbering_final.json"
-                numbering_final_paths.append(final_json)
-                overlay_path = page_outputs / "numbering_overlay.png" if step_overlay else None
-
-                if (
-                    self.skip_existing
-                    and final_json.exists()
-                    and (not overlay_path or overlay_path.exists())
-                ):
-                    logger.info(f"Skipping final_numbering for {page_id}: file exists.")
-                else:
-                    if not self.dry_run:
-                        raw_barlines = load_json(Path(resolved_item["barlines_json"]))
-                        barline_boxes = normalize_barlines(raw_barlines)
-                        if apply_barlines:
-                            if "corrected_barlines" in ctx:
-                                barline_boxes = ctx["corrected_barlines"]
-                            elif ctx["barlines_path"].exists():
-                                barline_boxes = normalize_barlines(load_json(ctx["barlines_path"]))
-
-                        img_ref = cv2.imread(str(image_path))
-                        h, w = img_ref.shape[:2]
-
-                        page_obj = numbering_pipeline.process_page(
-                            barline_boxes,
-                            Path(resolved_item["staff_mask"]),
-                            (w, h),
-                            page_number=index,
-                            assume_one_staff_per_system=force_single_system,
-                            image=img_ref,
-                        )
-                        from src.measure_numbering.types import Score
-
-                        temp_score = Score()
-                        temp_score.pages.append(page_obj)
-
-                        ov = overrides_payload.get("measure_overrides")
-                        numbering_pipeline.numberer.number_score(
-                            temp_score, start_number=1, overrides=ov
-                        )
-                        write_json(final_json, score_to_dict(temp_score))
-
-                        if step_overlay and overlay_path:
-                            from tools.add_measure_numbers import render_overlay
-
-                            render_overlay(temp_score, image_path, overlay_path)
-
-        return numbering_final_paths

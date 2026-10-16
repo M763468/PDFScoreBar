@@ -218,17 +218,16 @@ def validate_manual_correction_handoff(
         normalized["movement_boundary_evidence"] = _relative_for_gui(
             movement_evidence, package_root=package_root
         )
-        resolved_output = _resolve_package_path(
-            payload.get("movement_boundary_resolved_output")
-            or "corrections/movement_boundaries.json",
-            package_root=package_root,
-            field="movement_boundary_resolved_output",
-            required=True,
-        )
-        assert resolved_output is not None
-        normalized["movement_boundary_resolved_output"] = _relative_for_gui(
-            resolved_output, package_root=package_root
-        )
+    resolved_output = _resolve_package_path(
+        payload.get("movement_boundary_resolved_output") or "corrections/movement_boundaries.json",
+        package_root=package_root,
+        field="movement_boundary_resolved_output",
+        required=True,
+    )
+    assert resolved_output is not None
+    normalized["movement_boundary_resolved_output"] = _relative_for_gui(
+        resolved_output, package_root=package_root
+    )
 
     normalized_pages = []
 
@@ -276,6 +275,13 @@ def validate_manual_correction_handoff(
         normalized_page["manual_outputs"] = _manual_output_paths(page, package_root=package_root)
         normalized_pages.append(normalized_page)
 
+    movement_outputs = {page["manual_outputs"]["movement_boundary"] for page in normalized_pages}
+    if len(movement_outputs) != 1:
+        raise ManualCorrectionHandoffError(
+            "movement boundary review output must resolve to one shared package-local path "
+            "across all handoff pages"
+        )
+
     normalized["pages"] = normalized_pages
     return normalized
 
@@ -313,9 +319,9 @@ def build_manual_gui_config(
             gui_page["review_overlay"] = page["review_overlay"]
         if not _is_missing(normalized.get("movement_boundary_evidence")):
             gui_page["movement_boundary_evidence"] = normalized["movement_boundary_evidence"]
-            gui_page["movement_boundary_resolved_output"] = normalized[
-                "movement_boundary_resolved_output"
-            ]
+        gui_page["movement_boundary_resolved_output"] = normalized[
+            "movement_boundary_resolved_output"
+        ]
         pages.append(gui_page)
 
     return {

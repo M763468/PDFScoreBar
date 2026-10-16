@@ -5,12 +5,47 @@ on:
   push:
     branches:
       - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   repository-surface:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Validate minimal-mainline surface contract
         run: python3 tools/check_repository_surface.py
+      - name: Install release-tool test dependency
+        run: python3 -m pip install pytest
+      - name: Test pinned release creation and corruption rejection
+        run: python3 -m pytest -q tests/test_release_candidate.py
+      - name: Generate and check independent minimal Git candidates
+        shell: bash
+        run: |
+          source_commit=$(git rev-parse HEAD)
+          main_commit=$(git rev-parse origin/main)
+          for run in a b; do
+            python3 tools/release_candidate.py create "$RUNNER_TEMP/candidate-$run" \
+              --source-commit "$source_commit" --main-commit "$main_commit" \
+              --branch "release/ci-$run" --report "$RUNNER_TEMP/candidate-$run.json"
+            python3 tools/materialize_distribution.py check "$RUNNER_TEMP/candidate-$run" --git-checkout
+          done
+          cmp "$RUNNER_TEMP/candidate-a.json" "$RUNNER_TEMP/candidate-b.json"
+      - name: Retain static candidate identities (not release acceptance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-static-evidence
+          path: |
+            ${{ runner.temp }}/candidate-a.json
+            ${{ runner.temp }}/candidate-b.json
+            ${{ runner.temp }}/candidate-a/DISTRIBUTION_PROVENANCE.json

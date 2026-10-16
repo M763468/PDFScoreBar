@@ -19,6 +19,7 @@ def _handoff(tmp_path):
     (page / "source.png").write_bytes(b"image")
     for name in ("numbering_final.json", "mmr_overrides.json", "barlines_review.json"):
         (page / name).write_text("{}", encoding="utf-8")
+    (page / "numbering_final.json").write_text(json.dumps({"systems": [{"index": 0}]}))
     handoff = root / "manual_correction_input.json"
     handoff.write_text(
         json.dumps(
@@ -287,6 +288,141 @@ def test_review_movement_export_uses_declared_package_paths(tmp_path):
         thread.join()
 
 
+def _load_saved_movement(package):
+    from src.pipeline.review.apply_corrections import _load_movement_boundary_input
+
+    return _load_movement_boundary_input(
+        normalized_handoff={
+            "pages": package.pages,
+            "movement_boundary_resolved_output": "corrections/movement_boundaries.json",
+        },
+        package_root=package.root,
+        source_config={},
+    )[0]
+
+
+def test_manual_movement_save_is_ready_for_numbering_without_detector_evidence(review_server):
+    server, _ = review_server
+    item = {"page": 0, "system": 0, "op": "boundary", "reason": "new movement"}
+    assert (
+        _request(
+            server,
+            "POST",
+            "/api/save",
+            {"page": 0, "correction_type": "movement_boundary", "items": [item]},
+        )[0]
+        == 200
+    )
+    payload = _load_saved_movement(server.package)
+    assert [(b["page"], b["system"], b["reset_number"]) for b in payload["boundaries"]] == [
+        (0, 0, 1)
+    ]
+    boundary = payload["boundaries"][0]
+    assert boundary["source"] == "manual"
+    assert boundary["provenance"]["review"]["sha256"]
+    assert "evidence" not in boundary["provenance"]
+    server.package.record_correction(0, "movement_boundary", [])
+    assert _load_saved_movement(server.package)["boundaries"] == []
+
+
+@pytest.mark.parametrize(
+    "item",
+    [
+        {"page": 0, "system": 99, "op": "boundary"},
+        {"page": 1, "system": 0, "op": "boundary"},
+        {"page": 0, "system": 0, "op": "no_boundary"},
+    ],
+)
+def test_manual_movement_rejects_unsupported_targets_before_writing(review_server, item):
+    server, _ = review_server
+    status, _ = _request(
+        server,
+        "POST",
+        "/api/save",
+        {
+            "page": 0,
+            "correction_type": "movement_boundary",
+            "items": [item],
+        },
+    )
+    assert status == 400
+    assert not server.package.output(0, "movement_boundary").exists()
+
+
+def test_manual_movement_partial_save_cannot_apply_stale_reset(review_server, monkeypatch):
+    server, _ = review_server
+    package = server.package
+    item = {"page": 0, "system": 0, "op": "boundary"}
+    package.record_correction(0, "movement_boundary", [item])
+    original_write = review_server_module._atomic_write
+
+    def fail_resolved(path, value):
+        if path.name == "movement_boundaries.json":
+            raise OSError("resolved write failed")
+        original_write(path, value)
+
+    changed = [{**item, "reason": "changed decision"}]
+    with monkeypatch.context() as patch:
+        patch.setattr(review_server_module, "_atomic_write", fail_resolved)
+        with pytest.raises(OSError, match="resolved write failed"):
+            package.record_correction(0, "movement_boundary", changed)
+    with pytest.raises(ValueError, match="stale"):
+        _load_saved_movement(package)
+    package.record_correction(0, "movement_boundary", changed)
+    assert len(_load_saved_movement(package)["boundaries"]) == 1
+
+
+@pytest.mark.parametrize("custom_outputs", [False, True])
+def test_manual_movement_save_preserves_other_pages_and_rechecks_saved_bytes(
+    tmp_path, custom_outputs
+):
+    handoff = _handoff(tmp_path)
+    data = json.loads(handoff.read_text())
+    data["pages"].append({**data["pages"][0], "page_id": "page_002", "page_number": 2})
+    if custom_outputs:
+        for index, page in enumerate(data["pages"]):
+            page["correction_outputs"] = {
+                "mmr_measure_span": f"corrections/page{index}-mmr.json",
+                "measure_construction": f"corrections/page{index}-measures.json",
+                "barline_construction": f"corrections/page{index}-barlines.json",
+                "movement_boundary": "corrections/shared-movements.json",
+            }
+    handoff.write_text(json.dumps(data))
+    package = ReviewPackage(handoff)
+    for page in (0, 1):
+        package.record_correction(
+            page, "movement_boundary", [{"page": page, "system": 0, "op": "boundary"}]
+        )
+    assert len(_load_saved_movement(package)["boundaries"]) == 2
+    package.record_correction(0, "movement_boundary", [])
+    assert [b["page"] for b in _load_saved_movement(package)["boundaries"]] == [1]
+    path = package.output(1, "movement_boundary")
+    path.write_text(
+        json.dumps({"schema_version": 1, "correction_type": "movement_boundary", "items": []})
+    )
+    with pytest.raises(ValueError, match="stale"):
+        _load_saved_movement(package)
+
+
+def test_distinct_movement_paths_are_rejected_before_any_save_or_apply(tmp_path):
+    handoff = _handoff(tmp_path)
+    data = json.loads(handoff.read_text())
+    data["pages"].append({**data["pages"][0], "page_id": "page_002", "page_number": 2})
+    handoff.write_text(json.dumps(data))
+    package = ReviewPackage(handoff)
+    package.pages[1]["manual_outputs"]["movement_boundary"] = "corrections/other-movements.json"
+    with pytest.raises(ValueError, match="one shared package-local path"):
+        _load_saved_movement(package)
+
+    data["pages"][1]["correction_outputs"] = {
+        **package.pages[1]["manual_outputs"],
+    }
+    handoff.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="one shared package-local path"):
+        ReviewPackage(handoff)
+    assert not (handoff.parent / "corrections").exists()
+
+
 def test_review_rejects_handoff_output_targeting_artifact_or_external_symlink(tmp_path):
     handoff = _handoff(tmp_path)
     payload = json.loads(handoff.read_text())
@@ -346,7 +482,13 @@ def test_all_corrections_share_record_transition_and_failure_preservation(
 ):
     server, _ = review_server
     package = server.package
-    first = [{"page": 0, "op": "boundary" if kind == "movement_boundary" else "set_measure_span"}]
+    first = [
+        {
+            "page": 0,
+            "system": 0,
+            "op": "boundary" if kind == "movement_boundary" else "set_measure_span",
+        }
+    ]
     changed = [{**first[0], "reason": "new draft"}]
     package.state.set_pending(0, kind, first)
     package.record_correction(0, kind, first)

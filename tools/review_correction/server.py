@@ -124,8 +124,44 @@ class ReviewPackage:
                 raise ValueError("Correction items must be objects")
             existing = _load_items(path, kind)
             merged = [item for item in existing if str(item.get("page")) != str(page)] + items
+            config = next(p for p in self.pages if str(p["page"]) == str(page))
+            manual_movement = kind == "movement_boundary" and not config.get(
+                "movement_boundary_evidence"
+            )
+            if manual_movement:
+                from src.pipeline.review.movement_boundary_review import (
+                    build_manual_movement_boundaries,
+                )
+
+                # Validate before replacing either artifact. The consumer also
+                # checks their shared review digest if the second write fails.
+                build_manual_movement_boundaries(
+                    review=_payload(kind, merged), review_artifact="", review_sha256=""
+                )
+                if any(str(item.get("page")) != str(page) for item in items):
+                    raise ValueError("Movement decisions must target the selected page")
+                for item in merged:
+                    target = next((p for p in self.pages if p["page"] == item["page"]), None)
+                    if target is None:
+                        raise ValueError("Unknown movement boundary page")
+                    numbering = json.loads(self.readable(target["numbering"]).read_bytes())
+                    page_data = (numbering.get("pages") or [numbering])[0]
+                    systems = page_data.get("systems", [])
+                    system_ids = {
+                        system.get("index", system.get("system", index))
+                        for index, system in enumerate(systems)
+                    }
+                    if item["system"] not in system_ids:
+                        raise ValueError("Unknown movement boundary system")
             path = self.output(page, kind)
             _atomic_write(path, _payload(kind, merged))
+            if manual_movement:
+                resolved = build_manual_movement_boundaries(
+                    review=_payload(kind, merged),
+                    review_artifact=config["manual_outputs"]["movement_boundary"],
+                    review_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                )
+                _atomic_write(self.writable(config["movement_boundary_resolved_output"]), resolved)
         except (ValueError, OSError, KeyError, TypeError) as exc:
             try:
                 self.state.note_record_error(page, kind, str(exc))

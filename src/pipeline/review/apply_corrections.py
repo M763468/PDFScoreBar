@@ -243,13 +243,35 @@ def _load_movement_boundary_input(
     *, normalized_handoff: Dict[str, Any], package_root: Path, source_config: Dict[str, Any]
 ) -> tuple[Dict[str, Any], Optional[Path], Optional[str]]:
     """Prefer a finalized package-local movement decision, with legacy fallback."""
-    from src.pipeline.review.movement_boundary_review import build_resolved_movement_boundaries
+    from src.pipeline.review.movement_boundary_review import (
+        build_manual_movement_boundaries,
+        build_resolved_movement_boundaries,
+    )
     from src.pipeline.steps.numbering import load_movement_boundary_payload
 
     movement_review_path = None
     movement_review_digest = None
     movement_output = normalized_handoff.get("movement_boundary_resolved_output")
     evidence_rel = normalized_handoff.get("movement_boundary_evidence")
+    review_rels = {
+        p["manual_outputs"]["movement_boundary"]
+        for p in normalized_handoff.get("pages", [])
+        if p.get("manual_outputs", {}).get("movement_boundary")
+    }
+    if len(review_rels) > 1:
+        raise ValueError(
+            "movement boundary review output must resolve to one shared package-local path "
+            "across all handoff pages"
+        )
+    review_rel = next(iter(review_rels), None)
+    review_path = None
+    if review_rel:
+        try:
+            review_path = _resolve_package_artifact(
+                package_root, review_rel, role="movement boundary review"
+            )
+        except FileNotFoundError:
+            pass
     if movement_output:
         try:
             movement_review_path = _resolve_package_artifact(
@@ -266,21 +288,8 @@ def _load_movement_boundary_input(
             evidence_path = _resolve_package_artifact(
                 package_root, evidence_rel, role="movement_boundary_evidence"
             )
-            page = next(
-                (
-                    p
-                    for p in normalized_handoff.get("pages", [])
-                    if p.get("manual_outputs", {}).get("movement_boundary")
-                ),
-                None,
-            )
-            if page is None:
+            if review_path is None:
                 raise ValueError("Finalized movement boundaries have no declared review artifact")
-            review_path = _resolve_package_artifact(
-                package_root,
-                page["manual_outputs"]["movement_boundary"],
-                role="movement boundary review",
-            )
             evidence_bytes = evidence_path.read_bytes()
             evidence = json.loads(evidence_bytes.decode("utf-8"))
             review = json.loads(review_path.read_text(encoding="utf-8"))
@@ -294,33 +303,33 @@ def _load_movement_boundary_input(
                 raise ValueError(
                     "Finalized movement-boundary output is stale; export the current saved review"
                 )
+        elif review_path is not None or any(
+            boundary.get("provenance", {}).get("kind") == "manual_movement_boundary_review"
+            for boundary in payload["boundaries"]
+        ):
+            if review_path is None:
+                raise ValueError(
+                    "Finalized manual movement boundaries have no saved review artifact"
+                )
+            review_bytes = review_path.read_bytes()
+            expected = build_manual_movement_boundaries(
+                review=json.loads(review_bytes),
+                review_artifact=review_rel,
+                review_sha256=hashlib.sha256(review_bytes).hexdigest(),
+            )
+            if payload != expected:
+                raise ValueError(
+                    "Finalized movement-boundary output is stale; save the current review"
+                )
         return payload, movement_review_path, movement_review_digest
 
-    if evidence_rel:
-        page = next(
-            (
-                p
-                for p in normalized_handoff.get("pages", [])
-                if p.get("manual_outputs", {}).get("movement_boundary")
-            ),
-            None,
-        )
-        if page is not None:
-            try:
-                review_path = _resolve_package_artifact(
-                    package_root,
-                    page["manual_outputs"]["movement_boundary"],
-                    role="movement boundary review",
-                )
-            except FileNotFoundError:
-                review_path = None
-            if review_path is not None and review_path.is_file():
-                review = json.loads(review_path.read_text(encoding="utf-8"))
-                items = review.get("items") if isinstance(review, dict) else None
-                if isinstance(items, list) and items:
-                    raise ValueError(
-                        "Movement-boundary decisions are saved but not finalized; export them before applying"
-                    )
+    if review_path is not None:
+        review = json.loads(review_path.read_text(encoding="utf-8"))
+        items = review.get("items") if isinstance(review, dict) else None
+        if isinstance(items, list) and items:
+            raise ValueError(
+                "Movement-boundary decisions are saved but not finalized; export them before applying"
+            )
 
     return (
         load_movement_boundary_payload(get_nested(source_config, "inputs", "movement_boundaries")),
@@ -1126,13 +1135,6 @@ def apply_corrections_and_rerun(
     normalized = validate_manual_correction_handoff(
         raw_payload, handoff_path=handoff_path, mode="base_v1"
     )
-    # Preserve an explicitly declared resolved-output location even for older
-    # handoffs that do not carry the companion evidence pointer.
-    if raw_payload.get("movement_boundary_resolved_output"):
-        normalized["movement_boundary_resolved_output"] = raw_payload[
-            "movement_boundary_resolved_output"
-        ]
-
     # Collect custom staging paths from normalized handoff
     staging_paths: Dict[str, List[str | Path]] = {
         "mmr_measure_span": [],

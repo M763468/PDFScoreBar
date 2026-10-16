@@ -35,9 +35,9 @@ const saveStatus = document.getElementById("saveStatus");
 const dirtyStatus = document.getElementById("dirtyStatus");
 const selectionMeta = document.getElementById("selectionMeta");
 
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
 const saveBtn = document.getElementById("saveBtn");
+const panModeBtn = document.getElementById("panModeBtn");
+const fitPageBtn = document.getElementById("fitPageBtn");
 const exportMovementBtn = document.getElementById("exportMovementBtn");
 const helpBtn = document.getElementById("helpBtn");
 const helpPanel = document.getElementById("helpPanel");
@@ -74,6 +74,7 @@ let panOrigin = { x: 0, y: 0 };
 let isDrawing = false;
 let drawStart = null;
 let spaceDown = false;
+let panMode = false;
 
 const COLOR_MEASURE = "#3aa3ff";
 const COLOR_BASE_MMR = "#46c46b";
@@ -202,6 +203,14 @@ function updateControlState() {
   const op = currentOp();
   const movementMode = type === "movement_boundary";
   const barlineMode = type === "barline_construction";
+  document.getElementById("taskHelp").textContent = window.ReviewStrings.taskSummary[type];
+  document.getElementById("taskHelpDetails").textContent = window.ReviewStrings.taskHelp[type];
+  document.getElementById("restReviewGuide").hidden = type !== "mmr_measure_span";
+  document.getElementById("restReviewInstructions").hidden = type !== "mmr_measure_span";
+  document.getElementById("operationRow").hidden =
+    type === "measure_construction" || (movementMode && !currentPage?.movement_boundary_evidence);
+  selectionMeta.hidden = movementMode;
+  movementPageStatus.hidden = !movementMode;
 
   measureSpanRow.style.display =
     type === "mmr_measure_span" && op === "set_measure_span" ? "flex" : "none";
@@ -214,9 +223,8 @@ function updateControlState() {
   drawModeBtn.disabled = !barlineMode;
   if (!barlineMode && mode === "draw") setMode("select");
 
-  // Movement review persists each decision immediately, so a separate Save
-  // button would create an unnecessary second commit step.
-  saveBtn.style.display = movementMode ? "none" : "";
+  // Other correction types on this page may still have pending edits.
+  saveBtn.style.display = "";
   exportMovementBtn.style.display =
     movementMode && currentPage && currentPage.movement_boundary_evidence ? "" : "none";
   reasonRow.style.display = movementMode ? "none" : "";
@@ -233,8 +241,8 @@ function updateControlState() {
     addItemBtn.textContent = window.ReviewStrings.stage;
   }
 
-  const movementOption = typeSelect.querySelector("option[value=movement_boundary]");
-  if (movementOption) movementOption.hidden = !currentPage?.movement_boundary_evidence;
+  const noBoundaryOption = opSelect.querySelector("option[value=no_boundary]");
+  if (noBoundaryOption) noBoundaryOption.hidden = !currentPage?.movement_boundary_evidence;
   renderItems();
   updateSelectionMeta();
   draw();
@@ -244,13 +252,14 @@ function setMode(nextMode) {
   mode = nextMode;
   selectModeBtn.classList.toggle("active", mode === "select");
   drawModeBtn.classList.toggle("active", mode === "draw");
-  canvas.style.cursor = mode === "draw" ? "crosshair" : "default";
+  if (mode === "draw") panMode = false;
+  updatePanControl();
 }
 
 function resetView() {
-  const container = canvas.parentElement;
-  canvas.width = container.clientWidth;
-  canvas.height = container.clientHeight;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.round(rect.width));
+  canvas.height = Math.max(1, Math.round(rect.height));
   const scaleX = canvas.width / image.width;
   const scaleY = canvas.height / image.height;
   viewScale = Math.min(scaleX, scaleY);
@@ -268,6 +277,20 @@ function imgToCanvas(pt) {
 
 function canvasToImg(pt) {
   return { x: (pt.x - viewOffset.x) / viewScale, y: (pt.y - viewOffset.y) / viewScale };
+}
+
+function canvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * canvas.width / rect.width,
+    y: (event.clientY - rect.top) * canvas.height / rect.height,
+  };
+}
+
+function updatePanControl() {
+  panModeBtn.classList.toggle("active", panMode);
+  panModeBtn.setAttribute("aria-pressed", String(panMode));
+  canvas.style.cursor = panMode ? "grab" : mode === "draw" ? "crosshair" : "default";
 }
 
 function normalizeBox(box) {
@@ -439,13 +462,9 @@ function updateMovementTargetMeta() {
   } else {
     const bounds = systemBounds(system);
     const state = movementStateAt(system);
-    const clicked =
-      selectedMeasure && String(selectedMeasure.system) === String(system)
-        ? ` ${reviewerCopy("ui.selectedMeasure", {measure: displayIndex(selectedMeasure.measure)})}`
-        : "";
-    const status = state ? ` ${reviewerCopy("ui.currentState", {state: state.label})}` : ` ${window.ReviewStrings.ui.noBoundaryState}`;
+    const status = state ? ` ${reviewerCopy("ui.currentState", {state: state.label})}` : "";
     movementTargetMeta.textContent = bounds
-      ? `${reviewerCopy("ui.targetBefore", {system: displayIndex(system)})}${clicked}${status}`
+      ? `${reviewerCopy("ui.targetBefore", {system: displayIndex(system)})}${status}`
       : reviewerCopy("ui.missingSystem", {system: displayIndex(system)});
   }
 
@@ -937,6 +956,8 @@ function updateActionButtons() {
 
 function renderItems() {
   itemList.innerHTML = "";
+  document.getElementById("itemListHeading").textContent =
+    window.ReviewStrings.listHeadings[currentType()];
   if (currentType() === "mmr_measure_span") renderMmrRows();
   else if (currentType() === "movement_boundary") renderMovementRows();
   else renderManualItems();
@@ -1508,19 +1529,29 @@ window.addEventListener("review-language-changed", () => {
   window.reviewApplyResult?.refresh();
 });
 
-prevBtn.onclick = () => switchPage(Math.max(0, currentIndex - 1));
-nextBtn.onclick = () => switchPage(Math.min(pages.length - 1, currentIndex + 1));
+panModeBtn.onclick = () => {
+  releaseTransientInteraction();
+  panMode = !panMode;
+  if (panMode) setMode("select");
+  updatePanControl();
+};
+fitPageBtn.onclick = () => {
+  releaseTransientInteraction();
+  resetView();
+  draw();
+};
 
 canvas.addEventListener("mousedown", (event) => {
-  const rect = canvas.getBoundingClientRect();
-  const pt = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  const pt = canvasPoint(event);
 
-  if (event.button === 1 || spaceDown) {
+  if (event.button === 1 || (event.button === 0 && (spaceDown || panMode))) {
+    event.preventDefault();
     isPanning = true;
     panStart = pt;
     panOrigin = { ...viewOffset };
     return;
   }
+  if (event.button !== 0) return;
 
   if (mode === "draw" && currentType() === "barline_construction") {
     isDrawing = true;
@@ -1581,9 +1612,8 @@ canvas.addEventListener("mousedown", (event) => {
   }
 });
 
-canvas.addEventListener("mousemove", (event) => {
-  const rect = canvas.getBoundingClientRect();
-  const pt = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+window.addEventListener("mousemove", (event) => {
+  const pt = canvasPoint(event);
 
   if (isPanning) {
     viewOffset = { x: panOrigin.x + (pt.x - panStart.x), y: panOrigin.y + (pt.y - panStart.y) };
@@ -1598,10 +1628,9 @@ canvas.addEventListener("mousemove", (event) => {
   }
 });
 
-canvas.addEventListener("mouseup", (event) => {
+window.addEventListener("mouseup", (event) => {
   if (isDrawing && drawStart) {
-    const rect = canvas.getBoundingClientRect();
-    const end = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const end = canvasPoint(event);
     const startImg = canvasToImg({ x: drawStart.x, y: drawStart.y });
     const endImg = canvasToImg(end);
     draftBBox = normalizeBox([startImg.x, startImg.y, endImg.x, endImg.y]);
@@ -1618,8 +1647,7 @@ canvas.addEventListener(
   "wheel",
   (event) => {
     event.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const pt = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const pt = canvasPoint(event);
     const zoom = Math.exp(-event.deltaY * 0.001);
     const imgPt = canvasToImg(pt);
     viewScale = Math.min(5.0, Math.max(0.1, viewScale * zoom));
@@ -1640,11 +1668,11 @@ window.addEventListener("keydown", (event) => {
   }
   if (event.key === "ArrowLeft") {
     event.preventDefault();
-    prevBtn.click();
+    switchPage(Math.max(0, currentIndex - 1));
   }
   if (event.key === "ArrowRight") {
     event.preventDefault();
-    nextBtn.click();
+    switchPage(Math.min(pages.length - 1, currentIndex + 1));
   }
   if (event.key === "Delete" || event.key === "Backspace") deleteSelectedItem();
 });
@@ -1664,6 +1692,20 @@ window.addEventListener("resize", () => {
   resetView();
   draw();
 });
+
+// Header feedback and translated controls can change the available height
+// without a window resize. Keep the bitmap aligned without losing the zoom.
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(() => {
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    if (canvas.width === width && canvas.height === height) return;
+    canvas.width = width;
+    canvas.height = height;
+    if (image.complete && image.width) draw();
+  }).observe(canvas);
+}
 
 updateOps();
 

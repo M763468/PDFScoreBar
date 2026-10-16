@@ -17,13 +17,15 @@
     const copy = window.ReviewStrings.state;
     latestState = state;
     panel.replaceChildren();
+    const details = document.getElementById("correctionStateDetails");
+    if (details && details !== panel) details.replaceChildren();
     const heading = document.createElement("strong");
     heading.textContent = copy.heading;
     if (!document.getElementById("statePanel")) panel.appendChild(heading);
     const summary = document.createElement("div");
     summary.className = "small";
     const statusNames = window.ReviewStrings.state.statuses || {};
-    summary.textContent = `${statusNames[state.package.status] || (state.labels || {})[state.package.status] || state.package.status} · ${state.package.counts.pending} ${copy.pending} · ${state.package.counts.recorded} ${copy.recorded} · ${state.package.counts.error} ${copy.errors}`;
+    summary.textContent = `${state.package.counts.pending} ${copy.pending} · ${state.package.counts.recorded} ${copy.recorded} · ${state.package.counts.error} ${copy.errors}`;
     panel.appendChild(summary);
     for (const entry of state.states || []) {
       if (currentPage && String(entry.page) !== String(pageValue())) continue;
@@ -34,7 +36,8 @@
       const typeName = copy.types[entry.correction_type] || entry.correction_type;
       line.textContent = `${copy.page} ${Number(entry.page) + 1} · ${typeName}: ${statuses.join(" · ")}`;
       if (entry.error) line.textContent += ` · ${entry.error}`;
-      panel.appendChild(line);
+      // Errors stay visible even when routine per-type details are collapsed.
+      (entry.error ? panel : details || panel).appendChild(line);
     }
     const identity = document.getElementById("resultIdentity");
     if (identity) identity.textContent = `${copy.source}: ${state.package.current_identity.source_identity} · ${copy.result}: ${state.package.last_successful_result?.result_identity || "—"}`;

@@ -7,12 +7,15 @@
   <style>
     :root { color-scheme: light; font: 14px/1.4 system-ui, sans-serif; color: #17212b; background: #f3f5f7; }
     * { box-sizing: border-box; }
-    body { margin: 0; height: 100vh; min-height: 560px; display: grid; grid-template-rows: 58px 1fr; }
+    [hidden] { display:none !important; }
+    body { margin: 0; height: 100vh; min-height: 560px; display: grid; grid-template-rows: auto minmax(0,1fr); }
     button, select, input { font: inherit; }
     .btn { padding: 7px 11px; border: 1px solid #bcc7d1; border-radius: 6px; background: #fff; color: #17212b; cursor: pointer; }
     .btn:hover { background: #edf4fa; } .btn.active { color: #075b9a; border-color: #2587cb; background: #e4f3ff; }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
-    #topbar { display:flex; align-items:center; gap:14px; padding: 0 18px; background:#fff; border-bottom:1px solid #d9e0e6; }
+    #topbar { display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px; padding:10px 18px; background:#fff; border-bottom:1px solid #d9e0e6; }
+    #applicationControls .row { margin:0; } #applicationControls p { margin:4px 0 0; }
+    #saveBtn { background:#e4f3ff; border-color:#2587cb; }
     #topbar strong { font-size:16px; } #pageMeta { color:#536473; } .spacer { flex:1; }
     #workspace { min-height:0; display:grid; grid-template-columns: 205px minmax(320px,1fr) 300px; }
     #navigation, #context { min-height:0; overflow:auto; background:#fff; }
@@ -25,7 +28,8 @@
     #main { min-width:0; min-height:0; display:flex; flex-direction:column; }
     #displayControls { display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:8px 12px; background:#fff; border-bottom:1px solid #d9e0e6; }
     #displayControls label { display:inline-flex; gap:4px; align-items:center; color:#536473; font-size:12px; }
-    #canvas { flex:1; min-height:0; width:100%; background:#15191e; cursor:default; }
+    #canvasViewport { flex:1; min-height:0; position:relative; overflow:hidden; background:#15191e; }
+    #canvas { position:absolute; inset:0; display:block; width:100%; height:100%; cursor:default; touch-action:none; }
     #canvasHint { padding:6px 12px; color:#657482; font-size:11px; background:#fff; }
     .panel { padding:12px 0; border-bottom:1px solid #e4e9ed; }
     .row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:8px 0; }
@@ -38,10 +42,10 @@
     #statePanel p { margin:5px 0; } #statePanel strong { color:#344553; }
     #itemList { max-height:23vh; overflow:auto; border:1px solid #e5eaee; }
     details { margin-top:10px; } summary { cursor:pointer; color:#425563; font-weight:600; }
-    .movement-guide, .movement-status { margin-top:7px; padding:8px; border:1px solid #ead994; border-radius:5px; background:#fff9df; font-size:12px; }
+    .movement-guide, .movement-status { margin-top:7px; padding:8px; border-radius:5px; background:#f3f6f8; font-size:12px; }
     .legend { display:flex; flex-wrap:wrap; gap:6px 10px; font-size:11px; color:#536473; } .dot { width:9px;height:9px;display:inline-block;border:1px solid #555; }
     #applyBtn { background:#126da8; color:white; border-color:#126da8; }
-    @media(max-width:900px) { #workspace { grid-template-columns:160px minmax(260px,1fr); } #context { grid-column:1/-1; border:0; border-top:1px solid #d9e0e6; max-height:42vh; } body { height:auto; min-height:100vh; grid-template-rows:58px auto; } #main { height:65vh; } }
+    @media(max-width:900px) { #workspace { grid-template-columns:140px minmax(0,1fr); } #context { grid-column:1/-1; border:0; border-top:1px solid #d9e0e6; max-height:42vh; } body { height:auto; min-height:100vh; grid-template-rows:auto auto; } #main { height:65vh; } }
   </style>
 </head>
 <body>
@@ -54,8 +58,15 @@
     </label>
     <span id="pageMeta"></span>
     <div class="spacer"></div>
-    <button id="prevBtn" class="btn" data-copy="previous">Previous</button>
-    <button id="nextBtn" class="btn" data-copy="next">Next</button>
+    <div id="applicationControls">
+      <div class="row">
+        <button id="saveBtn" class="btn" data-copy="save">Save this page</button>
+        <button id="applyBtn" class="btn" data-copy="result.apply">Generate corrected PDF</button>
+        <a id="openResultBtn" class="btn" href="/api/result" target="_blank" rel="noopener" hidden data-copy="openResult">Open corrected result</a>
+      </div>
+      <p class="small" data-copy="saveScope">Page changes are also saved when you change pages. PDF generation applies saved changes from every page.</p>
+      <div class="small" aria-live="polite"><span id="saveStatus"></span> <span id="dirtyStatus"></span></div>
+    </div>
   </header>
   <div id="workspace">
     <nav id="navigation" aria-label="Result pages" data-copy-aria="aria.pages">
@@ -72,18 +83,15 @@
         <label><input id="showManualToggle" type="checkbox" checked /><span data-copy="manualState">Your changes</span></label>
         <label><input id="showMovementToggle" type="checkbox" checked /><span data-copy="movement">Movement boundaries</span></label>
       </div>
-      <canvas id="canvas" aria-label="Score review canvas" data-copy-aria="aria.canvas"></canvas>
+      <div id="viewportControls" class="row" style="margin:0;padding:6px 12px;background:#fff">
+        <button id="panModeBtn" class="btn" type="button" aria-pressed="false" data-copy="pan">Move page</button>
+        <button id="fitPageBtn" class="btn" type="button" data-copy="fitPage">Fit page</button>
+      </div>
+      <div id="canvasViewport"><canvas id="canvas" aria-label="Score review canvas" data-copy-aria="aria.canvas"></canvas></div>
       <div id="canvasHint" data-copy="canvasHint">Scroll to zoom · Space-drag or middle-drag to pan · ←/→ changes page</div>
     </main>
     <aside id="context">
       <button id="helpBtn" hidden type="button" data-copy="details">Details</button>
-      <section class="panel" id="restReviewGuide">
-        <h2 data-copy="restReview.title">Check multi-measure rests</h2>
-        <p class="small" data-copy="restReview.check">Compare every printed rest count with its measure span. Missed rests may be shown as 1, and misreads may have no warning.</p>
-        <button id="reviewRestCountsBtn" class="btn" type="button" data-copy="restReview.open">Inspect all measures</button>
-        <p class="small" data-copy="restReview.edit">Select a measure, enter its printed rest count, add the change, and save. Hide overlays or zoom in to read the score.</p>
-        <p class="small" data-copy="restReview.verify">Generate the corrected PDF and compare subsequent row and page starts with the score. Successful generation does not certify correct numbering.</p>
-      </section>
       <section class="panel">
         <h2 data-copy="task">Correction task</h2>
         <div class="row"><label><span data-copy="taskType">Correction type</span>
@@ -94,39 +102,44 @@
             <option value="movement_boundary" data-copy="types.movement_boundary">Movement boundary</option>
           </select>
         </label></div>
-        <div class="row"><label><span data-copy="operation">Change</span><select id="opSelect"></select></label></div>
+        <p id="taskHelp" class="small"></p>
+        <div id="selectionMeta" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
+        <div class="row" id="operationRow"><label><span data-copy="operation">Change</span><select id="opSelect"></select></label></div>
         <div class="row" id="measureSpanRow"><label><span data-copy="measureSpan">Measure span</span> <input id="measureSpanInput" type="number" min="1" value="2" /></label></div>
+        <div id="movementBoundaryPanel" style="display:none">
+          <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" data-copy-placeholder="ui.systemPlaceholder" /></label></div>
+          <div class="movement-status" id="movementTargetMeta" data-copy="ui.noSystemSelected">No system selected.</div>
+          <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
+        </div>
         <div class="row" id="actionRow">
           <button id="selectModeBtn" class="btn active" data-copy="select">Select target</button>
           <button id="drawModeBtn" class="btn" data-copy="draw">Draw barline</button>
           <button id="addItemBtn" class="btn" data-copy="stage">Record change</button>
           <button id="deleteItemBtn" class="btn" disabled data-copy="remove">Remove recorded change</button>
         </div>
-        <div id="movementBoundaryPanel" style="display:none">
-          <div class="movement-guide" data-copy="ui.movementPrompt">Choose a system to review its movement boundary.</div>
-          <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" data-copy-placeholder="ui.systemPlaceholder" /></label></div>
-          <div class="movement-status" id="movementTargetMeta" data-copy="ui.noSystemSelected">No system selected.</div>
-          <div class="movement-status" id="movementPageStatus"></div>
-          <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
-        </div>
         <div class="row" id="reasonRow"><label><span data-copy="reason">Reason</span> <input id="reasonInput" type="text" value="manual correction" data-copy-default="ui.reasonDefault" /></label></div>
-        <div id="selectionMeta" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
+      </section>
+      <section class="panel" id="restReviewGuide">
+        <button id="reviewRestCountsBtn" class="btn" type="button" data-copy="restReview.open">Inspect all measures</button>
+        <p class="small" data-copy="restReview.reminder">Check printed rest counts even when no warning is shown.</p>
       </section>
       <section class="panel" id="statePanel" aria-live="polite">
         <h2 data-copy="status">Correction status</h2>
         <div id="correctionStatePanel" data-copy="stateLoading">Loading correction status…</div>
-        <div id="applicationControls">
-          <p id="applicationStatus" data-copy="result.loading">Result status is loading.</p>
-          <div class="row">
-            <button id="saveBtn" class="btn" data-copy="save">Save changes</button>
-            <button id="applyBtn" class="btn" data-copy="result.apply">Generate corrected PDF</button>
-            <a id="openResultBtn" class="btn" href="/api/result" target="_blank" rel="noopener" hidden data-copy="openResult">Open corrected result</a>
-          </div>
-        </div>
-        <div id="saveStatus"></div><div id="dirtyStatus"></div>
+        <p id="applicationStatus" data-copy="result.loading">Result status is loading.</p>
+        <details><summary data-copy="state.details">Save details</summary><div id="correctionStateDetails"></div></details>
       </section>
-      <details class="panel" id="resultDetails"><summary data-copy="currentChanges">Current page changes</summary><div id="itemList"></div></details>
-      <details class="panel" id="helpPanel"><summary data-copy="details">Details and evidence</summary><p id="resultIdentity" class="small"></p>
+      <details class="panel" id="resultDetails"><summary id="itemListHeading" data-copy="currentChanges">Measures on this page</summary><div id="itemList"></div></details>
+      <details class="panel" id="helpPanel"><summary data-copy="details">Editing tips</summary>
+        <p id="taskHelpDetails" class="small"></p>
+        <div id="restReviewInstructions">
+          <h2 data-copy="restReview.title">Check multi-measure rests</h2>
+          <p class="small" data-copy="restReview.check">Compare every printed rest count with its measure span. Missed rests may be shown as 1, and misreads may have no warning.</p>
+          <p class="small" data-copy="restReview.edit">Select a measure, enter its printed rest count, add the change, and save. Hide overlays or zoom in to read the score.</p>
+          <p class="small" data-copy="restReview.verify">Generate the corrected PDF and compare subsequent row and page starts with the score. Successful generation does not certify correct numbering.</p>
+        </div>
+        <p class="small" data-copy="ui.movementPrompt">Choose a system to review its movement boundary.</p>
+        <div class="small" id="movementPageStatus"></div>
         <p class="small" data-copy="help.pages">Visible page, system, and measure numbers start at 1. Saved correction indices keep their existing format.</p>
         <p class="small" data-copy="help.overlays">Selected objects and active drafts remain visible when overlays are hidden. Barlines can be selected or drawn; other changes use the selected score target.</p>
         <p class="small" data-copy="help.movement">Movement decisions apply before the selected system. Movement decisions are saved immediately.</p>

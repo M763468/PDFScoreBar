@@ -180,6 +180,40 @@ def validate_movement_boundary_review(
     }
 
 
+def build_manual_movement_boundaries(
+    *, review: Mapping[str, Any], review_artifact: str, review_sha256: str
+) -> dict[str, Any]:
+    """Resolve explicit manual resets without inventing detector evidence.
+
+    Bind the saved review bytes so an older export cannot silently override a
+    newer edit. With no producer, no_boundary is not a valid operation.
+    """
+    normalized = validate_movement_boundary_review(
+        review, evidence={"schema_version": EVIDENCE_SCHEMA_VERSION, "candidates": []}
+    )
+    return {
+        "schema_version": RESOLVED_SCHEMA_VERSION,
+        "boundaries": [
+            {
+                "page": item["page"],
+                "system": item["system"],
+                "reset_number": 1,
+                "source": "manual",
+                "provenance": {
+                    "kind": "manual_movement_boundary_review",
+                    "review": {
+                        "artifact": review_artifact,
+                        "sha256": review_sha256,
+                        "action": "manual_boundary",
+                        "reason": item.get("reason") or "manual movement boundary",
+                    },
+                },
+            }
+            for item in sorted(normalized["items"], key=lambda item: (item["page"], item["system"]))
+        ],
+    }
+
+
 def build_resolved_movement_boundaries(
     *,
     evidence: Mapping[str, Any],

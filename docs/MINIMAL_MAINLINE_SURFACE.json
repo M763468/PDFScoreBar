@@ -696,6 +696,7 @@
       "tests/test_issue43_full68_harness.py"
     ],
     "validation_harness": [
+      "tests/test_release_candidate.py",
       "tests/test_cnn_scoring_model_path.py",
       "tests/test_docker_runtime_contract.py",
       "tests/test_engine_service_readiness.py",

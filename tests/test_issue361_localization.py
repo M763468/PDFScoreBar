@@ -113,7 +113,7 @@ assert.equal(JSON.stringify(keys(en)), JSON.stringify(keys(ja)));
 def test_language_switch_rerenders_without_resetting_the_current_operation_or_target():
     app = (UI / "app.js").read_text(encoding="utf-8")
     start = app.index('window.addEventListener("review-language-changed", () => {')
-    end = app.index("\n\nprevBtn.onclick", start)
+    end = app.index("\n\npanModeBtn.onclick", start)
     listener = app[start:end]
     assert "updateOps(true)" in listener
     assert listener.index("updateOps(true)") < listener.index("if (!currentPage) return;")

@@ -84,6 +84,7 @@ def test_build_manual_gui_config_maps_handoff_to_current_gui_config(tmp_path):
             "mmr": "pages/page_003/mmr_overrides.json",
             "barlines": "pages/page_003/barlines_review.json",
             "review_overlay": "pages/page_003/review_overlay.png",
+            "movement_boundary_resolved_output": "corrections/movement_boundaries.json",
         }
     ]
     assert "_staging" not in json.dumps(config)
@@ -163,6 +164,28 @@ def test_handoff_uses_explicit_correction_outputs_without_staging_suffix(tmp_pat
         "movement_boundary": "corrections/movement_boundaries_review.json",
     }
     assert all("_staging" not in key for key in config["pages"][0]["manual_outputs"])
+
+
+@pytest.mark.parametrize("evidence", [False, True])
+@pytest.mark.parametrize("explicit", [False, True])
+def test_handoff_rejects_distinct_movement_review_outputs(tmp_path, evidence, explicit):
+    handoff_path, handoff = _review_package(tmp_path)
+    second = {**handoff["pages"][0], "page_id": "page_004", "page_number": 4}
+    handoff["pages"].append(second)
+    if explicit:
+        second["correction_outputs"] = {
+            "mmr_measure_span": "corrections/page4-mmr.json",
+            "measure_construction": "corrections/page4-measures.json",
+            "barline_construction": "corrections/page4-barlines.json",
+            "movement_boundary": "corrections/page4-movements.json",
+        }
+    else:
+        second["correction_output"] = "corrections/page4"
+    if evidence:
+        _write_json(handoff_path.parent / "movement_boundary_evidence.json")
+        handoff["movement_boundary_evidence"] = "movement_boundary_evidence.json"
+    with pytest.raises(ManualCorrectionHandoffError, match="one shared package-local path"):
+        validate_manual_correction_handoff(handoff, handoff_path=handoff_path)
 
 
 def test_canonicalize_manual_correction_outputs_writes_pipeline_payloads(tmp_path):

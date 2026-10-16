@@ -73,7 +73,10 @@ PDF or persisted page images
                  -> OMR-DLN on the same persisted x4 image
             -> hybrid consensus
        -> dense candidate/probe reconstruction
-       -> CNN scoring
+       -> staff-local CNN candidate normalization (maintained_original only)
+            -> split multi-staff boxes; supplement original HOMR pieces with SR-or-OMR consensus
+            -> preserve original probe row seeds and connector-mask evidence
+       -> CNN scoring + strict staff-stroke duplicate suppression
   -> page filtering / user barline corrections
   -> Phase A physical grouping + numbering_base
        -> maintained original-image staff geometry
@@ -86,6 +89,32 @@ PDF or persisted page images
   -> Phase C final numbering / optional overlay
   -> manifest / review-package materialization when configured
 ```
+
+The staff-stroke adapter runs after dense generation, filtering and rescue. It splits
+only boxes intersecting at least two extracted staves by two staff units each; single-staff
+connector tails remain unchanged. Added original-HOMR pieces pass the existing SR-or-OMR
+IoU > 0.5 consensus before actual CNN inference. Post-CNN duplicate suppression uses
+X-center distance <= 0.1 median extracted staff unit and vertical overlap >= 0.8,
+retaining the numbering-compatible canonical geometry and its own CNN score. This is
+separate from logical time-boundary merging. Per-page normalization and suppression
+sidecars preserve the source hashes and representatives. No GT or evaluation data enters
+this runtime step. CNN lookup resolves relative, absolute and symlink image paths to
+the same unit-map identity. Probe directories use the image parent/stem identity
+consistently through rescue, the adapter and CNN, including composite score/page stems;
+logical inventory score/page labels do not select the adapter directory.
+The inventory makes image paths absolute without resolving symlinks, preserving the
+caller's parent/stem for rescue and CNN output locations. Support metadata can use that
+identity or the resolved identity used inside disposable source-page workers; the adapter
+requires exactly one physical result at these known locations and checks its image and
+completion status. The unit-map lookup still resolves the file identity.
+Successful empty CNN results also write an empty
+suppression audit when deduplication is enabled, and
+reruns with deduplication disabled remove stale suppression sidecars.
+A page containing any accepted staff without an estimated
+unit (including one-line percussion notation) keeps its original candidates and skips
+this adapter and stroke deduplication; its sidecar records `no_staff_unit_size` rather
+than inventing a geometric threshold. This also preserves unknown voices on mixed pages.
+See `tools/issue416/IMPLEMENTATION.md` for the fixed-input validation.
 
 `pdf_to_images` is currently in-process inside `PipelineOrchestrator` when enabled. The
 verified dense route itself requires persisted page image files; it rejects in-memory-only

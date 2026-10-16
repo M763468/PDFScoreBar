@@ -1,0 +1,128 @@
+{
+  "reviewed_commit": "0c89ce87b50558f9c1de5a7f82c5669fa08f10e4",
+  "provenance": {
+    "parent_commit": "43a8b7fdefe293231f77d338ee8e3662ab5431d3",
+    "runner_sha256": "e1e543b324caf322ce9afc6b3d28b1402a5cbf0473fb77bca6c5fe4637281746",
+    "model_sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+    "source_files": {
+      "src/pipeline/steps/staff_strokes.py": "399386bc47d64dd0726dc581493150ac1e2cae6c8215f01b9e47e60d99ab60b8",
+      "src/pipeline/steps/cnn_scoring.py": "cf3002bf514de076c8e7032d258002271254bd628ad46744abfa19ddbfb51384"
+    },
+    "device": "NVIDIA GeForce RTX 4060",
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0",
+    "python": "3.12.15 (main, Oct  1 2026, 15:41:07) [GCC 11.4.0]",
+    "contract": {
+      "source_base": "016e181861270f1adc753778ef71422fa51f2716",
+      "scope": "Round 2: composite-stem probe/adapter/CNN identity; empty and invalid-crop successful scoring audit consistency",
+      "fixed_detector": {
+        "pages": 68,
+        "gt": 3567,
+        "baseline_tp": 3535,
+        "baseline_fp": 11,
+        "baseline_fn": 32,
+        "baseline_soft": 100,
+        "matcher": "center_anchor",
+        "vov": 0.5,
+        "xdist_unit_ratio": 0.5,
+        "cnn_threshold": 0.4965248107910156
+      },
+      "candidate_gates": {
+        "tp_at_least": 3560,
+        "fp": 0,
+        "fn_at_most": 7,
+        "no_new_per_page_hard_fp_fn": true,
+        "count": 3287,
+        "preserve_expected_system_membership": true
+      },
+      "downstream": {
+        "mmr_tp": 171,
+        "mmr_fn": 3,
+        "mmr_wrong": 3,
+        "mmr_fp": 0,
+        "application_errors": 0,
+        "continuity_errors": 0,
+        "known_local_gt_errors": 6,
+        "known_row_sample_mismatches": 5
+      },
+      "residual_disposition": "Seven stroke-level residuals accepted for this focused fix if every original location retains its physical time boundary and current numbering; no unattended-perfect-numbering or main promotion claim. Keep independent GT strokes and all FN counts.",
+      "runtime": "sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc",
+      "no_threshold_model_gt_change": true,
+      "baseline_and_candidate": "Regenerate dense raw/filter/rescue from same retained current-run producer outputs; score ALL candidates in same CUDA image; do not reuse component CNN decisions. Compare existing canonical correctness and smoke without excluding failures.",
+      "reviewed_commit": "0c89ce87b50558f9c1de5a7f82c5669fa08f10e4",
+      "review_gates": {
+        "relative_public_cnn_route_pages": 68,
+        "dedup_sidecars": 68,
+        "unknown_unit_pages_in_full68": 0,
+        "exact_prior_candidate_predictions": true,
+        "exact_prior_numbering_base": true,
+        "hard_fp": 0,
+        "fn": 7,
+        "soft": 121,
+        "physical_measures": 3287
+      },
+      "reuse": "Raw/filter/rescue producers unchanged; use retained unnormalized candidates and producer outputs, regenerate staff adapter and execute production _run_cnn_scoring with relative images. Compare parent batch implementation and candidate on identical normalized candidates and GPU model. Reuse MMR/PDF only after exact base equivalence.",
+      "synthetic_gates": "Real inventory -> real probe rescue -> adapter -> production CNN with composite names, absolute/relative images. Empty/no-valid-crop clears stale audit or writes suppressed:[]."
+    },
+    "reviewed_commit": "0c89ce87b50558f9c1de5a7f82c5669fa08f10e4"
+  },
+  "candidate": {
+    "gt": 3567,
+    "pred": 3681,
+    "tp": 3560,
+    "fp": 0,
+    "fn": 7,
+    "soft": 121
+  },
+  "physical_measures": 3287,
+  "gates": {
+    "passed": true,
+    "pages": 68,
+    "relative_production_cnn_route": true,
+    "normalized_candidates_equal": true,
+    "predictions_equal": true,
+    "numbering_base_equal": true,
+    "dedup_sidecars": 68,
+    "unknown_unit_pages": 0,
+    "mmr_pdf_reuse": "All exact base/predictions plus unchanged support producer and downstream code; retain prior all68 final/support equivalence and pixel-verified PDFs."
+  },
+  "input_equivalence": {
+    "passed": true,
+    "retained_hashes": 967,
+    "normalization_input_hash_equivalence_pages": 68
+  },
+  "fresh_smoke": {
+    "status": "passed",
+    "run_dir": "/workspace/logs/issue416/review-422-round2-20261015/smoke/issue416_review422_round2_smoke",
+    "page_key": "Va_Prokofiev_Symphony1/page_001",
+    "input_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+    "source_pdf_sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41",
+    "prediction_count": 85,
+    "gt_count": 85,
+    "matched": 85,
+    "hard_fp_count": 0,
+    "fn_count": 0,
+    "soft_count": 0,
+    "barlines_json": "/workspace/logs/issue416/review-422-round2-20261015/smoke/issue416_review422_round2_smoke/intermediate/dense_full_pipeline_route/dense_candidate_reconstruction/probe_rescue_candidates/eval2_images_page_001/pipeline2_no_peak_filtered_cnn.json"
+  },
+  "fresh_smoke_dedup_sidecars": 1,
+  "checks": {
+    "targeted_pytest": 57,
+    "test_fast": 114,
+    "ruff_check": "passed",
+    "ruff_format": "passed",
+    "repository_surface": "passed"
+  },
+  "evidence_root": "logs/issue416/review-422-round2-20261015",
+  "evidence_sha256": {
+    "candidate/report.json": "5ba11faa83d963144cfee2b680cd4c8ac215b03039a79ad36095d8f28007cf9d",
+    "gates.json": "cb93215a35c440e98b9e1323cb15587a882925ed97faf20b7d270b176280f3bd",
+    "input-equivalence.json": "7db39d60c3910f361d96ec2c956def90c62d812c8c1ec742af3a38c136b811af",
+    "smoke/issue416_review422_round2_smoke/detector_accuracy_smoke_summary.json": "dba68844f057c02a179b29a7992b120faa8b9f196eed59da069eb39f697bc231",
+    "smoke/issue416_review422_round2_smoke/intermediate/dense_full_pipeline_route/dense_candidate_reconstruction/probe_rescue_candidates/eval2_images_page_001/pipeline2_no_peak_stroke_dedup.json": "61e65d0c9cebf44fd89065f259cf7b0d585dfe7dd6d3b1a70af4708a3405f083"
+  },
+  "baseline": "Retained verified production candidate predictions and numbering from production-20261015; unchanged inputs verified, no parent inference rerun.",
+  "mmr_pdf_reuse": "Exact all68 prediction/base and retained input hashes; prior MMR support/final numbering and pixel-verified PDF evidence remains valid.",
+  "composite_connection_test": "Real inventory writer -> real probe rescue -> adapter -> production CNN; absolute and relative composite images, only model inference replaced by deterministic positive stub.",
+  "empty_audit_test": "Empty candidate or no valid crop, with dedup enabled/disabled and stale audit seeded: 4 cases passed."
+}

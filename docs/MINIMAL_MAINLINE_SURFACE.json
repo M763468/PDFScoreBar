@@ -375,6 +375,14 @@
     {
       "pattern": "src/pipeline/utils/images.py",
       "role": "production pipeline utilities"
+    },
+    {
+      "pattern": "src/common/barline_strokes.py",
+      "role": "Staff-local stroke normalization and strict duplicate geometry"
+    },
+    {
+      "pattern": "src/pipeline/steps/staff_strokes.py",
+      "role": "Maintained dense CNN input adapter using current producer evidence"
     }
   ],
   "development_validation_patterns": [
@@ -788,7 +796,8 @@
       "tests/test_reviewed_movement_apply.py",
       "tests/test_distribution_surface.py",
       "tests/test_issue409_failure_contracts.py",
-      "tests/test_issue413_system_identity.py"
+      "tests/test_issue413_system_identity.py",
+      "tests/test_staff_strokes.py"
     ]
   },
   "test_support_patterns": [

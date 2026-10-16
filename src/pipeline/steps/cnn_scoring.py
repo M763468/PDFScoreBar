@@ -15,6 +15,7 @@ from torchvision import models, transforms
 from tqdm import tqdm
 
 from src.common.barline_geometry import barline_iou, barline_vertical_overlap
+from src.common.barline_strokes import deduplicate_staff_strokes
 from src.pipeline.core import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
@@ -247,6 +248,29 @@ def apply_nms(
     return kept
 
 
+def _write_scoring_results(
+    *,
+    run_dir: Path,
+    scored_results: List[Dict[str, Any]],
+    accepted: List[Dict[str, Any]],
+    stroke_unit_size: float | None,
+) -> None:
+    """Write one consistent result/audit contract, including empty pages."""
+    audit_path = run_dir / "pipeline2_no_peak_stroke_dedup.json"
+    if stroke_unit_size is not None:
+        accepted, suppressed = deduplicate_staff_strokes(accepted, unit_size=stroke_unit_size)
+        audit_path.write_text(
+            json.dumps({"unit_size": stroke_unit_size, "suppressed": suppressed}, indent=2) + "\n"
+        )
+    else:
+        # A rerun without stroke dedup must not retain an earlier run's audit.
+        audit_path.unlink(missing_ok=True)
+    (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
+    (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
+        json.dumps([item["bbox"] for item in accepted], indent=2)
+    )
+
+
 def _score_directory(
     *,
     run_dir: Path,
@@ -265,6 +289,7 @@ def _score_directory(
     input_image_scale: float = 1.0,
     apply_nms_enabled: bool = True,
     in_memory_images: Dict[str, Any] | None = None,
+    stroke_unit_size: float | None = None,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
@@ -281,8 +306,9 @@ def _score_directory(
         return False
 
     if not candidates:
-        (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps([], indent=2))
-        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(json.dumps([], indent=2))
+        _write_scoring_results(
+            run_dir=run_dir, scored_results=[], accepted=[], stroke_unit_size=stroke_unit_size
+        )
         return True
 
     from src.pipeline.utils.images import load_image
@@ -337,8 +363,9 @@ def _score_directory(
         valid_boxes.append(box)
 
     if not batch_tensors:
-        (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps([], indent=2))
-        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(json.dumps([], indent=2))
+        _write_scoring_results(
+            run_dir=run_dir, scored_results=[], accepted=[], stroke_unit_size=stroke_unit_size
+        )
         return True
 
     score_chunks: List[np.ndarray] = []
@@ -393,13 +420,12 @@ def _score_directory(
     if apply_nms_enabled:
         apply_nms(candidate_objects_for_filter)
 
-    filtered_boxes = [
-        item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
-    ]
-
-    (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
-    (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
-        json.dumps(filtered_boxes, indent=2)
+    accepted = [item for item in candidate_objects_for_filter if item["score"] >= threshold]
+    _write_scoring_results(
+        run_dir=run_dir,
+        scored_results=scored_results,
+        accepted=accepted,
+        stroke_unit_size=stroke_unit_size,
     )
     return True
 
@@ -421,6 +447,7 @@ def run_cnn_scoring_batch(
     candidate_rescale_factor: Optional[float] = None,
     apply_nms_enabled: bool = True,
     in_memory_images: Dict[str, Any] | None = None,
+    stroke_dedup_units: Dict[str, float] | None = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -451,6 +478,7 @@ def run_cnn_scoring_batch(
             input_image_scale=input_image_scale,
             apply_nms_enabled=apply_nms_enabled,
             in_memory_images=in_memory_images,
+            stroke_unit_size=(stroke_dedup_units or {}).get(str(img_path.resolve())),
         ):
             processed += 1
     return processed

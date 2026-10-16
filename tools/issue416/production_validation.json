@@ -1,0 +1,442 @@
+{
+  "base_commit": "016e181861270f1adc753778ef71422fa51f2716",
+  "contract": {
+    "source_base": "016e181861270f1adc753778ef71422fa51f2716",
+    "scope": "Production maintained_original dense route: normalize and supplement stroke candidates only after unchanged dense generation/filter/rescue, then actual CNN scoring and geometry-preserving strict duplicate handling",
+    "fixed_detector": {
+      "pages": 68,
+      "gt": 3567,
+      "baseline_tp": 3535,
+      "baseline_fp": 11,
+      "baseline_fn": 32,
+      "baseline_soft": 100,
+      "matcher": "center_anchor",
+      "vov": 0.5,
+      "xdist_unit_ratio": 0.5,
+      "cnn_threshold": 0.4965248107910156
+    },
+    "candidate_gates": {
+      "tp_at_least": 3560,
+      "fp": 0,
+      "fn_at_most": 7,
+      "no_new_per_page_hard_fp_fn": true,
+      "count": 3287,
+      "preserve_expected_system_membership": true
+    },
+    "downstream": {
+      "mmr_tp": 171,
+      "mmr_fn": 3,
+      "mmr_wrong": 3,
+      "mmr_fp": 0,
+      "application_errors": 0,
+      "continuity_errors": 0,
+      "known_local_gt_errors": 6,
+      "known_row_sample_mismatches": 5
+    },
+    "residual_disposition": "Seven stroke-level residuals accepted for this focused fix if every original location retains its physical time boundary and current numbering; no unattended-perfect-numbering or main promotion claim. Keep independent GT strokes and all FN counts.",
+    "runtime": "sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc",
+    "no_threshold_model_gt_change": true,
+    "baseline_and_candidate": "Regenerate dense raw/filter/rescue from same retained current-run producer outputs; score ALL candidates in same CUDA image; do not reuse component CNN decisions. Compare existing canonical correctness and smoke without excluding failures."
+  },
+  "provenance": {
+    "python": "3.12.15 (main, Oct  1 2026, 15:41:07) [GCC 11.4.0]",
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0",
+    "device": "NVIDIA GeForce RTX 4060",
+    "model_sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+    "source_files": {
+      "src/common/barline_strokes.py": "a68c392bb6c0c0745b1fe65f381588fc3224fc15a496392b2f0b9e85896c03aa",
+      "src/pipeline/steps/staff_strokes.py": "4bbf8f333914c083a242516dc2bca564de990d9a2ee9bab59c1201ce30e97766",
+      "src/pipeline/steps/cnn_scoring.py": "ea65ab290fd7e5f08cfd2ec4e9dcdad62533f69b4f77ead8195c307cf2156670",
+      "src/pipeline/detection/dense_orchestrator.py": "33ac0cbe8516c7e32b4ad70d5fa6e606df0abdcb455c067252eb85042bfca9b4"
+    },
+    "runner_sha256": "64bd5bf22c9e703b354434d8c84455c99fc0bcb362e9ff03f6ad6a4e4f611401",
+    "contract": {
+      "source_base": "016e181861270f1adc753778ef71422fa51f2716",
+      "scope": "Production maintained_original dense route: normalize and supplement stroke candidates only after unchanged dense generation/filter/rescue, then actual CNN scoring and geometry-preserving strict duplicate handling",
+      "fixed_detector": {
+        "pages": 68,
+        "gt": 3567,
+        "baseline_tp": 3535,
+        "baseline_fp": 11,
+        "baseline_fn": 32,
+        "baseline_soft": 100,
+        "matcher": "center_anchor",
+        "vov": 0.5,
+        "xdist_unit_ratio": 0.5,
+        "cnn_threshold": 0.4965248107910156
+      },
+      "candidate_gates": {
+        "tp_at_least": 3560,
+        "fp": 0,
+        "fn_at_most": 7,
+        "no_new_per_page_hard_fp_fn": true,
+        "count": 3287,
+        "preserve_expected_system_membership": true
+      },
+      "downstream": {
+        "mmr_tp": 171,
+        "mmr_fn": 3,
+        "mmr_wrong": 3,
+        "mmr_fp": 0,
+        "application_errors": 0,
+        "continuity_errors": 0,
+        "known_local_gt_errors": 6,
+        "known_row_sample_mismatches": 5
+      },
+      "residual_disposition": "Seven stroke-level residuals accepted for this focused fix if every original location retains its physical time boundary and current numbering; no unattended-perfect-numbering or main promotion claim. Keep independent GT strokes and all FN counts.",
+      "runtime": "sha256:2706623aae2e4e6b104d3787ecf295fe6eea3c9dc2fee3b641da4b10a1c009bc",
+      "no_threshold_model_gt_change": true,
+      "baseline_and_candidate": "Regenerate dense raw/filter/rescue from same retained current-run producer outputs; score ALL candidates in same CUDA image; do not reuse component CNN decisions. Compare existing canonical correctness and smoke without excluding failures."
+    }
+  },
+  "baseline": {
+    "gt": 3567,
+    "pred": 3646,
+    "tp": 3535,
+    "fp": 11,
+    "fn": 32,
+    "soft": 100
+  },
+  "candidate": {
+    "gt": 3567,
+    "pred": 3681,
+    "tp": 3560,
+    "fp": 0,
+    "fn": 7,
+    "soft": 121
+  },
+  "physical_measures": 3287,
+  "gates": {
+    "passed": true,
+    "pages": 68,
+    "all_prior_verified_geometry_equal": true,
+    "no_per_page_hard_regression": true
+  },
+  "residual_acceptance": {
+    "records": [
+      {
+        "id": 3,
+        "score": "Sibelius-Violin_Concerto-Viola",
+        "page": "page_001",
+        "gt": [
+          1258,
+          1630,
+          1267,
+          1738
+        ],
+        "diagnosis": "overheight_candidate_retained",
+        "candidate_predictions_sha256": "9bdd090c466a74c1eb4bc2c6d97ac688acc517e36fbee32070d95849bfa45a90",
+        "candidate_base_sha256": "fb10d3a4af1bddec177f3a166723c9b792894d7d9c72631acfbe25a04bac520b",
+        "oracle_measure_delta": 0,
+        "oracle_grouping_equal": true,
+        "oracle_geometry_equal": false,
+        "physical_boundary_support": [
+          {
+            "system": 0,
+            "measure": 1,
+            "bbox": [
+              1135,
+              1219,
+              1261,
+              1791
+            ]
+          },
+          {
+            "system": 0,
+            "measure": 2,
+            "bbox": [
+              1265,
+              1219,
+              1620,
+              1791
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "score": "Sibelius-Violin_Concerto-Viola",
+        "page": "page_001",
+        "gt": [
+          1616,
+          1630,
+          1627,
+          1736
+        ],
+        "diagnosis": "overheight_candidate_and_low_cnn_score",
+        "candidate_predictions_sha256": "9bdd090c466a74c1eb4bc2c6d97ac688acc517e36fbee32070d95849bfa45a90",
+        "candidate_base_sha256": "fb10d3a4af1bddec177f3a166723c9b792894d7d9c72631acfbe25a04bac520b",
+        "oracle_measure_delta": 0,
+        "oracle_grouping_equal": true,
+        "oracle_geometry_equal": false,
+        "physical_boundary_support": [
+          {
+            "system": 0,
+            "measure": 2,
+            "bbox": [
+              1265,
+              1219,
+              1620,
+              1791
+            ]
+          },
+          {
+            "system": 0,
+            "measure": 3,
+            "bbox": [
+              1621,
+              1219,
+              2147,
+              1791
+            ]
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "score": "Sibelius-Violin_Concerto-Viola",
+        "page": "page_001",
+        "gt": [
+          3063,
+          4320,
+          3067,
+          4423
+        ],
+        "diagnosis": "double_stroke_one_to_one_assignment",
+        "candidate_predictions_sha256": "9bdd090c466a74c1eb4bc2c6d97ac688acc517e36fbee32070d95849bfa45a90",
+        "candidate_base_sha256": "fb10d3a4af1bddec177f3a166723c9b792894d7d9c72631acfbe25a04bac520b",
+        "oracle_measure_delta": 0,
+        "oracle_grouping_equal": true,
+        "oracle_geometry_equal": true,
+        "physical_boundary_support": [
+          {
+            "system": 8,
+            "measure": 5,
+            "bbox": [
+              2595,
+              4308,
+              3053,
+              4460
+            ]
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "score": "Sibelius-Violin_Concerto-Viola",
+        "page": "page_003",
+        "gt": [
+          1892,
+          1363,
+          1896,
+          1470
+        ],
+        "diagnosis": "double_stroke_one_to_one_assignment",
+        "candidate_predictions_sha256": "964b175a57c6b324b6cc2b3b21675d9b0d80c7a7102c9834884f9fc711647b97",
+        "candidate_base_sha256": "e252788e94175e096333fa8ce408d806975024bdec4337a9238d1cea1d498758",
+        "oracle_measure_delta": 0,
+        "oracle_grouping_equal": true,
+        "oracle_geometry_equal": true,
+        "physical_boundary_support": [
+          {
+            "system": 2,
+            "measure": 3,
+            "bbox": [
+              1205,
+              1350,
+              1883,
+              1506
+            ]
+          },
+          {
+            "system": 2,
+            "measure": 4,
+            "bbox": [
+              1897,
+              1350,
+              2373,
+              1506
+            ]
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "score": "Sibelius-Violin_Concerto-Viola",
+        "page": "page_003",
+        "gt": [
+          2671,
+          1363,
+          2675,
+          1470
+        ],
+        "diagnosis": "double_stroke_one_to_one_assignment",
+        "candidate_predictions_sha256": "964b175a57c6b324b6cc2b3b21675d9b0d80c7a7102c9834884f9fc711647b97",
+        "candidate_base_sha256": "e252788e94175e096333fa8ce408d806975024bdec4337a9238d1cea1d498758",
+        "oracle_measure_delta": 0,
+        "oracle_grouping_equal": true,
+        "oracle_geometry_equal": true,
+        "physical_boundary_support": [
+          {
+            "system": 2,
+            "measure": 5,
+            "bbox": [
+              2380,
+              1350,
+              2660,
+              1506
+            ]
+          },
+          {
+            "system": 2,
+            "measure": 6,
+            "bbox": [
+              2678,
+              1350,
+              2893,
+              1506
+            ]
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "score": "Va_Prokofiev_Symphony1",
+        "page": "page_004",
+        "gt": [
+          2715,
+          2481,
+          2720,
+          2582
+        ],
+        "diagnosis": "double_stroke_one_to_one_assignment",
+        "candidate_predictions_sha256": "d0f53ff2995af9a299059c61a00c8c459892d091ef8254efb92e4663a28f0e93",
+        "candidate_base_sha256": "e04c6d2c5d9b1ae3ddc336101d2b166d2a7c33e3c860edd6dc13cccc2099d62b",
+        "oracle_measure_delta": 0,
+        "oracle_grouping_equal": true,
+        "oracle_geometry_equal": true,
+        "physical_boundary_support": [
+          {
+            "system": 6,
+            "measure": 7,
+            "bbox": [
+              2570,
+              2452,
+              2702,
+              2794
+            ]
+          },
+          {
+            "system": 6,
+            "measure": 8,
+            "bbox": [
+              2709,
+              2452,
+              2884,
+              2794
+            ]
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "score": "Va_Prokofiev_Symphony1",
+        "page": "page_005",
+        "gt": [
+          2377,
+          3496,
+          2381,
+          3599
+        ],
+        "diagnosis": "double_stroke_one_to_one_assignment",
+        "candidate_predictions_sha256": "9029e86f448b3778cdaa7e6317de546458635dac5d9ff93cf85f668e720012f1",
+        "candidate_base_sha256": "7e7b2f433b40ee971057e8ec4aecc5b436d68bf64b96935a8ce8e7a580eb0b25",
+        "oracle_measure_delta": 0,
+        "oracle_grouping_equal": true,
+        "oracle_geometry_equal": true,
+        "physical_boundary_support": [
+          {
+            "system": 9,
+            "measure": 3,
+            "bbox": [
+              1947,
+              3448,
+              2360,
+              3626
+            ]
+          },
+          {
+            "system": 9,
+            "measure": 4,
+            "bbox": [
+              2369,
+              3448,
+              2834,
+              3626
+            ]
+          }
+        ]
+      }
+    ],
+    "fixed_inputs_verified": 967,
+    "decision": "Accept seven stroke-level FN for this focused fix; retain stroke GT and residual counts, no main-promotion requirement or perfect-numbering claim."
+  },
+  "downstream": {
+    "mode": "candidate",
+    "pages": 68,
+    "physical_measures": 3287,
+    "recognition": {
+      "expected": 177,
+      "detected": 174,
+      "matched_tp": 171,
+      "missed_fn": 3,
+      "skip_mismatch": 3,
+      "unexpected_fp": 0
+    },
+    "gt_increment_errors": 6,
+    "application_errors": 0,
+    "continuity_errors": 0,
+    "reuse_reference_sha256": "377a8a789ded5233a3c93c1c7c8804a6903487ef032a28e72deac8f06a3d0463",
+    "pdf_pages_reused": 68,
+    "pdf_rows_reused": 637,
+    "row_samples_reviewed": 18,
+    "row_sample_mismatches": 5,
+    "absolute_numbering_certified": false,
+    "reason": "All68 exact serialized base and regenerated MMR support; actual production final numbering equal after rerun with candidate barlines. Source images identical, so fresh GPU MMR and actual pixel-verified PDFs remain valid."
+  },
+  "retained_evidence_root": "logs/issue416/production-20261015",
+  "evidence_sha256": {
+    "baseline/report.json": "0d5015ed6cde95facf1ca770ee80aa57314a5388be18b0a50e821a0109cd65b1",
+    "candidate/report.json": "3a30ee831bb235b2f8fd282690c55633b32bb459ee82301c767092092a731b5b",
+    "residual-acceptance.json": "ff966fd7ae0ee0c1661617e2c355117db91e677a6013bf42a256325b31fa6fae",
+    "downstream-candidate/report.json": "7daa668291696b2b601da70cea64c2e4b584f542efa8b8202e08a8295bed5244"
+  },
+  "fresh_production_smoke": {
+    "summary": {
+      "status": "passed",
+      "run_dir": "/workspace/logs/issue416/production-20261015/smoke/issue416_production_smoke2",
+      "page_key": "Va_Prokofiev_Symphony1/page_001",
+      "input_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+      "source_pdf_sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41",
+      "prediction_count": 85,
+      "gt_count": 85,
+      "matched": 85,
+      "hard_fp_count": 0,
+      "fn_count": 0,
+      "soft_count": 0,
+      "barlines_json": "/workspace/logs/issue416/production-20261015/smoke/issue416_production_smoke2/intermediate/dense_full_pipeline_route/dense_candidate_reconstruction/probe_rescue_candidates/eval2_images_page_001/pipeline2_no_peak_filtered_cnn.json"
+    },
+    "summary_sha256": "e98c10ec4a8c8c0b4ddf49130edb4469e69d04170130f66ae7cf57e9478b1585",
+    "log_sha256": "1dfcb088f75beeb82f26f42d2b9acc828d4cc8e2bbbb2c072f90399201906ad7",
+    "status": "passed"
+  },
+  "checks": {
+    "targeted_pytest": 46,
+    "test_fast": 114,
+    "distribution_and_prototype_pytest": 34,
+    "repository_surface": "passed",
+    "ruff_check": "passed",
+    "ruff_format": "passed"
+  }
+}

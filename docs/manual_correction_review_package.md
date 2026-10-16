@@ -121,6 +121,13 @@ restarts at 1 before that system when **Generate corrected PDF** is used. Removi
 manual boundary also updates the resolved input. The saved review hash binds that input
 to the current decisions; failed or stale saves must be resolved before applying them.
 
+All handoff pages must use one shared `correction_outputs.movement_boundary` path,
+including manual review without evidence. The default is
+`corrections/movement_boundaries_review.json`. Other correction types may use page-specific
+outputs, but custom configurations must keep this movement review path shared. Handoff
+validation rejects differing paths before any correction is saved or applied, so saving
+one page cannot replace another page's movement decisions in the shared resolved input.
+
 To review detector suggestions, keep the same review package and attach the review-only
 Issue #333 evidence artifact:
 

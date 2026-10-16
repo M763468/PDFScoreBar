@@ -18,8 +18,9 @@
 PR reviewとGitHub CIを通して統合し、この段階の完了は機構実装の受入として記録する。
 topic branchから生成した準備candidateやローカル検証を、最終release受入へ読み替えない。
 
-**Phase B: initial release → main。** [PR #422](https://github.com/M763468/PDFScoreBar/pull/422)の
-review・採否・developへの統合後に、必要修正を含むthen-current accepted develop SHAをfreezeする。
+**Phase B: initial release → main。** [PR #422](https://github.com/M763468/PDFScoreBar/pull/422)は
+2026-10-16に`develop@6ef2ff3b21a3b244f4d2a0bd8908a30fc3399fcb`へ統合済み。
+#423を含む必要修正を受理したthen-current accepted develop SHAをfreezeする。
 manifest/config/model identitiesを固定して新たなversioned `release/*-rcN`を生成し、
 その候補自身のclean checkout、配布tree、Docker/GPU/PDF/GUI、意味的番号、既知限界を検証する。
 小節線の幾何変更で物理位置や番号へ影響があり得るため、以前の補正位置・結果を無条件に流用しない。
@@ -34,7 +35,14 @@ candidate受入後は`release/* → main`専用PRを用意し、manifest選択�
 残らないことをtree差分で確認する。全受入結果を提示し、利用者の明示的な最終承認を得てから
 mainへのmerge/push/tagを行う。候補identityが変われば、影響するgateを再検証する。
 
-## 昇格元と配布対象
+## 昇格元と配布対象（2026-10-15準備snapshot）
+
+以下の105ファイル・source identitiesは#422統合前の準備snapshotとして保持する。
+#422は本番`src/common/barline_strokes.py`と`src/pipeline/steps/staff_strokes.py`を配布へ追加し、
+統合後の選択は**107ファイル + 生成provenance = 108ファイル**となった。
+#423のrelease test分類追加と#422のruntime追加は両方を保持する。
+新しいsourceからmanifest hash・file hashes・candidate identityを取り直す。
+旧candidateの105-file検証を新candidateの合格証拠へ読み替えない。
 
 | 項目 | 確認したidentity / 意味 |
 | --- | --- |
@@ -169,8 +177,11 @@ MMRを直しただけで小節線/resetの問題も解決したとは扱わな�
 
 [release_candidate.py](../../../tools/release_candidate.py)の`create` / `check`を実装した。
 source/main両方のfull commit SHAを必須にし、sourceのcommitted bytes・modeを取得する。
-作業treeがdirtyでもローカル変更は一切取り込まれず、provenanceの`source_dirty=false`は
-このcommitted snapshotについての記録となる。従来の作業tree用materializerは開発用途に残す。
+実行中の`release_candidate.py`と`materialize_distribution.py`はsource commitのGit blobsと
+byte一致を必須にし、不一致・未commitのtool変更を候補生成/checkの前に拒否する。
+両toolのprovenance hashも固定sourceのblobsから取得する。同じtool bytesなら実行checkoutの
+HEADが異なってもよい。配布sourceのローカル変更は取り込まず、`source_dirty=false`は
+committed snapshotを指す。従来の作業tree用materializerは開発用途に残す。
 
 生成先はfreshな独立Git repositoryで、sourceのobject alternatesや開発root mountに依存しない。
 source/main/manifest/generator hash、file hash/modeと固定author/date/messageを使うため、

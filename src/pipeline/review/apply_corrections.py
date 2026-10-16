@@ -253,14 +253,17 @@ def _load_movement_boundary_input(
     movement_review_digest = None
     movement_output = normalized_handoff.get("movement_boundary_resolved_output")
     evidence_rel = normalized_handoff.get("movement_boundary_evidence")
-    review_rel = next(
-        (
-            p["manual_outputs"]["movement_boundary"]
-            for p in normalized_handoff.get("pages", [])
-            if p.get("manual_outputs", {}).get("movement_boundary")
-        ),
-        None,
-    )
+    review_rels = {
+        p["manual_outputs"]["movement_boundary"]
+        for p in normalized_handoff.get("pages", [])
+        if p.get("manual_outputs", {}).get("movement_boundary")
+    }
+    if len(review_rels) > 1:
+        raise ValueError(
+            "movement boundary review output must resolve to one shared package-local path "
+            "across all handoff pages"
+        )
+    review_rel = next(iter(review_rels), None)
     review_path = None
     if review_rel:
         try:

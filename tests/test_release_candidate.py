@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -16,7 +19,16 @@ def git(root, *args):
 
 def commit(root, message):
     git(root, "add", ".")
-    git(root, "commit", "-qm", message)
+    git(
+        root,
+        "-c",
+        "user.name=Release tests",
+        "-c",
+        "user.email=release-tests@example.invalid",
+        "commit",
+        "-qm",
+        message,
+    )
     return git(root, "rev-parse", "HEAD")
 
 
@@ -35,6 +47,9 @@ def source(tmp_path):
     (root / "src/runtime.py").write_text("print('released')\n")
     (root / "src/runtime.py").chmod(0o755)
     (root / "src/developer.py").write_text("print('develop only')\n")
+    (root / "tools").mkdir()
+    for name in ("release_candidate.py", "materialize_distribution.py"):
+        shutil.copyfile(Path(__file__).resolve().parents[1] / "tools" / name, root / "tools" / name)
     manifest = {
         "schema_version": 3,
         "runtime_bundle_patterns": [
@@ -58,6 +73,25 @@ def create(source, destination, branch="release/test-rc1"):
     return create_candidate(root, destination, head, parent, branch)
 
 
+def run_cli(tool_checkout, source, command, destination):
+    root, head, parent = source
+    args = [
+        sys.executable,
+        str(tool_checkout / "tools/release_candidate.py"),
+        "--repository",
+        str(root),
+        command,
+        str(destination),
+        "--source-commit",
+        head,
+        "--main-commit",
+        parent,
+    ]
+    if command == "create":
+        args.extend(["--branch", "release/cli-rc1"])
+    return subprocess.run(args, capture_output=True, text=True)
+
+
 def test_pinned_candidate_is_minimal_independent_and_reproducible(source, tmp_path):
     root, head, parent = source
     first, second = tmp_path / "first", tmp_path / "second"
@@ -70,6 +104,13 @@ def test_pinned_candidate_is_minimal_independent_and_reproducible(source, tmp_pa
     assert first_report["static_checks"] == "PASS"
     assert first_report["release_accepted"] is False
     assert first_report["shipped_files"] == 3
+    provenance = json.loads((first / PROVENANCE).read_text())["release"]
+    for role, name in (
+        ("generator", "release_candidate.py"),
+        ("checker", "materialize_distribution.py"),
+    ):
+        pinned = subprocess.check_output(["git", "-C", str(root), "show", f"{head}:tools/{name}"])
+        assert provenance[f"{role}_sha256"] == hashlib.sha256(pinned).hexdigest()
     assert (first / "README.md").read_text() == "# Distribution\n"
     assert (first / "src/runtime.py").stat().st_mode & 0o111
     assert not (first / "old-main.txt").exists()
@@ -87,6 +128,40 @@ def test_pinned_candidate_is_minimal_independent_and_reproducible(source, tmp_pa
     root.rename(relocated)
     assert git(first, "show", "HEAD:README.md") == "# Distribution"
     assert git(first, "cat-file", "-t", parent) == "commit"
+
+
+def test_same_pinned_tools_from_another_checkout_reproduce_candidate(source, tmp_path):
+    expected = create(source, tmp_path / "first")
+    checkout = tmp_path / "other-checkout"
+    git(tmp_path, "clone", "-q", str(source[0]), str(checkout))
+    # A different checkout HEAD/product tree is harmless when tools match the pinned source.
+    (checkout / "README.md").write_text("another committed product revision\n")
+    commit(checkout, "other checkout revision")
+    result = run_cli(checkout, source, "create", tmp_path / "second")
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == expected
+
+
+@pytest.mark.parametrize("name", ["release_candidate.py", "materialize_distribution.py"])
+@pytest.mark.parametrize("revision", ["dirty", "other-checkout-commit"])
+def test_different_executing_tools_reject_create_and_check(source, tmp_path, name, revision):
+    candidate = tmp_path / "existing"
+    expected = create(source, candidate)
+    checkout = source[0]
+    if revision == "other-checkout-commit":
+        checkout = tmp_path / "other-checkout"
+        git(tmp_path, "clone", "-q", str(source[0]), str(checkout))
+    tool = checkout / "tools" / name
+    tool.write_bytes(tool.read_bytes() + b"\n# different executing tool revision\n")
+    if revision == "other-checkout-commit":
+        commit(checkout, "change release tool")
+    destination = tmp_path / "new-candidate"
+    for command, target in (("create", destination), ("check", candidate)):
+        result = run_cli(checkout, source, command, target)
+        assert result.returncode == 1
+        assert f"Running release tool differs from pinned source: tools/{name}" in result.stderr
+    assert not destination.exists()
+    assert check_candidate(source[0], candidate, source[1], source[2]) == expected
 
 
 @pytest.mark.parametrize("kind", ["missing", "tampered", "extra", "symlink-dir"])

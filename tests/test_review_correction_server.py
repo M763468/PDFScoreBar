@@ -372,10 +372,21 @@ def test_manual_movement_partial_save_cannot_apply_stale_reset(review_server, mo
     assert len(_load_saved_movement(package)["boundaries"]) == 1
 
 
-def test_manual_movement_save_preserves_other_pages_and_rechecks_saved_bytes(tmp_path):
+@pytest.mark.parametrize("custom_outputs", [False, True])
+def test_manual_movement_save_preserves_other_pages_and_rechecks_saved_bytes(
+    tmp_path, custom_outputs
+):
     handoff = _handoff(tmp_path)
     data = json.loads(handoff.read_text())
     data["pages"].append({**data["pages"][0], "page_id": "page_002", "page_number": 2})
+    if custom_outputs:
+        for index, page in enumerate(data["pages"]):
+            page["correction_outputs"] = {
+                "mmr_measure_span": f"corrections/page{index}-mmr.json",
+                "measure_construction": f"corrections/page{index}-measures.json",
+                "barline_construction": f"corrections/page{index}-barlines.json",
+                "movement_boundary": "corrections/shared-movements.json",
+            }
     handoff.write_text(json.dumps(data))
     package = ReviewPackage(handoff)
     for page in (0, 1):
@@ -391,6 +402,25 @@ def test_manual_movement_save_preserves_other_pages_and_rechecks_saved_bytes(tmp
     )
     with pytest.raises(ValueError, match="stale"):
         _load_saved_movement(package)
+
+
+def test_distinct_movement_paths_are_rejected_before_any_save_or_apply(tmp_path):
+    handoff = _handoff(tmp_path)
+    data = json.loads(handoff.read_text())
+    data["pages"].append({**data["pages"][0], "page_id": "page_002", "page_number": 2})
+    handoff.write_text(json.dumps(data))
+    package = ReviewPackage(handoff)
+    package.pages[1]["manual_outputs"]["movement_boundary"] = "corrections/other-movements.json"
+    with pytest.raises(ValueError, match="one shared package-local path"):
+        _load_saved_movement(package)
+
+    data["pages"][1]["correction_outputs"] = {
+        **package.pages[1]["manual_outputs"],
+    }
+    handoff.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="one shared package-local path"):
+        ReviewPackage(handoff)
+    assert not (handoff.parent / "corrections").exists()
 
 
 def test_review_rejects_handoff_output_targeting_artifact_or_external_symlink(tmp_path):

@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import materialize_distribution
 from materialize_distribution import MANIFEST, PROVENANCE, ROOT, check_tree, selected_files
 
 
@@ -45,10 +46,32 @@ def source_files(repository: Path, commit: str) -> dict[str, tuple[str, str]]:
     return entries
 
 
+def pinned_tool_hashes(repository: Path, entries: dict) -> dict[str, str]:
+    """Require the running generator/checker to match the frozen source tools."""
+    hashes = {}
+    for role, path in (
+        ("generator", Path(__file__)),
+        ("checker", Path(materialize_distribution.__file__)),
+    ):
+        source_path = "tools/" + path.name
+        mode, oid = entries.get(source_path, (None, None))
+        if mode not in {"100644", "100755"}:
+            raise ValueError(f"Missing or unsafe pinned release tool: {source_path}")
+        pinned = git(repository, "cat-file", "blob", oid)
+        if path.read_bytes() != pinned:
+            raise ValueError(
+                f"Running release tool differs from pinned source: {source_path}; "
+                "run the tools from a checkout of the source commit"
+            )
+        hashes[role] = hashlib.sha256(pinned).hexdigest()
+    return hashes
+
+
 def snapshot(repository: Path, source_commit: str, main_commit: str) -> tuple[dict, dict]:
     source_commit = commit_id(repository, source_commit)
     main_commit = commit_id(repository, main_commit)
     entries = source_files(repository, source_commit)
+    tool_hashes = pinned_tool_hashes(repository, entries)
     if entries.get(MANIFEST, (None,))[0] != "100644":
         raise ValueError("The committed distribution manifest must be a regular file")
     manifest = json.loads(git(repository, "cat-file", "blob", entries[MANIFEST][1]))
@@ -79,10 +102,8 @@ def snapshot(repository: Path, source_commit: str, main_commit: str) -> tuple[di
             "manifest_sha256": hashlib.sha256(content[MANIFEST]).hexdigest(),
             "manifest_schema_version": manifest["schema_version"],
             "file_modes": modes,
-            "generator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-            "checker_sha256": hashlib.sha256(
-                Path(__file__).with_name("materialize_distribution.py").read_bytes()
-            ).hexdigest(),
+            "generator_sha256": tool_hashes["generator"],
+            "checker_sha256": tool_hashes["checker"],
         },
     }
     content[PROVENANCE] = (json.dumps(provenance, indent=2) + "\n").encode()

@@ -165,6 +165,10 @@ recorded manual boundary updates the resolution immediately. Candidate absence
 does not create a no-boundary decision. Only explicit boundary records reset the
 number; ordinary page breaks continue numbering.
 
+Every page in the handoff must declare the same movement review output path.
+This is a score-wide review artifact even when other correction outputs are page-local;
+handoff validation and application reject differing movement paths before consuming them.
+
 If saving the resolution fails after saving the review, application rejects the
 stale pair until the review is saved successfully. Both paths remain constrained
 to the review package. Older handoffs receive the same default resolved-output

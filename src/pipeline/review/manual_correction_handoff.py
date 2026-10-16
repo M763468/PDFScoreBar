@@ -275,6 +275,13 @@ def validate_manual_correction_handoff(
         normalized_page["manual_outputs"] = _manual_output_paths(page, package_root=package_root)
         normalized_pages.append(normalized_page)
 
+    movement_outputs = {page["manual_outputs"]["movement_boundary"] for page in normalized_pages}
+    if len(movement_outputs) != 1:
+        raise ManualCorrectionHandoffError(
+            "movement boundary review output must resolve to one shared package-local path "
+            "across all handoff pages"
+        )
+
     normalized["pages"] = normalized_pages
     return normalized
 

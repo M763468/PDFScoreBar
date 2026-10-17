@@ -194,6 +194,28 @@ def test_executor_publishes_only_contract_artifacts(executor_fixture):
     )
 
 
+def test_executor_preserves_input_filename_through_review_handoff_and_final(executor_fixture):
+    build, artifact_root = executor_fixture
+    input_path = artifact_root.parent / "inputs" / "Festival Overture.pdf"
+    input_path.write_bytes((artifact_root.parent / "inputs" / "score.pdf").read_bytes())
+
+    result = build("job-named-input")(
+        JobRequest(
+            input={"kind": "local_path", "reference": input_path.name},
+            output_profile=OutputProfile.REVIEW,
+            config_overrides={"pages": [1]},
+        )
+    )
+
+    assert result.status is JobStatus.SUCCEEDED
+    package = artifact_root / result.job_id
+    handoff = json.loads(
+        (package / "review" / "manual_correction_input.json").read_text(encoding="utf-8")
+    )
+    assert handoff["output_name"] == "Festival_Overture"
+    assert (package / "final" / "Festival_Overture_score_numbered.pdf").is_file()
+
+
 def test_execute_payload_maps_missing_fields_to_structured_failure(executor_fixture):
     build, artifact_root = executor_fixture
     events = []

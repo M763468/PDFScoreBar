@@ -1,4 +1,5 @@
 import hashlib
+import http.client
 import json
 from threading import Event
 
@@ -24,10 +25,20 @@ def _fake_engine(handoff, **kwargs):
     run = kwargs["output_root"] / kwargs["run_id"]
     (run / "final").mkdir(parents=True)
     (run / "review").mkdir()
-    final = run / "final" / "score_numbered.pdf"
+    payload = json.loads(handoff.read_text(encoding="utf-8"))
+    final = run / "final" / f"{payload.get('output_name', 'score')}_score_numbered.pdf"
     final.write_bytes(b"%PDF-1.4\nexample")
     (run / "review" / "correction_summary.json").write_text(json.dumps({"final_pdf": str(final)}))
     return run
+
+
+def _request_with_headers(server, method, path):
+    conn = http.client.HTTPConnection("127.0.0.1", server.server_port)
+    conn.request(method, path)
+    response = conn.getresponse()
+    result = response.status, dict(response.getheaders()), response.read()
+    conn.close()
+    return result
 
 
 def test_apply_snapshots_inputs_and_records_exact_success(tmp_path, monkeypatch):
@@ -164,12 +175,58 @@ def test_apply_http_rejects_path_substitution_and_exposes_only_own_result(
     ):
         assert _request(server, "POST", "/api/apply", payload)[0] == 400
     assert not server.application.root.exists()
+    assert (
+        _request(
+            server,
+            "POST",
+            "/api/save",
+            {"page": 0, "correction_type": "barline_construction", "items": []},
+        )[0]
+        == 200
+    )
     assert _request(server, "POST", "/api/apply", {})[0] == 200
     server.application.thread.join(5)
-    status, content = _request(server, "GET", "/api/result?path=/other/result.pdf")
+    status, headers, content = _request_with_headers(
+        server, "GET", "/api/result?path=/other/result.pdf"
+    )
     assert status == 200 and content.startswith(b"%PDF-")
+    assert headers["Content-Disposition"] == (
+        "inline; filename=\"score_score_numbered.pdf\"; filename*=UTF-8''score_score_numbered.pdf"
+    )
     state = json.loads(_request(server, "GET", "/api/state")[1])
     assert state["package"]["current_result"]["final_pdf"] == str(server.application.result())
+
+
+def test_application_carries_handoff_output_name_into_apply_snapshot(tmp_path, monkeypatch):
+    app = _application(tmp_path)
+    payload = json.loads(app.handoff.read_text(encoding="utf-8"))
+    payload["output_name"] = "Festival_Overture"
+    app.handoff.write_text(json.dumps(payload), encoding="utf-8")
+    from tools.review_correction import application
+
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", _fake_engine)
+    app.start()
+    app.thread.join(5)
+
+    snapshot = app.root / "attempt_0001" / "input_review" / "manual_correction_input.json"
+    assert json.loads(snapshot.read_text(encoding="utf-8"))["output_name"] == "Festival_Overture"
+    assert app.result().name == "Festival_Overture_score_numbered.pdf"
+
+
+def test_application_recovers_name_from_existing_legacy_final_pdf(tmp_path, monkeypatch):
+    app = _application(tmp_path)
+    old_final = app.package.root.parent / "final" / "score_score_numbered.pdf"
+    old_final.parent.mkdir(parents=True)
+    old_final.write_bytes(b"%PDF-1.4\nold output")
+    from tools.review_correction import application
+
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", _fake_engine)
+    app.start()
+    app.thread.join(5)
+
+    snapshot = app.root / "attempt_0001" / "input_review" / "manual_correction_input.json"
+    assert json.loads(snapshot.read_text(encoding="utf-8"))["output_name"] == "score"
+    assert app.result().name == "score_score_numbered.pdf"
 
 
 def test_apply_http_blocks_save_and_duplicate_while_running(application_server, monkeypatch):

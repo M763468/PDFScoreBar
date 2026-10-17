@@ -6,6 +6,7 @@ import io
 import json
 import math
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -40,29 +41,99 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def _sanitize_output_name(raw_name: str) -> str:
-    name = re.sub(r"[^A-Za-z0-9._-]+", "_", raw_name.strip())
+_DEFAULT_FALLBACK_OUTPUT_NAME = "corrected"
+_SCORE_NUMBERED_SUFFIX_RE = re.compile(r"(?:_score_numbered)+$", re.IGNORECASE)
+_PDF_SUFFIX_RE = re.compile(r"\.pdf$", re.IGNORECASE)
+_GENERIC_ARTIFACT_ROOT_NAMES = frozenset(
+    {
+        "corrected",
+        "final",
+        "input",
+        "input_review",
+        "inputs",
+        "output",
+        "outputs",
+        "publish",
+        "review",
+        "runs",
+        "source",
+        "work",
+    }
+)
+
+
+def _strip_output_suffixes(raw_name: str) -> str:
+    candidate = raw_name.strip()
+    while True:
+        updated = _PDF_SUFFIX_RE.sub("", candidate).strip()
+        updated = _SCORE_NUMBERED_SUFFIX_RE.sub("", updated).strip()
+        if updated == candidate:
+            return candidate
+        candidate = updated
+
+
+def _sanitize_output_name(
+    raw_name: str,
+    *,
+    fallback: str = _DEFAULT_FALLBACK_OUTPUT_NAME,
+    is_path: bool = False,
+) -> str:
+    candidate = unicodedata.normalize("NFC", raw_name.strip())
+    if is_path:
+        normalized_path = candidate.replace("\\", "/").rstrip("/")
+        candidate = normalized_path.rsplit("/", 1)[-1] if normalized_path else ""
+        if candidate in {".", ".."}:
+            candidate = ""
+    elif candidate in {".", ".."} or "/" in candidate or "\\" in candidate:
+        candidate = ""
+
+    candidate = _strip_output_suffixes(candidate)
+    name = "".join(char if char.isalnum() or char in "._-" else "_" for char in candidate)
     name = re.sub(r"_+", "_", name).strip("._-")
-    return name or "score"
+    name = _strip_output_suffixes(name)
+    name = re.sub(r"_+", "_", name).strip("._-")
+    return name or fallback
+
+
+def _is_usable_artifact_root_name(name: str) -> bool:
+    lowered = name.strip().lower()
+    if not lowered or lowered.startswith("."):
+        return False
+    if lowered in _GENERIC_ARTIFACT_ROOT_NAMES:
+        return False
+    if re.fullmatch(r"attempt_\d+", lowered):
+        return False
+    return True
 
 
 def _derive_output_name(explicit_output_name: str | None, handoff_payload: dict[str, Any]) -> str:
-    if explicit_output_name:
-        return _sanitize_output_name(explicit_output_name)
+    if isinstance(explicit_output_name, str) and explicit_output_name.strip():
+        sanitized = _sanitize_output_name(explicit_output_name, fallback="")
+        if sanitized:
+            return sanitized
 
-    for key in ("output_name", "input_pdf", "source_pdf"):
+    output_name_raw = handoff_payload.get("output_name")
+    if isinstance(output_name_raw, str) and output_name_raw.strip():
+        sanitized = _sanitize_output_name(output_name_raw, fallback="")
+        if sanitized:
+            return sanitized
+
+    for key in ("input_pdf", "source_pdf"):
         raw_name = handoff_payload.get(key)
         if isinstance(raw_name, str) and raw_name.strip():
-            candidate = Path(raw_name.strip()).name
-            if candidate.lower().endswith(".pdf"):
-                candidate = candidate[:-4]
-            return _sanitize_output_name(candidate)
+            sanitized = _sanitize_output_name(raw_name, fallback="", is_path=True)
+            if sanitized:
+                return sanitized
 
     source_root = handoff_payload.get("source_artifact_root")
     if isinstance(source_root, str) and source_root.strip():
-        return _sanitize_output_name(Path(source_root).name)
+        root_name = Path(source_root.replace("\\", "/").rstrip("/")).name
+        if _is_usable_artifact_root_name(root_name):
+            sanitized = _sanitize_output_name(root_name, fallback="")
+            if sanitized:
+                return sanitized
 
-    return "score"
+    return _DEFAULT_FALLBACK_OUTPUT_NAME
 
 
 def _resolve_package_path(package_root: Path, raw_path: Any, *, description: str) -> Path:

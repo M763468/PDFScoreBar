@@ -1316,14 +1316,41 @@ def apply_corrections_and_rerun(
     _write_apply_summary(summary, new_run_dir, corrections_dir)
 
     if generate_final_pdf:
-        from src.pipeline.review.final_output import materialize_corrected_final_outputs
+        from src.pipeline.review.final_output import (
+            _sanitize_output_name,
+            materialize_corrected_final_outputs,
+        )
+        from src.pipeline.review.manual_correction_materializer import (
+            _is_engine_staged_pdf_path,
+            _resolve_handoff_output_name,
+        )
+
+        resolved_output_name = output_name
+        if not resolved_output_name and not any(
+            isinstance(normalized.get(key), str) and str(normalized.get(key)).strip()
+            for key in ("output_name", "input_pdf", "source_pdf")
+        ):
+            pdf_path_raw = get_nested(source_config, "inputs", "pdf_path")
+            if (
+                isinstance(pdf_path_raw, str)
+                and pdf_path_raw.strip()
+                and not _is_engine_staged_pdf_path(pdf_path_raw)
+            ):
+                resolved_output_name = (
+                    _sanitize_output_name(pdf_path_raw, fallback="", is_path=True) or None
+                )
+            if not resolved_output_name and source_manifest is not None:
+                resolved_output_name = _resolve_handoff_output_name(
+                    explicit_output_name=None,
+                    manifest=source_manifest,
+                )
 
         final_summary = materialize_corrected_final_outputs(
             handoff_path=handoff_path,
             corrected_run_dir=new_run_dir,
             final_root=new_run_dir / "final",
             review_root=new_run_dir / "review",
-            output_name=output_name,
+            output_name=resolved_output_name,
         )
         summary["final_pdf"] = final_summary.get("final_pdf")
         summary["corrected_final_summary"] = final_summary.get("summary_path")

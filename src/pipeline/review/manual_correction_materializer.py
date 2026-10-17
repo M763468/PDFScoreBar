@@ -233,12 +233,69 @@ def _extract_review_barline_records(payload: Any, *, source: Path) -> list[Any]:
     )
 
 
+def _is_engine_staged_pdf_path(raw_pdf_path: str) -> bool:
+    normalized = raw_pdf_path.replace("\\", "/").rstrip("/")
+    parts = [part for part in normalized.split("/") if part]
+    return len(parts) >= 2 and parts[-2:] == ["input", "source.pdf"]
+
+
+def _resolve_handoff_output_name(
+    *,
+    explicit_output_name: str | None,
+    manifest: dict[str, Any],
+) -> str | None:
+    from src.pipeline.review.final_output import _sanitize_output_name
+
+    if isinstance(explicit_output_name, str) and explicit_output_name.strip():
+        sanitized = _sanitize_output_name(explicit_output_name, fallback="")
+        if sanitized:
+            return sanitized
+
+    manifest_config = manifest.get("config")
+    if isinstance(manifest_config, dict):
+        inputs = manifest_config.get("inputs")
+        if isinstance(inputs, dict):
+            pdf_path_raw = inputs.get("pdf_path")
+            if (
+                isinstance(pdf_path_raw, str)
+                and pdf_path_raw.strip()
+                and not _is_engine_staged_pdf_path(pdf_path_raw)
+            ):
+                sanitized = _sanitize_output_name(pdf_path_raw, fallback="", is_path=True)
+                if sanitized:
+                    return sanitized
+
+    pages = manifest.get("pages")
+    if isinstance(pages, list):
+        for page in pages:
+            if not isinstance(page, dict):
+                continue
+            source_ref = page.get("source_reference")
+            if not isinstance(source_ref, dict):
+                continue
+            source_doc = source_ref.get("source_document")
+            if not isinstance(source_doc, dict):
+                continue
+            doc_path = source_doc.get("path")
+            if (
+                isinstance(doc_path, str)
+                and doc_path.strip()
+                and not _is_engine_staged_pdf_path(doc_path)
+            ):
+                sanitized = _sanitize_output_name(doc_path, fallback="", is_path=True)
+                if sanitized:
+                    return sanitized
+
+    return None
+
+
 def materialize_manual_correction_review_package(
     *,
     run_root: str | Path,
     review_root: str | Path,
     pages: list[str] | None = None,
     source_pipeline_command: str | None = None,
+    output_name: str | None = None,
     overwrite: bool = True,
 ) -> dict[str, Any]:
     """Create a review manual-correction package from one pipeline run.
@@ -357,6 +414,12 @@ def materialize_manual_correction_review_package(
         "source_manifest": "manifest.json",
         "pages": handoff_pages,
     }
+    resolved_output_name = _resolve_handoff_output_name(
+        explicit_output_name=output_name,
+        manifest=manifest,
+    )
+    if resolved_output_name:
+        handoff["output_name"] = resolved_output_name
     if source_pipeline_command:
         handoff["source_pipeline_command"] = source_pipeline_command
 

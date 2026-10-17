@@ -84,6 +84,21 @@ def test_materializes_review_package_from_manifest_resolved_barlines(tmp_path):
     assert handoff_on_disk["pages"][0]["barlines_review_source"] == page["barlines_review_source"]
 
 
+def test_materializer_preserves_input_pdf_basename_in_handoff(tmp_path):
+    run_root = _fake_run_root(tmp_path)
+    manifest_path = run_root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["config"] = {"inputs": {"pdf_path": "/input/Festival Overture.pdf"}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    handoff = materialize_manual_correction_review_package(
+        run_root=run_root,
+        review_root=tmp_path / "review",
+    )
+
+    assert handoff["output_name"] == "Festival_Overture"
+
+
 def test_materializer_accepts_manifest_declared_shared_source_image(tmp_path):
     run_root = _fake_run_root(tmp_path)
     shared_image = tmp_path / "input_images" / "page_001.png"

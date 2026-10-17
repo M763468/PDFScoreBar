@@ -23,7 +23,7 @@ from src.pipeline.review.manual_correction_handoff import (  # noqa: E402
     build_manual_gui_config,
     load_manual_correction_handoff,
 )
-from tools.review_correction.application import CorrectionApplication
+from tools.review_correction.application import CorrectionApplication, preview_numbering
 from tools.review_correction.state import CorrectionState
 
 
@@ -39,6 +39,7 @@ class ReviewPackage:
         if handoff.name != "manual_correction_input.json":
             raise ValueError("Expected a package-local manual_correction_input.json")
         self.root = handoff.parent
+        self.handoff_path = handoff
         config = build_manual_gui_config(
             load_manual_correction_handoff(handoff),
             handoff_path=handoff,
@@ -346,6 +347,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
             "/api/state/pending",
             "/api/state/pending/clear",
             "/api/apply",
+            "/api/preview_numbering",
         }:
             self.send_error(404, "Not found")
             return
@@ -365,6 +367,17 @@ class ReviewHandler(BaseHTTPRequestHandler):
                         "Apply uses the active review package and accepts no paths or options"
                     )
                 self._json(self.server.application.start())
+                return
+            if parsed.path == "/api/preview_numbering":
+                if payload:
+                    raise ValueError(
+                        "Numbering preview uses saved corrections and accepts no options"
+                    )
+                if self.server.application.lock.locked():
+                    raise ValueError(
+                        "Wait for corrected PDF generation before previewing numbering"
+                    )
+                self._json(preview_numbering(package.handoff_path))
                 return
             if self.server.application.lock.locked():
                 raise ValueError("Wait for corrected PDF generation before editing corrections")

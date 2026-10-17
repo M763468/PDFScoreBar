@@ -17,8 +17,61 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(url);
     await page.waitForFunction(() => window.reviewCorrectionState && currentPage && measures.length);
-    // Select the known retained first measure; use the actual UI for edit/save/apply.
-    await page.evaluate(() => { selectedMeasure = measures[0]; updateSelectionMeta(); updateActionButtons(); });
+    const pageChoices = page.locator('#pageList button');
+    if (await pageChoices.count() !== 1 || !await pageChoices.first().getAttribute('aria-current')) {
+      throw new Error('Page navigation does not expose the current page accessibly');
+    }
+    const firstMeasurePoint = async () => page.evaluate(() => {
+      const box = measures[0].bbox;
+      const point = imgToCanvas({x: (box[0] + box[2]) / 2, y: (box[1] + box[3]) / 2});
+      const rect = canvas.getBoundingClientRect();
+      return {x: rect.left + point.x * rect.width / canvas.width, y: rect.top + point.y * rect.height / canvas.height};
+    });
+    await page.locator('#canvas').focus();
+    const firstMeasure = await firstMeasurePoint();
+    await page.mouse.click(firstMeasure.x, firstMeasure.y);
+    await page.waitForFunction(() => selectedMeasure === measures[0]);
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(() => selectedMeasure === measures[1]);
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForFunction(() => selectedMeasure === measures[0]);
+
+    await page.locator('#typeSelect').selectOption('barline_construction');
+    await page.waitForFunction(() => barlines.length > 0);
+    const firstBarlinePoint = await page.evaluate(() => {
+      const box = barlines[0].bbox;
+      const point = imgToCanvas({x: (box[0] + box[2]) / 2, y: (box[1] + box[3]) / 2});
+      const rect = canvas.getBoundingClientRect();
+      return {x: rect.left + point.x * rect.width / canvas.width, y: rect.top + point.y * rect.height / canvas.height};
+    });
+    await page.mouse.click(firstBarlinePoint.x, firstBarlinePoint.y);
+    await page.waitForFunction(() => selectedBarline === barlines[0]);
+    await page.locator('#opSelect').selectOption('remove_barline');
+    await page.locator('#addItemBtn').click();
+    await page.waitForFunction(() => window.reviewCorrectionState.get().package.counts.pending > 0);
+    await page.locator('#saveBtn').click();
+    await page.waitForFunction(() => window.reviewCorrectionState.get().package.counts.pending === 0);
+
+    await page.locator('#typeSelect').selectOption('movement_boundary');
+    await page.locator('#itemListHeading').click();
+    const firstSystemPoint = await page.evaluate(() => {
+      const box = systemBounds(0);
+      const point = imgToCanvas({x: (box[0] + box[2]) / 2, y: (box[1] + box[3]) / 2});
+      const rect = canvas.getBoundingClientRect();
+      return {x: rect.left + point.x * rect.width / canvas.width, y: rect.top + point.y * rect.height / canvas.height};
+    });
+    await page.mouse.click(firstSystemPoint.x, firstSystemPoint.y);
+    await page.waitForFunction(() => selectedMovementSystem === 0);
+    await page.locator('#movementAfterBtn').click();
+    await page.waitForFunction(() => document.querySelector('#saveStatus').textContent.includes('Saved a boundary after') || document.querySelector('#saveStatus').textContent.includes('境界を保存しました'));
+    const movementRows = await page.locator('#itemList').innerText();
+    if (!movementRows.includes('After Page 1 / System 1') && !movementRows.includes('ページ1・段1の後')) {
+      throw new Error('Movement boundary added after a system is not shown at its source location');
+    }
+
+    await page.locator('#typeSelect').selectOption('mmr_measure_span');
+    await page.mouse.click(firstMeasure.x, firstMeasure.y);
+    await page.waitForFunction(() => selectedMeasure === measures[0]);
     await page.locator('#measureSpanInput').fill('2');
     await page.locator('#addItemBtn').click();
     await page.waitForFunction(() => window.reviewCorrectionState.get().package.counts.pending > 0);
@@ -27,6 +80,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     await page.waitForFunction(() => window.reviewCorrectionState.get().package.counts.pending === 0);
     const recorded = await page.evaluate(() => window.reviewCorrectionState.get());
     if (recorded.package.current_result) throw new Error('Save reports a current applied result');
+    await page.locator('#previewNumbersBtn').click();
+    await page.waitForFunction(() => document.querySelector('#saveStatus').textContent.includes('Provisional numbering updated') || document.querySelector('#saveStatus').textContent.includes('仮番号'));
+    if (await page.locator('#previewNumbersBtn').getAttribute('aria-pressed') !== 'true') {
+      throw new Error('Numbering preview is not exposed as active');
+    }
     await page.locator('#applyBtn').click();
     await page.waitForFunction(() => window.reviewCorrectionState.get().package.current_result, {timeout: 180000});
     const applied = await page.evaluate(() => window.reviewCorrectionState.get());

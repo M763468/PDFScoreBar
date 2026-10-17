@@ -7,13 +7,16 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 SOURCE_CONTRACT_ROOTS = (
     Path("src"),
     Path("docker"),
+    Path("configs"),
+    Path("models"),
 )
 SOURCE_CONTRACT_FILES = (
     Path("Dockerfile"),
@@ -26,8 +29,15 @@ SOURCE_CONTRACT_FILES = (
     Path("tools/review_correction/strings.js"),
     Path("tools/review_correction/correction_state.js"),
 )
-SOURCE_SUFFIXES = frozenset({".py", ".toml"})
+SOURCE_SUFFIXES = frozenset({".py", ".toml", ".yaml", ".yml", ".json", ".pth"})
 RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
+PROVENANCE_NAME = "DISTRIBUTION_PROVENANCE.json"
+MANIFEST_NAME = "docs/MINIMAL_MAINLINE_SURFACE.json"
+MANIFEST_SECTIONS = (
+    "runtime_bundle_patterns",
+    "distribution_support_patterns",
+    "distribution_metadata_patterns",
+)
 
 # Image/runtime compatibility is intentionally narrower than source provenance.
 # The active checkout is bind-mounted at /workspace, so application Python does
@@ -113,6 +123,90 @@ def source_fingerprint(root: Path) -> str:
                 digest.update(chunk)
         digest.update(b"\0")
     return digest.hexdigest()
+
+
+def validate_distribution_provenance(workspace: Path) -> dict | None:
+    """Verify all manifest-selected bytes before trusting a frozen identity."""
+    provenance_path = workspace / PROVENANCE_NAME
+    if not provenance_path.is_file():
+        return None
+    try:
+        provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+        manifest = json.loads((workspace / MANIFEST_NAME).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot read distribution identity metadata: {exc}") from exc
+    if provenance.get("schema_version") != 1:
+        raise ValueError("unsupported distribution provenance schema")
+    if not isinstance(provenance.get("source_commit"), str) or not re.fullmatch(
+        r"[0-9a-f]{40}", provenance["source_commit"]
+    ):
+        raise ValueError("distribution provenance has an invalid source commit")
+    if manifest.get("schema_version") != 3:
+        raise ValueError("unsupported distribution manifest schema")
+
+    selected: set[str] = set()
+    for section in MANIFEST_SECTIONS:
+        entries = manifest.get(section)
+        if not isinstance(entries, list):
+            raise ValueError(f"invalid distribution manifest section: {section}")
+        for entry in entries:
+            relative = entry.get("pattern") if isinstance(entry, dict) else None
+            path = PurePosixPath(relative) if isinstance(relative, str) else None
+            if (
+                path is None
+                or path.is_absolute()
+                or ".." in path.parts
+                or str(path) != relative
+                or any(char in relative for char in "*?[")
+                or relative == PROVENANCE_NAME
+                or not entry.get("role")
+            ):
+                raise ValueError(f"invalid exact distribution entry: {entry}")
+            if relative in selected:
+                raise ValueError(f"duplicate distribution entry: {relative}")
+            selected.add(relative)
+    if MANIFEST_NAME not in selected:
+        raise ValueError("distribution manifest must include itself")
+
+    hashes = provenance.get("files")
+    if not isinstance(hashes, dict) or set(hashes) != selected:
+        raise ValueError("distribution provenance file selection differs from manifest")
+    for relative, expected in hashes.items():
+        path = PurePosixPath(relative)
+        if (
+            path.is_absolute()
+            or ".." in path.parts
+            or str(path) != relative
+            or not isinstance(expected, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", expected)
+        ):
+            raise ValueError(f"invalid distribution provenance entry: {relative!r}")
+        target = workspace / relative
+        if (
+            target.is_symlink()
+            or not target.is_file()
+            or not target.resolve().is_relative_to(workspace.resolve())
+        ):
+            raise ValueError(f"missing or unsafe distributed file: {relative}")
+        actual = hashlib.sha256(target.read_bytes()).hexdigest()
+        if actual != expected:
+            raise ValueError(f"distribution content hash mismatch: {relative}")
+
+    release = provenance.get("release")
+    if isinstance(release, dict):
+        manifest_hash = hashlib.sha256((workspace / MANIFEST_NAME).read_bytes()).hexdigest()
+        if release.get("manifest_sha256") != manifest_hash:
+            raise ValueError("distribution manifest hash differs from release provenance")
+        modes = release.get("file_modes")
+        if not isinstance(modes, dict) or set(modes) != selected:
+            raise ValueError("distribution file modes differ from release provenance")
+        for relative, mode in modes.items():
+            if mode not in {"100644", "100755"}:
+                raise ValueError(f"invalid distributed file mode: {relative}")
+            executable = bool((workspace / relative).stat().st_mode & 0o111)
+            if executable != (mode == "100755"):
+                raise ValueError(f"distribution file mode mismatch: {relative}")
+    return provenance
 
 
 def _remove_exact_sequence(lines: list[str], sequence: tuple[str, ...]) -> list[str]:
@@ -265,6 +359,11 @@ def run_preflight(
         if expected_source_fingerprint_path.is_file()
         else None
     )
+
+    try:
+        validate_distribution_provenance(workspace)
+    except (OSError, ValueError) as exc:
+        errors.append(f"distribution provenance is invalid: {exc}")
 
     if not expected_runtime_fingerprint:
         errors.append("selected image runtime compatibility fingerprint is missing")

@@ -72,6 +72,104 @@ def test_candidate_rejects_corrupt_or_extra_content(candidate):
     assert any("Unexpected candidate files" in error for error in errors)
 
 
+def test_distribution_source_identity_verifies_complete_provenance(candidate, monkeypatch):
+    from docker import distribution
+
+    _init_candidate_git(candidate)
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+    identity = distribution.source_identity()
+    assert (
+        identity["source_dirty"] is json.loads((candidate / PROVENANCE).read_text())["source_dirty"]
+    )
+    assert len(identity["files"]) == len(
+        selected_files(json.loads((candidate / "docs/MINIMAL_MAINLINE_SURFACE.json").read_text()))
+    )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/pipeline/main.py",
+        "configs/dense_full_pipeline.yaml",
+        "models/mmr/mmr_classifier_best.pth",
+    ],
+)
+def test_distribution_source_identity_rejects_tampered_runtime_bytes(candidate, monkeypatch, path):
+    from docker import distribution
+
+    _init_candidate_git(candidate)
+    target = candidate / path
+    target.write_bytes(target.read_bytes() + b"\nchanged")
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+    with pytest.raises(ValueError, match=f"distribution content hash mismatch: {path}"):
+        distribution.source_identity()
+
+
+def test_distribution_source_identity_rejects_missing_and_unexpected_files(candidate, monkeypatch):
+    from docker import distribution
+
+    _init_candidate_git(candidate)
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+    (candidate / "README.md").unlink()
+    with pytest.raises(ValueError, match="missing or unsafe distributed file: README.md"):
+        distribution.source_identity()
+
+
+def test_distribution_source_identity_rejects_unexpected_file(candidate, monkeypatch):
+    from docker import distribution
+
+    _init_candidate_git(candidate)
+    (candidate / "unlisted.txt").write_text("not part of this release\n")
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+    with pytest.raises(ValueError, match="checkout is dirty"):
+        distribution.source_identity()
+
+
+def test_distribution_source_identity_rejects_provenance_inventory_mismatch(candidate, monkeypatch):
+    from docker import distribution
+
+    _init_candidate_git(candidate)
+    provenance_path = candidate / PROVENANCE
+    provenance = json.loads(provenance_path.read_text())
+    provenance["files"].pop("README.md")
+    provenance_path.write_text(json.dumps(provenance))
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+    with pytest.raises(ValueError, match="file selection differs from manifest"):
+        distribution.source_identity()
+
+
+def test_candidate_gitignore_keeps_supported_help_command_checkout_clean(candidate):
+    _init_candidate_git(candidate)
+
+    result = subprocess.run(
+        ["python3", "docker/distribution.py", "--help"],
+        cwd=candidate,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (
+        subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=candidate,
+            text=True,
+        )
+        == ""
+    )
+
+
+def _init_candidate_git(candidate: Path) -> None:
+    for command in (
+        ["git", "init", "-q"],
+        ["git", "config", "user.name", "Distribution test"],
+        ["git", "config", "user.email", "distribution-test@example.invalid"],
+        ["git", "add", "-f", "-A"],
+        ["git", "commit", "-qm", "fixture candidate"],
+    ):
+        subprocess.run(command, cwd=candidate, capture_output=True, text=True, check=True)
+
+
 def test_materializer_rejects_existing_output_and_symlink(tmp_path):
     with pytest.raises(ValueError, match="already exists"):
         materialize(ROOT, tmp_path)

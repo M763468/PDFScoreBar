@@ -1,9 +1,9 @@
 # Minimal distributable surface (#100 / #409)
 
-The candidate has **107 tracked files** in
+The candidate has **108 tracked files** in
 [MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 85 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
-application, and minimum user documentation. The exact distribution is the union of
+application, minimum user documentation, and checkout-local ignore rules. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and
 `distribution_metadata_patterns`. A generated `DISTRIBUTION_PROVENANCE.json` records
 source identity, dirty status, and each shipped file's hash.
@@ -27,7 +27,7 @@ and inspectable runtime/model/input identity.
 | Production Docker helpers and metadata | Clean build, compatibility/preflight, normal PDF and correction operation |
 | Seven `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
 | README + user guide | Install, run, review/correct, troubleshooting and asset ownership |
-| Distribution manifest | Auditable exact release selection |
+| Distribution metadata and ignore rules | Auditable exact release selection; keep generated runtime files out of Git |
 
 Every existing runtime entry was revisited against those responsibilities. GT matching was
 unnecessarily imported from `src/common/barline_evaluation.py` by shared package exports

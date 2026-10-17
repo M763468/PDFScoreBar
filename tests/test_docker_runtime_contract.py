@@ -58,21 +58,47 @@ def test_omr_dln_model_accepts_explicit_external_asset(tmp_path: Path) -> None:
     assert resolved == expected
 
 
-def test_source_fingerprint_detects_runtime_source_drift_but_ignores_config(tmp_path: Path) -> None:
+def test_source_fingerprint_detects_source_config_and_checkpoint_drift(tmp_path: Path) -> None:
     runtime_contract = _load_runtime_contract_module()
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "worker.py").write_text("VALUE = 1\n", encoding="utf-8")
     (tmp_path / "configs").mkdir()
     (tmp_path / "configs" / "smoke.yaml").write_text("value: 1\n", encoding="utf-8")
+    (tmp_path / "models" / "mmr").mkdir(parents=True)
+    (tmp_path / "models" / "mmr" / "checkpoint.pth").write_bytes(b"weights-v1")
     (tmp_path / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
     (tmp_path / "pyproject.toml").write_text("[project]\nname='fixture'\n", encoding="utf-8")
 
     initial = runtime_contract.source_fingerprint(tmp_path)
     (tmp_path / "configs" / "smoke.yaml").write_text("value: 2\n", encoding="utf-8")
-    assert runtime_contract.source_fingerprint(tmp_path) == initial
+    config_changed = runtime_contract.source_fingerprint(tmp_path)
+    assert config_changed != initial
+
+    (tmp_path / "configs" / "smoke.yaml").write_text("value: 1\n", encoding="utf-8")
+    (tmp_path / "models" / "mmr" / "checkpoint.pth").write_bytes(b"weights-v2")
+    assert runtime_contract.source_fingerprint(tmp_path) != initial
 
     (tmp_path / "src" / "worker.py").write_text("VALUE = 2\n", encoding="utf-8")
     assert runtime_contract.source_fingerprint(tmp_path) != initial
+
+
+def test_preflight_rejects_tampered_distribution_provenance(tmp_path: Path, capsys) -> None:
+    runtime_contract = _load_runtime_contract_module()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "DISTRIBUTION_PROVENANCE.json").write_text("{}\n", encoding="utf-8")
+    expected_runtime = tmp_path / "runtime.txt"
+    expected_runtime.write_text("\n", encoding="utf-8")
+
+    status = runtime_contract.run_preflight(
+        workspace,
+        tmp_path / "unused-config.yaml",
+        expected_runtime,
+    )
+
+    captured = capsys.readouterr()
+    assert status == 2
+    assert "distribution provenance is invalid" in captured.err
 
 
 def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_steps(

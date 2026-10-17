@@ -882,6 +882,10 @@
     {
       "pattern": "docs/MINIMAL_MAINLINE_SURFACE.json",
       "role": "Exact candidate selection and auditable release reasons"
+    },
+    {
+      "pattern": ".gitignore",
+      "role": "Keep Python caches and routine local runtime artifacts out of the supported checkout"
     }
   ],
   "documentation_audiences": {

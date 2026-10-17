@@ -138,3 +138,100 @@ def test_renderer_uses_provenance_bound_source_bytes(tmp_path: Path) -> None:
 
     assert len(rendered) == 1
     assert rendered[0][0] == 1
+
+
+@pytest.mark.parametrize("dpi", [300, 360])
+@pytest.mark.parametrize("resize", [{}, {"target_width": 510, "target_height": 660}])
+def test_rendered_source_geometry_survives_public_review_and_correction(tmp_path, dpi, resize):
+    import json
+
+    from PIL import Image
+
+    from src.pipeline.engine_executor import PipelineJobExecutor
+    from src.pipeline.orchestrator import PipelineOrchestrator
+    from src.pipeline.review.final_output import materialize_corrected_final_outputs
+    from src.pipeline.review.manual_correction_materializer import (
+        materialize_manual_correction_review_package,
+    )
+
+    source = tmp_path / "input.pdf"
+    with fitz.open() as pdf:
+        pdf.new_page(width=612, height=792)
+        pdf.new_page(width=100, height=100)  # Intentionally unselected.
+        last = pdf.new_page(width=595.28, height=841.89)
+        last.set_cropbox(fitz.Rect(10, 20, 585.28, 821.89))
+        last.set_rotation(90)
+        expected = [(pdf[i].rect.width, pdf[i].rect.height) for i in (0, 2)]
+        pdf.save(source)
+
+    config = {
+        "inputs": {
+            "pdf_path": str(source),
+            "pdf_to_images": {"dpi": dpi, "pages": "3,1", **resize},
+        },
+        "steps": {"pdf_to_images": True},
+        "outputs": {"review": {"manual_correction_package": True}},
+    }
+    run = tmp_path / "run"
+    orchestrator = PipelineOrchestrator(config, "geometry", run)
+    source_sha, selected, sizes = orchestrator._run_pdf_to_images()
+    images = sorted((run / "inputs/images").glob("*.png"))
+    references = resolve_source_page_references(
+        config,
+        images,
+        rendered_this_run=True,
+        rendered_source_sha256=source_sha,
+        rendered_source_pages=selected,
+        rendered_page_sizes_points=sizes,
+    )
+    manifest_pages = []
+    for index, (image, reference) in enumerate(zip(images, references, strict=True)):
+        assert reference["page_size_points"] == pytest.approx(expected[index])
+        with Image.open(image) as png:
+            assert "dpi" not in png.info
+        page_id = image.stem
+        numbering = run / "outputs" / page_id / "numbering_final.json"
+        numbering.parent.mkdir(parents=True)
+        numbering.write_text(
+            json.dumps(
+                {
+                    "pages": [
+                        {
+                            "systems": [
+                                {
+                                    "staves": [{"bbox": [50, 50, 250, 90]}],
+                                    "measures": [{"bbox": [50, 50, 250, 90], "number": 42 + index}],
+                                }
+                            ]
+                        }
+                    ]
+                }
+            )
+        )
+        barlines = run / "intermediate" / page_id / "barlines.json"
+        barlines.parent.mkdir(parents=True)
+        barlines.write_text(json.dumps({"boxes": [{"bbox": [50, 50, 50, 90]}]}))
+        manifest_pages.append(
+            {
+                "page_id": page_id,
+                "image_path": str(image),
+                "barlines_json": str(barlines),
+                "source_reference": reference,
+            }
+        )
+    (run / "manifest.json").write_text(json.dumps({"config": config, "pages": manifest_pages}))
+    private_review = run / ".review_work"
+    materialize_manual_correction_review_package(run_root=run, review_root=private_review)
+    public = tmp_path / "public_review"
+    PipelineJobExecutor._copy_review(private_review, public, source_job_id="geometry")
+    handoff = public / "manual_correction_input.json"
+    payload = json.loads(handoff.read_text())
+    assert "source_manifest" not in payload
+    assert "source_artifact_root" not in payload
+    source.unlink()  # Correction output must not depend on the original PDF.
+    summary = materialize_corrected_final_outputs(handoff_path=handoff, corrected_run_dir=run)
+    assert summary["warnings"] == []
+    with fitz.open(summary["final_pdf"]) as pdf:
+        for page, size in zip(pdf, expected, strict=True):
+            assert (page.rect.width, page.rect.height) == pytest.approx(size)
+    assert [p["row_labels"][0]["row_start_measure_number"] for p in summary["pages"]] == [42, 43]

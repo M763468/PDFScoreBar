@@ -182,7 +182,7 @@ class PipelineOrchestrator:
         if not images:
             raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
 
-    def _run_pdf_to_images(self) -> tuple[str, list[int]] | None:
+    def _run_pdf_to_images(self) -> tuple[str, list[int], dict[int, list[float]]] | None:
         """Step 1: Convert PDF to images in-process and retain exact source identity."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
@@ -203,6 +203,9 @@ class PipelineOrchestrator:
         source_sha256 = hashlib.sha256(source_bytes).hexdigest()
         with fitz.open(stream=source_bytes, filetype="pdf") as doc:
             pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
+            page_sizes_points = {
+                index: [doc[index].rect.width, doc[index].rect.height] for index in pages
+            }
 
         logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
         from src.pdf_to_images import render_pdf_to_memory
@@ -250,7 +253,7 @@ class PipelineOrchestrator:
                 destination = output_dir / f"{stem}.{fmt}"
                 save_image(destination, image, fmt=fmt)
 
-        return source_sha256, pages
+        return source_sha256, pages, page_sizes_points
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
@@ -277,6 +280,7 @@ class PipelineOrchestrator:
         pdf_rendered_this_run = False
         rendered_source_sha256: str | None = None
         rendered_source_pages: list[int] | None = None
+        rendered_page_sizes_points: dict[int, list[float]] | None = None
 
         if get_nested(self.config, "steps", "pdf_to_images", default=False):
             if (
@@ -290,7 +294,11 @@ class PipelineOrchestrator:
                     render_provenance = self._run_pdf_to_images()
                 commands.append(["inprocess:pdf_to_images"])
                 if render_provenance is not None:
-                    rendered_source_sha256, rendered_source_pages = render_provenance
+                    (
+                        rendered_source_sha256,
+                        rendered_source_pages,
+                        rendered_page_sizes_points,
+                    ) = render_provenance
                     pdf_rendered_this_run = True
 
         logger.info("Collecting images...")
@@ -315,6 +323,7 @@ class PipelineOrchestrator:
             rendered_this_run=pdf_rendered_this_run,
             rendered_source_sha256=rendered_source_sha256,
             rendered_source_pages=rendered_source_pages,
+            rendered_page_sizes_points=rendered_page_sizes_points,
         )
         logger.info(f"Collected {len(images)} images.")
 

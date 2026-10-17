@@ -340,6 +340,9 @@ def materialize_manual_correction_review_package(
             "barlines_review_source_manifest_field": barlines_source_field,
             "correction_output": "corrections",
         }
+        source_reference = page.get("source_reference")
+        if isinstance(source_reference, dict) and "page_size_points" in source_reference:
+            handoff_page["page_size_points"] = source_reference["page_size_points"]
         if mmr_overrides.exists():
             handoff_page["mmr_overrides"] = f"pages/{page_id}/mmr_overrides.json"
         if review_overlay.exists():

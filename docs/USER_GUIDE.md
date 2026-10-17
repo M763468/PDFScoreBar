@@ -43,6 +43,12 @@ directory under the output root. Its `final/` directory contains the numbered PD
 records status, warnings, artifact hashes, and source provenance. Review-required status
 means the generated result needs user attention.
 
+Numbered PDFs retain the source PDF's visible page size, including cropping and
+rotation, independently of render DPI or image resizing. Older review packages
+may lack this size information: image DPI is used when available, otherwise a
+warning reports a 300-DPI assumption. Reprocess the original PDF when its exact
+paper size must be recovered from such a package.
+
 Before using the numbered PDF, open the job's review application and follow the
 [rest-count inspection procedure](#check-and-correct-multi-measure-rests), even
 when the job succeeded without warnings. Job success is not a completed score review.

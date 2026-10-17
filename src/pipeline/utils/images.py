@@ -115,6 +115,7 @@ def resolve_source_page_references(
     rendered_this_run: bool = False,
     rendered_source_sha256: str | None = None,
     rendered_source_pages: List[int] | None = None,
+    rendered_page_sizes_points: Dict[int, List[float]] | None = None,
 ) -> List[Dict[str, Any] | None]:
     """Return physical PDF provenance only for this process's direct renderer.
 
@@ -161,7 +162,7 @@ def resolve_source_page_references(
             f"expected {expected_stems}, got {actual_stems}"
         )
     pdf_path = Path(pdf_path_value)
-    return [
+    references = [
         {
             "kind": "direct_pdf_render",
             "source_page": source_page,
@@ -172,6 +173,10 @@ def resolve_source_page_references(
         }
         for source_page in source_pages
     ]
+    if rendered_page_sizes_points is not None:
+        for reference in references:
+            reference["page_size_points"] = rendered_page_sizes_points[reference["source_page"]]
+    return references
 
 
 def load_image(

@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict, List, Optional
 
 from .types import Barline, BBox, Measure, MeasureAttribute, Score, System
@@ -8,21 +9,35 @@ class MeasureNumberer:
     Assigns measure numbers to systems of music.
     """
 
-    # Constants for logic thresholds
-    DEDUPLICATION_THRESHOLD = 15  # px: merge barlines closer than this
-    IMPLICIT_START_THRESHOLD = 50  # px: if first barline is > this from edge, assume hidden measure
-    MIN_MEASURE_WIDTH = 25  # px: reject intervals narrower than this (e.g. double barlines)
+    # Musical-geometry thresholds are expressed in staff-line spacing units.
+    DEDUPLICATION_THRESHOLD_UNITS = 1.2
+    IMPLICIT_START_THRESHOLD_UNITS = 4.0
+    MIN_MEASURE_WIDTH_UNITS = 1.0
+    STAFF_HEIGHT_UNITS_FALLBACK = 4.0
+    FIRST_GHOST_MEASURE_MAX_MEDIAN_RATIO = 0.5
+    FIRST_GHOST_MEASURE_MAX_STAFF_HEIGHT_RATIO = 1.2
 
     def number_score(
-        self, score: Score, start_number: int = 1, overrides: Optional[List[Dict[str, Any]]] = None
+        self,
+        score: Score,
+        start_number: int = 1,
+        overrides: Optional[List[Dict[str, Any]]] = None,
+        boundary_resets: Optional[Dict[tuple[int, int], int]] = None,
     ) -> int:
         """
         Numbers all pages and systems in a score sequentially.
+        Override and boundary system indices address the compact ``systems``
+        array in score_to_dict, not positions in Page.systems (which also holds
+        empty systems). Resolve visibility from fresh, uncorrected geometry so
+        the contract also holds on a newly reconstructed Phase-C Page.
         Returns the next available measure number.
         """
         current_number = start_number
         if not score.pages:
             return current_number
+
+        boundary_resets = boundary_resets or {}
+        applied_boundaries: set[tuple[int, int]] = set()
 
         # Map overrides by (page_index, system_index, measure_index) for fast lookup
         ov_map = {}
@@ -32,12 +47,30 @@ class MeasureNumberer:
                 ov_map[key] = ov
 
         for p_idx, page in enumerate(score.pages):
-            for s_idx, system in enumerate(page.systems):
+            s_idx = 0
+            for system in page.systems:
+                base_next_number = self.number_system(system, current_number)
+                if not system.measures:
+                    continue
+                boundary_key = (p_idx, s_idx)
+                if boundary_key in boundary_resets:
+                    current_number = boundary_resets[boundary_key]
+                    applied_boundaries.add(boundary_key)
                 # Prepare system-specific overrides
                 sys_ov = {
                     m_idx: ov for (p, s, m_idx), ov in ov_map.items() if p == p_idx and s == s_idx
                 }
-                current_number = self.number_system(system, current_number, overrides=sys_ov)
+                if sys_ov or boundary_key in boundary_resets:
+                    current_number = self.number_system(system, current_number, overrides=sys_ov)
+                else:
+                    current_number = base_next_number
+                s_idx += 1
+
+        unknown_boundaries = set(boundary_resets) - applied_boundaries
+        if unknown_boundaries:
+            raise ValueError(
+                f"Movement boundary targets missing score systems: {sorted(unknown_boundaries)}"
+            )
 
         return current_number
 
@@ -48,35 +81,62 @@ class MeasureNumberer:
         Creates Measure objects for a single system and assigns numbers.
         Returns the next start number.
         """
+        system.measures = []
         if not system.staves:
             return start_number
 
         overrides = overrides or {}
+        unit_size = self._system_unit_size(system)
+        deduplication_threshold = unit_size * self.DEDUPLICATION_THRESHOLD_UNITS
+        implicit_start_threshold = unit_size * self.IMPLICIT_START_THRESHOLD_UNITS
+        min_measure_width = unit_size * self.MIN_MEASURE_WIDTH_UNITS
 
         # 1. Collect and Deduplicate barlines in the system
         all_barlines = set()
         for staff in system.staves:
             all_barlines.update(staff.barlines)
 
-        raw_sorted = sorted(list(all_barlines), key=lambda b: b.bbox.x1)
-        sorted_barlines = self._deduplicate_barlines(raw_sorted)
+        if len(system.staves) >= 3:
+            all_barlines = self._supported_multistaff_barlines(
+                system, all_barlines, deduplication_threshold
+            )
+
+        raw_sorted = sorted(
+            all_barlines,
+            key=lambda barline: (
+                barline.bbox.x1,
+                -barline.bbox.width,
+                barline.bbox.y1,
+                barline.bbox.y2,
+                barline.bbox.x2,
+                barline.is_ghost,
+            ),
+        )
+        sorted_barlines = self._deduplicate_barlines(raw_sorted, deduplication_threshold)
 
         # 2. System and Staff geometry
         sys_x1 = min(s.bbox.x1 for s in system.staves)
-        max(s.bbox.x2 for s in system.staves)
         sys_y1 = min(s.bbox.y1 for s in system.staves)
         sys_y2 = max(s.bbox.y2 for s in system.staves)
+        avg_staff_height = sum(s.bbox.height for s in system.staves) / len(system.staves)
 
         # 3. Detect and insert Implicit Start if necessary
         if sorted_barlines:
             first_bar = sorted_barlines[0]
-            if first_bar.bbox.x1 - sys_x1 > self.IMPLICIT_START_THRESHOLD:
+            if first_bar.bbox.x1 - sys_x1 > implicit_start_threshold:
                 ghost_start = Barline(bbox=BBox(sys_x1, sys_y1, sys_x1 + 1, sys_y2), is_ghost=True)
                 sorted_barlines.insert(0, ghost_start)
 
+        interval_widths = self._measure_interval_widths(sorted_barlines, min_measure_width)
+        median_widths = (
+            interval_widths[1:]
+            if sorted_barlines and sorted_barlines[0].is_ghost
+            else interval_widths
+        )
+        median_interval_width = self._median(median_widths)
+
         # 4. Iterate intervals to create Measures
         current_number = start_number
-        system.measures = []
 
         if not sorted_barlines:
             pass
@@ -87,14 +147,27 @@ class MeasureNumberer:
 
                 m_x1 = left_bar.bbox.x2
                 m_x2 = right_bar.bbox.x1
+                measure_width = m_x2 - m_x1
 
                 # Check for insufficient width (e.g. double barline gap)
-                if (m_x2 - m_x1) < self.MIN_MEASURE_WIDTH:
+                if measure_width < min_measure_width:
                     continue
 
-                # Check for overrides
+                visible_measure_idx = len(system.measures)
+                interval_override = overrides.get(i)
+                force_measure = bool(interval_override and interval_override.get("force_measure"))
+                ov = interval_override if force_measure else overrides.get(visible_measure_idx)
+
+                if not force_measure and self._is_narrow_ghost_start_interval(
+                    i=i,
+                    left_bar=left_bar,
+                    measure_width=measure_width,
+                    median_interval_width=median_interval_width,
+                    avg_staff_height=avg_staff_height,
+                ):
+                    continue
+
                 attr = None
-                ov = overrides.get(i)
                 if ov:
                     attr = MeasureAttribute(
                         skip=ov.get("skip", 0),
@@ -121,7 +194,104 @@ class MeasureNumberer:
 
         return current_number
 
-    def _deduplicate_barlines(self, barlines: List[Barline]) -> List[Barline]:
+    def _supported_multistaff_barlines(self, system, barlines, x_tolerance):
+        """Reject isolated short ink fragments as shared multi-staff boundaries.
+
+        A boundary must span a five-line staff or have aligned support on
+        multiple staves. A note/clef fragment on just one of three/four voices
+        cannot introduce an extra measure for every voice. Existing staff-space
+        and x-deduplication units define both checks; two-staff and single-staff
+        compatibility behavior is unchanged.
+        """
+        supported = set()
+        for bar in barlines:
+            if bar.is_ghost:
+                supported.add(bar)
+                continue
+            full_staff = any(
+                min(bar.bbox.y2, staff.bbox.y2) - max(bar.bbox.y1, staff.bbox.y1)
+                >= self._system_unit_size(System(staves=[staff])) * self.STAFF_HEIGHT_UNITS_FALLBACK
+                for staff in system.staves
+            )
+            if full_staff:
+                supported.add(bar)
+                continue
+            center_x = bar.bbox.center[0]
+            staff_support = sum(
+                any(abs(other.bbox.center[0] - center_x) < x_tolerance for other in staff.barlines)
+                for staff in system.staves
+            )
+            if staff_support >= 2:
+                supported.add(bar)
+        return supported
+
+    def _is_narrow_ghost_start_interval(
+        self,
+        *,
+        i: int,
+        left_bar: Barline,
+        measure_width: float,
+        median_interval_width: Optional[float],
+        avg_staff_height: float,
+    ) -> bool:
+        """Return true for a short non-measure region after an implicit system start."""
+        if i != 0 or not left_bar.is_ghost or median_interval_width is None:
+            return False
+        return (
+            measure_width < median_interval_width * self.FIRST_GHOST_MEASURE_MAX_MEDIAN_RATIO
+            and measure_width < avg_staff_height * self.FIRST_GHOST_MEASURE_MAX_STAFF_HEIGHT_RATIO
+        )
+
+    def _measure_interval_widths(
+        self, barlines: List[Barline], min_measure_width: float
+    ) -> List[float]:
+        widths = []
+        for left_bar, right_bar in zip(barlines, barlines[1:]):
+            width = right_bar.bbox.x1 - left_bar.bbox.x2
+            if width >= min_measure_width:
+                widths.append(width)
+        return widths
+
+    def _system_unit_size(self, system: System) -> float:
+        """Resolve staff-line spacing in the system/barline coordinate frame."""
+        explicit_units = [
+            float(staff.unit_size)
+            for staff in system.staves
+            if staff.unit_size is not None
+            and math.isfinite(float(staff.unit_size))
+            and float(staff.unit_size) > 0
+        ]
+        if explicit_units:
+            unit_size = self._median(explicit_units)
+            assert unit_size is not None
+            return unit_size
+
+        # Compatibility for direct/synthetic System construction. Production
+        # StaffExtractor supplies mask-derived unit_size; when it is absent, staff
+        # height is still a resolution-normalized geometry scale rather than a px
+        # constant. A five-line staff spans approximately four staff spaces.
+        staff_heights = [
+            float(staff.bbox.height)
+            for staff in system.staves
+            if math.isfinite(float(staff.bbox.height)) and float(staff.bbox.height) > 0
+        ]
+        median_staff_height = self._median(staff_heights)
+        if median_staff_height is None:
+            raise ValueError("Cannot resolve numbering unit_size from empty/invalid staff geometry")
+        return median_staff_height / self.STAFF_HEIGHT_UNITS_FALLBACK
+
+    def _median(self, values: List[float]) -> Optional[float]:
+        if not values:
+            return None
+        sorted_values = sorted(values)
+        midpoint = len(sorted_values) // 2
+        if len(sorted_values) % 2:
+            return sorted_values[midpoint]
+        return (sorted_values[midpoint - 1] + sorted_values[midpoint]) / 2
+
+    def _deduplicate_barlines(
+        self, barlines: List[Barline], deduplication_threshold: float
+    ) -> List[Barline]:
         """
         Merges barlines that are too close to each other.
         """
@@ -134,9 +304,10 @@ class MeasureNumberer:
             for next_bar in barlines[1:]:
                 # Distance check (center to center or x1 to x1)
                 dist = abs(next_bar.bbox.x1 - current.bbox.x1)
-                if dist < self.DEDUPLICATION_THRESHOLD:
-                    # Merge: keep the one that is wider or just the first?
-                    # Usually detector produces multiple thin candidates.
+                if dist < deduplication_threshold:
+                    # Keep the first candidate in the deterministic ordering above.
+                    # For exact x1 ties this is the wider barline; distinct x1 positions
+                    # continue to prefer the earlier x1 as before.
                     continue
                 else:
                     deduped.append(current)

@@ -17,10 +17,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(url);
     await page.waitForFunction(() => window.reviewCorrectionState && currentPage && measures.length);
+    await page.waitForFunction(() => document.querySelectorAll('#pageList button').length === pages.length);
     const pageChoices = page.locator('#pageList button');
-    if (await pageChoices.count() !== 1 || !await pageChoices.first().getAttribute('aria-current')) {
+    if (await pageChoices.count() !== await page.evaluate(() => pages.length) || await page.locator('#pageList button[aria-current="page"]').count() !== 1) {
       throw new Error('Page navigation does not expose the current page accessibly');
     }
+    await page.locator('#nextPageBtn').click();
+    await page.waitForFunction(() => currentIndex === 1 && currentPage && measures.length > 0);
+    await page.locator('#previousPageBtn').click();
+    await page.waitForFunction(() => currentIndex === 0 && currentPage && measures.length > 0);
     const firstMeasurePoint = async () => page.evaluate(() => {
       const box = measures[0].bbox;
       const point = imgToCanvas({x: (box[0] + box[2]) / 2, y: (box[1] + box[3]) / 2});

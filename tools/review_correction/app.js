@@ -1173,7 +1173,7 @@ function addCorrectionItem() {
     updateSelectionMeta();
     draw();
     saveStatus.textContent = movementAfterSource
-      ? reviewerCopy("savingAfterBoundary", {page: movementAfterSource.page, system: movementAfterSource.system, next: displayIndex(system)})
+      ? reviewerCopy("ui.savingAfterBoundary", {page: movementAfterSource.page, system: movementAfterSource.system, next: displayIndex(system)})
       : item.op === "boundary"
         ? reviewerCopy("savingBoundary", {system: displayIndex(visibleSystem - 1)})
         : reviewerCopy("savingNoBoundary", {system: displayIndex(visibleSystem - 1)});
@@ -1185,7 +1185,7 @@ function addCorrectionItem() {
         updateSelectionMeta();
         draw();
         saveStatus.textContent = movementAfterSource
-          ? reviewerCopy("savedAfterBoundary", {page: movementAfterSource.page, system: movementAfterSource.system, next: displayIndex(system)})
+          ? reviewerCopy("ui.savedAfterBoundary", {page: movementAfterSource.page, system: movementAfterSource.system, next: displayIndex(system)})
           : item.op === "boundary"
             ? reviewerCopy("savedBoundary", {system: displayIndex(visibleSystem - 1)})
             : reviewerCopy("savedNoBoundary", {system: displayIndex(visibleSystem - 1)});

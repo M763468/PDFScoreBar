@@ -235,3 +235,118 @@ def test_rendered_source_geometry_survives_public_review_and_correction(tmp_path
         for page, size in zip(pdf, expected, strict=True):
             assert (page.rect.width, page.rect.height) == pytest.approx(size)
     assert [p["row_labels"][0]["row_start_measure_number"] for p in summary["pages"]] == [42, 43]
+
+
+def test_cached_pdf_render_restores_verified_source_geometry(tmp_path):
+    import json
+
+    from src.pipeline.engine_executor import PipelineJobExecutor
+    from src.pipeline.orchestrator import PipelineOrchestrator
+    from src.pipeline.review.final_output import materialize_corrected_final_outputs
+    from src.pipeline.review.manual_correction_materializer import (
+        materialize_manual_correction_review_package,
+    )
+
+    source = tmp_path / "input.pdf"
+    with fitz.open() as pdf:
+        pdf.new_page(width=720, height=936)
+        pdf.new_page(width=500, height=700)
+        pdf.save(source)
+    original_pdf = source.read_bytes()
+
+    config = {
+        "inputs": {
+            "pdf_path": str(source),
+            "pdf_to_images": {"dpi": 72, "pages": "2,1"},
+        },
+        "steps": {"pdf_to_images": True},
+        "outputs": {"review": {"manual_correction_package": True}},
+    }
+    run = tmp_path / "run"
+    first_run = PipelineOrchestrator(config, "first", run)
+    first_run_provenance = first_run._run_pdf_to_images()
+    assert first_run_provenance is not None
+
+    resumed = PipelineOrchestrator(config, "resume", run, skip_existing=True)
+    cached_provenance = resumed._load_cached_pdf_render_provenance()
+    assert cached_provenance is not None
+    source_sha, source_pages, page_sizes = cached_provenance
+    assert source_sha == first_run_provenance[0]
+    assert source_pages == [0, 1]
+    assert page_sizes == {0: [720.0, 936.0], 1: [500.0, 700.0]}
+
+    images = sorted((run / "inputs/images").glob("*.png"))
+    references = resolve_source_page_references(
+        config,
+        images,
+        rendered_source_sha256=source_sha,
+        rendered_source_pages=source_pages,
+        rendered_page_sizes_points=page_sizes,
+        verified_cached_render=True,
+    )
+    assert [reference["page_size_points"] for reference in references] == [
+        [720.0, 936.0],
+        [500.0, 700.0],
+    ]
+
+    cached_image = images[0]
+    original_image = cached_image.read_bytes()
+    cached_image.write_bytes(original_image + b"changed")
+    with pytest.raises(ValueError, match="image changed since rendering"):
+        resumed._load_cached_pdf_render_provenance()
+    cached_image.write_bytes(original_image)
+
+    replacement = tmp_path / "replacement.pdf"
+    _pdf(replacement, pages=2)
+    source.write_bytes(replacement.read_bytes())
+    with pytest.raises(ValueError, match="different source PDF"):
+        resumed._load_cached_pdf_render_provenance()
+
+    source.write_bytes(original_pdf)
+    manifest_pages = []
+    for index, (image, reference) in enumerate(zip(images, references, strict=True)):
+        page_id = image.stem
+        numbering = run / "outputs" / page_id / "numbering_final.json"
+        numbering.parent.mkdir(parents=True)
+        numbering.write_text(
+            json.dumps(
+                {
+                    "pages": [
+                        {
+                            "systems": [
+                                {
+                                    "staves": [{"bbox": [50, 50, 250, 90]}],
+                                    "measures": [{"bbox": [50, 50, 250, 90], "number": 42 + index}],
+                                }
+                            ]
+                        }
+                    ]
+                }
+            )
+        )
+        barlines = run / "intermediate" / page_id / "barlines.json"
+        barlines.parent.mkdir(parents=True)
+        barlines.write_text(json.dumps({"boxes": [{"bbox": [50, 50, 50, 90]}]}))
+        manifest_pages.append(
+            {
+                "page_id": page_id,
+                "image_path": str(image),
+                "barlines_json": str(barlines),
+                "source_reference": reference,
+            }
+        )
+    (run / "manifest.json").write_text(json.dumps({"config": config, "pages": manifest_pages}))
+
+    private_review = run / ".review_work"
+    materialize_manual_correction_review_package(run_root=run, review_root=private_review)
+    public_review = tmp_path / "public_review"
+    PipelineJobExecutor._copy_review(private_review, public_review, source_job_id="resume")
+    handoff = public_review / "manual_correction_input.json"
+    source.unlink()
+    summary = materialize_corrected_final_outputs(handoff_path=handoff, corrected_run_dir=run)
+    assert summary["warnings"] == []
+    with fitz.open(summary["final_pdf"]) as final_pdf:
+        assert [(page.rect.width, page.rect.height) for page in final_pdf] == [
+            (720.0, 936.0),
+            (500.0, 700.0),
+        ]

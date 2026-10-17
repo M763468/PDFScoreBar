@@ -116,19 +116,17 @@ def resolve_source_page_references(
     rendered_source_sha256: str | None = None,
     rendered_source_pages: List[int] | None = None,
     rendered_page_sizes_points: Dict[int, List[float]] | None = None,
+    verified_cached_render: bool = False,
 ) -> List[Dict[str, Any] | None]:
-    """Return physical PDF provenance only for this process's direct renderer.
+    """Return physical PDF provenance for a direct render or verified render cache.
 
     External images and historical page_NNN names are intentionally not
-    interpreted as physical PDF page identities. Direct-render provenance must
-    be supplied by the render step that consumed the source bytes.
+    interpreted as physical PDF page identities. A cached render is accepted
+    only when its sidecar has verified the source and image identities.
     """
     if not get_nested(config, "steps", "pdf_to_images", default=False):
         return [None] * len(images)
-    # Reusing files from a previous run is not evidence that they came from the
-    # currently configured PDF. A future retained-provenance implementation
-    # may opt in explicitly; absent that proof, fail closed.
-    if not rendered_this_run:
+    if not rendered_this_run and not verified_cached_render:
         logger.warning(
             "pdf_to_images was skipped; omitting direct_pdf_render provenance for reused images"
         )

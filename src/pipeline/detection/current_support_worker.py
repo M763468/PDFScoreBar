@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import subprocess
+import traceback
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -309,6 +310,7 @@ def main() -> int:
     try:
         result = run(args.request, args.result)
     except Exception as error:  # noqa: BLE001
+        traceback.print_exc()
         print(
             json.dumps(
                 {"status": "failed", "error_type": type(error).__name__, "error": str(error)},

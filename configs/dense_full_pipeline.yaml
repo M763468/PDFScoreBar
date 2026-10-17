@@ -1,0 +1,81 @@
+run:
+  run_id: dense_full_pipeline
+  output_root: logs/full_pipeline_runs
+
+inputs:
+  pdf_to_images:
+    output_dir: data/evaluation2/images
+    image_glob: page_*.png
+
+steps:
+  pdf_to_images: false
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: true
+  apply_measure_overrides: true
+  overlay: false
+
+detection:
+  enable_sr: true
+  sr_scale: 4
+  sr_compile_mode: reduce-overhead
+  homr_profile: maintained_original
+  detector_route: dense_full_pipeline
+  probe_use_original_images: true
+  crop_recenter_on_bbox_ink: true
+  hybrid_output_root: logs/full_pipeline_runs/dense_full_pipeline/hybrid_output
+
+  # Dense full-pipeline detector settings recovered during the Issue #120 repair
+  # and revalidated from fresh upstream across evaluation2 in Issue #255.
+  band_source: row_stats
+  band_cluster_max_dist: 25.0
+  ink_threshold: 240
+  min_ratio: 0.60
+  min_height_ratio: 0.006
+  min_width_ratio: 0.0
+  probe_width: 4
+  max_per_band: 80
+  enable_heuristic_filters: true
+  candidate_filter_kwargs:
+    left_margin_ratio: 0.12
+    clef_left_ratio: 0.25
+    min_height_median_ratio: 0.6
+    ink_threshold: 180
+    min_ink_ratio: 0.18
+    paper_threshold: 200
+    min_paper_overlap_ratio: 0.6
+    min_staff_overlap_ratio: 0.02
+
+  # Issue #296 D27: current-producer candidate-aligned EfficientNet-B0,
+  # selected on untouched validation at epoch 9 and published by Issue #315.
+  cnn_model_manifest: models/barline_cnn/manifest.json
+  cnn_threshold: 0.4965248107910156
+  cnn_apply_nms: false
+  divisi_rescue: true
+  scan_gap_rescue: true
+  scan_gap_threshold_ratio: 1.5
+  scan_gap_rescue_min_ratio: 0.3
+  scan_x_peak_rescue: true
+  scan_rightmost_rescue: true
+  scan_center_on_peak: true
+
+filters:
+  blank_page: auto
+  blank_page_config:
+    pixel_threshold: 245
+    max_ink_ratio: 0.003
+    max_stddev: 12.0
+  staff_detect: auto
+  staff_detect_config:
+    min_nonzero_ratio: 0.001
+  user_exclude: []
+
+mmr:
+  model_path: models/mmr/mmr_classifier_best.pth
+  ocr_lang: eng
+  enable_rotation_tta: false
+
+numbering:
+  force_single_system: false

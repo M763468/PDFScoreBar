@@ -1,0 +1,31 @@
+{
+  "schema_version": "pdfscorebar.model_artifact.v1",
+  "model_id": "barline-cnn",
+  "version": "issue296-d27-v1",
+  "architecture": "efficientnet_b0",
+  "release": {
+    "repository": "M763468/PDFScoreBar",
+    "tag": "model-barline-cnn-issue296-d27-v1",
+    "asset": "cnn_classifier_epoch_9.pth"
+  },
+  "sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+  "size_bytes": 16339553,
+  "cache_path": "barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth",
+  "provenance": {
+    "accepted_issue": 296,
+    "accepted_pr": 310,
+    "accepted_merge_commit": "49a9da6a5f352e48cffd79306d75acdc8da3d9e7",
+    "accepted_experiment": "D27 current-producer candidate-aligned EfficientNet-B0",
+    "source_checkpoint": "logs/cnn_barline_classification/issue296_efficientnet_b0_current_candidate_aligned_v1/cnn_classifier_epoch_9.pth",
+    "publication_issue": 315
+  },
+  "production_contract": {
+    "cnn_threshold": 0.4965248107910156,
+    "cnn_apply_nms": false,
+    "training_evaluation_matcher": {
+      "name": "center_anchor",
+      "vov_threshold": 0.5,
+      "xdist_threshold": 12.0
+    }
+  }
+}

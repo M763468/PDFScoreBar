@@ -2,6 +2,8 @@
 
 from typing import Any, Dict
 
+DEFAULT_CNN_APPLY_NMS = False
+
 PROBE_SCAN_KWARG_KEYS = (
     "probe_width",
     "use_peak_relative_ratio",
@@ -16,7 +18,13 @@ PROBE_SCAN_KWARG_KEYS = (
     "max_per_band",
     "band_height_mode",
     "band_height_scale",
+    "band_source",
     "band_height_min",
+    "band_row_pad_ratio",
+    "band_row_pad_staff_mult",
+    "scan_x_domain_mode",
+    "scan_x_domain_pad",
+    "scan_x_domain_pad_unit_ratio",
     "x_merge_tol",
     "x_merge_tol_unit_ratio",
     "post_emit_unit_normalized_box",
@@ -65,6 +73,12 @@ PROBE_SCAN_KWARG_KEYS = (
     "divisi_align_min_count",
 )
 
+PROBE_X_DOMAIN_KWARG_KEYS = (
+    "scan_x_domain_mode",
+    "scan_x_domain_pad",
+    "scan_x_domain_pad_unit_ratio",
+)
+
 
 def get_probe_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
     """Extracts probe-specific keyword arguments from configuration."""
@@ -73,3 +87,17 @@ def get_probe_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
         for key in PROBE_SCAN_KWARG_KEYS
         if key in det_cfg and det_cfg.get(key) is not None
     }
+
+
+def get_probe_x_domain_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract X-domain probe kwargs for detector routes with custom reconstruction."""
+    return {
+        key: det_cfg[key]
+        for key in PROBE_X_DOMAIN_KWARG_KEYS
+        if key in det_cfg and det_cfg.get(key) is not None
+    }
+
+
+def get_cnn_apply_nms(det_cfg: Dict[str, Any]) -> bool:
+    """Return explicit CNN NMS setting, defaulting to False (opt-in)."""
+    return bool(det_cfg.get("cnn_apply_nms", DEFAULT_CNN_APPLY_NMS))

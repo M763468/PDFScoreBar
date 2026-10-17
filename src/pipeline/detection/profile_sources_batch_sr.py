@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -204,6 +205,13 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         if process.returncode != 0:
             lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
             tail = "\n".join(lines[-80:])
+            work_root = next(
+                (parent for parent in worker_output.parents if parent.name == ".engine-work"),
+                None,
+            )
+            if work_root is not None:
+                retained_log = work_root.parent / f"failed-source-page-{image.stem}.log"
+                shutil.copyfile(log_path, retained_log)
             raise RuntimeError(
                 f"Verified source-page worker failed ({process.returncode}): {image}\n"
                 f"--- worker log tail ---\n{tail}"

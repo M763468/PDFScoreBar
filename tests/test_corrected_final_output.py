@@ -57,6 +57,7 @@ def _setup_final_output_fixture(tmp_path: Path, *, output_name: str = "Corrected
                     "page_id": "page_001",
                     "page_number": 1,
                     "source_image": "pages/page_001/source.png",
+                    "page_size_points": [72, 48],
                     "numbering_final": "pages/page_001/numbering_final.json",
                     "correction_output": "corrections",
                 }

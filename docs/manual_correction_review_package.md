@@ -54,6 +54,21 @@ The handoff records the page identity and coordinate-space relationship needed b
 manual review must start from this handoff rather than assembling image, numbering, MMR, or barline
 paths from unrelated `logs/` runs.
 
+For a direct PDF render, each page also records optional `page_size_points:
+[width, height]` in PDF points (72 points per inch). The renderer captures the
+visible size after crop/rotation from the same source bytes used for rendering;
+the manifest, review handoff, public package and correction snapshot retain it.
+The final PDF uses these dimensions even when raster DPI or target pixel size
+changes, without reopening the original PDF. Older packages use image DPI when
+available, otherwise emit a warning for an assumed 300 DPI; this fallback cannot
+certify the original paper size. Invalid explicit dimensions are rejected.
+
+When `--skip-existing` reuses rendered PDF images, the pipeline accepts their
+geometry only if the run's `inputs/pdf_render_provenance.json` matches the current
+PDF bytes, selected pages, page sizes and cached image hashes. Existing image
+caches without that verified record must be rendered again without
+`--skip-existing` before creating a review package.
+
 A review package faithfully displays the detector artifact produced by its source run; that does
 not by itself make the source run production-accuracy evidence. Before interpreting visible misses
 or false positives as production regressions, verify that the source manifest uses the current

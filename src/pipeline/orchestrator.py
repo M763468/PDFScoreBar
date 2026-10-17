@@ -182,7 +182,7 @@ class PipelineOrchestrator:
         if not images:
             raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
 
-    def _run_pdf_to_images(self) -> tuple[str, list[int]] | None:
+    def _run_pdf_to_images(self) -> tuple[str, list[int], dict[int, list[float]]] | None:
         """Step 1: Convert PDF to images in-process and retain exact source identity."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
@@ -203,6 +203,9 @@ class PipelineOrchestrator:
         source_sha256 = hashlib.sha256(source_bytes).hexdigest()
         with fitz.open(stream=source_bytes, filetype="pdf") as doc:
             pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
+            page_sizes_points = {
+                index: [doc[index].rect.width, doc[index].rect.height] for index in pages
+            }
 
         logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
         from src.pdf_to_images import render_pdf_to_memory
@@ -250,7 +253,83 @@ class PipelineOrchestrator:
                 destination = output_dir / f"{stem}.{fmt}"
                 save_image(destination, image, fmt=fmt)
 
-        return source_sha256, pages
+        if persist_to_disk:
+            provenance_path = self.run_dir / "inputs" / "pdf_render_provenance.json"
+            temporary_path = provenance_path.with_suffix(".json.tmp")
+            write_json(
+                temporary_path,
+                {
+                    "schema_version": "pipeline.pdf_render_provenance.v1",
+                    "source_sha256": source_sha256,
+                    "source_pages": pages,
+                    "page_sizes_points": page_sizes_points,
+                    "images": {
+                        f"{prefix}_{page_index + 1:03d}.{fmt}": hashlib.sha256(
+                            (output_dir / f"{prefix}_{page_index + 1:03d}.{fmt}").read_bytes()
+                        ).hexdigest()
+                        for page_index, _image in rendered
+                    },
+                },
+            )
+            temporary_path.replace(provenance_path)
+
+        return source_sha256, pages, page_sizes_points
+
+    def _load_cached_pdf_render_provenance(
+        self,
+    ) -> tuple[str, list[int], dict[int, list[float]]] | None:
+        """Recover PDF geometry only when cached images match their recorded source."""
+        provenance_path = self.run_dir / "inputs" / "pdf_render_provenance.json"
+        if not provenance_path.is_file():
+            return None
+
+        pdf_path_value = get_nested(self.config, "inputs", "pdf_path")
+        if not isinstance(pdf_path_value, str) or not pdf_path_value:
+            raise ValueError("cached PDF rendering requires inputs.pdf_path")
+        pdf_path = Path(pdf_path_value)
+        source_bytes = pdf_path.read_bytes()
+        source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+
+        import fitz
+
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        with fitz.open(stream=source_bytes, filetype="pdf") as doc:
+            pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
+            page_sizes_points = {
+                index: [doc[index].rect.width, doc[index].rect.height] for index in pages
+            }
+
+        provenance = load_json(provenance_path)
+        if not isinstance(provenance, dict) or provenance.get("schema_version") != (
+            "pipeline.pdf_render_provenance.v1"
+        ):
+            raise ValueError(f"invalid cached PDF render provenance: {provenance_path}")
+        if provenance.get("source_sha256") != source_sha256:
+            raise ValueError("cached PDF images were rendered from a different source PDF")
+        if provenance.get("source_pages") != pages:
+            raise ValueError("cached PDF images do not match the configured page selection")
+        if provenance.get("page_sizes_points") != {
+            str(page): size for page, size in page_sizes_points.items()
+        }:
+            raise ValueError("cached PDF page geometry does not match the source PDF")
+
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        prefix = str(pdf_opts.get("prefix", "page"))
+        fmt = str(pdf_opts.get("format", "png"))
+        recorded_images = provenance.get("images")
+        if not isinstance(recorded_images, dict):
+            raise ValueError("cached PDF render provenance has no image digests")
+        for page in pages:
+            name = f"{prefix}_{page + 1:03d}.{fmt}"
+            image_path = self.run_dir / "inputs" / "images" / name
+            expected_digest = recorded_images.get(name)
+            if not image_path.is_file() or not isinstance(expected_digest, str):
+                raise ValueError(f"cached PDF render is missing verified image {name}")
+            actual_digest = hashlib.sha256(image_path.read_bytes()).hexdigest()
+            if actual_digest != expected_digest:
+                raise ValueError(f"cached PDF render image changed since rendering: {name}")
+
+        return source_sha256, pages, page_sizes_points
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
@@ -277,6 +356,8 @@ class PipelineOrchestrator:
         pdf_rendered_this_run = False
         rendered_source_sha256: str | None = None
         rendered_source_pages: list[int] | None = None
+        rendered_page_sizes_points: dict[int, list[float]] | None = None
+        cached_pdf_provenance_verified = False
 
         if get_nested(self.config, "steps", "pdf_to_images", default=False):
             if (
@@ -285,12 +366,28 @@ class PipelineOrchestrator:
                 and list((self.run_dir / "inputs" / "images").glob("*.png"))
             ):
                 logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
+                render_provenance = self._load_cached_pdf_render_provenance()
+                if render_provenance is None:
+                    raise ValueError(
+                        "cannot skip existing PDF images without verified render provenance; "
+                        "rerun without --skip-existing to record the source PDF geometry"
+                    )
+                (
+                    rendered_source_sha256,
+                    rendered_source_pages,
+                    rendered_page_sizes_points,
+                ) = render_provenance
+                cached_pdf_provenance_verified = True
             else:
                 with self._telemetry_stage("pdf_render"):
                     render_provenance = self._run_pdf_to_images()
                 commands.append(["inprocess:pdf_to_images"])
                 if render_provenance is not None:
-                    rendered_source_sha256, rendered_source_pages = render_provenance
+                    (
+                        rendered_source_sha256,
+                        rendered_source_pages,
+                        rendered_page_sizes_points,
+                    ) = render_provenance
                     pdf_rendered_this_run = True
 
         logger.info("Collecting images...")
@@ -315,6 +412,8 @@ class PipelineOrchestrator:
             rendered_this_run=pdf_rendered_this_run,
             rendered_source_sha256=rendered_source_sha256,
             rendered_source_pages=rendered_source_pages,
+            rendered_page_sizes_points=rendered_page_sizes_points,
+            verified_cached_render=cached_pdf_provenance_verified,
         )
         logger.info(f"Collected {len(images)} images.")
 

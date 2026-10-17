@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import io
 import json
+import math
 import re
 from pathlib import Path
 from typing import Any
 
+import fitz
 from PIL import Image, ImageDraw, ImageFont
 
 _LABEL_FONT_CANDIDATES = (
@@ -291,6 +294,39 @@ def _render_final_page_image(
     return rendered, records
 
 
+def _physical_page_size(
+    page: dict[str, Any], image: Image.Image, warnings: list[str]
+) -> tuple[float, float]:
+    """Use captured PDF geometry, independent of render DPI or raster resizing."""
+    size = page.get("page_size_points")
+    if size is not None:
+        if not isinstance(size, (list, tuple)) or len(size) != 2:
+            raise CorrectedFinalOutputError("page_size_points must contain width and height")
+        try:
+            width, height = (float(value) for value in size)
+        except (TypeError, ValueError) as exc:
+            raise CorrectedFinalOutputError("page_size_points must contain numeric values") from exc
+        if not all(math.isfinite(value) and value > 0 for value in (width, height)):
+            raise CorrectedFinalOutputError("page_size_points must be finite and positive")
+        return width, height
+
+    # Older review packages do not contain physical geometry. Honor image DPI
+    # when present; otherwise disclose the canonical render-DPI assumption.
+    dpi = image.info.get("dpi")
+    if isinstance(dpi, (list, tuple)) and len(dpi) == 2:
+        try:
+            x_dpi, y_dpi = (float(value) for value in dpi)
+        except (TypeError, ValueError):
+            x_dpi = y_dpi = 0.0
+        if all(math.isfinite(value) and value > 0 for value in (x_dpi, y_dpi)):
+            return image.width * 72.0 / x_dpi, image.height * 72.0 / y_dpi
+    warnings.append(
+        f"{page.get('page_id')}: physical page size unavailable; assuming 300 DPI "
+        "for this legacy image (original paper size is unknown)"
+    )
+    return image.width * 72.0 / 300.0, image.height * 72.0 / 300.0
+
+
 def materialize_corrected_final_outputs(
     *,
     handoff_path: str | Path,
@@ -372,14 +408,26 @@ def materialize_corrected_final_outputs(
                     "corrected_numbering_final": str(corrected_numbering),
                     "rendered_row_labels": len(row_records),
                     "row_labels": row_records,
+                    "page_size_points": list(_physical_page_size(page, rendered, warnings)),
                 }
             )
 
         if not rendered_pages:
             raise CorrectedFinalOutputError("No pages were rendered for final PDF")
 
-        first, *rest = rendered_pages
-        first.save(final_pdf, save_all=True, append_images=rest)
+        # A single Pillow PDF dpi argument applies to the whole document. Place
+        # each unchanged JPEG raster on its own physical page so mixed sizes,
+        # rotations/crops and explicitly resized renderings are all preserved.
+        with fitz.open() as document:
+            for image, page_summary in zip(rendered_pages, page_summaries, strict=True):
+                width, height = page_summary["page_size_points"]
+                pdf_page = document.new_page(width=width, height=height)
+                with io.BytesIO() as encoded:
+                    image.save(encoded, format="JPEG")
+                    pdf_page.insert_image(
+                        pdf_page.rect, stream=encoded.getvalue(), keep_proportion=False
+                    )
+            document.save(final_pdf)
     finally:
         for page_image in rendered_pages:
             page_image.close()

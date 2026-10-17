@@ -171,6 +171,46 @@ def call_parse_staffs_compat(
     )
 
 
+def _sanitize_generate_xml_staffs(staffs: Any) -> list[list[Any]]:
+    """Drop malformed chord markers that would join a note to a symbol without duration.
+
+    HOMR's ``chord`` token means that the following symbol belongs to the current
+    note chord. TrOmr can emit it before a barline or another non-note symbol when
+    a note/rest was missed. It can also emit a zero-duration grace note without a
+    pitch; HOMR classifies that token as a rest and asserts while generating XML.
+    The generated XML is discarded by the pipeline, so clean only its token input
+    after detection has produced the artifacts used downstream.
+    """
+    sanitized: list[list[Any]] = []
+    for voice in staffs:
+        symbols = list(voice)
+        duration_symbols: list[Any] = []
+        for symbol in symbols:
+            rhythm = getattr(symbol, "rhythm", None)
+            if isinstance(rhythm, str) and rhythm.startswith(("note", "rest")) and getattr(
+                symbol, "pitch", None
+            ) in (
+                "_",
+                ".",
+            ):
+                get_duration = getattr(symbol, "get_duration", None)
+                if callable(get_duration) and get_duration().fraction <= 0:
+                    continue
+            duration_symbols.append(symbol)
+
+        kept: list[Any] = []
+        for index, symbol in enumerate(duration_symbols):
+            rhythm = getattr(symbol, "rhythm", None)
+            if rhythm == "chord":
+                following = duration_symbols[index + 1] if index + 1 < len(duration_symbols) else None
+                following_rhythm = getattr(following, "rhythm", "")
+                if not following_rhythm.startswith(("note", "rest")):
+                    continue
+            kept.append(symbol)
+        sanitized.append(kept)
+    return sanitized
+
+
 def install_current_homr_consumer_compat(
     homr_main: Any,
     predictor_module: Any,
@@ -210,7 +250,15 @@ def install_current_homr_consumer_compat(
         original_generate_xml = _original_consumer_callable(original_generate_xml)
 
         def generate_xml_consumer_compat(*args: Any, **kwargs: Any) -> Any:
-            xml = original_generate_xml(*args, **kwargs)
+            signature = inspect.signature(original_generate_xml)
+            bound = signature.bind_partial(*args, **kwargs)
+            if "staffs" in bound.arguments:
+                bound.arguments["staffs"] = _sanitize_generate_xml_staffs(
+                    bound.arguments["staffs"]
+                )
+                xml = original_generate_xml(*bound.args, **bound.kwargs)
+            else:
+                xml = original_generate_xml(*args, **kwargs)
             if hasattr(xml, "write"):
                 return xml
             import xml.etree.ElementTree as element_tree

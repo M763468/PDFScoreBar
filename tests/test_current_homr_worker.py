@@ -403,6 +403,84 @@ def test_consumer_compat_adapts_split_gpu_bound_symbols() -> None:
     }
 
 
+def test_consumer_generate_xml_drops_only_malformed_chord_markers() -> None:
+    received = {}
+
+    def current_download_weights(use_gpu_inference):
+        del use_gpu_inference
+
+    def current_load_predictions(image_path, enable_debug, enable_cache, use_gpu_inference):
+        del image_path, enable_debug, enable_cache, use_gpu_inference
+
+    def current_generate_xml(args, staffs, title):
+        received["staffs"] = staffs
+        import xml.etree.ElementTree as element_tree
+
+        return element_tree.Element("score-partwise")
+
+    symbols = [
+        SimpleNamespace(rhythm="note_2", pitch="E5"),
+        SimpleNamespace(rhythm="chord", pitch="."),
+        SimpleNamespace(rhythm="barline", pitch="."),
+        SimpleNamespace(
+            rhythm="note_8G", pitch="_", get_duration=lambda: SimpleNamespace(fraction=0)
+        ),
+        SimpleNamespace(
+            rhythm="rest_0", pitch="_", get_duration=lambda: SimpleNamespace(fraction=1)
+        ),
+        SimpleNamespace(rhythm="note_4", pitch="F5"),
+        SimpleNamespace(rhythm="chord", pitch="."),
+        SimpleNamespace(rhythm="rest_2", pitch="_"),
+        SimpleNamespace(rhythm="note_4", pitch="D5"),
+        SimpleNamespace(rhythm="chord", pitch="."),
+        SimpleNamespace(
+            rhythm="note_8G", pitch="_", get_duration=lambda: SimpleNamespace(fraction=0)
+        ),
+        SimpleNamespace(rhythm="barline", pitch="."),
+    ]
+    original_staffs = [symbols]
+    predictor_module = SimpleNamespace(
+        download_weights=current_download_weights,
+        generate_xml=current_generate_xml,
+    )
+    heuristics_module = SimpleNamespace(load_and_preprocess_predictions=current_load_predictions)
+    homr_main = SimpleNamespace(parse_staffs=lambda *args, **kwargs: None)
+
+    install_current_homr_consumer_compat(
+        homr_main,
+        predictor_module,
+        heuristics_module,
+        use_gpu_inference=False,
+    )
+
+    predictor_module.generate_xml("args", original_staffs, "title")
+
+    assert [symbol.rhythm for symbol in received["staffs"][0]] == [
+        "note_2",
+        "barline",
+        "rest_0",
+        "note_4",
+        "chord",
+        "rest_2",
+        "note_4",
+        "barline",
+    ]
+    assert [symbol.rhythm for symbol in original_staffs[0]] == [
+        "note_2",
+        "chord",
+        "barline",
+        "note_8G",
+        "rest_0",
+        "note_4",
+        "chord",
+        "rest_2",
+        "note_4",
+        "chord",
+        "note_8G",
+        "barline",
+    ]
+
+
 def test_consumer_parse_staffs_does_not_swallow_internal_type_error() -> None:
     def current_download_weights(use_gpu_inference) -> None:
         del use_gpu_inference

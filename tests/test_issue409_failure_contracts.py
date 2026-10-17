@@ -407,6 +407,22 @@ def test_batch_sr_failure_propagates_through_actual_batch_parent(tmp_path, monke
     assert not (support_root / "_sr_batch/result.json").exists()
 
 
+def test_retained_source_page_worker_log_is_a_bounded_tail(tmp_path):
+    from src.pipeline.detection.profile_sources_batch_sr import (
+        _MAX_RETAINED_WORKER_LOG_BYTES,
+        _bounded_worker_log_tail,
+    )
+
+    log_path = tmp_path / "worker.log"
+    log_path.write_bytes(b"EARLY-ONLY\n" + b"filler line\n" * 10000 + b"final failure details\n")
+
+    tail = _bounded_worker_log_tail(log_path)
+
+    assert len(tail) <= _MAX_RETAINED_WORKER_LOG_BYTES
+    assert b"EARLY-ONLY" not in tail
+    assert tail.endswith(b"final failure details\n")
+
+
 @pytest.mark.parametrize(
     ("mask_case", "error_type"),
     [

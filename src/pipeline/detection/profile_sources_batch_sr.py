@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -24,6 +23,24 @@ from src.pipeline.perf_trace import span
 
 from .current_support_worker import _require_precomputed_sr
 from .profile_sources import ProfileHybridDetector
+
+_MAX_RETAINED_WORKER_LOG_BYTES = 64 * 1024
+_MAX_RETAINED_WORKER_LOG_LINES = 80
+
+
+def _bounded_worker_log_tail(log_path: Path) -> bytes:
+    """Read a bounded diagnostic tail without loading or copying the full log."""
+    file_size = log_path.stat().st_size
+    start = max(0, file_size - _MAX_RETAINED_WORKER_LOG_BYTES)
+    with log_path.open("rb") as log_file:
+        log_file.seek(start)
+        tail = log_file.read(_MAX_RETAINED_WORKER_LOG_BYTES)
+    if start:
+        first_line_end = tail.find(b"\n")
+        if first_line_end >= 0:
+            tail = tail[first_line_end + 1 :]
+    lines = tail.splitlines(keepends=True)
+    return b"".join(lines[-_MAX_RETAINED_WORKER_LOG_LINES:])
 
 
 class BatchSRProfileHybridDetector(ProfileHybridDetector):
@@ -203,15 +220,15 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                 text=True,
             )
         if process.returncode != 0:
-            lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
-            tail = "\n".join(lines[-80:])
+            tail_bytes = _bounded_worker_log_tail(log_path)
+            tail = tail_bytes.decode("utf-8", errors="replace").rstrip()
             work_root = next(
                 (parent for parent in worker_output.parents if parent.name == ".engine-work"),
                 None,
             )
             if work_root is not None:
                 retained_log = work_root.parent / f"failed-source-page-{image.stem}.log"
-                shutil.copyfile(log_path, retained_log)
+                retained_log.write_bytes(tail_bytes)
             raise RuntimeError(
                 f"Verified source-page worker failed ({process.returncode}): {image}\n"
                 f"--- worker log tail ---\n{tail}"

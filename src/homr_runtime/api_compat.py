@@ -187,11 +187,14 @@ def _sanitize_generate_xml_staffs(staffs: Any) -> list[list[Any]]:
         duration_symbols: list[Any] = []
         for symbol in symbols:
             rhythm = getattr(symbol, "rhythm", None)
-            if isinstance(rhythm, str) and rhythm.startswith(("note", "rest")) and getattr(
-                symbol, "pitch", None
-            ) in (
-                "_",
-                ".",
+            if (
+                isinstance(rhythm, str)
+                and rhythm.startswith(("note", "rest"))
+                and getattr(symbol, "pitch", None)
+                in (
+                    "_",
+                    ".",
+                )
             ):
                 get_duration = getattr(symbol, "get_duration", None)
                 if callable(get_duration) and get_duration().fraction <= 0:
@@ -202,7 +205,9 @@ def _sanitize_generate_xml_staffs(staffs: Any) -> list[list[Any]]:
         for index, symbol in enumerate(duration_symbols):
             rhythm = getattr(symbol, "rhythm", None)
             if rhythm == "chord":
-                following = duration_symbols[index + 1] if index + 1 < len(duration_symbols) else None
+                following = (
+                    duration_symbols[index + 1] if index + 1 < len(duration_symbols) else None
+                )
                 following_rhythm = getattr(following, "rhythm", "")
                 if not following_rhythm.startswith(("note", "rest")):
                     continue
@@ -253,9 +258,7 @@ def install_current_homr_consumer_compat(
             signature = inspect.signature(original_generate_xml)
             bound = signature.bind_partial(*args, **kwargs)
             if "staffs" in bound.arguments:
-                bound.arguments["staffs"] = _sanitize_generate_xml_staffs(
-                    bound.arguments["staffs"]
-                )
+                bound.arguments["staffs"] = _sanitize_generate_xml_staffs(bound.arguments["staffs"])
                 xml = original_generate_xml(*bound.args, **bound.kwargs)
             else:
                 xml = original_generate_xml(*args, **kwargs)

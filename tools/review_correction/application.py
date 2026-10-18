@@ -53,17 +53,18 @@ def preview_numbering(handoff_path: str | Path) -> dict:
             if raw_path:
                 staging_paths[kind].append(package_root / raw_path)
 
-    movement_input = _load_movement_boundary_input(
-        normalized_handoff=normalized,
-        package_root=package_root,
-        source_config=source_config,
-    )
     existing = _read_existing_override_inputs(
         source_config=source_config,
         config_base_dir=manifest_path.parent,
     )
     with tempfile.TemporaryDirectory(prefix="pdfscore-numbering-preview-") as temporary:
         temporary_root = Path(temporary)
+        movement_input = _load_movement_boundary_input(
+            normalized_handoff=normalized,
+            package_root=package_root,
+            source_config=source_config,
+            preview_output_path=temporary_root / "movement_boundaries.json",
+        )
         canonical_paths = canonicalize_manual_correction_outputs(
             temporary_root / "corrections",
             overwrite=True,

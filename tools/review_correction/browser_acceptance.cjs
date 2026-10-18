@@ -12,6 +12,43 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   const browser = await chromium.launch({headless: true,
     ...(process.env.CHROMIUM_PATH ? {executablePath: process.env.CHROMIUM_PATH} : {})});
   try {
+    const emptyPageCase = await browser.newPage({viewport: {width: 1440, height: 1000}});
+    let emptyNumberingPath;
+    let emptyEvidencePath;
+    await emptyPageCase.route('**/api/pages', async route => {
+      const response = await route.fetch();
+      const data = await response.json();
+      if (data.pages.length < 3) throw new Error('Empty-page case requires three source pages');
+      emptyNumberingPath = data.pages[1].numbering;
+      emptyEvidencePath = data.pages[1].movement_boundary_evidence;
+      await route.fulfill({response, json: {pages: data.pages.slice(0, 3)}});
+    });
+    await emptyPageCase.route('**/api/template**', async route => {
+      const requestedPath = new URL(route.request().url()).searchParams.get('path');
+      if (requestedPath === emptyNumberingPath) {
+        await route.fulfill({json: {systems: []}});
+      } else if (emptyEvidencePath && requestedPath === emptyEvidencePath) {
+        await route.fulfill({json: {candidates: []}});
+      } else {
+        await route.continue();
+      }
+    });
+    await emptyPageCase.goto(url);
+    await emptyPageCase.waitForFunction(() => currentPage && measures.length > 0);
+    await emptyPageCase.locator('#typeSelect').selectOption('movement_boundary');
+    const sourceSystem = await emptyPageCase.evaluate(() => Math.max(...measures.map(measure => measure.system)));
+    const sourceSystemPoint = await emptyPageCase.evaluate((system) => {
+      const box = systemBounds(system);
+      const point = imgToCanvas({x: (box[0] + box[2]) / 2, y: (box[1] + box[3]) / 2});
+      const rect = canvas.getBoundingClientRect();
+      return {x: rect.left + point.x * rect.width / canvas.width, y: rect.top + point.y * rect.height / canvas.height};
+    }, sourceSystem);
+    await emptyPageCase.mouse.click(sourceSystemPoint.x, sourceSystemPoint.y);
+    await emptyPageCase.waitForFunction((system) => selectedMovementSystem === system, sourceSystem);
+    await emptyPageCase.locator('#movementAfterBtn').click();
+    await emptyPageCase.waitForFunction(() => currentIndex === 2 && selectedMovementSystem !== null && (document.querySelector('#saveStatus').textContent.includes('Saved a boundary after') || document.querySelector('#saveStatus').textContent.includes('境界を保存しました')));
+    await emptyPageCase.close();
+
     const page = await browser.newPage({viewport: {width: 1440, height: 1000}});
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));

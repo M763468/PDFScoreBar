@@ -1448,11 +1448,18 @@ function loadPage() {
     renderPageList();
     if (movementAfterPageJump && movementAfterPageJump.targetIndex === currentIndex) {
       const after = movementAfterPageJump;
-      movementAfterPageJump = null;
       const firstSystem = movementSystemsOnPage()[0];
       if (firstSystem === undefined) {
-        saveStatus.textContent = reviewerCopy("ui.noFollowingSystem");
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < pages.length) {
+          movementAfterPageJump = {...after, targetIndex: nextIndex};
+          switchPage(nextIndex);
+        } else {
+          movementAfterPageJump = null;
+          saveStatus.textContent = reviewerCopy("ui.noFollowingSystem");
+        }
       } else {
+        movementAfterPageJump = null;
         movementAfterSource = { page: after.sourcePage, system: after.sourceSystem };
         typeSelect.value = "movement_boundary";
         updateOps();

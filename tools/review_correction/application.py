@@ -97,7 +97,10 @@ class CorrectionApplication:
             if not (isinstance(payload.get("output_name"), str) and payload["output_name"].strip()):
                 final_dir = self.package.root.parent / "final"
                 if final_dir.is_dir():
-                    from src.pipeline.review.final_output import _sanitize_output_name
+                    from src.pipeline.review.final_output import (
+                        _is_usable_artifact_root_name,
+                        _sanitize_output_name,
+                    )
 
                     final_pdfs = sorted(
                         path
@@ -106,7 +109,11 @@ class CorrectionApplication:
                     )
                     if len(final_pdfs) == 1:
                         recovered_name = _sanitize_output_name(final_pdfs[0].name, fallback="")
-                        if recovered_name:
+                        if (
+                            recovered_name
+                            and _is_usable_artifact_root_name(recovered_name)
+                            and recovered_name.lower() != "score"
+                        ):
                             payload["output_name"] = recovered_name
             snapshot_handoff = review / "manual_correction_input.json"
             snapshot_handoff.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

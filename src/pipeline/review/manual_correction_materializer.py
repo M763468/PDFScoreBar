@@ -236,7 +236,11 @@ def _extract_review_barline_records(payload: Any, *, source: Path) -> list[Any]:
 def _is_engine_staged_pdf_path(raw_pdf_path: str) -> bool:
     normalized = raw_pdf_path.replace("\\", "/").rstrip("/")
     parts = [part for part in normalized.split("/") if part]
-    return len(parts) >= 2 and parts[-2:] == ["input", "source.pdf"]
+    return (
+        len(parts) >= 3
+        and parts[-3] in {".engine-work", ".engine-retained"}
+        and parts[-2:] == ["input", "source.pdf"]
+    )
 
 
 def _resolve_handoff_output_name(

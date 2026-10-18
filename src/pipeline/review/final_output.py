@@ -42,6 +42,7 @@ def _write_json(path: Path, payload: Any) -> None:
 
 
 _DEFAULT_FALLBACK_OUTPUT_NAME = "corrected"
+_MAX_OUTPUT_STEM_UTF8_BYTES = 200
 _SCORE_NUMBERED_SUFFIX_RE = re.compile(r"(?:_score_numbered)+$", re.IGNORECASE)
 _PDF_SUFFIX_RE = re.compile(r"\.pdf$", re.IGNORECASE)
 _GENERIC_ARTIFACT_ROOT_NAMES = frozenset(
@@ -72,11 +73,26 @@ def _strip_output_suffixes(raw_name: str) -> str:
         candidate = updated
 
 
+def _truncate_utf8_bytes(value: str, *, max_utf8_bytes: int) -> str:
+    if len(value.encode("utf-8")) <= max_utf8_bytes:
+        return value
+    chars: list[str] = []
+    used = 0
+    for char in value:
+        char_bytes = len(char.encode("utf-8"))
+        if used + char_bytes > max_utf8_bytes:
+            break
+        chars.append(char)
+        used += char_bytes
+    return "".join(chars)
+
+
 def _sanitize_output_name(
     raw_name: str,
     *,
     fallback: str = _DEFAULT_FALLBACK_OUTPUT_NAME,
     is_path: bool = False,
+    max_utf8_bytes: int = _MAX_OUTPUT_STEM_UTF8_BYTES,
 ) -> str:
     candidate = unicodedata.normalize("NFC", raw_name.strip())
     if is_path:
@@ -90,6 +106,8 @@ def _sanitize_output_name(
     candidate = _strip_output_suffixes(candidate)
     name = "".join(char if char.isalnum() or char in "._-" else "_" for char in candidate)
     name = re.sub(r"_+", "_", name).strip("._-")
+    name = _strip_output_suffixes(name)
+    name = _truncate_utf8_bytes(name, max_utf8_bytes=max_utf8_bytes)
     name = _strip_output_suffixes(name)
     name = re.sub(r"_+", "_", name).strip("._-")
     return name or fallback

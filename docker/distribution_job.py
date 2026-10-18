@@ -60,7 +60,10 @@ def prepare_local_review(package: Path) -> str:
     if not (isinstance(payload.get("output_name"), str) and payload["output_name"].strip()):
         final_dir = package / "final"
         if final_dir.is_dir():
-            from src.pipeline.review.final_output import _sanitize_output_name
+            from src.pipeline.review.final_output import (
+                _is_usable_artifact_root_name,
+                _sanitize_output_name,
+            )
 
             final_pdfs = sorted(
                 path
@@ -69,7 +72,11 @@ def prepare_local_review(package: Path) -> str:
             )
             if len(final_pdfs) == 1:
                 recovered_name = _sanitize_output_name(final_pdfs[0].name, fallback="")
-                if recovered_name:
+                if (
+                    recovered_name
+                    and _is_usable_artifact_root_name(recovered_name)
+                    and recovered_name.lower() != "score"
+                ):
                     payload["output_name"] = recovered_name
     handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     sha = hashlib.sha256(handoff.read_bytes()).hexdigest()

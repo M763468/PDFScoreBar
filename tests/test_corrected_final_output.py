@@ -221,6 +221,25 @@ def test_materialize_corrected_final_outputs_uses_safe_source_name_or_fallback(
     assert Path(summary["final_pdf"]).resolve().is_relative_to((corrected_run / "final").resolve())
 
 
+def test_materialize_corrected_final_outputs_bounds_long_multibyte_source_name(tmp_path):
+    long_cjk_stem = "楽" * 79  # 237 UTF-8 bytes; + ".pdf" is 241 bytes (valid on 255-byte fs)
+    handoff_path, corrected_run = _setup_final_output_fixture(
+        tmp_path,
+        output_name=f"{long_cjk_stem}.pdf",
+    )
+
+    summary = materialize_corrected_final_outputs(
+        handoff_path=handoff_path,
+        corrected_run_dir=corrected_run,
+    )
+
+    final_pdf = Path(summary["final_pdf"])
+    assert final_pdf.is_file()
+    assert final_pdf.name.endswith("_score_numbered.pdf")
+    assert len(final_pdf.name.encode("utf-8")) <= 255
+    assert len(summary["output_name"].encode("utf-8")) <= 200
+
+
 def test_materialize_corrected_final_outputs_uses_page_uniform_label_size(tmp_path):
     handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
     _write_json(

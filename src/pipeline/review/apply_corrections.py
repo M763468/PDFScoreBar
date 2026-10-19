@@ -299,6 +299,7 @@ def _load_movement_boundary_input(
             review=json.loads(review_bytes.decode("utf-8")),
             evidence_artifact=str(evidence_rel),
             evidence_sha256=hashlib.sha256(evidence_bytes).hexdigest(),
+            allow_unresolved=True,
         )
         preview_output_path.parent.mkdir(parents=True, exist_ok=True)
         preview_bytes = (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode("utf-8")

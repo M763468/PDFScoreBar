@@ -91,7 +91,7 @@ const context = {
   itemList: {appendChild(node){rows.push(node);}},
   dirtyTypes: pending,
   details: {open:false},
-  document: {createElement: () => ({}), getElementById: () => context.details},
+  document: {createElement: () => ({setAttribute(){}}), getElementById: () => context.details},
   selectMeasure: measure => {context.selected = measure;},
 };
 vm.createContext(context);

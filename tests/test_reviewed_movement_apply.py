@@ -192,6 +192,68 @@ def test_saved_movement_decisions_require_finalized_export(tmp_path):
         )
 
 
+def test_numbering_preview_accepts_partial_saved_movement_review(tmp_path):
+    handoff_path = _handoff(tmp_path)
+    evidence = {
+        "schema_version": "issue333.movement_boundary_evidence.v1",
+        "candidates": [
+            {"id": "candidate-1", "page": 0, "system": 1, "state": "ambiguous_review_required"},
+            {"id": "candidate-2", "page": 0, "system": 3, "state": "ambiguous_review_required"},
+        ],
+    }
+    review = {
+        "schema_version": 1,
+        "correction_type": "movement_boundary",
+        "items": [{"op": "boundary", "page": 0, "system": 1}],
+    }
+    (handoff_path.parent / "movement_boundary_evidence.json").write_text(
+        json.dumps(evidence), encoding="utf-8"
+    )
+    (handoff_path.parent / "corrections" / "movement_boundaries_review.json").write_text(
+        json.dumps(review), encoding="utf-8"
+    )
+    preview_path = handoff_path.parent / "preview" / "movement_boundaries.json"
+
+    payload, consumed_path, digest = _load_movement_boundary_input(
+        normalized_handoff={
+            "movement_boundary_evidence": "movement_boundary_evidence.json",
+            "movement_boundary_resolved_output": "corrections/movement_boundaries.json",
+            "pages": [
+                {
+                    "manual_outputs": {
+                        "movement_boundary": "corrections/movement_boundaries_review.json"
+                    }
+                }
+            ],
+        },
+        package_root=handoff_path.parent,
+        source_config={"inputs": {"movement_boundaries": {"boundaries": []}}},
+        preview_output_path=preview_path,
+    )
+
+    assert [(item["page"], item["system"]) for item in payload["boundaries"]] == [(0, 1)]
+    assert consumed_path == preview_path
+    assert digest and len(digest) == 64
+    assert json.loads(preview_path.read_text(encoding="utf-8")) == payload
+
+    with pytest.raises(ValueError, match="saved but not finalized"):
+        _load_movement_boundary_input(
+            normalized_handoff={
+                "movement_boundary_evidence": "movement_boundary_evidence.json",
+                "movement_boundary_resolved_output": "corrections/movement_boundaries.json",
+                "pages": [
+                    {
+                        "manual_outputs": {
+                            "movement_boundary": "corrections/movement_boundaries_review.json"
+                        }
+                    }
+                ],
+            },
+            package_root=handoff_path.parent,
+            source_config={"inputs": {"movement_boundaries": {"boundaries": []}}},
+        )
+
+
 def test_preview_resolves_saved_evidence_review_without_package_export(tmp_path):
     handoff_path = _handoff(tmp_path)
     evidence = {

@@ -91,7 +91,7 @@ const context = {
   itemList: {appendChild(node){rows.push(node);}},
   dirtyTypes: pending,
   details: {open:false},
-  document: {createElement: () => ({}), getElementById: () => context.details},
+  document: {createElement: () => ({setAttribute(){}}), getElementById: () => context.details},
   selectMeasure: measure => {context.selected = measure;},
 };
 vm.createContext(context);
@@ -273,6 +273,74 @@ assert(sidebarHeader.children.includes(controls));
 assert.equal(byId.get('applyBtn').parentNode, controls);
 assert.equal(byId.get('openResultBtn').parentNode, controls);
 assert.equal(byId.get('applicationStatus').parentNode, controls);
+"""
+    result = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_stale_numbering_preview_responses_cannot_restore_invalidated_results():
+    script = r"""
+const fs = require('fs'), vm = require('vm'), assert = require('assert/strict');
+const source = fs.readFileSync('tools/review_correction/app.js', 'utf8');
+function deferred() { let resolve; const promise = new Promise(r => resolve = r); return {promise, resolve}; }
+function makeContext() {
+  const requests = [];
+  const button = {attributes:{}, setAttribute(name, value){this.attributes[name] = value;}};
+  const context = {
+    Map, String, Object, Promise,
+    provisionalNumbering: new Map(), provisionalNumberingVisible: false,
+        provisionalNumberingRevision: 0, numberingPreviewRequestId: 0,
+    previewNumbersBtn: button, saveStatus: {textContent:''},
+    reviewerCopy: key => key, draw(){},
+    waitForMovementSaves: async () => {}, saveDirtyTypes: async () => {},
+    fetch: () => { const request = deferred(); requests.push(request); return request.promise; },
+  };
+  vm.createContext(context);
+  vm.runInContext(source.slice(source.indexOf('function invalidateProvisionalNumbering()'),
+    source.indexOf('function updateDirtyStatus()')), context);
+  const handlerStart = source.indexOf('previewNumbersBtn.onclick = async () => {');
+  const handlerEnd = source.indexOf('\n\ncanvas.addEventListener', handlerStart);
+  vm.runInContext(source.slice(handlerStart, handlerEnd), context);
+  return {context, requests};
+}
+function response(number) {
+  return {ok:true, json:async () => ({pages:[{page:0, systems:[{system:0, number}]}]})};
+}
+async function waitForRequests(requests, count) {
+  for (let i = 0; i < 20 && requests.length < count; i++) await Promise.resolve();
+  assert.equal(requests.length, count, 'preview request should start');
+}
+(async () => {
+  {
+    const {context, requests} = makeContext();
+    const pending = context.previewNumbersBtn.onclick();
+    await waitForRequests(requests, 1);
+    context.invalidateProvisionalNumbering();
+    context.saveStatus.textContent = 'edited';
+    requests[0].resolve(response(1));
+    await pending;
+    assert.equal(vm.runInContext('provisionalNumberingVisible', context), false);
+    assert.equal(context.previewNumbersBtn.attributes['aria-pressed'], 'false');
+    assert.equal(context.saveStatus.textContent, 'edited');
+    assert.equal(vm.runInContext('provisionalNumbering.size', context), 0);
+  }
+  {
+    const {context, requests} = makeContext();
+    const older = context.previewNumbersBtn.onclick();
+    await waitForRequests(requests, 1);
+    const newer = context.previewNumbersBtn.onclick();
+    await waitForRequests(requests, 2);
+    requests[1].resolve(response(2));
+    await newer;
+    requests[0].resolve(response(1));
+    await older;
+    assert.equal(vm.runInContext('provisionalNumberingVisible', context), true);
+    assert.equal(vm.runInContext('provisionalNumbering.get("0").get("0").number', context), 2);
+    assert.equal(context.saveStatus.textContent, 'ui.previewReady');
+  }
+})().catch(error => {console.error(error); process.exitCode = 1;});
 """
     result = subprocess.run(
         ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20

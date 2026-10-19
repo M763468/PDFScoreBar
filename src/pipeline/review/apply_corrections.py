@@ -240,9 +240,17 @@ def _resolve_retained_artifact(raw_path: Any, *, source_root: Path, role: str) -
 
 
 def _load_movement_boundary_input(
-    *, normalized_handoff: Dict[str, Any], package_root: Path, source_config: Dict[str, Any]
+    *,
+    normalized_handoff: Dict[str, Any],
+    package_root: Path,
+    source_config: Dict[str, Any],
+    preview_output_path: Optional[Path] = None,
 ) -> tuple[Dict[str, Any], Optional[Path], Optional[str]]:
-    """Prefer a finalized package-local movement decision, with legacy fallback."""
+    """Prefer a finalized package-local movement decision, with legacy fallback.
+
+    Numbering preview may provide a temporary output path to resolve the latest
+    saved evidence-backed review without requiring the reviewer to finalize it.
+    """
     from src.pipeline.review.movement_boundary_review import (
         build_manual_movement_boundaries,
         build_resolved_movement_boundaries,
@@ -280,6 +288,23 @@ def _load_movement_boundary_input(
         except FileNotFoundError:
             # Handoffs may advertise the destination before the review is finalized.
             movement_review_path = None
+    if preview_output_path is not None and evidence_rel and review_path is not None:
+        evidence_path = _resolve_package_artifact(
+            package_root, evidence_rel, role="movement_boundary_evidence"
+        )
+        evidence_bytes = evidence_path.read_bytes()
+        review_bytes = review_path.read_bytes()
+        payload = build_resolved_movement_boundaries(
+            evidence=json.loads(evidence_bytes.decode("utf-8")),
+            review=json.loads(review_bytes.decode("utf-8")),
+            evidence_artifact=str(evidence_rel),
+            evidence_sha256=hashlib.sha256(evidence_bytes).hexdigest(),
+            allow_unresolved=True,
+        )
+        preview_output_path.parent.mkdir(parents=True, exist_ok=True)
+        preview_bytes = (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+        preview_output_path.write_bytes(preview_bytes)
+        return payload, preview_output_path, hashlib.sha256(preview_bytes).hexdigest()
     if movement_review_path is not None:
         payload_bytes = movement_review_path.read_bytes()
         payload = load_movement_boundary_payload(movement_review_path)

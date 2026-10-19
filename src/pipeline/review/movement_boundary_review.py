@@ -220,8 +220,13 @@ def build_resolved_movement_boundaries(
     review: Mapping[str, Any],
     evidence_artifact: str,
     evidence_sha256: str,
+    allow_unresolved: bool = False,
 ) -> dict[str, Any]:
-    """Export only explicit boundary decisions to the Issue #268 schema."""
+    """Build boundaries from explicit decisions, requiring a complete review by default.
+
+    ``allow_unresolved`` is reserved for temporary previews. Unreviewed candidates
+    are omitted from that provisional payload; finalized exports must remain complete.
+    """
 
     if not isinstance(evidence_artifact, str) or not evidence_artifact:
         raise MovementBoundaryReviewError("evidence_artifact must be a non-empty path string")
@@ -246,7 +251,7 @@ def build_resolved_movement_boundaries(
     }
     reviewed_locations = {(item["page"], item["system"]) for item in normalized_review["items"]}
     unresolved_locations = sorted(required_review_locations - reviewed_locations)
-    if unresolved_locations:
+    if unresolved_locations and not allow_unresolved:
         formatted = ", ".join(
             f"(page={page}, system={system})" for page, system in unresolved_locations
         )

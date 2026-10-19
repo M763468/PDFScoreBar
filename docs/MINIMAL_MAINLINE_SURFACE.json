@@ -722,6 +722,7 @@
       "tests/test_review_correction_client.py",
       "tests/test_issue396_review_ui.py",
       "tests/test_issue361_localization.py",
+      "tests/test_numbering_preview.py",
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [

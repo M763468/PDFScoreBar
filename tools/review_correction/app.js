@@ -38,6 +38,9 @@ const selectionMeta = document.getElementById("selectionMeta");
 const saveBtn = document.getElementById("saveBtn");
 const panModeBtn = document.getElementById("panModeBtn");
 const fitPageBtn = document.getElementById("fitPageBtn");
+const previousPageBtn = document.getElementById("previousPageBtn");
+const nextPageBtn = document.getElementById("nextPageBtn");
+const previewNumbersBtn = document.getElementById("previewNumbersBtn");
 const exportMovementBtn = document.getElementById("exportMovementBtn");
 const helpBtn = document.getElementById("helpBtn");
 const helpPanel = document.getElementById("helpPanel");
@@ -53,6 +56,7 @@ const measureSpanInput = document.getElementById("measureSpanInput");
 const movementBoundaryPanel = document.getElementById("movementBoundaryPanel");
 const movementSystemRow = document.getElementById("movementSystemRow");
 const movementSystemInput = document.getElementById("movementSystemInput");
+const movementAfterBtn = document.getElementById("movementAfterBtn");
 const movementTargetMeta = document.getElementById("movementTargetMeta");
 const movementPageStatus = document.getElementById("movementPageStatus");
 const reasonRow = document.getElementById("reasonRow");
@@ -60,6 +64,7 @@ const reasonInput = document.getElementById("reasonInput");
 
 const showMeasuresToggle = document.getElementById("showMeasuresToggle");
 const showBarlinesToggle = document.getElementById("showBarlinesToggle");
+const showBarlineNumbersToggle = document.getElementById("showBarlineNumbersToggle");
 const showLabelsToggle = document.getElementById("showLabelsToggle");
 const showBaseToggle = document.getElementById("showBaseToggle");
 const showManualToggle = document.getElementById("showManualToggle");
@@ -75,6 +80,12 @@ let isDrawing = false;
 let drawStart = null;
 let spaceDown = false;
 let panMode = false;
+let provisionalNumbering = new Map();
+let provisionalNumberingVisible = false;
+let provisionalNumberingRevision = 0;
+let numberingPreviewRequestId = 0;
+let movementAfterSource = null;
+let movementAfterPageJump = null;
 
 const COLOR_MEASURE = "#3aa3ff";
 const COLOR_BASE_MMR = "#46c46b";
@@ -169,9 +180,16 @@ function selectedMeasureKey() {
   return measureKey(pageValue(), selectedMeasure.system, selectedMeasure.measure);
 }
 
+function invalidateProvisionalNumbering() {
+  provisionalNumberingRevision += 1;
+  provisionalNumberingVisible = false;
+  previewNumbersBtn.setAttribute("aria-pressed", "false");
+}
+
 function setDirty(correctionType, isDirty) {
   if (isDirty) dirtyTypes.add(correctionType);
   else dirtyTypes.delete(correctionType);
+  if (isDirty) invalidateProvisionalNumbering();
   updateDirtyStatus();
 }
 
@@ -227,6 +245,7 @@ function updateControlState() {
   saveBtn.style.display = "";
   exportMovementBtn.style.display =
     movementMode && currentPage && currentPage.movement_boundary_evidence ? "" : "none";
+  movementAfterBtn.style.display = movementMode ? "" : "none";
   reasonRow.style.display = movementMode ? "none" : "";
 
   if (movementMode && selectedMeasure && selectedMovementSystem === null) {
@@ -331,6 +350,44 @@ function drawLabel(box, text, color) {
   ctx.fillText(text, p.x + 3, p.y - 3);
 }
 
+function drawBarlineCorrection(item) {
+  if (!Array.isArray(item.bbox) || item.bbox.length !== 4) return;
+  const [x1, y1, x2, y2] = item.bbox;
+  const start = imgToCanvas({ x: x1, y: y1 });
+  const end = imgToCanvas({ x: x2, y: y2 });
+  const vertical = Math.abs(end.y - start.y) >= Math.abs(end.x - start.x);
+  const center = vertical
+    ? { from: { x: (start.x + end.x) / 2, y: start.y }, to: { x: (start.x + end.x) / 2, y: end.y } }
+    : { from: { x: start.x, y: (start.y + end.y) / 2 }, to: { x: end.x, y: (start.y + end.y) / 2 } };
+  const removed = item.op === "remove_barline";
+  const color = removed ? COLOR_SUPPRESSED : COLOR_MANUAL;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(center.from.x, center.from.y);
+  ctx.lineTo(center.to.x, center.to.y);
+  if (removed) {
+    ctx.strokeStyle = "rgba(255,255,255,.94)";
+    ctx.lineWidth = Math.max(4, viewScale * 5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(center.from.x, center.from.y);
+    ctx.lineTo(center.to.x, center.to.y);
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+  } else {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+  }
+  ctx.stroke();
+  ctx.restore();
+  drawBox(item.bbox, color, 2, !removed);
+  const label = removed
+    ? window.ReviewStrings.ui.removedBarline
+    : window.ReviewStrings.ui.addedBarline;
+  drawLabel(item.bbox, label, color);
+}
+
 function systemBounds(system) {
   const systemMeasures = measures.filter(
     (measure) => String(measure.system) === String(system)
@@ -408,6 +465,7 @@ function movementStateAt(system) {
 
 function movementSystemsOnPage() {
   const systems = new Set();
+  measures.forEach((measure) => systems.add(String(measure.system)));
   movementEvidenceCandidates.forEach((candidate) => {
     if (
       String(candidate.page) === String(pageValue()) &&
@@ -464,7 +522,7 @@ function updateMovementTargetMeta() {
     const state = movementStateAt(system);
     const status = state ? ` ${reviewerCopy("ui.currentState", {state: state.label})}` : "";
     movementTargetMeta.textContent = bounds
-      ? `${reviewerCopy("ui.targetBefore", {system: displayIndex(system)})}${status}`
+      ? `${system > 0 ? reviewerCopy("ui.afterAndBeforeSystem", {previous: displayIndex(system - 1), system: displayIndex(system)}) : reviewerCopy("ui.targetBefore", {system: displayIndex(system)})}${status}`
       : reviewerCopy("ui.missingSystem", {system: displayIndex(system)});
   }
 
@@ -518,28 +576,29 @@ function draw() {
     }
 
     let label = measureDisplayLabel(measure);
-    if ((baseVisible || manualVisible) && (effective.baseSpan > 1 || effective.effectiveSpan > 1 || effective.manualOp)) {
+    const restReview = effective.baseSpan > 1 || effective.effectiveSpan > 1 || effective.manualOp;
+    if ((baseVisible || manualVisible) && restReview) {
       label += ` b${effective.baseSpan}->e${effective.effectiveSpan}`;
     }
     drawBox(measure.bbox, color, thickness, fill);
     if (showLabels) drawLabel(measure.bbox, label, color);
+    if (restReview) {
+      const unit = effective.effectiveSpan === 1
+        ? window.ReviewStrings.ui.oneMeasure
+        : window.ReviewStrings.ui.manyMeasures;
+      drawLabel(measure.bbox, reviewerCopy("ui.restMeasures", {count: effective.effectiveSpan, unit}), color);
+    }
   });
 
   if (showBarlines) {
     barlines.forEach((barline, index) => {
       drawBox(barline.bbox, COLOR_BARLINE, 1.2);
-      if (showLabels) drawLabel(barline.bbox, `B${index + 1}`, COLOR_BARLINE);
+      if (showBarlineNumbersToggle.checked) drawLabel(barline.bbox, `B${index + 1}`, COLOR_BARLINE);
     });
   }
 
   if (showManual) {
-    itemsForCurrentPage("barline_construction").forEach((item) => {
-      if (!Array.isArray(item.bbox)) return;
-      const isRemove = item.op === "remove_barline";
-      const color = isRemove ? COLOR_SUPPRESSED : COLOR_MANUAL;
-      drawBox(item.bbox, color, 2.5, isRemove);
-      if (showLabels) drawLabel(item.bbox, operationLabel("barline_construction", item.op), color);
-    });
+    itemsForCurrentPage("barline_construction").forEach(drawBarlineCorrection);
 
     itemsForCurrentPage("measure_construction").forEach((item) => {
       const measure = measures.find(
@@ -557,6 +616,21 @@ function draw() {
     movementSystemsOnPage().forEach((system) => {
       const state = movementStateAt(system);
       if (state) drawMovementMarker(system, state, false);
+    });
+  }
+
+  if (provisionalNumberingVisible) {
+    const pagePreview = provisionalNumbering.get(String(pageValue())) || new Map();
+    pagePreview.forEach((preview, system) => {
+      const bounds = systemBounds(system);
+      if (!bounds) return;
+      const baseline = measures
+        .filter((measure) => String(measure.system) === String(system))
+        .sort((a, b) => a.measure - b.measure)[0]?.number;
+      const label = baseline === undefined
+        ? reviewerCopy("ui.previewNumber", {number: preview.first_measure_number})
+        : `${reviewerCopy("ui.previewBase", {number: baseline})} → ${reviewerCopy("ui.previewNumber", {number: preview.first_measure_number})}`;
+      drawLabel(bounds, label, "#ff8a00");
     });
   }
 
@@ -749,8 +823,10 @@ function updateMovementFinishButton() {
 function renderPageList() {
   pageList.innerHTML = "";
   pages.forEach((page, index) => {
-    const div = document.createElement("div");
-    div.className = "list-item" + (index === currentIndex ? " active" : "");
+    const div = document.createElement("button");
+    div.type = "button";
+    div.className = "list-item page-choice" + (index === currentIndex ? " active" : "");
+    if (index === currentIndex) div.setAttribute("aria-current", "page");
     const pageNumber = displayPageNumberFor(page, index);
     const pageCoordinate =
       page.page !== undefined
@@ -782,6 +858,7 @@ function renderPageList() {
     div.onclick = () => switchPage(index);
     pageList.appendChild(div);
   });
+  updatePageNavigation();
   updateMovementFinishButton();
 }
 
@@ -806,9 +883,11 @@ function renderMmrRows() {
   const manualMap = manualMmrMap();
   measures.forEach((measure) => {
     const state = effectiveMmrState(measure, baseMap, manualMap);
-    const div = document.createElement("div");
+    const div = document.createElement("button");
+    div.type = "button";
     const key = measureKey(pageValue(), measure.system, measure.measure);
-    div.className = "list-item" + (key === selectedKey ? " active" : "");
+    div.className = "list-item score-choice" + (key === selectedKey ? " active" : "");
+    div.setAttribute("aria-pressed", String(key === selectedKey));
     let status = window.ReviewStrings.ui.normal;
     if (state.baseSpan > 1) status = window.ReviewStrings.ui.baseMmr;
     if (state.manualOp === "set_measure_span") status = window.ReviewStrings.feedback.stagedSpan;
@@ -856,24 +935,37 @@ function renderMovementRows() {
     const review = bySystem.get(String(system));
     const candidate = movementCandidateAt(system);
     const resolved = resolvedMovementAt(system);
-    const state = movementStateAt(system);
-    if (!state) return;
+    const state = movementStateAt(system) || {
+      label: window.ReviewStrings.ui.noBoundaryState,
+      color: COLOR_MOVEMENT_REJECTED,
+      dashed: true,
+    };
 
     const div = document.createElement("div");
-    div.className =
-      "list-item" +
-      (selectedMovementSystem !== null && String(selectedMovementSystem) === String(system)
-        ? " active"
-        : "");
+    div.className = "movement-row";
 
-    const title = document.createElement("div");
+    const title = document.createElement("button");
+    title.type = "button";
+    title.className = "list-item score-choice" +
+      (selectedMovementSystem !== null && String(selectedMovementSystem) === String(system) ? " active" : "");
+    title.setAttribute(
+      "aria-pressed",
+      String(selectedMovementSystem !== null && String(selectedMovementSystem) === String(system))
+    );
     let suffix = state.label;
     if (review && review.op === "boundary" && candidate) suffix = window.ReviewStrings.ui.confirmedBoundary;
     else if (review && review.op === "boundary") suffix = window.ReviewStrings.ui.manualBoundary;
     else if (review && review.op === "no_boundary") suffix = window.ReviewStrings.ui.checkedNoBoundary;
     else if (resolved) suffix = reviewerCopy("ui.resolvedBoundary", {reset: resolved.reset_number ?? 1});
     else if (candidate) suffix = window.ReviewStrings.ui.suggestedBoundary;
-    title.textContent = reviewerCopy("ui.beforeSystem", {system: displayIndex(system), state: suffix});
+    const afterPreviousPage = review?.item?.reason?.match(
+      /^Manual boundary after page (\d+) system (\d+)$/
+    );
+    title.textContent = afterPreviousPage
+      ? reviewerCopy("ui.boundaryAfterLocation", {page: afterPreviousPage[1], system: afterPreviousPage[2], nextPage: displayPageNumber(), next: displayIndex(system), state: suffix})
+      : system > 0
+        ? reviewerCopy("ui.afterAndBeforeSystemState", {previous: displayIndex(system - 1), system: displayIndex(system), state: suffix})
+        : reviewerCopy("ui.beforeSystem", {system: displayIndex(system), state: suffix});
     div.appendChild(title);
 
     if (candidate) {
@@ -888,7 +980,7 @@ function renderMovementRows() {
       div.appendChild(details);
     }
 
-    div.onclick = () => {
+    title.onclick = () => {
       selectedMovementSystem = system;
       selectedMeasure = null;
       selectedBarline = null;
@@ -913,8 +1005,10 @@ function renderManualItems() {
   const type = currentType();
   const items = itemsForCurrentPage(type);
   items.forEach((item, index) => {
-    const div = document.createElement("div");
-    div.className = "list-item" + (index === selectedItemIndex ? " active" : "");
+    const div = document.createElement("button");
+    div.type = "button";
+    div.className = "list-item score-choice" + (index === selectedItemIndex ? " active" : "");
+    div.setAttribute("aria-pressed", String(index === selectedItemIndex));
     div.textContent = manualItemSummary(item, index, type);
     div.onclick = () => {
       selectedItemIndex = index;
@@ -971,6 +1065,35 @@ function currentReason() {
 function removeManualMmrForSelected(pageItems) {
   const key = selectedMeasureKey();
   return pageItems.filter((item) => measureKey(item.page, item.system, item.measure) !== key);
+}
+
+function addMovementBoundaryAfterSelected() {
+  const sourceSystem = selectedMovementSystem;
+  if (sourceSystem === null || !Number.isFinite(sourceSystem) || !systemBounds(sourceSystem)) {
+    saveStatus.textContent = reviewerCopy("ui.selectSystemForAfter");
+    return;
+  }
+  const nextSystem = sourceSystem + 1;
+  const sourcePageNumber = displayPageNumber();
+  if (systemBounds(nextSystem)) {
+    movementAfterSource = { page: sourcePageNumber, system: displayIndex(sourceSystem) };
+    selectedMovementSystem = nextSystem;
+    movementSystemInput.value = String(displayIndex(nextSystem));
+    opSelect.value = "boundary";
+    updateControlState();
+    addCorrectionItem();
+    return;
+  }
+  if (currentIndex + 1 >= pages.length) {
+    saveStatus.textContent = reviewerCopy("ui.noFollowingSystem");
+    return;
+  }
+  movementAfterPageJump = {
+    sourcePage: sourcePageNumber,
+    sourceSystem: displayIndex(sourceSystem),
+    targetIndex: currentIndex + 1,
+  };
+  switchPage(currentIndex + 1);
 }
 
 function addCorrectionItem() {
@@ -1032,7 +1155,9 @@ function addCorrectionItem() {
       op,
       page,
       system,
-      reason: candidate ? "movement boundary review" : "manual movement boundary",
+      reason: movementAfterSource
+        ? `Manual boundary after page ${movementAfterSource.page} system ${movementAfterSource.system}`
+        : candidate ? "movement boundary review" : "manual movement boundary",
       evidence_candidate_id: candidate ? candidate.id : null,
       review_kind: candidate
         ? op === "boundary"
@@ -1044,13 +1169,15 @@ function addCorrectionItem() {
       (existing) => String(existing.system) !== String(system)
     );
     pageItems.push(item);
+    invalidateProvisionalNumbering();
     replaceItemsForCurrentPage(type, pageItems);
     selectedItemIndex = pageItems.length - 1;
     renderItems();
     updateSelectionMeta();
     draw();
-    saveStatus.textContent =
-      item.op === "boundary"
+    saveStatus.textContent = movementAfterSource
+      ? reviewerCopy("ui.savingAfterBoundary", {page: movementAfterSource.page, system: movementAfterSource.system, next: displayIndex(system)})
+      : item.op === "boundary"
         ? reviewerCopy("savingBoundary", {system: displayIndex(visibleSystem - 1)})
         : reviewerCopy("savingNoBoundary", {system: displayIndex(visibleSystem - 1)});
 
@@ -1060,12 +1187,15 @@ function addCorrectionItem() {
         renderPageList();
         updateSelectionMeta();
         draw();
-        saveStatus.textContent =
-          item.op === "boundary"
+        saveStatus.textContent = movementAfterSource
+          ? reviewerCopy("ui.savedAfterBoundary", {page: movementAfterSource.page, system: movementAfterSource.system, next: displayIndex(system)})
+          : item.op === "boundary"
             ? reviewerCopy("savedBoundary", {system: displayIndex(visibleSystem - 1)})
             : reviewerCopy("savedNoBoundary", {system: displayIndex(visibleSystem - 1)});
+        movementAfterSource = null;
       })
       .catch((error) => {
+        movementAfterSource = null;
         saveStatus.textContent = reviewerCopy("movementSaveFailed", {error: error.message});
       });
     return;
@@ -1120,6 +1250,7 @@ function deleteSelectedItem() {
   const pageItems = itemsForCurrentPage(type);
   if (selectedItemIndex === null || !pageItems[selectedItemIndex]) return;
   pageItems.splice(selectedItemIndex, 1);
+  invalidateProvisionalNumbering();
   selectedItemIndex = null;
   replaceItemsForCurrentPage(type, pageItems);
   if (type !== "movement_boundary") setDirty(type, true);
@@ -1318,6 +1449,30 @@ function loadPage() {
   ]).then(() => {
     updateControlState();
     renderPageList();
+    if (movementAfterPageJump && movementAfterPageJump.targetIndex === currentIndex) {
+      const after = movementAfterPageJump;
+      const firstSystem = movementSystemsOnPage()[0];
+      if (firstSystem === undefined) {
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < pages.length) {
+          movementAfterPageJump = {...after, targetIndex: nextIndex};
+          switchPage(nextIndex);
+        } else {
+          movementAfterPageJump = null;
+          saveStatus.textContent = reviewerCopy("ui.noFollowingSystem");
+        }
+      } else {
+        movementAfterPageJump = null;
+        movementAfterSource = { page: after.sourcePage, system: after.sourceSystem };
+        typeSelect.value = "movement_boundary";
+        updateOps();
+        opSelect.value = "boundary";
+        selectedMovementSystem = firstSystem;
+        movementSystemInput.value = String(displayIndex(firstSystem));
+        updateControlState();
+        addCorrectionItem();
+      }
+    }
   });
 }
 
@@ -1414,7 +1569,7 @@ function startRestCountReview() {
 }
 
 function switchPage(nextIndex) {
-  if (nextIndex === currentIndex) return;
+  if (nextIndex === currentIndex || nextIndex < 0 || nextIndex >= pages.length) return;
   waitForMovementSaves()
     .then(() => saveCorrectionTypes(Array.from(dirtyTypes)))
     .then(() => {
@@ -1425,6 +1580,40 @@ function switchPage(nextIndex) {
       saveStatus.textContent = reviewerCopy("pageSaveFailed", {error: error.message});
       console.error("Page switch aborted due to save failure:", error);
     });
+}
+
+function updatePageNavigation() {
+  previousPageBtn.disabled = currentIndex <= 0;
+  nextPageBtn.disabled = currentIndex >= pages.length - 1;
+}
+
+function navigateScoreTarget(direction) {
+  if (!currentPage) return;
+  if (currentType() === "movement_boundary") {
+    const targets = movementSystemsOnPage();
+    if (!targets.length) return;
+    const current = targets.indexOf(selectedMovementSystem);
+    selectedMovementSystem = targets[Math.max(0, Math.min(targets.length - 1, current + direction))];
+    selectedMeasure = null;
+    selectedBarline = null;
+    selectedItemIndex = null;
+    movementSystemInput.value = String(displayIndex(selectedMovementSystem));
+  } else if (currentType() === "barline_construction" && barlines.length) {
+    const current = barlines.indexOf(selectedBarline);
+    selectedBarline = barlines[Math.max(0, Math.min(barlines.length - 1, current + direction))];
+    selectedMeasure = null;
+    selectedItemIndex = null;
+  } else if (measures.length) {
+    const current = measures.indexOf(selectedMeasure);
+    selectedMeasure = measures[Math.max(0, Math.min(measures.length - 1, current + direction))];
+    selectedBarline = null;
+    selectedItemIndex = null;
+    const state = effectiveMmrState(selectedMeasure);
+    measureSpanInput.value = String(state.effectiveSpan || state.baseSpan || 1);
+  }
+  updateSelectionMeta();
+  renderItems();
+  draw();
 }
 
 selectModeBtn.onclick = (event) => {
@@ -1483,6 +1672,10 @@ helpBtn.onclick = () => {
   helpPanel.open = true;
   helpPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 };
+movementAfterBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  addMovementBoundaryAfterSelected();
+};
 
 document.getElementById("reviewRestCountsBtn").onclick = (event) => {
   event.currentTarget.blur();
@@ -1506,6 +1699,7 @@ movementSystemInput.oninput = () => {
 [
   showMeasuresToggle,
   showBarlinesToggle,
+  showBarlineNumbersToggle,
   showLabelsToggle,
   showBaseToggle,
   showManualToggle,
@@ -1540,11 +1734,55 @@ fitPageBtn.onclick = () => {
   resetView();
   draw();
 };
+previousPageBtn.onclick = () => switchPage(Math.max(0, currentIndex - 1));
+nextPageBtn.onclick = () => switchPage(Math.min(pages.length - 1, currentIndex + 1));
+previewNumbersBtn.onclick = async () => {
+  if (provisionalNumberingVisible) {
+    invalidateProvisionalNumbering();
+    draw();
+    return;
+  }
+  const requestId = ++numberingPreviewRequestId;
+  const revision = provisionalNumberingRevision;
+  const isCurrentRequest = () =>
+    requestId === numberingPreviewRequestId && revision === provisionalNumberingRevision;
+  try {
+    await waitForMovementSaves();
+    if (!isCurrentRequest()) return;
+    await saveDirtyTypes();
+    if (!isCurrentRequest()) return;
+    saveStatus.textContent = reviewerCopy("ui.previewLoading");
+    const response = await fetch("/api/preview_numbering", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    if (!isCurrentRequest()) return;
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    const result = await response.json();
+    if (!isCurrentRequest()) return;
+    provisionalNumbering.clear();
+    (result.pages || []).forEach((page) => {
+      provisionalNumbering.set(
+        String(page.page),
+        new Map((page.systems || []).map((system) => [String(system.system), system]))
+      );
+    });
+    provisionalNumberingVisible = true;
+    previewNumbersBtn.setAttribute("aria-pressed", "true");
+    saveStatus.textContent = reviewerCopy("ui.previewReady");
+    draw();
+  } catch (error) {
+    if (!isCurrentRequest()) return;
+    saveStatus.textContent = reviewerCopy("ui.previewFailed", { error: error.message });
+  }
+};
 
 canvas.addEventListener("mousedown", (event) => {
+  if (event.button === 0) canvas.focus({ preventScroll: true });
   const pt = canvasPoint(event);
 
-  if (event.button === 1 || (event.button === 0 && (spaceDown || panMode))) {
+  if (event.button === 1 || (event.button === 0 && (spaceDown || panMode || event.ctrlKey))) {
     event.preventDefault();
     isPanning = true;
     panStart = pt;
@@ -1662,17 +1900,26 @@ window.addEventListener("keydown", (event) => {
   const tag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
   if (tag === "input" || tag === "select" || tag === "textarea") return;
   if (event.key === " ") {
-    if (tag === "button") blurActiveControl();
+    if (tag === "button" || tag === "a") return;
     event.preventDefault();
     spaceDown = true;
   }
-  if (event.key === "ArrowLeft") {
+  const scoreFocused = event.target === canvas || tag === "body";
+  if (scoreFocused && event.ctrlKey && event.key === "ArrowLeft") {
     event.preventDefault();
     switchPage(Math.max(0, currentIndex - 1));
   }
-  if (event.key === "ArrowRight") {
+  if (scoreFocused && event.ctrlKey && event.key === "ArrowRight") {
     event.preventDefault();
     switchPage(Math.min(pages.length - 1, currentIndex + 1));
+  }
+  if (scoreFocused && !event.ctrlKey && event.key === "ArrowLeft") {
+    event.preventDefault();
+    navigateScoreTarget(-1);
+  }
+  if (scoreFocused && !event.ctrlKey && event.key === "ArrowRight") {
+    event.preventDefault();
+    navigateScoreTarget(1);
   }
   if (event.key === "Delete" || event.key === "Backspace") deleteSelectedItem();
 });

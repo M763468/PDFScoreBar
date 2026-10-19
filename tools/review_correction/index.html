@@ -25,6 +25,12 @@
     #pageList { max-height:calc(100vh - 125px); overflow:auto; }
     .list-item { padding:8px 9px; border-bottom:1px solid #edf0f2; cursor:pointer; font-size:13px; }
     .list-item.active { background:#eaf5fd; outline:1px solid #b6dcf4; }
+    .page-nav-button { padding:5px 8px; }
+    #pageList .page-choice { display:block; width:100%; text-align:left; border:0; background:transparent; }
+    #itemList .score-choice { display:block; width:100%; text-align:left; border:0; background:transparent; color:inherit; }
+    .movement-row { border-bottom:1px solid #edf0f2; padding:4px; }
+    #pageList .page-choice:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, canvas:focus-visible { outline:3px solid #2587cb; outline-offset:2px; }
+    #pageNavigation { display:inline-flex; gap:5px; }
     #main { min-width:0; min-height:0; display:flex; flex-direction:column; }
     #displayControls { display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:8px 12px; background:#fff; border-bottom:1px solid #d9e0e6; }
     #displayControls label { display:inline-flex; gap:4px; align-items:center; color:#536473; font-size:12px; }
@@ -57,6 +63,10 @@
       </select>
     </label>
     <span id="pageMeta"></span>
+    <div id="pageNavigation" role="group" aria-label="Page navigation" data-copy-aria="aria.pageNavigation">
+      <button id="previousPageBtn" class="btn page-nav-button" type="button" data-copy="previousPage">Previous page</button>
+      <button id="nextPageBtn" class="btn page-nav-button" type="button" data-copy="nextPage">Next page</button>
+    </div>
     <div class="spacer"></div>
     <div id="applicationControls">
       <div class="row">
@@ -78,17 +88,19 @@
         <strong data-copy="display">Score display</strong>
         <label><input id="showMeasuresToggle" type="checkbox" checked /><span data-copy="measures">Measures</span></label>
         <label><input id="showBarlinesToggle" type="checkbox" checked /><span data-copy="barlines">Barlines</span></label>
+        <label><input id="showBarlineNumbersToggle" type="checkbox" checked /><span data-copy="barlineNumbers">Line numbers</span></label>
         <label><input id="showLabelsToggle" type="checkbox" /><span data-copy="labels">Labels</span></label>
         <label><input id="showBaseToggle" type="checkbox" checked /><span data-copy="baseState">Original grouping</span></label>
         <label><input id="showManualToggle" type="checkbox" checked /><span data-copy="manualState">Your changes</span></label>
         <label><input id="showMovementToggle" type="checkbox" checked /><span data-copy="movement">Movement boundaries</span></label>
+        <button id="previewNumbersBtn" class="btn" type="button" aria-pressed="false" data-copy="previewNumbers">Preview numbering</button>
       </div>
       <div id="viewportControls" class="row" style="margin:0;padding:6px 12px;background:#fff">
         <button id="panModeBtn" class="btn" type="button" aria-pressed="false" data-copy="pan">Move page</button>
         <button id="fitPageBtn" class="btn" type="button" data-copy="fitPage">Fit page</button>
       </div>
-      <div id="canvasViewport"><canvas id="canvas" aria-label="Score review canvas" data-copy-aria="aria.canvas"></canvas></div>
-      <div id="canvasHint" data-copy="canvasHint">Scroll to zoom · Space-drag or middle-drag to pan · ←/→ changes page</div>
+      <div id="canvasViewport"><canvas id="canvas" tabindex="0" aria-label="Score review canvas" data-copy-aria="aria.canvas"></canvas></div>
+      <div id="canvasHint" data-copy="canvasHint">Scroll to zoom · Space/Ctrl-drag or middle-drag to pan · ←/→ moves between score targets · Ctrl+←/→ changes page</div>
     </main>
     <aside id="context">
       <button id="helpBtn" hidden type="button" data-copy="details">Details</button>
@@ -103,12 +115,13 @@
           </select>
         </label></div>
         <p id="taskHelp" class="small"></p>
-        <div id="selectionMeta" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
+        <div id="selectionMeta" aria-live="polite" aria-atomic="true" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
         <div class="row" id="operationRow"><label><span data-copy="operation">Change</span><select id="opSelect"></select></label></div>
         <div class="row" id="measureSpanRow"><label><span data-copy="measureSpan">Measure span</span> <input id="measureSpanInput" type="number" min="1" value="2" /></label></div>
         <div id="movementBoundaryPanel" style="display:none">
           <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" data-copy-placeholder="ui.systemPlaceholder" /></label></div>
           <div class="movement-status" id="movementTargetMeta" data-copy="ui.noSystemSelected">No system selected.</div>
+          <button id="movementAfterBtn" class="btn" type="button" data-copy="movementAfter">Add boundary after selected system</button>
           <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
         </div>
         <div class="row" id="actionRow">

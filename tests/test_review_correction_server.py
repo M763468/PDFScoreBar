@@ -132,6 +132,24 @@ def test_review_routes_only_serve_declared_artifacts(review_server):
     assert _request(server, "POST", "/api/probe_log", {"page": "page_001"})[0] == 404
 
 
+def test_numbering_preview_endpoint_uses_the_active_package_without_options(
+    review_server, monkeypatch
+):
+    server, handoff = review_server
+    monkeypatch.setattr(
+        review_server_module,
+        "preview_numbering",
+        lambda path: {"status": "provisional", "handoff": str(path)},
+    )
+    status, content = _request(server, "POST", "/api/preview_numbering", {})
+    assert status == 200
+    assert json.loads(content) == {
+        "status": "provisional",
+        "handoff": str(handoff.resolve()),
+    }
+    assert _request(server, "POST", "/api/preview_numbering", {"path": "/outside"})[0] == 400
+
+
 def test_review_save_cannot_select_gt_or_canonical_paths(review_server):
     server, handoff = review_server
     root = handoff.parent

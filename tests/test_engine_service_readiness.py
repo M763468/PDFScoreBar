@@ -216,6 +216,30 @@ def test_executor_preserves_input_filename_through_review_handoff_and_final(exec
     assert (package / "final" / "Festival_Overture_score_numbered.pdf").is_file()
 
 
+def test_executor_truncates_long_multibyte_input_filename_to_utf8_limit(executor_fixture):
+    build, artifact_root = executor_fixture
+    input_path = artifact_root.parent / "inputs" / f"{'楽' * 79}.pdf"
+    input_path.write_bytes((artifact_root.parent / "inputs" / "score.pdf").read_bytes())
+
+    result = build("job-long-cjk-input")(
+        JobRequest(
+            input={"kind": "local_path", "reference": input_path.name},
+            output_profile=OutputProfile.REVIEW,
+            config_overrides={"pages": [1]},
+        )
+    )
+
+    assert result.status is JobStatus.SUCCEEDED
+    package = artifact_root / result.job_id
+    handoff = json.loads(
+        (package / "review" / "manual_correction_input.json").read_text(encoding="utf-8")
+    )
+    assert handoff["output_name"] == "楽" * 66
+    final_pdf = package / "final" / f"{'楽' * 66}_score_numbered.pdf"
+    assert final_pdf.is_file()
+    assert len(final_pdf.name.encode("utf-8")) <= 255
+
+
 def test_execute_payload_maps_missing_fields_to_structured_failure(executor_fixture):
     build, artifact_root = executor_fixture
     events = []

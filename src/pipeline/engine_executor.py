@@ -483,9 +483,13 @@ class PipelineJobExecutor:
             requested = len(meta.selected_pages)
             _check_attempt_budget(work_root, self.safety_policy)
 
-            output_name = validate_output_name(
-                str(request.config_overrides.get("output_name") or Path(source_name).stem)
-            )
+            explicit_output_name = request.config_overrides.get("output_name")
+            if explicit_output_name is not None and str(explicit_output_name).strip():
+                output_name = validate_output_name(str(explicit_output_name))
+            else:
+                from src.pipeline.review.final_output import _sanitize_output_name
+
+                output_name = validate_output_name(_sanitize_output_name(source_name, is_path=True))
             self._clear_public(package_root)
             if staging.exists():
                 shutil.rmtree(staging)

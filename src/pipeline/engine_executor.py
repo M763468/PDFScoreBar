@@ -483,9 +483,13 @@ class PipelineJobExecutor:
             requested = len(meta.selected_pages)
             _check_attempt_budget(work_root, self.safety_policy)
 
-            output_name = validate_output_name(
-                str(request.config_overrides.get("output_name") or Path(source_name).stem)
-            )
+            explicit_output_name = request.config_overrides.get("output_name")
+            if explicit_output_name is not None and str(explicit_output_name).strip():
+                output_name = validate_output_name(str(explicit_output_name))
+            else:
+                from src.pipeline.review.final_output import _sanitize_output_name
+
+                output_name = validate_output_name(_sanitize_output_name(source_name, is_path=True))
             self._clear_public(package_root)
             if staging.exists():
                 shutil.rmtree(staging)
@@ -522,12 +526,18 @@ class PipelineJobExecutor:
                 )
             if not internal_handoff.is_file():
                 raise RuntimeError("review materializer did not produce its handoff")
+            self._ensure_handoff_output_name(internal_handoff, output_name=output_name)
 
             with telemetry.stage("artifact_materialization", detail_code="engine.public_artifacts"):
                 public_review = None
                 if request.output_profile in {OutputProfile.REVIEW, OutputProfile.DEBUG}:
                     public_review = staging / "review"
-                    self._copy_review(internal_handoff.parent, public_review, source_job_id=job_id)
+                    self._copy_review(
+                        internal_handoff.parent,
+                        public_review,
+                        source_job_id=job_id,
+                        output_name=output_name,
+                    )
 
                 final_summary = self._final_builder()(
                     handoff_path=internal_handoff,
@@ -662,7 +672,32 @@ class PipelineJobExecutor:
                 path.unlink()
 
     @staticmethod
-    def _copy_review(source: Path, destination: Path, *, source_job_id: str) -> None:
+    def _ensure_handoff_output_name(handoff_path: Path, *, output_name: str | None) -> None:
+        if not isinstance(output_name, str) or not output_name.strip():
+            return
+        from src.pipeline.review.final_output import _sanitize_output_name
+
+        sanitized = _sanitize_output_name(output_name, fallback="")
+        if not sanitized:
+            return
+        payload = json.loads(handoff_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            return
+        if payload.get("output_name") != sanitized:
+            payload["output_name"] = sanitized
+            handoff_path.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+
+    @staticmethod
+    def _copy_review(
+        source: Path,
+        destination: Path,
+        *,
+        source_job_id: str,
+        output_name: str | None = None,
+    ) -> None:
         if destination.exists():
             shutil.rmtree(destination)
         shutil.copytree(source, destination)
@@ -672,6 +707,12 @@ class PipelineJobExecutor:
             raise ValueError("manual correction handoff must be an object")
         for key in ("source_artifact_root", "source_manifest", "source_pipeline_command"):
             payload.pop(key, None)
+        if isinstance(output_name, str) and output_name.strip():
+            from src.pipeline.review.final_output import _sanitize_output_name
+
+            sanitized = _sanitize_output_name(output_name, fallback="")
+            if sanitized:
+                payload["output_name"] = sanitized
         payload["engine_contract_version"] = "1"
         payload["source_job_id"] = source_job_id
         payload["coordinate_space"] = dict(REVIEW_COORDINATE_SPACE)

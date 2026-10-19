@@ -204,6 +204,27 @@ class CorrectionApplication:
             payload = json.loads(self.handoff.read_text(encoding="utf-8"))
             manifest = _resolve_source_manifest_path(payload, self.package.root)
             payload["source_manifest"] = str(manifest)
+            if not (isinstance(payload.get("output_name"), str) and payload["output_name"].strip()):
+                final_dir = self.package.root.parent / "final"
+                if final_dir.is_dir():
+                    from src.pipeline.review.final_output import (
+                        _is_usable_artifact_root_name,
+                        _sanitize_output_name,
+                    )
+
+                    final_pdfs = sorted(
+                        path
+                        for path in final_dir.glob("*_score_numbered.pdf")
+                        if path.is_file() and not path.is_symlink()
+                    )
+                    if len(final_pdfs) == 1:
+                        recovered_name = _sanitize_output_name(final_pdfs[0].name, fallback="")
+                        if (
+                            recovered_name
+                            and _is_usable_artifact_root_name(recovered_name)
+                            and recovered_name.lower() != "score"
+                        ):
+                            payload["output_name"] = recovered_name
             snapshot_handoff = review / "manual_correction_input.json"
             snapshot_handoff.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
             if self.package.state.capture_identity() != identity:

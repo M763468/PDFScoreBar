@@ -84,6 +84,45 @@ def test_materializes_review_package_from_manifest_resolved_barlines(tmp_path):
     assert handoff_on_disk["pages"][0]["barlines_review_source"] == page["barlines_review_source"]
 
 
+def test_materializer_preserves_input_pdf_basename_in_handoff(tmp_path):
+    run_root = _fake_run_root(tmp_path)
+    manifest_path = run_root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["config"] = {"inputs": {"pdf_path": "/input/Festival Overture.pdf"}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    handoff = materialize_manual_correction_review_package(
+        run_root=run_root,
+        review_root=tmp_path / "review",
+    )
+
+    assert handoff["output_name"] == "Festival_Overture"
+
+
+def test_materializer_distinguishes_engine_staged_pdf_from_user_source_pdf(tmp_path):
+    run_root = _fake_run_root(tmp_path)
+    manifest_path = run_root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    # Legitimate user path ending in input/source.pdf must preserve 'source'
+    manifest["config"] = {"inputs": {"pdf_path": "/home/user/input/source.pdf"}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    user_handoff = materialize_manual_correction_review_package(
+        run_root=run_root,
+        review_root=tmp_path / "review_user",
+    )
+    assert user_handoff["output_name"] == "source"
+
+    # Engine staged path under .engine-work/input/source.pdf must not claim 'source'
+    manifest["config"] = {"inputs": {"pdf_path": "/results/job-1/.engine-work/input/source.pdf"}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    staged_handoff = materialize_manual_correction_review_package(
+        run_root=run_root,
+        review_root=tmp_path / "review_staged",
+    )
+    assert "output_name" not in staged_handoff
+
+
 def test_materializer_accepts_manifest_declared_shared_source_image(tmp_path):
     run_root = _fake_run_root(tmp_path)
     shared_image = tmp_path / "input_images" / "page_001.png"

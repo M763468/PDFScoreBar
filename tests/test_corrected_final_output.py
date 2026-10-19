@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import fitz
 import pytest
 from PIL import Image
 
@@ -112,6 +113,10 @@ def test_materialize_corrected_final_outputs_creates_clean_pdf_and_review_summar
     assert review_summary["pages"][0]["rendered_row_labels"] == 1
     assert review_summary["pages"][0]["row_labels"][0]["row_start_measure_number"] == 42
     assert review_summary["warnings"] == []
+    with fitz.open(final_pdf) as document:
+        assert document.page_count == 1
+        assert document[0].rect.width == pytest.approx(72)
+        assert document[0].rect.height == pytest.approx(48)
 
 
 def test_materialize_corrected_final_outputs_uses_cross_page_final_numbers_for_row_labels(
@@ -185,6 +190,54 @@ def test_materialize_corrected_final_outputs_uses_explicit_output_name(tmp_path)
     )
 
     assert (corrected_run / "final" / "custom_score_name_score_numbered.pdf").exists()
+
+
+@pytest.mark.parametrize(
+    ("handoff_fields", "explicit_name", "expected_name"),
+    [
+        ({"source_pdf": "/input/My Orchestra Score.pdf"}, None, "My_Orchestra_Score"),
+        ({"source_pdf": "/input/楽章協会 第九.pdf"}, None, "楽章協会_第九"),
+        ({"input_pdf": r"C:\\scores\\piece_score_numbered.pdf"}, None, "piece"),
+        ({}, "../outside/score", "corrected"),
+        ({}, None, "corrected"),
+    ],
+)
+def test_materialize_corrected_final_outputs_uses_safe_source_name_or_fallback(
+    tmp_path, handoff_fields, explicit_name, expected_name
+):
+    handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
+    payload = json.loads(handoff_path.read_text(encoding="utf-8"))
+    payload.pop("output_name", None)
+    payload.update(handoff_fields)
+    handoff_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    summary = materialize_corrected_final_outputs(
+        handoff_path=handoff_path,
+        corrected_run_dir=corrected_run,
+        output_name=explicit_name,
+    )
+
+    assert Path(summary["final_pdf"]).name == f"{expected_name}_score_numbered.pdf"
+    assert Path(summary["final_pdf"]).resolve().is_relative_to((corrected_run / "final").resolve())
+
+
+def test_materialize_corrected_final_outputs_bounds_long_multibyte_source_name(tmp_path):
+    long_cjk_stem = "楽" * 79  # 237 UTF-8 bytes; + ".pdf" is 241 bytes (valid on 255-byte fs)
+    handoff_path, corrected_run = _setup_final_output_fixture(
+        tmp_path,
+        output_name=f"{long_cjk_stem}.pdf",
+    )
+
+    summary = materialize_corrected_final_outputs(
+        handoff_path=handoff_path,
+        corrected_run_dir=corrected_run,
+    )
+
+    final_pdf = Path(summary["final_pdf"])
+    assert final_pdf.is_file()
+    assert final_pdf.name.endswith("_score_numbered.pdf")
+    assert len(final_pdf.name.encode("utf-8")) <= 255
+    assert len(summary["output_name"].encode("utf-8")) <= 200
 
 
 def test_materialize_corrected_final_outputs_uses_page_uniform_label_size(tmp_path):

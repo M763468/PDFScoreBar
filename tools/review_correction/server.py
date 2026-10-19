@@ -261,7 +261,13 @@ class ReviewHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    def _file(self, path: Path, *, json_type: bool = False) -> None:
+    def _file(
+        self,
+        path: Path,
+        *,
+        json_type: bool = False,
+        download_filename: str | None = None,
+    ) -> None:
         data = path.read_bytes()
         content_type = (
             "application/json"
@@ -270,6 +276,18 @@ class ReviewHandler(BaseHTTPRequestHandler):
         )
         self.send_response(200)
         self.send_header("Content-Type", content_type)
+        if download_filename:
+            from urllib.parse import quote
+
+            safe_ascii = "".join(
+                ch if 32 <= ord(ch) < 127 and ch not in {'"', "\\"} else "_"
+                for ch in Path(download_filename).name
+            )
+            encoded_utf8 = quote(Path(download_filename).name, safe="")
+            self.send_header(
+                "Content-Disposition",
+                f"inline; filename=\"{safe_ascii}\"; filename*=UTF-8''{encoded_utf8}",
+            )
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -291,7 +309,8 @@ class ReviewHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/result":
             try:
-                self._file(self.server.application.result())
+                result_path = self.server.application.result()
+                self._file(result_path, download_filename=result_path.name)
             except (ValueError, OSError, KeyError) as exc:
                 self.send_error(400, str(exc))
             return

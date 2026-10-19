@@ -82,6 +82,8 @@ let spaceDown = false;
 let panMode = false;
 let provisionalNumbering = new Map();
 let provisionalNumberingVisible = false;
+let provisionalNumberingRevision = 0;
+let numberingPreviewRequestId = 0;
 let movementAfterSource = null;
 let movementAfterPageJump = null;
 
@@ -179,6 +181,7 @@ function selectedMeasureKey() {
 }
 
 function invalidateProvisionalNumbering() {
+  provisionalNumberingRevision += 1;
   provisionalNumberingVisible = false;
   previewNumbersBtn.setAttribute("aria-pressed", "false");
 }
@@ -1735,22 +1738,29 @@ previousPageBtn.onclick = () => switchPage(Math.max(0, currentIndex - 1));
 nextPageBtn.onclick = () => switchPage(Math.min(pages.length - 1, currentIndex + 1));
 previewNumbersBtn.onclick = async () => {
   if (provisionalNumberingVisible) {
-    provisionalNumberingVisible = false;
-    previewNumbersBtn.setAttribute("aria-pressed", "false");
+    invalidateProvisionalNumbering();
     draw();
     return;
   }
+  const requestId = ++numberingPreviewRequestId;
+  const revision = provisionalNumberingRevision;
+  const isCurrentRequest = () =>
+    requestId === numberingPreviewRequestId && revision === provisionalNumberingRevision;
   try {
     await waitForMovementSaves();
+    if (!isCurrentRequest()) return;
     await saveDirtyTypes();
+    if (!isCurrentRequest()) return;
     saveStatus.textContent = reviewerCopy("ui.previewLoading");
     const response = await fetch("/api/preview_numbering", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "{}",
     });
+    if (!isCurrentRequest()) return;
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
     const result = await response.json();
+    if (!isCurrentRequest()) return;
     provisionalNumbering.clear();
     (result.pages || []).forEach((page) => {
       provisionalNumbering.set(
@@ -1763,6 +1773,7 @@ previewNumbersBtn.onclick = async () => {
     saveStatus.textContent = reviewerCopy("ui.previewReady");
     draw();
   } catch (error) {
+    if (!isCurrentRequest()) return;
     saveStatus.textContent = reviewerCopy("ui.previewFailed", { error: error.message });
   }
 };

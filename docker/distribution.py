@@ -5,13 +5,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from docker.runtime_contract import runtime_fingerprint, source_fingerprint
+from docker.runtime_contract import (
+    runtime_fingerprint,
+    source_fingerprint,
+    validate_distribution_provenance,
+)
 from src.common.model_artifacts import resolve_model_artifact
 
 
@@ -22,7 +27,41 @@ def capture(command: list[str]) -> str:
 def source_identity() -> dict:
     provenance = ROOT / "DISTRIBUTION_PROVENANCE.json"
     if provenance.is_file():
-        return json.loads(provenance.read_text(encoding="utf-8"))
+        identity = validate_distribution_provenance(ROOT)
+        expected = set(identity["files"]) | {"DISTRIBUTION_PROVENANCE.json"}
+        if (ROOT / ".git").exists():
+            git_root = subprocess.check_output(
+                ["git", "-C", str(ROOT), "rev-parse", "--show-toplevel"], text=True
+            ).strip()
+            if Path(git_root).resolve() != ROOT.resolve():
+                raise ValueError("Distribution provenance must be checked at the checkout root")
+            tracked = subprocess.check_output(["git", "-C", str(ROOT), "ls-files", "-z"]).split(
+                b"\0"
+            )
+            if {item.decode("utf-8") for item in tracked if item} != expected:
+                raise ValueError("Tracked checkout inventory differs from distribution provenance")
+            status = subprocess.check_output(
+                ["git", "-C", str(ROOT), "status", "--porcelain", "--untracked-files=all"],
+                text=True,
+            )
+            if status:
+                raise ValueError(
+                    "Distribution checkout is dirty; refusing to trust frozen provenance"
+                )
+        else:
+            actual = set()
+            for directory, dirs, files in os.walk(ROOT, followlinks=False):
+                parent = Path(directory)
+                dirs[:] = [name for name in dirs if name != "__pycache__"]
+                actual.update((parent / name).relative_to(ROOT).as_posix() for name in files)
+                actual.update(
+                    (parent / name).relative_to(ROOT).as_posix()
+                    for name in dirs
+                    if (parent / name).is_symlink()
+                )
+            if actual != expected:
+                raise ValueError("Extracted distribution inventory differs from provenance")
+        return identity
     return {
         "source_commit": capture(["git", "rev-parse", "HEAD"]),
         "source_branch": capture(["git", "branch", "--show-current"]) or "detached",

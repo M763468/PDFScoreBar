@@ -111,15 +111,18 @@ docker exec --user "$(id -u):$(id -g)" -w "$container_worktree" \
   /opt/venv_pipeline/bin/python -m pytest --version
 
 # Choose the required check; do not run tests just to validate a docs-only change.
+# Read the maintained fast-test list, then invoke pytest with the container interpreter.
+mapfile -t fast_tests < <(sed -n 's/^FAST_TESTS ?= //p' Makefile | tr ' ' '\n')
 docker exec --user "$(id -u):$(id -g)" -w "$container_worktree" \
   -e PYTHONPATH="$container_worktree" pdfscore_pipeline_pytest_dev \
-  make test-fast PYTHON=/opt/venv_pipeline/bin/python
+  /opt/venv_pipeline/bin/python -m pytest "${fast_tests[@]}"
 ```
 
-For a focused suite, replace `make ...` with
-`/opt/venv_pipeline/bin/python -m pytest <selected-tests>`. Confirm any worktree-local
-`.venv_pdf/bin/python` is compatible before using make, since that target prefers it over
-`PYTHON`. Do not run host `make test-fast` merely to discover that pytest only exists in Docker.
+Use `/opt/venv_pipeline/bin/python -m pytest <selected-tests>` for a focused suite. This
+bypasses `make test-fast`'s automatic `.venv_pdf/bin/python` preference, so the command cannot
+silently select a checkout-local interpreter. Do not pass `PYTHON=/opt/venv_pipeline/bin/python`
+to that Make target and assume it wins: the target replaces `PYTHON` whenever `.venv_pdf/bin/python`
+exists. Do not run host `make test-fast` merely to discover that pytest only exists in Docker.
 
 ## Browser validation
 
@@ -127,8 +130,9 @@ Use this after starting the review server in the shared Python container on port
 fresh copied review package, following [Review acceptance](REVIEW_ACCEPTANCE.md#browser-workflow).
 The browser runner shares that container's network namespace, so `127.0.0.1:8010` reaches the
 server without publishing new ports. Its own `/workspace` mount is the active issue worktree,
-read-only, with a separate writable evidence bind at `/evidence`. Retained data outside that worktree needs explicit
-mounts on the server side as described in [Local worktree data](local_worktree_data.md#docker-mounts).
+read-only, with a separate writable evidence bind at `/evidence`. Retained data outside that
+worktree needs explicit mounts on the server side as described in
+[Local worktree data](local_worktree_data.md#docker-mounts).
 
 ```bash
 # Run from the host issue worktree; use the Issue/run ID for the current task.

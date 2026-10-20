@@ -30,6 +30,59 @@ This document defines how to choose validation for local automation and manual P
 For the v1 engine boundary, see [`ENGINE_SERVICE_READINESS.md`](../ENGINE_SERVICE_READINESS.md)
 for the clean container smoke and its separation from production accuracy evidence.
 
+## Validation status and evidence
+
+Use one row per check in PRs and completion reports. A report-level tested revision/environment
+may cover multiple rows when identical. Record the following four statuses explicitly:
+
+| Status | Meaning for the current attempt |
+| --- | --- |
+| Passed / 今回実行して成功 | The check ran to completion and its acceptance condition passed. |
+| Failed / 今回実行して失敗 | The check ran and reported a test/assertion or acceptance failure. |
+| Blocked / 実行できず | A prerequisite, permission, environment, or launcher failure prevented completion. Test results remain unknown or partial. |
+| Not run / 未実行 | The check was not attempted; explain why it was skipped or deferred. |
+
+A nonzero launcher exit alone does not establish a test failure. For example, failure to open
+`artifacts/test_fast.log` before pytest starts is **Blocked**, not a failing test suite.
+If tests partially ran before an environment failure, record the partial counts and retain
+Blocked for the incomplete check. Never infer success from an existing log file.
+
+For every attempted check, record:
+
+- The tested commit (`git rev-parse HEAD`), or the base commit plus an identified uncommitted
+  diff (for example, a retained patch and its digest). If files changed after a check, state
+  whether that check still covers the final diff and why; rerun when affected behavior changed.
+- The exact command, working directory, and relevant environment: host interpreter or Docker
+  image ID, container, and checkout mount. Record configuration/inputs when relevant.
+- Status, exit code when available (otherwise explain why), and a log/artifact path or concise
+  output. For Blocked, include the attempted command, concrete error, and alternative checks
+  completed with their limits. For Not run, include the reason and any follow-up needed.
+
+Historical results belong in a separate paragraph labeled **Historical evidence** with the
+original revision, environment, command and evidence reference when available. Explicitly
+state that they were not rerun for the current change; missing provenance remains unknown.
+A previous commit, another worktree, CI, or another environment passing does not establish a
+current rerun. Preserve separate attempts when a blocked check is later retried successfully.
+
+Before execution, follow the [environment preflight](../ENVIRONMENTS.md#execution-preflight)
+to avoid selecting unavailable tools or testing a different checkout.
+
+Example (illustrative only; these rows are not actual validation results):
+
+Tested target: commit `<sha>` plus retained `logs/issue<N>/validation/<run>/changes.patch`
+(SHA-256 `<digest>`). Working directory: `/workspace` in `<container>`, image `<image-id>`,
+with the active worktree mounted there.
+
+| Check | Current status | Command / evidence |
+| --- | --- | --- |
+| Focused pytest | Passed | `docker exec -w /workspace -e PYTHONPATH=/workspace <container> /opt/venv_pipeline/bin/python -m pytest tests/test_python_env.py`; exit 0, `<run>/pytest.log`. |
+| Fast tests | Blocked | `docker exec -w /workspace <container> make test-fast PYTHON=/opt/venv_pipeline/bin/python`; exit 2, `artifacts/test_fast.log: Permission denied` before pytest started. Focused pytest above covers only its selected module. |
+| GPU smoke | Not run | Docs-only change; no runtime behavior changed. |
+
+Historical evidence: fast tests passed on `<older-sha>` in `<other-environment>`
+(command and log: `<reference>`); not rerun successfully for the current target.
+If an assertion fails during a completed run, record **Failed** and its failure summary.
+
 ## Evaluation contract integrity
 
 For any run used to justify an accuracy, quality, compatibility, or performance claim:

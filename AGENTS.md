@@ -74,8 +74,11 @@ container state, run tags, and issue handoff notes do not belong here.
   writes.
 - Add or update tests when behavior changes. For docs-only or metadata-only work, state why runtime
   tests are not applicable.
-- Before reporting completion, record commands/checks run, pass/fail status, and any skipped or
-  deferred validation with the reason.
+- Before reporting completion, follow the evidence format in
+  `docs/dev/VALIDATION_POLICY.md`: distinguish passed, failed, blocked, and not run for this
+  attempt; identify the tested commit/diff and command. Keep historical results separate.
+- Before environment-sensitive checks, use the execution preflight in `docs/ENVIRONMENTS.md`
+  to confirm the interpreter/tools, active checkout mount, writable output, and execution permissions.
 
 ## 6. Evaluation and experiment invariants
 

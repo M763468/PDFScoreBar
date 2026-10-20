@@ -15,10 +15,21 @@
 - <!-- out of scope -->
 
 ## How to test
-- <!-- commands/checks and results -->
+<!-- Follow docs/dev/VALIDATION_POLICY.md. Examples below are placeholders, not results.
+Use Passed / Failed / Blocked / Not run for this attempt. A launcher/environment failure
+is Blocked; a completed test/acceptance failure is Failed. Do not infer a pass from old logs. -->
+- Tested commit / identified diff: <!-- SHA; for dirty worktrees, base SHA + patch reference/digest -->
+- Environment / working directory: <!-- interpreter or image ID/container + active checkout mount -->
+
+| Check | Current status | Exact command | Exit / evidence / blocker |
+| --- | --- | --- | --- |
+| <!-- check --> | <!-- Passed / Failed / Blocked / Not run --> | <!-- command; N/A if not attempted --> | <!-- exit code, log or output; reason and alternative coverage if blocked --> |
+
+Historical evidence (if used): <!-- original revision/environment + command/evidence reference;
+explicitly state that it was not rerun for this change; otherwise N/A -->
 
 ## Validation skipped or deferred
-- None / <!-- skipped check and reason -->
+- None / <!-- each Blocked or Not run check, concrete reason, alternative coverage and remaining work -->
 
 ## Notes / implementation details
 - <!-- optional -->

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -48,11 +49,16 @@ def source_identity() -> dict:
                     "Distribution checkout is dirty; refusing to trust frozen provenance"
                 )
         else:
-            actual = {
-                path.relative_to(ROOT).as_posix()
-                for path in ROOT.rglob("*")
-                if path.is_file() or path.is_symlink()
-            }
+            actual = set()
+            for directory, dirs, files in os.walk(ROOT, followlinks=False):
+                parent = Path(directory)
+                dirs[:] = [name for name in dirs if name != "__pycache__"]
+                actual.update((parent / name).relative_to(ROOT).as_posix() for name in files)
+                actual.update(
+                    (parent / name).relative_to(ROOT).as_posix()
+                    for name in dirs
+                    if (parent / name).is_symlink()
+                )
             if actual != expected:
                 raise ValueError("Extracted distribution inventory differs from provenance")
         return identity

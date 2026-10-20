@@ -96,6 +96,21 @@ def test_distribution_source_identity_accepts_extracted_candidate(candidate, mon
     assert identity["files"]
 
 
+def test_distribution_source_identity_ignores_python_cache_in_extracted_candidate(
+    candidate, monkeypatch
+):
+    from docker import distribution
+
+    cache = candidate / "src/common/__pycache__"
+    cache.mkdir()
+    (cache / "local.cpython-312.pyc").write_bytes(b"runtime cache")
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+
+    identity = distribution.source_identity()
+
+    assert identity["files"]
+
+
 def test_distribution_source_identity_rejects_unexpected_extracted_file(candidate, monkeypatch):
     from docker import distribution
 

@@ -135,6 +135,8 @@ def validate_distribution_provenance(workspace: Path) -> dict | None:
         manifest = json.loads((workspace / MANIFEST_NAME).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"cannot read distribution identity metadata: {exc}") from exc
+    if not isinstance(provenance, dict) or not isinstance(manifest, dict):
+        raise ValueError("distribution identity metadata must be JSON objects")
     if provenance.get("schema_version") != 1:
         raise ValueError("unsupported distribution provenance schema")
     if not isinstance(provenance.get("source_commit"), str) or not re.fullmatch(

@@ -101,6 +101,35 @@ def test_preflight_rejects_tampered_distribution_provenance(tmp_path: Path, caps
     assert "distribution provenance is invalid" in captured.err
 
 
+@pytest.mark.parametrize(
+    ("provenance", "manifest"),
+    [
+        ("[]\n", "{}\n"),
+        ("{}\n", "[]\n"),
+    ],
+)
+def test_preflight_reports_non_object_distribution_metadata(
+    tmp_path: Path, capsys, provenance: str, manifest: str
+) -> None:
+    runtime_contract = _load_runtime_contract_module()
+    workspace = tmp_path / "workspace"
+    (workspace / "docs").mkdir(parents=True)
+    (workspace / "DISTRIBUTION_PROVENANCE.json").write_text(provenance, encoding="utf-8")
+    (workspace / "docs/MINIMAL_MAINLINE_SURFACE.json").write_text(manifest, encoding="utf-8")
+    expected_runtime = tmp_path / "runtime.txt"
+    expected_runtime.write_text("\n", encoding="utf-8")
+
+    status = runtime_contract.run_preflight(
+        workspace,
+        tmp_path / "unused-config.yaml",
+        expected_runtime,
+    )
+
+    captured = capsys.readouterr()
+    assert status == 2
+    assert "distribution identity metadata must be JSON objects" in captured.err
+
+
 def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_steps(
     tmp_path: Path,
 ) -> None:

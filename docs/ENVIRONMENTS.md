@@ -202,14 +202,15 @@ Before environment-sensitive validation, choose the execution environment from c
    present, otherwise `PYTHON` (default `python3`); it does not route into Docker automatically.
 2. Confirm the selected interpreter has the required tools/dependencies. Do not launch host
    pytest just because a host Python exists. When pytest is available only in Docker, use the
-   [persistent validation container](#persistent-pytest-capable-pipeline-container) and its
-   `/opt/venv_pipeline/bin/python`. The production image alone does not include pytest.
-3. Confirm the container's actual image and bind mounts with `docker inspect <container>`.
-   `/workspace` must point to the active worktree being tested, not another checkout. An
-   existing container does not switch mounts when the host working directory changes. If
-   the mount differs, use a separate development container for this worktree following the
-   setup below with a unique name; preserve existing containers. Check compatibility using
-   the documented resolver before reusing an image/container.
+   [local validation environment map](dev/LOCAL_VALIDATION.md#available-environments) to select
+   Python/pytest or Node/Playwright execution and continue the check there. The production
+   image alone does not include pytest; the Python validation container does not include Node.
+3. Use the [standard worktree layout](dev/LOCAL_VALIDATION.md#worktree-and-mount-contract).
+   Inspect the actual bind mounts with `docker inspect <container>`. With the manager checkout
+   mounted at `/workspace`, run issue checks at `/workspace/.worktrees/issue<N>` with matching
+   `PYTHONPATH`; `/workspace` itself is the manager checkout. A container mounted directly from
+   an isolated candidate instead uses `/workspace`. Never infer the tested source from host cwd.
+   Verify image compatibility against the active issue worktree before pipeline use.
 4. Check output-directory and existing log-file permissions for the executing user before
    launch. Host and container users may differ. In particular, `make test-fast` redirects to
    `artifacts/test_fast.log`; a root-owned existing file can block it before pytest starts.
@@ -339,6 +340,15 @@ on an ad-hoc checkout-local model path.
 For repeated pipeline evaluation that also needs repository pytest, use a named persistent
 container based on `pdfscore_pipeline_gpu`. The production runtime intentionally does not
 include pytest; do not weaken or rewrite repository pytest coverage for that reason.
+
+The shared development container mounts the **manager checkout** at `/workspace`; run the
+creation block below from that checkout. Issue worktrees below `.worktrees/` are then visible
+without recreating the container or reinstalling tools. Use the
+[worktree commands](dev/LOCAL_VALIDATION.md#python-validation-from-an-issue-worktree) for issue
+validation; the `/workspace` commands below apply only to the manager checkout. A dedicated
+container mounted directly from a candidate is an explicit exception, not a shared mount.
+Node/browser validation uses the separate environment documented in
+[LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md#browser-validation).
 
 Create the container when absent. Resolve the production tag to a verified immutable image,
 and mount the registered external OMR-DLN weight so this container can run pipeline checks:

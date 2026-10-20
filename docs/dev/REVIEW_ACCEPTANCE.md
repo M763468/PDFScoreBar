@@ -44,6 +44,10 @@ Browser workflow and local focused tests complement these API and artifact gates
 
 ### Browser workflow
 
+Use the prepared [browser validation environment](LOCAL_VALIDATION.md#browser-validation)
+when the Python container lacks Node/Playwright. It includes the explicit Chromium path and
+network/mount setup; continue the check there rather than asking for a user rerun.
+
 With an installed Playwright module and Chromium, open a fresh writable copied package using
 `tools.review_correction.server`, then run:
 

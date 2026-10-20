@@ -21,8 +21,9 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
    ```bash
    cd /home/masaki_muramatsu/ws_PDFScoreBar
    git fetch origin
-   git worktree add ../ws_PDFScoreBar_issue173 -b issue-173-codex-local-automation origin/develop
-   cd ../ws_PDFScoreBar_issue173
+   mkdir -p .worktrees
+   git worktree add .worktrees/issue173 -b issue-173-codex-local-automation origin/develop
+   cd .worktrees/issue173
    ```
 
 3. If local-only assets are needed, link them into the worktree:
@@ -32,11 +33,10 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
    ```
 
 4. Implement changes using the usual repository commands. The automation scripts are optional.
-5. Run the lightest relevant validation first:
-
-   ```bash
-   make test-fast
-   ```
+5. Select the execution environment and run the lightest relevant validation using
+   [Local validation](LOCAL_VALIDATION.md). Use the existing Python container for pytest,
+   and the browser image for Node/Playwright. Missing host tools are not a reason to hand
+   the check back to the user. Docs-only changes need the static checks in Validation Policy.
 
 6. For pipeline or GPU-sensitive changes, run:
 
@@ -105,7 +105,8 @@ Web-based edits are acceptable for small docs or code changes, but they do not h
 
 1. Pull the branch into a dedicated local worktree.
 2. Inspect the diff locally.
-3. Run `make test-fast` or stronger validation as required by `docs/dev/VALIDATION_POLICY.md`.
+3. Run the checks required by `docs/dev/VALIDATION_POLICY.md` in the environment selected
+   through `docs/dev/LOCAL_VALIDATION.md`. Do not assume host pytest or Node is available.
 4. Post local validation results to the PR.
 
 ## Safety Boundaries

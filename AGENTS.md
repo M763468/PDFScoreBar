@@ -33,6 +33,9 @@ container state, run tags, and issue handoff notes do not belong here.
   opens a PR to `develop`; `main` is the stable/release branch. See `docs/BRANCH_POLICY.md` when
   creating or changing branches or PRs.
 - Use a topic branch. Do not merge to `develop` or `main` automatically.
+- Create normal issue worktrees at `<manager-checkout>/.worktrees/issue<N>` (add a purpose
+  suffix for parallel work on the same Issue). Follow `docs/dev/LOCAL_VALIDATION.md` for
+  layout, container paths, and tool selection; do not alternate between `/tmp` and siblings.
 - An Issue is useful when the task is Issue-driven, but repository maintenance does not require
   inventing an Issue solely to satisfy an agent workflow.
 - When creating a PR, follow `.github/pull_request_template.md`. Use `N/A` for Related Issue when
@@ -79,6 +82,9 @@ container state, run tags, and issue handoff notes do not belong here.
   attempt; identify the tested commit/diff and command. Keep historical results separate.
 - Before environment-sensitive checks, use the execution preflight in `docs/ENVIRONMENTS.md`
   to confirm the interpreter/tools, active checkout mount, writable output, and execution permissions.
+- Use the available validation environments in `docs/dev/LOCAL_VALIDATION.md` and continue
+  authorized checks there when the host lacks a tool. Do not stop at "not installed" or ask
+  the user to rerun in Docker when the documented environment is available.
 
 ## 6. Evaluation and experiment invariants
 

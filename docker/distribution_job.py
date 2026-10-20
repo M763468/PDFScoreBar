@@ -116,7 +116,10 @@ def main() -> int:
             config_overrides=overrides,
         )
     )
-    output = args.output / result.job_id
+    output_root = args.output.resolve()
+    output = output_root / result.job_id
+    if output.is_symlink() or output.resolve().parent != output_root:
+        raise ValueError("Job result directory must stay inside the output root")
     if result.status in {JobStatus.SUCCEEDED, JobStatus.REVIEW_REQUIRED}:
         sha = prepare_local_review(output)
         result = replace(
@@ -128,9 +131,9 @@ def main() -> int:
                 for artifact in result.artifacts
             ),
         )
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "result.json").write_text(result.to_json() + "\n", encoding="utf-8")
     print(result.to_json(include_debug_context=True))
-    if output.is_dir():
-        (output / "result.json").write_text(result.to_json() + "\n", encoding="utf-8")
     return 0 if result.status in {JobStatus.SUCCEEDED, JobStatus.REVIEW_REQUIRED} else 1
 
 

@@ -250,7 +250,9 @@ def validate_manual_correction_handoff(
         normalized_page["page_id"] = page_id
         normalized_page["page_number"] = page_number
         normalized_page["gui_page_index_zero_based"] = page_number - 1
-        normalized_page["source_page_number_one_based"] = page_number
+        normalized_page["source_page_number_one_based"] = _as_page_number(
+            page.get("source_page_number", page_number), page_id=page_id
+        )
 
         for field in (
             "source_image",

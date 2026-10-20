@@ -129,15 +129,26 @@ def _resolve_run_artifact(
 
 
 def _page_number_from_manifest(page: dict[str, Any], *, page_id: str) -> int:
+    """Return the physical PDF page, independently of its selected-list position."""
+    source = page.get("source_reference")
+    if isinstance(source, dict) and "source_page" in source:
+        source_page = source["source_page"]
+        if isinstance(source_page, bool) or not isinstance(source_page, int) or source_page < 0:
+            raise ManualCorrectionMaterializerError(
+                f"{page_id}: source_reference.source_page must be a non-negative integer"
+            )
+        return source_page + 1
+
+    match = re.search(r"(\d+)$", page_id)
+    if match:
+        return int(match.group(1))
+
     status = page.get("status")
     if isinstance(status, dict):
         page_index = status.get("page_index")
         if isinstance(page_index, int) and page_index >= 1:
             return page_index
 
-    match = re.search(r"(\d+)$", page_id)
-    if match:
-        return int(match.group(1))
     raise ManualCorrectionMaterializerError(f"{page_id}: cannot determine one-based page number")
 
 
@@ -330,7 +341,12 @@ def materialize_manual_correction_review_package(
     handoff_pages: list[dict[str, Any]] = []
     for page in selected_pages:
         page_id = str(page["page_id"])
-        page_number = _page_number_from_manifest(page, page_id=page_id)
+        source_page_number = _page_number_from_manifest(page, page_id=page_id)
+        # Keep the established correction sequence independent of the physical label.
+        status = page.get("status")
+        page_number = status.get("page_index") if isinstance(status, dict) else None
+        if isinstance(page_number, bool) or not isinstance(page_number, int) or page_number < 1:
+            page_number = source_page_number
 
         image_source = _resolve_run_artifact(
             page.get("image_path"),
@@ -393,6 +409,7 @@ def materialize_manual_correction_review_package(
         handoff_page = {
             "page_id": page_id,
             "page_number": page_number,
+            "source_page_number": source_page_number,
             "source_image": f"pages/{page_id}/source.png",
             "numbering_final": f"pages/{page_id}/numbering_final.json",
             "barlines_review": f"pages/{page_id}/barlines_review.json",

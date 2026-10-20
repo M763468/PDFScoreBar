@@ -92,6 +92,20 @@ def _setup_final_output_fixture(tmp_path: Path, *, output_name: str = "Corrected
     return handoff_path, corrected_run
 
 
+def test_final_pdf_summary_uses_physical_page_without_changing_correction_numbering(tmp_path):
+    handoff, corrected_run = _setup_final_output_fixture(tmp_path)
+    payload = json.loads(handoff.read_text())
+    payload["pages"][0]["source_page_number"] = 3
+    _write_json(handoff, payload)
+    summary = materialize_corrected_final_outputs(
+        handoff_path=handoff, corrected_run_dir=corrected_run
+    )
+    assert summary["pages"][0]["page_number"] == 3
+    assert summary["pages"][0]["row_labels"][0]["page_number"] == 3
+    assert summary["pages"][0]["row_labels"][0]["row_start_measure_number"] == 42
+    assert json.loads(handoff.read_text())["pages"][0]["page_number"] == 1
+
+
 def test_materialize_corrected_final_outputs_creates_clean_pdf_and_review_summary(tmp_path):
     handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
 

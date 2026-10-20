@@ -114,7 +114,7 @@ def preview_numbering(handoff_path: str | Path) -> dict:
             preview_pages.append(
                 {
                     "page": page_number - 1,
-                    "page_number": page_number,
+                    "page_number": page["source_page_number_one_based"],
                     "page_id": page_id,
                     "systems": systems,
                 }

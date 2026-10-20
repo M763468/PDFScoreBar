@@ -314,6 +314,52 @@ def test_release_launcher_uses_pinned_image_and_isolated_paths(tmp_path, monkeyp
     assert "-m" in calls[1] and "docker.distribution_job" in calls[1]
     assert "--expected-fingerprint-value" in calls[0]
 
+    # A later review uses the same external output without dirtying the distribution.
+    handoff = tmp_path / "output/job-one/review/manual_correction_input.json"
+    handoff.parent.mkdir(parents=True)
+    handoff.write_text("{}")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "distribution.py",
+            "review",
+            "--output",
+            str(tmp_path / "output"),
+            "--handoff",
+            str(handoff),
+        ],
+    )
+    assert distribution.main() == 0
+    assert "tools.review_correction.server" in calls[-1]
+    assert "--prepare-review" in calls[-2]
+
+
+@pytest.mark.parametrize("git_checkout", [False, True])
+@pytest.mark.parametrize("command", ["run", "review"])
+@pytest.mark.parametrize("location", ["root", "child", "symlink"])
+def test_launcher_rejects_internal_output_before_identity_or_docker(
+    candidate, tmp_path, monkeypatch, git_checkout, command, location
+):
+    from docker import distribution
+
+    if git_checkout:
+        _init_candidate_git(candidate)
+    output = candidate if location == "root" else candidate / "results"
+    if location == "symlink":
+        alias = tmp_path / "alias"
+        alias.symlink_to(candidate, target_is_directory=True)
+        output = alias / "results"
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+    monkeypatch.setattr(
+        distribution, "source_identity", lambda: pytest.fail("must reject output before identity")
+    )
+    args = ["distribution.py", command, "--output", str(output)]
+    args += [str(tmp_path / "source.pdf")] if command == "run" else ["--handoff", "unused.json"]
+    monkeypatch.setattr("sys.argv", args)
+    with pytest.raises(ValueError, match="outside the distribution root"):
+        distribution.main()
+    assert not (candidate / "results").exists()
+
 
 def test_local_review_bridge_preserves_original_and_rebinds_paths(tmp_path):
     import hashlib
@@ -355,6 +401,78 @@ def test_local_review_bridge_preserves_original_and_rebinds_paths(tmp_path):
         "local_manifest.json"
     )
     assert prepare_local_review(package) == digest
+
+
+@pytest.mark.parametrize(
+    ("case", "error_code"),
+    [
+        ("invalid", "input_pdf_invalid"),
+        ("encrypted", "input_pdf_encrypted"),
+        ("pages", "request_page_out_of_range"),
+    ],
+)
+def test_local_job_persists_early_pdf_failure(tmp_path, monkeypatch, capsys, case, error_code):
+    import fitz
+
+    from docker import distribution_job
+    from src.pipeline.engine_executor import PipelineJobExecutor
+
+    pdf = tmp_path / "source.pdf"
+    if case == "invalid":
+        pdf.write_bytes(b"not a PDF")
+    else:
+        document = fitz.open()
+        document.new_page()
+        options = (
+            {"encryption": fitz.PDF_ENCRYPT_AES_256, "owner_pw": "owner", "user_pw": "secret"}
+            if case == "encrypted"
+            else {}
+        )
+        document.save(pdf, **options)
+        document.close()
+    output = tmp_path / "new-results"
+    monkeypatch.setattr(
+        distribution_job,
+        "PipelineJobExecutor",
+        lambda **kwargs: PipelineJobExecutor(
+            **kwargs,
+            job_id_factory=lambda: "job-early-failure",
+            pipeline_runner=lambda *args, **kwargs: pytest.fail("input must fail before inference"),
+        ),
+    )
+    args = ["distribution_job", str(pdf), "--output", str(output)]
+    if case == "pages":
+        args += ["--pages", "3"]
+    monkeypatch.setattr("sys.argv", args)
+    assert distribution_job.main() == 1
+    persisted = json.loads((output / "job-early-failure/result.json").read_text())
+    printed = json.loads(capsys.readouterr().out)
+    assert persisted["status"] == printed["status"] == "failed"
+    assert persisted["failure"]["code"] == printed["failure"]["code"] == error_code
+    assert "debug_context" not in persisted["failure"]
+    assert not (output / "job-early-failure/.engine-work").exists()
+
+
+def test_local_job_does_not_persist_result_through_job_directory_symlink(tmp_path, monkeypatch):
+    from docker import distribution_job
+    from src.pipeline.engine_executor import PipelineJobExecutor
+
+    output = tmp_path / "results"
+    output.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (output / "job-fixed").symlink_to(outside, target_is_directory=True)
+    pdf = tmp_path / "invalid.pdf"
+    pdf.write_bytes(b"not a PDF")
+    monkeypatch.setattr(
+        distribution_job,
+        "PipelineJobExecutor",
+        lambda **kwargs: PipelineJobExecutor(**kwargs, job_id_factory=lambda: "job-fixed"),
+    )
+    monkeypatch.setattr("sys.argv", ["distribution_job", str(pdf), "--output", str(output)])
+    with pytest.raises(ValueError, match="inside the output root"):
+        distribution_job.main()
+    assert not (outside / "result.json").exists()
 
 
 def test_canonical_direct_run_discovers_established_external_images(tmp_path, monkeypatch):

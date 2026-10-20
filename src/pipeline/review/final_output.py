@@ -460,7 +460,7 @@ def materialize_corrected_final_outputs(
             page_id = page.get("page_id")
             if not isinstance(page_id, str) or not page_id:
                 raise CorrectedFinalOutputError(f"pages[{index}].page_id is required")
-            page_number_raw = page.get("page_number", index + 1)
+            page_number_raw = page.get("source_page_number", page.get("page_number", index + 1))
             try:
                 page_number = int(page_number_raw)
             except (TypeError, ValueError) as exc:

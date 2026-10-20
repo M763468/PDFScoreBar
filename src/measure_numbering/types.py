@@ -1,11 +1,10 @@
+"""Measure numbering data records and their JSON serialization contract."""
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional, Tuple
 
 
-# Simple Bounding Box type: (x1, y1, x2, y2)
-# Using a class for clarity, or just a tuple. Let's use a simple alias for now,
-# but a dataclass is better for type safety and methods later.
 @dataclass(unsafe_hash=True)
 class BBox:
     x1: int
@@ -66,8 +65,6 @@ class Measure:
     bbox: BBox  # The bounding region of the measure on the staff
     attribute: Optional[MeasureAttribute] = None
 
-    # We might want to link to the Staff it belongs to, but let's keep it simple tree for now.
-
 
 @dataclass
 class Staff:
@@ -82,6 +79,11 @@ class Staff:
     system_index: Optional[int] = None  # Explicit index from upstream (homr)
     bracket_group: Optional[int] = None  # ID of the bracket this staff belongs to
 
+    # Staff-line spacing in the same coordinate frame as bbox/barlines.
+    # Kept after the legacy fields so positional construction remains compatible.
+    # Production extraction populates this from the staff mask when available.
+    unit_size: Optional[float] = None
+
 
 @dataclass
 class System:
@@ -92,9 +94,6 @@ class System:
 
     staves: List[Staff] = field(default_factory=list)
     measures: List[Measure] = field(default_factory=list)
-    # Note: Measures here might be "System Measures" which aggregate staff-measures,
-    # or we might just track the logical measure sequence.
-    # For numbering, we primarily care about the sequence of measures.
 
 
 @dataclass
@@ -108,3 +107,48 @@ class Page:
 @dataclass
 class Score:
     pages: List[Page] = field(default_factory=list)
+
+
+def _serialize_staves(staves):
+    return [
+        {"bbox": [staff.bbox.x1, staff.bbox.y1, staff.bbox.x2, staff.bbox.y2]} for staff in staves
+    ]
+
+
+def _serialize_measure(measure):
+    return {
+        "number": measure.number,
+        "bbox": [measure.bbox.x1, measure.bbox.y1, measure.bbox.x2, measure.bbox.y2],
+    }
+
+
+def score_to_dict(score) -> dict:
+    """Convert a Score object tree into the numbering JSON contract.
+
+    ``systems`` contains only systems with measures, in Page.systems order.
+    Its zero-based compact index is the identity used by MMR/manual overrides
+    and movement boundaries. Empty systems have no address in that namespace.
+    """
+    data = {"pages": []}
+    for page in score.pages:
+        page_data = {
+            "page_number": page.page_number,
+            "width": page.width,
+            "height": page.height,
+            "systems": [],
+            "empty_systems": [],
+        }
+        for system in page.systems:
+            staves = _serialize_staves(system.staves)
+            if not system.measures:
+                page_data["empty_systems"].append({"staves": staves, "reason": "no_measures"})
+                continue
+
+            page_data["systems"].append(
+                {
+                    "staves": staves,
+                    "measures": [_serialize_measure(measure) for measure in system.measures],
+                }
+            )
+        data["pages"].append(page_data)
+    return data

@@ -5,14 +5,12 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Callable, List, Optional, Sequence
 
 import cv2
 import fitz  # PyMuPDF
 import numpy as np
 
-DEFAULT_PDF = Path("data/training/pdfs/IMSLP19910-PMLP01607-Beethoven_Symphony_9_V1.pdf")
-DEFAULT_OUTPUT = Path("data/training/images")
 INTERPOLATION_MAP = {
     "nearest": cv2.INTER_NEAREST,
     "linear": cv2.INTER_LINEAR,
@@ -31,13 +29,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--pdf",
         type=Path,
-        default=DEFAULT_PDF,
+        required=True,
         help="Path to the PDF file to convert",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=DEFAULT_OUTPUT,
+        required=True,
         help="Directory where rendered images will be written",
     )
     parser.add_argument(
@@ -138,9 +136,11 @@ def resize_image(
         return image
     height, width = image.shape[:2]
     if target_width is None:
+        assert target_height is not None
         scale = target_height / height
         target_width = max(1, int(round(width * scale)))
     if target_height is None:
+        assert target_width is not None
         scale = target_width / width
         target_height = max(1, int(round(height * scale)))
     interp_flag = INTERPOLATION_MAP[interpolation]
@@ -151,6 +151,45 @@ def save_image(path: Path, image: np.ndarray, *, fmt: str) -> None:
     success = cv2.imwrite(str(path), image)
     if not success:
         raise PdfConversionError(f"Failed to write image: {path}")
+
+
+def render_pdf_to_memory(
+    pdf_path: Path,
+    *,
+    dpi: float,
+    pages: Sequence[int],
+    keep_alpha: bool = False,
+    target_width: Optional[int] = None,
+    target_height: Optional[int] = None,
+    interpolation: str = "area",
+    source_bytes: bytes | None = None,
+    on_page_rendered: Callable[[int, int], None] | None = None,
+) -> List[tuple[int, np.ndarray]]:
+    if source_bytes is None and not pdf_path.exists():
+        raise FileNotFoundError(f"PDF not found: {pdf_path}")
+
+    rendered: List[tuple[int, np.ndarray]] = []
+    document_source = (
+        fitz.open(stream=source_bytes, filetype="pdf")
+        if source_bytes is not None
+        else fitz.open(pdf_path)
+    )
+    with document_source as document:
+        for page_index in pages:
+            page = document.load_page(page_index)
+            matrix = fitz.Matrix(dpi / 72.0, dpi / 72.0)
+            pix = page.get_pixmap(matrix=matrix, alpha=keep_alpha)
+            image = pixmap_to_array(pix, keep_alpha=keep_alpha)
+            image = resize_image(
+                image,
+                target_width=target_width,
+                target_height=target_height,
+                interpolation=interpolation,
+            )
+            rendered.append((page_index, image))
+            if on_page_rendered is not None:
+                on_page_rendered(len(rendered), page_index)
+    return rendered
 
 
 def render_pdf(
@@ -167,29 +206,26 @@ def render_pdf(
     interpolation: str,
     overwrite: bool,
 ) -> List[Path]:
-    if not pdf_path.exists():
-        raise FileNotFoundError(f"PDF not found: {pdf_path}")
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    rendered_images = render_pdf_to_memory(
+        pdf_path,
+        dpi=dpi,
+        pages=pages,
+        keep_alpha=keep_alpha,
+        target_width=target_width,
+        target_height=target_height,
+        interpolation=interpolation,
+    )
+
     written: List[Path] = []
-    with fitz.open(pdf_path) as document:
-        for page_index in pages:
-            page = document.load_page(page_index)
-            matrix = fitz.Matrix(dpi / 72.0, dpi / 72.0)
-            pix = page.get_pixmap(matrix=matrix, alpha=keep_alpha)
-            image = pixmap_to_array(pix, keep_alpha=keep_alpha)
-            image = resize_image(
-                image,
-                target_width=target_width,
-                target_height=target_height,
-                interpolation=interpolation,
-            )
-            name = f"{prefix}_{page_index + 1:03d}.{fmt}"
-            destination = output_dir / name
-            if destination.exists() and not overwrite:
-                raise PdfConversionError(f"Refusing to overwrite existing file: {destination}")
-            save_image(destination, image, fmt=fmt)
-            written.append(destination)
+    for page_index, image in rendered_images:
+        name = f"{prefix}_{page_index + 1:03d}.{fmt}"
+        destination = output_dir / name
+        if destination.exists() and not overwrite:
+            raise PdfConversionError(f"Refusing to overwrite existing file: {destination}")
+        save_image(destination, image, fmt=fmt)
+        written.append(destination)
     return written
 
 

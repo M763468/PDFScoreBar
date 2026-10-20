@@ -180,6 +180,105 @@ def _append_if_staff_like(
         out.append((y1, y2))
 
 
+def resolve_x_domains(
+    *,
+    mode: str,
+    bands: Sequence[Tuple[int, int]],
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    image_width: int,
+    pad: int = 0,
+) -> List[Tuple[int, int]]:
+    """Resolve a fail-open horizontal probe domain for each staff/row band."""
+    if image_width <= 0:
+        return []
+
+    full_width = (0, image_width - 1)
+    if mode == "full_width":
+        return [full_width for _ in bands]
+    if mode not in {"staff_mask", "existing_boxes", "staff_mask_or_existing_boxes"}:
+        raise ValueError(
+            "scan_x_domain_mode must be one of "
+            "'full_width', 'staff_mask', 'existing_boxes', or 'staff_mask_or_existing_boxes'"
+        )
+
+    pad_px = max(0, int(pad))
+    mask_h = int(staff_mask.shape[0]) if staff_mask.ndim >= 2 else 0
+    domains: List[Tuple[int, int]] = []
+
+    for y1, y2 in bands:
+        span: Tuple[int, int] | None = None
+
+        if mode in {"staff_mask", "staff_mask_or_existing_boxes"} and mask_h > 0:
+            y_lo = max(0, min(mask_h - 1, int(min(y1, y2))))
+            y_hi = max(0, min(mask_h - 1, int(max(y1, y2))))
+            if y_hi >= y_lo:
+                band_mask = staff_mask[y_lo : y_hi + 1, :]
+                xs = np.where(band_mask.sum(axis=0) > 0)[0]
+                if xs.size > 0:
+                    span = (int(xs.min()), int(xs.max()))
+
+        if span is None and mode in {"existing_boxes", "staff_mask_or_existing_boxes"}:
+            band_xs: List[int] = []
+            for bx1, by1, bx2, by2 in existing_boxes:
+                cy = (by1 + by2) / 2.0
+                if min(y1, y2) <= cy <= max(y1, y2):
+                    band_xs.extend((int(min(bx1, bx2)), int(max(bx1, bx2))))
+            if band_xs:
+                span = (min(band_xs), max(band_xs))
+
+        if span is None:
+            domains.append(full_width)
+            continue
+
+        x1 = max(0, min(image_width - 1, int(span[0]) - pad_px))
+        x2 = max(0, min(image_width - 1, int(span[1]) + pad_px))
+        if x2 - x1 + 1 < 3:
+            domains.append(full_width)
+        else:
+            domains.append((x1, x2))
+
+    return domains
+
+
+def compute_domain_ratios(
+    band_img: np.ndarray,
+    *,
+    kernel: np.ndarray,
+    width: int,
+    image_width: int,
+    x_domain: Tuple[int, int],
+) -> tuple[np.ndarray, int]:
+    """Compute global-indexed probe ratios while projecting only the X domain plus halo."""
+    if image_width <= 0:
+        return np.zeros(0, dtype=np.float64), 0
+
+    x1 = max(0, min(image_width - 1, int(x_domain[0])))
+    x2 = max(0, min(image_width - 1, int(x_domain[1])))
+    if x2 < x1:
+        x1, x2 = 0, image_width - 1
+
+    band_h = max(1, int(band_img.shape[0]))
+    denominator = float(band_h * width)
+
+    if x1 == 0 and x2 == image_width - 1:
+        col_sums = band_img.sum(axis=0)
+        stripe_sums = np.convolve(col_sums, kernel, mode="same")
+        return stripe_sums / denominator, image_width
+
+    halo = max(1, int(len(kernel)))
+    ext_x1 = max(0, x1 - halo)
+    ext_x2 = min(image_width - 1, x2 + halo)
+    local_col_sums = band_img[:, ext_x1 : ext_x2 + 1].sum(axis=0)
+    local_stripe_sums = np.convolve(local_col_sums, kernel, mode="same")
+
+    local_start = x1 - ext_x1
+    local_stop = local_start + (x2 - x1 + 1)
+    ratios = np.zeros(image_width, dtype=np.float64)
+    ratios[x1 : x2 + 1] = local_stripe_sums[local_start:local_stop] / denominator
+    return ratios, ext_x2 - ext_x1 + 1
+
+
 def scan_staff_band_from_ink(
     ink: np.ndarray,
     x_center: int,
@@ -268,6 +367,7 @@ def build_divisi_map(
     image_h: int,
     global_height: int,
     config: DivisiRescueConfig,
+    x_domains: Sequence[Tuple[int, int]] | None = None,
 ) -> Dict[int, Dict[str, bool]]:
     divisi_map: Dict[int, Dict[str, bool]] = {}
     if not config.enabled or len(bands) <= 1:
@@ -326,9 +426,16 @@ def build_divisi_map(
         if band_img.size == 0:
             continue
 
-        col_sums = band_img.sum(axis=0)
-        stripe_sums = np.convolve(col_sums, kernel, mode="same")
-        ratios = stripe_sums / float(max(1, band_y2 - band_y1 + 1) * width)
+        x_domain = (
+            x_domains[i] if x_domains is not None and i < len(x_domains) else (0, ink.shape[1] - 1)
+        )
+        ratios, _ = compute_domain_ratios(
+            band_img,
+            kernel=kernel,
+            width=width,
+            image_width=ink.shape[1],
+            x_domain=x_domain,
+        )
 
         divisi_min_ratio = config.min_ratio
         if ratios.size < 3:
@@ -338,6 +445,8 @@ def build_divisi_map(
             & (ratios >= np.roll(ratios, 1))
             & (ratios >= np.roll(ratios, -1))
         )[0]
+        x1, x2 = x_domain
+        peak_indices = peak_indices[(peak_indices >= x1) & (peak_indices <= x2)]
         for px in peak_indices:
             band_xs[i].append(float(px))
 

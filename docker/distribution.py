@@ -27,21 +27,34 @@ def source_identity() -> dict:
     provenance = ROOT / "DISTRIBUTION_PROVENANCE.json"
     if provenance.is_file():
         identity = validate_distribution_provenance(ROOT)
-        git_root = subprocess.check_output(
-            ["git", "-C", str(ROOT), "rev-parse", "--show-toplevel"], text=True
-        ).strip()
-        if Path(git_root).resolve() != ROOT.resolve():
-            raise ValueError("Distribution provenance must be checked at the checkout root")
-        tracked = subprocess.check_output(["git", "-C", str(ROOT), "ls-files", "-z"]).split(b"\0")
         expected = set(identity["files"]) | {"DISTRIBUTION_PROVENANCE.json"}
-        if {item.decode("utf-8") for item in tracked if item} != expected:
-            raise ValueError("Tracked checkout inventory differs from distribution provenance")
-        status = subprocess.check_output(
-            ["git", "-C", str(ROOT), "status", "--porcelain", "--untracked-files=all"],
-            text=True,
-        )
-        if status:
-            raise ValueError("Distribution checkout is dirty; refusing to trust frozen provenance")
+        if (ROOT / ".git").exists():
+            git_root = subprocess.check_output(
+                ["git", "-C", str(ROOT), "rev-parse", "--show-toplevel"], text=True
+            ).strip()
+            if Path(git_root).resolve() != ROOT.resolve():
+                raise ValueError("Distribution provenance must be checked at the checkout root")
+            tracked = subprocess.check_output(["git", "-C", str(ROOT), "ls-files", "-z"]).split(
+                b"\0"
+            )
+            if {item.decode("utf-8") for item in tracked if item} != expected:
+                raise ValueError("Tracked checkout inventory differs from distribution provenance")
+            status = subprocess.check_output(
+                ["git", "-C", str(ROOT), "status", "--porcelain", "--untracked-files=all"],
+                text=True,
+            )
+            if status:
+                raise ValueError(
+                    "Distribution checkout is dirty; refusing to trust frozen provenance"
+                )
+        else:
+            actual = {
+                path.relative_to(ROOT).as_posix()
+                for path in ROOT.rglob("*")
+                if path.is_file() or path.is_symlink()
+            }
+            if actual != expected:
+                raise ValueError("Extracted distribution inventory differs from provenance")
         return identity
     return {
         "source_commit": capture(["git", "rev-parse", "HEAD"]),

@@ -86,6 +86,26 @@ def test_distribution_source_identity_verifies_complete_provenance(candidate, mo
     )
 
 
+def test_distribution_source_identity_accepts_extracted_candidate(candidate, monkeypatch):
+    from docker import distribution
+
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+
+    identity = distribution.source_identity()
+
+    assert identity["files"]
+
+
+def test_distribution_source_identity_rejects_unexpected_extracted_file(candidate, monkeypatch):
+    from docker import distribution
+
+    (candidate / "unlisted.txt").write_text("not part of this release\n")
+    monkeypatch.setattr(distribution, "ROOT", candidate)
+
+    with pytest.raises(ValueError, match="Extracted distribution inventory differs"):
+        distribution.source_identity()
+
+
 @pytest.mark.parametrize(
     "path",
     [

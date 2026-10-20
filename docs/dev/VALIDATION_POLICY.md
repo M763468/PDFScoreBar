@@ -76,7 +76,7 @@ with the active worktree mounted there.
 | Check | Current status | Command / evidence |
 | --- | --- | --- |
 | Focused pytest | Passed | `docker exec -w /workspace -e PYTHONPATH=/workspace <container> /opt/venv_pipeline/bin/python -m pytest tests/test_python_env.py`; exit 0, `<run>/pytest.log`. |
-| Fast tests | Blocked | Attempted: `docker exec -w /workspace <container> make test-fast PYTHON=/opt/venv_pipeline/bin/python`; exit 2, `artifacts/test_fast.log: Permission denied` before pytest started. A retry should read `FAST_TESTS` from Makefile and run `docker exec -w /workspace -e PYTHONPATH=/workspace <container> /opt/venv_pipeline/bin/python -m pytest $fast_tests`, which pins the container interpreter. Focused pytest above covers only its selected module. |
+| Fast tests | Blocked | Attempted: `docker exec -w /workspace <container> make test-fast PYTHON=/opt/venv_pipeline/bin/python`; exit 2, `artifacts/test_fast.log: Permission denied` before pytest started. For a self-contained retry that pins the container interpreter, follow [LOCAL_VALIDATION.md](LOCAL_VALIDATION.md#python-validation-from-an-issue-worktree): `mapfile -t fast_tests < <(sed -n 's/^FAST_TESTS ?= //p' Makefile | tr ' ' '\n') && docker exec -w /workspace -e PYTHONPATH=/workspace <container> /opt/venv_pipeline/bin/python -m pytest "${fast_tests[@]}"`. Focused pytest above covers only its selected module. |
 | GPU smoke | Not run | Docs-only change; no runtime behavior changed. |
 
 Historical evidence: fast tests passed on `<older-sha>` in `<other-environment>`

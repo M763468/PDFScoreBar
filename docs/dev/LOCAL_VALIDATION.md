@@ -37,10 +37,13 @@ suffix for simultaneous worktrees on the same Issue. Create topic branches from 
 
 ```bash
 # Run from the manager checkout, e.g. /home/masaki_muramatsu/ws_PDFScoreBar.
+# Replace <N> (and the branch prefix if needed) for the active Issue.
+issue_id="issue<N>"
+branch_name="fix/${issue_id}"
 git fetch origin develop
 mkdir -p .worktrees
-git worktree add -b fix/issue435 .worktrees/issue435 origin/develop
-cd .worktrees/issue435
+git worktree add -b "$branch_name" ".worktrees/$issue_id" origin/develop
+cd ".worktrees/$issue_id"
 ```
 
 Use an unused path/branch; resume an existing worktree instead of recreating it. `.worktrees/`
@@ -53,7 +56,7 @@ checkout for validation; run from the selected issue worktree.
 | Host path | Shared Python container path |
 | --- | --- |
 | `<manager-checkout>` | `/workspace` |
-| `<manager-checkout>/.worktrees/issue435` | `/workspace/.worktrees/issue435` |
+| `<manager-checkout>/.worktrees/issue<N>` | `/workspace/.worktrees/issue<N>` |
 
 A bind mount of the manager directory exposes worktrees created under it later. `/tmp` and
 sibling worktrees are outside this mount and are not the normal development layout. Move an
@@ -105,7 +108,9 @@ Execute checks as the host UID/GID to avoid creating root-owned logs. Create `ar
 and the issue's evidence directory as that user; inspect any existing log's permissions.
 
 ```bash
-mkdir -p artifacts logs/issue435/validation
+issue_id="issue<N>" # set to the active Issue ID, e.g. issue173
+evidence_dir="logs/$issue_id/validation"
+mkdir -p artifacts "$evidence_dir"
 docker exec --user "$(id -u):$(id -g)" -w "$container_worktree" \
   -e PYTHONPATH="$container_worktree" pdfscore_pipeline_pytest_dev \
   /opt/venv_pipeline/bin/python -m pytest --version
@@ -135,15 +140,17 @@ worktree needs explicit mounts on the server side as described in
 [Local worktree data](local_worktree_data.md#docker-mounts).
 
 ```bash
-# Run from the host issue worktree; use the Issue/run ID for the current task.
-mkdir -p logs/issue435/validation/browser
+# Run from the host issue worktree; set issue_id/evidence_dir for the current task.
+issue_id="issue<N>" # set to the active Issue ID, e.g. issue173
+evidence_dir="$PWD/logs/$issue_id/validation/browser"
+mkdir -p "$evidence_dir"
 browser_image=$(docker image inspect mcp/playwright:latest --format '{{.Id}}')
 chromium_path=$(docker run --rm --entrypoint node "$browser_image" \
   -p 'require("/app/node_modules/playwright").chromium.executablePath()')
 docker run --rm --network container:pdfscore_pipeline_pytest_dev \
   --user "$(id -u):$(id -g)" \
   -v "$PWD":/workspace:ro \
-  -v "$PWD/logs/issue435/validation/browser":/evidence \
+  -v "$evidence_dir":/evidence \
   -w /workspace \
   -e PLAYWRIGHT_MODULE=/app/node_modules/playwright \
   -e CHROMIUM_PATH="$chromium_path" \

@@ -34,7 +34,9 @@
       const statuses = [entry.edit_status === "none" ? null : entry.edit_status, entry.recording_status]
         .filter(Boolean).map(key => statusNames[key] || (state.labels || {})[key] || key);
       const typeName = copy.types[entry.correction_type] || entry.correction_type;
-      line.textContent = `${copy.page} ${Number(entry.page) + 1} · ${typeName}: ${statuses.join(" · ")}`;
+      const pageNumber = currentPage && currentPage.source_page_number !== undefined
+        ? currentPage.source_page_number : Number(entry.page) + 1;
+      line.textContent = `${copy.page} ${pageNumber} · ${typeName}: ${statuses.join(" · ")}`;
       if (entry.error) line.textContent += ` · ${entry.error}`;
       // Errors stay visible even when routine per-type details are collapsed.
       (entry.error ? panel : details || panel).appendChild(line);

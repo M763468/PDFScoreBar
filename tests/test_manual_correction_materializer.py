@@ -84,6 +84,51 @@ def test_materializes_review_package_from_manifest_resolved_barlines(tmp_path):
     assert handoff_on_disk["pages"][0]["barlines_review_source"] == page["barlines_review_source"]
 
 
+@pytest.mark.parametrize("physical_pages", [[3], [2, 4]])
+@pytest.mark.parametrize("source_reference", [False, True])
+def test_selected_pages_keep_physical_labels_and_correction_ordinals(
+    tmp_path, physical_pages, source_reference
+):
+    manifest_pages = []
+    for ordinal, physical in enumerate(physical_pages, start=1):
+        root = _fake_run_root(tmp_path, page_id=f"page_{physical:03d}")
+        page = json.loads((root / "manifest.json").read_text())["pages"][0]
+        page["status"]["page_index"] = ordinal
+        if source_reference:
+            page["source_reference"] = {"source_page": physical - 1}
+        manifest_pages.append(page)
+    _write_json(root / "manifest.json", {"pages": manifest_pages})
+    review = tmp_path / "review"
+    handoff = materialize_manual_correction_review_package(run_root=root, review_root=review)
+    config = build_manual_gui_config(handoff, handoff_path=review / "manual_correction_input.json")
+    assert [p["page_number"] for p in handoff["pages"]] == list(range(1, len(physical_pages) + 1))
+    assert [p["source_page_number"] for p in handoff["pages"]] == physical_pages
+    assert [p["page"] for p in config["pages"]] == list(range(len(physical_pages)))
+    assert [p["source_page_number"] for p in config["pages"]] == physical_pages
+
+
+def test_source_reference_page_takes_precedence_over_image_filename(tmp_path):
+    from src.pipeline.review.manual_correction_materializer import _page_number_from_manifest
+
+    assert (
+        _page_number_from_manifest(
+            {"source_reference": {"source_page": 2}, "status": {"page_index": 1}},
+            page_id="page_900",
+        )
+        == 3
+    )
+
+
+@pytest.mark.parametrize("source_page", [-1, True, "2", None])
+def test_materializer_rejects_invalid_physical_page_reference(source_page):
+    from src.pipeline.review.manual_correction_materializer import _page_number_from_manifest
+
+    with pytest.raises(ManualCorrectionMaterializerError, match="source_reference.source_page"):
+        _page_number_from_manifest(
+            {"source_reference": {"source_page": source_page}}, page_id="page_003"
+        )
+
+
 def test_materializer_preserves_input_pdf_basename_in_handoff(tmp_path):
     run_root = _fake_run_root(tmp_path)
     manifest_path = run_root / "manifest.json"

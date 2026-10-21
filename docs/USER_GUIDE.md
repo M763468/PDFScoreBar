@@ -43,6 +43,12 @@ directory under the output root. Its `final/` directory contains the numbered PD
 records status, warnings, artifact hashes, and source provenance. Review-required status
 means the generated result needs user attention.
 
+Choose an output directory outside the distribution checkout or extracted directory,
+such as `/absolute/path/results`. The launcher rejects an output directory inside the
+distribution before creating files or starting Docker, so subsequent review can verify
+the original distribution inventory. Selected-page reviews show the original PDF page
+numbers. A failed PDF input check also saves its job's `result.json` with the error details.
+
 Numbered PDFs retain the source PDF's visible page size, including cropping and
 rotation, independently of render DPI or image resizing. Older review packages
 may lack this size information: image DPI is used when available, otherwise a

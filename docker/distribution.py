@@ -76,13 +76,20 @@ def main() -> int:
     commands.add_parser("preflight")
     run = commands.add_parser("run")
     run.add_argument("pdf", type=Path)
-    run.add_argument("--output", type=Path, required=True)
+    run.add_argument(
+        "--output", type=Path, required=True, help="Output root outside this distribution"
+    )
     run.add_argument("--pages", type=int, nargs="+")
     review = commands.add_parser("review")
     review.add_argument("--output", type=Path, required=True, help="Same output root as run")
     review.add_argument("--handoff", type=Path, required=True)
     review.add_argument("--port", type=int, default=8010)
     args = parser.parse_args()
+    output = None
+    if args.command in {"run", "review"}:
+        output = args.output.resolve()
+        if output.is_relative_to(ROOT.resolve()):
+            raise ValueError("Output directory must be outside the distribution root")
     identity = source_identity()
     commit = identity["source_commit"]
     branch = identity["source_branch"]
@@ -180,7 +187,7 @@ def main() -> int:
     )
     if status or args.command == "preflight":
         return status
-    output = args.output.resolve()
+    assert output is not None
     output.mkdir(parents=True, exist_ok=True)
     common += ["-v", f"{output}:/results"]
     if args.command == "run":

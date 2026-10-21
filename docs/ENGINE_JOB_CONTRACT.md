@@ -129,6 +129,15 @@ A `relative_path` must remain inside its returned artifact package. Absolute
 paths and `..` traversal are rejected. Internal `logs/` or implementation
 paths are therefore not required API fields.
 
+The local review handoff keeps correction addressing separate from physical PDF
+labels for selected-page jobs. Its existing one-based `page_number` continues to
+identify the page in the pipeline's correction sequence (`page_number - 1` in
+correction keys). Optional `source_page_number` identifies the original PDF page,
+derived from `source_reference.source_page + 1`, with a page-ID fallback for legacy
+manifests. The GUI, numbering preview and final-PDF summary use this physical label.
+Older handoffs without the optional field keep their existing labels and keys.
+For `--pages 2 4`, correction keys remain `0, 1` while labels are `2, 4`.
+
 ## 5. CorrectionSet and current correction semantics
 
 Corrections are engine inputs, not service/UI state. v1 preserves the current

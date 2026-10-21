@@ -36,6 +36,11 @@ details.open=true;
 context.render(state);
 assert(details.open,'polling must not close expanded details');
 assert.equal(details.children.length,1,'polling must replace rather than duplicate rows');
+    context.currentPage={source_page_number:4};
+    context.pageValue=()=>1;
+    context.render(state);
+    assert(details.children[0].textContent.includes(context.window.ReviewStrings.state.page+' 4'),
+      'selected-page status uses the physical label, not its correction key');
 """
     result = subprocess.run(
         ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20

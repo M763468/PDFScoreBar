@@ -90,6 +90,14 @@ def test_build_manual_gui_config_maps_handoff_to_current_gui_config(tmp_path):
     assert "_staging" not in json.dumps(config)
 
 
+def test_handoff_distinguishes_selected_list_keys_from_source_pdf_page(tmp_path):
+    handoff_path, handoff = _review_package(tmp_path)
+    handoff["pages"][0].update(page_number=1, source_page_number=3)
+    config = build_manual_gui_config(handoff, handoff_path=handoff_path)
+    assert config["pages"][0]["page"] == 0
+    assert config["pages"][0]["source_page_number"] == 3
+
+
 def test_handoff_base_mode_allows_missing_optional_review_evidence(tmp_path):
     handoff_path, handoff = _review_package(tmp_path, include_strict=False)
 

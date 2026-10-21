@@ -17,6 +17,7 @@ def test_numbering_preview_uses_retained_artifact_consumer_without_mutating_pack
             {
                 "page_id": "page_001",
                 "page_number": 1,
+                "source_page_number_one_based": 3,
                 "manual_outputs": {},
             }
         ]
@@ -75,7 +76,7 @@ def test_numbering_preview_uses_retained_artifact_consumer_without_mutating_pack
         "pages": [
             {
                 "page": 0,
-                "page_number": 1,
+                "page_number": 3,
                 "page_id": "page_001",
                 "systems": [
                     {"system": 0, "first_measure_number": 3, "measure_count": 2},

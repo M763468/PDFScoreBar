@@ -191,6 +191,21 @@ canonical tag to point at it. `make docker-clean` never removes runtime images. 
 removal remains explicit; use `DOCKER_IMAGE=<ref> make docker-clean-full` when intentionally
 removing a non-default tag.
 
+## Execution preflight
+
+Before an environment-sensitive check, confirm the active worktree commit/diff, selected
+interpreter or immutable image ID, actual checkout mount, executing UID/GID, writable output
+paths, and availability of Docker/`gh` permissions. Use
+[Local validation](dev/LOCAL_VALIDATION.md) to select host Python, the shared pytest
+container, the production GPU image, or a Node/Playwright browser runner. A container's name
+or a previously observed image tag does not prove its current mount or compatibility.
+
+The standard shared pytest container mounts the manager checkout at `/workspace`; issue
+worktrees beneath `.worktrees/` appear beneath `/workspace/.worktrees/`. The dedicated
+container preflight script requires a direct `/workspace` checkout and intentionally rejects
+this nested layout. Use the nested-path checks in Local validation instead. Dedicated frozen
+candidate containers mounted directly at `/workspace` remain an exception.
+
 ## Host / uv environments
 
 ### Default host checks
@@ -306,6 +321,13 @@ on an ad-hoc checkout-local model path.
 For repeated pipeline evaluation that also needs repository pytest, use a named persistent
 container based on `pdfscore_pipeline_gpu`. The production runtime intentionally does not
 include pytest; do not weaken or rewrite repository pytest coverage for that reason.
+
+Create or inspect this shared container from the manager checkout. Its `/workspace` mount
+exposes issue worktrees below `.worktrees/`; run pytest with the nested worktree path and
+matching `PYTHONPATH` using [Local validation](dev/LOCAL_VALIDATION.md#python-and-pytest).
+The commands below run against the manager checkout itself. A dedicated container mounted
+directly from an isolated candidate is an explicit exception. Browser checks use the separate
+runner described in [Local validation](dev/LOCAL_VALIDATION.md#browser-validation).
 
 Create the container when absent. Resolve the production tag to a verified immutable image,
 and mount the registered external OMR-DLN weight so this container can run pipeline checks:

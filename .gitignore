@@ -95,6 +95,9 @@ data/evaluation2/**/missing_pages.json
 # AI Agent artifacts
 artifacts/
 
+# Issue worktrees share the manager checkout mount; keep nested source out of Git.
+/.worktrees/
+
 # Graphify generated artifacts
 # Commit portable graph/report/wiki results; ignore caches and local exports.
 /graphify-out/*

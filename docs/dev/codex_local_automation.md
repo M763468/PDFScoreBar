@@ -18,11 +18,18 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
 1. Keep the existing manager clone on its current work. If it is already serving another issue, do not checkout branches or edit files there.
 2. Fetch from the manager clone, then create a dedicated issue worktree from the correct base branch. Normal issue work uses `develop`:
 
+   Set `ISSUE_ID` to the target numeric Issue number in the shell before running this block.
+
    ```bash
-   cd /home/masaki_muramatsu/ws_PDFScoreBar
-   git fetch origin
-   git worktree add ../ws_PDFScoreBar_issue173 -b issue-173-codex-local-automation origin/develop
-   cd ../ws_PDFScoreBar_issue173
+   if [[ "${ISSUE_ID:-}" =~ ^[0-9]+$ ]]; then
+     cd /home/masaki_muramatsu/ws_PDFScoreBar
+     git fetch origin
+     mkdir -p .worktrees
+     git worktree add ".worktrees/issue${ISSUE_ID}" -b "fix/issue${ISSUE_ID}" origin/develop
+     cd ".worktrees/issue${ISSUE_ID}"
+   else
+     printf 'Set ISSUE_ID to the active Issue number before running this block.\n' >&2
+   fi
    ```
 
 3. If local-only assets are needed, link them into the worktree:
@@ -32,11 +39,8 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
    ```
 
 4. Implement changes using the usual repository commands. The automation scripts are optional.
-5. Run the lightest relevant validation first:
-
-   ```bash
-   make test-fast
-   ```
+5. Select the runner and execute the lightest relevant validation using
+   [Local validation](LOCAL_VALIDATION.md). Do not assume host pytest or browser tools exist.
 
 6. For pipeline or GPU-sensitive changes, run:
 
@@ -105,7 +109,8 @@ Web-based edits are acceptable for small docs or code changes, but they do not h
 
 1. Pull the branch into a dedicated local worktree.
 2. Inspect the diff locally.
-3. Run `make test-fast` or stronger validation as required by `docs/dev/VALIDATION_POLICY.md`.
+3. Run the checks required by `docs/dev/VALIDATION_POLICY.md` in the environment selected
+   through [Local validation](LOCAL_VALIDATION.md).
 4. Post local validation results to the PR.
 
 ## Safety Boundaries

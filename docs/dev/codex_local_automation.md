@@ -18,14 +18,18 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
 1. Keep the existing manager clone on its current work. If it is already serving another issue, do not checkout branches or edit files there.
 2. Fetch from the manager clone, then create a dedicated issue worktree from the correct base branch. Normal issue work uses `develop`:
 
+   Set `ISSUE_ID` to the target numeric Issue number in the shell before running this block.
+
    ```bash
-   cd /home/masaki_muramatsu/ws_PDFScoreBar
-   git fetch origin
-   mkdir -p .worktrees
-   read -r -p 'Issue number: ' issue_id
-   [[ "$issue_id" =~ ^[0-9]+$ ]] || exit 2
-   git worktree add ".worktrees/issue${issue_id}" -b "fix/issue${issue_id}" origin/develop
-   cd ".worktrees/issue${issue_id}"
+   if [[ "${ISSUE_ID:-}" =~ ^[0-9]+$ ]]; then
+     cd /home/masaki_muramatsu/ws_PDFScoreBar
+     git fetch origin
+     mkdir -p .worktrees
+     git worktree add ".worktrees/issue${ISSUE_ID}" -b "fix/issue${ISSUE_ID}" origin/develop
+     cd ".worktrees/issue${ISSUE_ID}"
+   else
+     printf 'Set ISSUE_ID to the active Issue number before running this block.\n' >&2
+   fi
    ```
 
 3. If local-only assets are needed, link them into the worktree:

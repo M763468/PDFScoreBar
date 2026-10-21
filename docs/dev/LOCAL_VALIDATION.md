@@ -34,18 +34,21 @@ Passed, Failed, Blocked, or Not run under the [evidence rules](VALIDATION_POLICY
 ## Worktree and mount contract
 
 Keep the manager checkout on its current task. Create normal issue worktrees beneath its
-`.worktrees/` directory, from the current `origin/develop`:
+`.worktrees/` directory, from the current `origin/develop`. Set `ISSUE_ID` to the target
+numeric Issue number in the shell before running the commands; the examples do not prompt:
 
 ```bash
 # Run from the manager checkout.
-manager_root="$(git rev-parse --show-toplevel)"
-read -r -p 'Issue number: ' issue_id
-[[ "$issue_id" =~ ^[0-9]+$ ]] || exit 2
-git fetch origin develop
-mkdir -p "$manager_root/.worktrees"
-git -C "$manager_root" worktree add \
-  -b "fix/issue${issue_id}" \
-  "$manager_root/.worktrees/issue${issue_id}" origin/develop
+if [[ "${ISSUE_ID:-}" =~ ^[0-9]+$ ]]; then
+  manager_root="$(git rev-parse --show-toplevel)"
+  git fetch origin develop
+  mkdir -p "$manager_root/.worktrees"
+  git -C "$manager_root" worktree add \
+    -b "fix/issue${ISSUE_ID}" \
+    "$manager_root/.worktrees/issue${ISSUE_ID}" origin/develop
+else
+  printf 'Set ISSUE_ID to the active Issue number before running this block.\n' >&2
+fi
 ```
 
 Use an unused path and branch; resume an existing worktree instead of recreating it. Add a
@@ -59,24 +62,27 @@ The standard shared Python container mounts the manager checkout at `/workspace`
 `/workspace/.worktrees/issue<issue-id>`. Confirm the actual source and nested path before use:
 
 ```bash
-manager_root="$(git rev-parse --show-toplevel)"
-read -r -p 'Issue number: ' issue_id
-[[ "$issue_id" =~ ^[0-9]+$ ]] || exit 2
-issue_root="$manager_root/.worktrees/issue${issue_id}"
-container_issue="/workspace/.worktrees/issue${issue_id}"
-docker inspect pdfscore_pipeline_pytest_dev \
-  --format '{{.Image}} {{json .Mounts}}'
-docker exec pdfscore_pipeline_pytest_dev \
-  test -f "$container_issue/AGENTS.md"
+if [[ "${ISSUE_ID:-}" =~ ^[0-9]+$ ]]; then
+  manager_root="$(git rev-parse --show-toplevel)"
+  issue_root="$manager_root/.worktrees/issue${ISSUE_ID}"
+  container_issue="/workspace/.worktrees/issue${ISSUE_ID}"
+  docker inspect pdfscore_pipeline_pytest_dev \
+    --format '{{.Image}} {{json .Mounts}}'
+  docker exec pdfscore_pipeline_pytest_dev \
+    test -f "$container_issue/AGENTS.md"
+else
+  printf 'Set ISSUE_ID to the active Issue number before running this block.\n' >&2
+fi
 ```
 
 [`scripts/docker_container_preflight.sh`](../../scripts/docker_container_preflight.sh) is
 intentionally for a dedicated container whose active checkout is mounted directly at
 `/workspace`. It rejects a nested issue worktree. For the shared layout, verify the manager
 bind source, nested files, and import path with the commands above; do not weaken the script's
-direct-mount check. Worktree `.git` pointers refer to host paths and need not resolve in the
-container. Record branch and commit on the host. Do not rewrite pointers to make container Git
-commands work.
+direct-mount check. A linked worktree's `.git` file contains an absolute host path, so Git
+commands inside the container need an explicit mapping to the worktree's administrative
+directory under the manager checkout's `/workspace/.git`. Record branch and commit on the
+host; do not rewrite the host `.git` pointer.
 
 `.worktrees/` is ignored by Git and excluded from Docker build context. For an older manager
 checkout that does not yet have these tracked ignore rules, use its local
@@ -105,6 +111,52 @@ docker exec --user "$(id -u):$(id -g)" \
   /opt/venv_pipeline/bin/python -m pytest --version
 ```
 
+### Git-dependent pytest suites
+
+The nested worktree's `.git` pointer is a host path and cannot be followed inside the shared
+container. For tests that invoke Git, map the worktree's administrative directory through the
+manager checkout bind mount and pass it explicitly. Derive its path rather than assuming the
+worktree directory name:
+
+```bash
+git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
+git_dir="$(git rev-parse --path-format=absolute --git-dir)"
+git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
+container_git_dir="/workspace/.git/$git_dir_relative"
+container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
+docker exec --user "$(id -u):$(id -g)" \
+  -w "$container_issue" \
+  pdfscore_pipeline_pytest_dev \
+  git --git-dir="$container_git_dir" --work-tree="$container_issue" \
+  rev-parse --absolute-git-dir
+```
+
+If that preflight resolves the container path, pass the same `GIT_DIR` and `GIT_WORK_TREE`
+to pytest so Git subprocesses inherit the mapping. Limit these variables to Git-dependent
+suites; ordinary tests do not need them. If the manager `.git` directory is not visible under
+the inspected `/workspace` mount, use a host runner with the required dependencies or a
+Git-aware checkout instead. Do not report a Git-dependent suite as passed based only on
+`pytest --version` or a test run without Git access.
+
+For example, the Docker runtime contract test that calls `git rev-parse` can run with the
+mapped metadata as follows; substitute the focused test path when needed:
+
+```bash
+git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
+git_dir="$(git rev-parse --path-format=absolute --git-dir)"
+git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
+container_git_dir="/workspace/.git/$git_dir_relative"
+container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
+docker exec --user "$(id -u):$(id -g)" \
+  -w "$container_issue" \
+  -e PYTHONPATH="$container_issue" \
+  -e GIT_DIR="$container_git_dir" \
+  -e GIT_WORK_TREE="$container_issue" \
+  pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python -m pytest \
+  tests/test_docker_runtime_contract.py::test_direct_build_creates_artifact_directory_before_tempfile
+```
+
 Read the maintained `FAST_TESTS` list from the issue worktree's Makefile, then invoke pytest
 directly with the container interpreter:
 
@@ -112,10 +164,23 @@ directly with the container interpreter:
 mapfile -t fast_tests < <(
   sed -n 's/^FAST_TESTS ?= //p' Makefile | tr ' ' '\n'
 )
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_issue" -e PYTHONPATH="$container_issue" \
-  pdfscore_pipeline_pytest_dev \
-  /opt/venv_pipeline/bin/python -m pytest "${fast_tests[@]}"
+fast_tests_valid=1
+if ((${#fast_tests[@]} == 0)); then
+  printf 'FAST_TESTS was not found or is empty; stopping before pytest.\n' >&2
+  fast_tests_valid=0
+fi
+for test_path in "${fast_tests[@]}"; do
+  if [[ ! -f "$test_path" ]]; then
+    printf 'FAST_TESTS entry is not a file: %s; stopping before pytest.\n' "$test_path" >&2
+    fast_tests_valid=0
+  fi
+done
+if ((fast_tests_valid)); then
+  docker exec --user "$(id -u):$(id -g)" \
+    -w "$container_issue" -e PYTHONPATH="$container_issue" \
+    pdfscore_pipeline_pytest_dev \
+    /opt/venv_pipeline/bin/python -m pytest "${fast_tests[@]}"
+fi
 ```
 
 For a focused suite, replace the test array with the selected paths/options. `make test-fast`
@@ -133,24 +198,26 @@ shares the server container's network namespace; select and verify an explicit r
 does not. The runner mounts source read-only and writes evidence to a separate directory.
 
 ```bash
-issue_root="$PWD"
-read -r -p 'Issue number: ' issue_id
-[[ "$issue_id" =~ ^[0-9]+$ ]] || exit 2
-browser_evidence="$issue_root/logs/issue${issue_id}/validation/browser"
-mkdir -p "$browser_evidence"
-browser_image="$(docker image inspect mcp/playwright:latest --format '{{.Id}}')"
-chromium_path="$(docker run --rm --entrypoint node "$browser_image" \
-  -p 'require("/app/node_modules/playwright").chromium.executablePath()')"
-docker run --rm --network container:pdfscore_pipeline_pytest_dev \
-  --user "$(id -u):$(id -g)" \
-  -v "$issue_root:/workspace:ro" \
-  -v "$browser_evidence:/evidence" \
-  -w /workspace \
-  -e PLAYWRIGHT_MODULE=/app/node_modules/playwright \
-  -e CHROMIUM_PATH="$chromium_path" \
-  --entrypoint node "$browser_image" \
-  tools/review_correction/browser_acceptance.cjs \
-  http://127.0.0.1:8010 /evidence
+if [[ "${ISSUE_ID:-}" =~ ^[0-9]+$ ]]; then
+  issue_root="$PWD"
+  browser_evidence="$issue_root/logs/issue${ISSUE_ID}/validation/browser"
+  mkdir -p "$browser_evidence"
+  browser_image="$(docker image inspect mcp/playwright:latest --format '{{.Id}}')"
+  chromium_path="$(docker run --rm --entrypoint node "$browser_image" \
+    -p 'require("/app/node_modules/playwright").chromium.executablePath()')"
+  docker run --rm --network container:pdfscore_pipeline_pytest_dev \
+    --user "$(id -u):$(id -g)" \
+    -v "$issue_root:/workspace:ro" \
+    -v "$browser_evidence:/evidence" \
+    -w /workspace \
+    -e PLAYWRIGHT_MODULE=/app/node_modules/playwright \
+    -e CHROMIUM_PATH="$chromium_path" \
+    --entrypoint node "$browser_image" \
+    tools/review_correction/browser_acceptance.cjs \
+    http://127.0.0.1:8010 /evidence
+else
+  printf 'Set ISSUE_ID to the active Issue number before running this block.\n' >&2
+fi
 ```
 
 The Playwright/Chromium image is a browser runner, not a production image dependency. A

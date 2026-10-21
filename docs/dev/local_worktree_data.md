@@ -20,12 +20,16 @@ Keep a local asset root outside issue worktrees, for example:
 
 Then link selected items into the issue worktree:
 
+Set `ISSUE_ID` to the target numeric Issue number in the shell before running this block.
+
 ```bash
 manager_root=/path/to/PDFScoreBar
-read -r -p 'Issue number: ' issue_id
-[[ "$issue_id" =~ ^[0-9]+$ ]] || exit 2
-cd "$manager_root/.worktrees/issue$issue_id"
-scripts/setup_local_worktree_links.sh --source /path/to/pdfscore-local-assets
+if [[ "${ISSUE_ID:-}" =~ ^[0-9]+$ ]]; then
+  cd "$manager_root/.worktrees/issue$ISSUE_ID"
+  scripts/setup_local_worktree_links.sh --source /path/to/pdfscore-local-assets
+else
+  printf 'Set ISSUE_ID to the active Issue number before running this block.\n' >&2
+fi
 ```
 
 Equivalent Makefile wrapper:

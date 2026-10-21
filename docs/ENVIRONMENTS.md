@@ -193,43 +193,9 @@ removing a non-default tag.
 
 ## Host / uv environments
 
-### Execution preflight
-
-Before environment-sensitive validation, choose the execution environment from current evidence:
-
-1. Identify the active checkout with `pwd` and `git rev-parse HEAD`. Inspect the maintained
-   Makefile target before running it. `make test-fast` prefers `.venv_pdf/bin/python` when
-   present, otherwise `PYTHON` (default `python3`); it does not route into Docker automatically.
-2. Confirm the selected interpreter has the required tools/dependencies. Do not launch host
-   pytest just because a host Python exists. When pytest is available only in Docker, use the
-   [local validation environment map](dev/LOCAL_VALIDATION.md#available-environments) to select
-   Python/pytest or Node/Playwright execution and continue the check there. The production
-   image alone does not include pytest; the Python validation container does not include Node.
-3. Use the [standard worktree layout](dev/LOCAL_VALIDATION.md#worktree-and-mount-contract).
-   Inspect the actual bind mounts with `docker inspect <container>`. With the manager checkout
-   mounted at `/workspace`, run issue checks at `/workspace/.worktrees/issue<N>` with matching
-   `PYTHONPATH`; `/workspace` itself is the manager checkout. A container mounted directly from
-   an isolated candidate instead uses `/workspace`. Never infer the tested source from host cwd.
-   Verify image compatibility against the active issue worktree before pipeline use.
-4. Check output-directory and existing log-file permissions for the executing user before
-   launch. Host and container users may differ. In particular, `make test-fast` redirects to
-   `artifacts/test_fast.log`; a root-owned existing file can block it before pytest starts.
-   Use a writable worktree/output location or an explicitly scoped permission repair; do not
-   delete retained evidence or broadly change ownership to work around the failure.
-5. Establish execution permissions separately from runtime dependencies. In a restricted
-   Codex sandbox, run Docker daemon access and networked `gh` operations outside the default
-   sandbox using the available escalation mechanism from the first attempt. Do not repeatedly
-   retry a known sandbox denial or diagnose it as a missing runtime dependency. If escalation
-   is denied, record the blocked command/reason and continue independent checks.
-
-Record the chosen environment and check outcomes using the
-[validation evidence format](dev/VALIDATION_POLICY.md#validation-status-and-evidence).
-These checks do not require creating a container or running GPU smoke for docs-only work.
-
 ### Default host checks
 
-When the host has the required tools/dependencies and writable output paths, use the repository
-Makefile for lightweight validation:
+Use the repository Makefile for lightweight validation:
 
 ```bash
 make test-fast
@@ -340,15 +306,6 @@ on an ad-hoc checkout-local model path.
 For repeated pipeline evaluation that also needs repository pytest, use a named persistent
 container based on `pdfscore_pipeline_gpu`. The production runtime intentionally does not
 include pytest; do not weaken or rewrite repository pytest coverage for that reason.
-
-The shared development container mounts the **manager checkout** at `/workspace`; run the
-creation block below from that checkout. Issue worktrees below `.worktrees/` are then visible
-without recreating the container or reinstalling tools. Use the
-[worktree commands](dev/LOCAL_VALIDATION.md#python-validation-from-an-issue-worktree) for issue
-validation; the `/workspace` commands below apply only to the manager checkout. A dedicated
-container mounted directly from a candidate is an explicit exception, not a shared mount.
-Node/browser validation uses the separate environment documented in
-[LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md#browser-validation).
 
 Create the container when absent. Resolve the production tag to a verified immutable image,
 and mount the registered external OMR-DLN weight so this container can run pipeline checks:

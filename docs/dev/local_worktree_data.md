@@ -4,10 +4,6 @@ Worktrees often need local-only data that is intentionally not tracked by git: d
 
 ## Recommended Layout
 
-Use `<manager-checkout>/.worktrees/issue<N>` for issue source, as defined in
-[Local validation](LOCAL_VALIDATION.md#worktree-and-mount-contract). Keep assets outside those
-worktrees. The shared Python container sees these worktrees below `/workspace/.worktrees/`.
-
 Keep a local asset root outside issue worktrees, for example:
 
 ```bash
@@ -20,7 +16,7 @@ Keep a local asset root outside issue worktrees, for example:
 Then link selected items into the issue worktree:
 
 ```bash
-cd /home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue173
+cd /home/masaki_muramatsu/ws_PDFScoreBar_issue173
 scripts/setup_local_worktree_links.sh --source /home/masaki_muramatsu/pdfscore-local-assets
 ```
 

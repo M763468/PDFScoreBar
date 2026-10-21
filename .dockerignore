@@ -38,6 +38,3 @@ __pycache__/
 external/omr_dln/
 external/grounding_dino/
 external/models/
-
-# Issue worktrees share the manager checkout mount; exclude nested source trees.
-/.worktrees/

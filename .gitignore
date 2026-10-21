@@ -103,6 +103,3 @@ artifacts/
 !/graphify-out/MANIFEST.json
 !/graphify-out/wiki/
 !/graphify-out/wiki/**
-
-# Issue worktrees share the manager checkout mount; exclude nested source trees.
-/.worktrees/

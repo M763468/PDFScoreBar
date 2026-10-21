@@ -4,6 +4,11 @@ Worktrees often need local-only data that is intentionally not tracked by git: d
 
 ## Recommended Layout
 
+Keep issue source in `<manager-checkout>/.worktrees/issue<N>` as described in
+[Local validation](LOCAL_VALIDATION.md#worktree-and-mount-contract). The shared Python
+container sees it at `/workspace/.worktrees/issue<N>`; keep local-only data outside the source
+worktree and mount it explicitly when Docker needs it.
+
 Keep a local asset root outside issue worktrees, for example:
 
 ```bash
@@ -16,8 +21,11 @@ Keep a local asset root outside issue worktrees, for example:
 Then link selected items into the issue worktree:
 
 ```bash
-cd /home/masaki_muramatsu/ws_PDFScoreBar_issue173
-scripts/setup_local_worktree_links.sh --source /home/masaki_muramatsu/pdfscore-local-assets
+manager_root=/path/to/PDFScoreBar
+read -r -p 'Issue number: ' issue_id
+[[ "$issue_id" =~ ^[0-9]+$ ]] || exit 2
+cd "$manager_root/.worktrees/issue$issue_id"
+scripts/setup_local_worktree_links.sh --source /path/to/pdfscore-local-assets
 ```
 
 Equivalent Makefile wrapper:

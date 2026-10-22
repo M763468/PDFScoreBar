@@ -14,7 +14,6 @@ from src.pipeline.engine_input_safety import (
     DEFAULT_JOB_SAFETY_POLICY,
     InputSafetyError,
     JobSafetyPolicy,
-    enforce_attempt_disk_budget,
     resolve_local_input_path,
     validate_local_input_reference,
     validate_local_pdf,
@@ -46,7 +45,16 @@ def test_default_policy_has_concrete_bounded_job_limits():
     assert policy.max_render_height_px == 12_000
     assert policy.max_render_pixels_per_page == 64_000_000
     assert policy.max_total_render_pixels == 1_000_000_000
-    assert policy.max_attempt_disk_bytes == 16 * 1024 * 1024 * 1024
+    assert not hasattr(policy, "max_attempt_disk_bytes")
+    assert set(policy.resource_budget()) == {
+        "max_pdf_bytes",
+        "max_document_pages",
+        "max_selected_pages",
+        "max_render_width_px",
+        "max_render_height_px",
+        "max_render_pixels_per_page",
+        "max_total_render_pixels",
+    }
     assert policy.allow_symlinks is False
     assert policy.require_input_root is True
 
@@ -257,7 +265,7 @@ def test_path_resolution_oserror_is_normalized(tmp_path: Path, monkeypatch: pyte
     assert exc_info.value.debug_context["exception"] == "PermissionError"
 
 
-def test_out_of_range_page_and_disk_budget_have_stable_codes(tmp_path: Path):
+def test_out_of_range_page_has_stable_code(tmp_path: Path):
     pdf_path = tmp_path / "score.pdf"
     _write_pdf(pdf_path)
 
@@ -268,14 +276,6 @@ def test_out_of_range_page_and_disk_budget_have_stable_codes(tmp_path: Path):
             requested_pages=[2],
         )
     assert page_info.value.code == "request_page_out_of_range"
-
-    with pytest.raises(InputSafetyError) as disk_info:
-        enforce_attempt_disk_budget(
-            101,
-            policy=JobSafetyPolicy(max_attempt_disk_bytes=100),
-        )
-    assert disk_info.value.code == "attempt_disk_budget_exceeded"
-    assert disk_info.value.user_actionable is False
 
 
 @pytest.mark.parametrize("output_name", ["../escape", "nested/name", r"nested\name", ".", ".."])

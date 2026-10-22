@@ -1,7 +1,12 @@
 # Engine Untrusted-PDF Safety Contract
 
 This document is the normative Issue #338 safety contract for processing one
-untrusted PDF through the future versioned engine boundary.
+untrusted PDF through the versioned engine boundary.
+
+For the initial local Docker distribution (#410), this contract enforces PDF
+input preflight bounds only. It does not provide a per-job runtime disk quota
+or force-stop a running job on storage growth. Hard storage isolation and
+process-tree cancellation are deferred to a future public-service deployment.
 
 It layers on:
 
@@ -73,14 +78,13 @@ adapter to choose stricter values for its deployment.
 | rendered height per page | 12,000 px |
 | rendered pixels per page | 64,000,000 |
 | total rendered pixels for selected pages | 1,000,000,000 |
-| attempt-local temp/intermediate/output disk | 16 GiB |
 | symlink input traversal | rejected |
 | worker-owned input root | required |
 
-These values are hard rejection ceilings, not a claim that every job below
+These values are preflight rejection ceilings, not a claim that every job below
 them fits every machine. A deployment may lower them without changing the v1
 wire schema. Raising them is an operational/security decision and does not
-remove the worker/container hard-resource requirements below.
+remove the future public-service worker requirements below.
 
 The page/pixel limits are calculated from PyMuPDF page geometry and the actual
 requested render DPI before `get_pixmap()`. They bound output amplification,
@@ -196,7 +200,7 @@ Preflight failures map into the existing v1 `EngineError` envelope.
 | render dimension exceeds policy | `resource` | `input_pdf_render_dimension_limit_exceeded` | false |
 | page pixels exceed policy | `resource` | `input_pdf_render_pixels_limit_exceeded` | false |
 | total render pixels exceed policy | `resource` | `input_pdf_total_render_pixels_limit_exceeded` | false |
-| attempt storage exceeds policy | `resource` | `attempt_disk_budget_exceeded` | false |
+| OS reports disk full during execution (`ENOSPC`) | `resource` | `disk_capacity_exhausted` | true |
 
 Configured limit rejection is a non-success engine result. It must not be
 automatically retried unchanged and must not publish partial final/review
@@ -251,7 +255,7 @@ network access.
 Any externally supplied OMR/MMR/model assets must likewise be staged and
 verified before accepting untrusted jobs.
 
-## 9. Worker/container requirements
+## 9. Future public-service worker/container requirements
 
 Python-level PDF validation is necessary but not sufficient. Parsing itself and
 accepted PDF content can still consume unexpected CPU/RAM, and native
@@ -273,16 +277,27 @@ A worker that accepts arbitrary PDFs must provide, outside the pure helper:
 - outbound network disabled for ordinary jobs;
 - quarantine/deletion of the attempt workspace after hard termination.
 
-The engine exposes `max_attempt_disk_bytes` and
-`enforce_attempt_disk_budget()` as an in-process hook. A filesystem/container
-quota is still the hard backstop because a killed or compromised process cannot
-be trusted to call the hook. The reference `PipelineJobExecutor` polls the
-attempt workspace while the pipeline and materializers run, checks at their
-stage boundaries, and checks again after it writes debug telemetry. This is
-best-effort detection: polling can miss short-lived files and does not stop an
-opaque stage at the instant it crosses the limit. Production workers must keep
-a hard per-attempt filesystem/container quota enabled to prevent disk
-exhaustion.
+The initial local Docker distribution does not implement these service isolation
+controls. `JobSafetyPolicy` contains only preflight input limits;
+`resource_budget()` reports those limits, not runtime CPU/RAM/disk guarantees.
+The former `max_attempt_disk_bytes` policy field, `enforce_attempt_disk_budget()`
+hook and polling monitor have been removed: they could detect usage but could
+not enforce a bound while an opaque runner or child process continued writing.
+Python callers must remove that policy argument; no compatibility argument is
+silently ignored. The v1 request/result/error wire schema remains unchanged.
+
+Local operators must provide enough free space for model assets, temporary
+files, retained review packages and final outputs. Validated input size/pages/
+pixels do not bound total intermediate storage, and there is no guarantee that
+an accepted job fits the available disk. An OS `ENOSPC` maps to a failed
+`disk_capacity_exhausted` result, with best-effort cleanup and no published
+partial artifacts. The local adapter persists that failure after cleanup when
+the filesystem permits writing; it cannot guarantee a result file if storage
+remains exhausted or unwritable.
+
+A future public service must enforce storage outside the job process, with
+quota/volume limits, cancellation of the full process tree and reliable
+reclamation. Polling or faster polling is not a substitute for these controls.
 
 The engine does not promise cross-job fairness or isolation. A service/worker
 pool must ensure one job cannot read another job's workspace or use unbounded
@@ -298,7 +313,8 @@ Therefore:
 
 - preflight occurs inside the same constrained worker/container trust boundary;
 - rendering/inference is never relied upon as a validator;
-- deadline/CPU/RAM/disk limits remain mandatory after preflight success;
+- a future public-service worker must enforce deadline/CPU/RAM/disk limits
+  after preflight success;
 - hard worker termination is a valid safety backstop;
 - a hard-killed attempt is non-success even if partial files remain.
 
@@ -326,8 +342,10 @@ Internal file existence is not publication.
 
 ## 12. Implementation status
 
-Issue #338 intentionally adds the reusable validation/policy layer without
-rewiring the current production `run_pipeline()` execution path.
+Issue #338 introduced the reusable validation/policy layer. The current
+`PipelineJobExecutor` invokes preflight before the config-first pipeline and
+maps terminal failures into v1 results. Local result persistence is owned by
+`docker.distribution_job`, rather than the pipeline runner.
 
 Implemented now:
 
@@ -337,16 +355,12 @@ Implemented now:
 - validated metadata without absolute paths;
 - local path/root/traversal/URL/symlink checks;
 - caller `output_name` filename-stem validation;
-- attempt-disk budget hook;
 - v1 `EngineError` mapping;
 - focused tests for the implemented behaviors.
 
 Still owned by a future production `JobExecutor`/worker adapter:
 
-- invoking this preflight before current PDF rendering;
-- configuring/enforcing the hard filesystem/container quota that backs up the
-  in-process attempt-disk monitor;
-- mapping terminal failures into a concrete `JobResult`;
+- configuring/enforcing a hard per-attempt filesystem/container quota;
 - hard CPU/RAM/VRAM/filesystem/container controls;
 - outbound-network policy enforcement at worker/container level;
 - process-group termination integration from #337.

@@ -9,7 +9,6 @@ import json
 import os
 import shutil
 import subprocess
-import threading
 import uuid
 from copy import deepcopy
 from pathlib import Path
@@ -31,7 +30,6 @@ from src.pipeline.engine_input_safety import (
     DEFAULT_JOB_SAFETY_POLICY,
     InputSafetyError,
     JobSafetyPolicy,
-    enforce_attempt_disk_budget,
     resolve_local_input_path,
     validate_local_pdf,
     validate_output_name,
@@ -53,60 +51,6 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
-
-
-def _attempt_bytes(root: Path) -> int:
-    total = 0
-    if not root.exists():
-        return total
-    for path in root.rglob("*"):
-        try:
-            if path.is_symlink():
-                continue
-            if path.is_file():
-                total += path.stat().st_size
-        except FileNotFoundError:
-            continue
-    return total
-
-
-def _check_attempt_budget(root: Path, policy: JobSafetyPolicy) -> None:
-    enforce_attempt_disk_budget(_attempt_bytes(root), policy=policy)
-
-
-class _AttemptDiskBudgetMonitor:
-    """Poll attempt storage while opaque runner/materializer calls are active."""
-
-    def __init__(self, root: Path, policy: JobSafetyPolicy, *, interval_seconds: float = 0.25):
-        self.root = root
-        self.policy = policy
-        self.interval_seconds = interval_seconds
-        self._stop_event = threading.Event()
-        self._thread: threading.Thread | None = None
-        self.failure: InputSafetyError | None = None
-
-    def start(self) -> None:
-        self._thread = threading.Thread(target=self._run, name="engine-disk-budget", daemon=True)
-        self._thread.start()
-
-    def _run(self) -> None:
-        while not self._stop_event.wait(self.interval_seconds):
-            try:
-                _check_attempt_budget(self.root, self.policy)
-            except InputSafetyError as exc:
-                self.failure = exc
-                self._stop_event.set()
-
-    def stop(self) -> None:
-        self._stop_event.set()
-        if self._thread is not None:
-            self._thread.join()
-
-    def check(self) -> None:
-        self.stop()
-        if self.failure is not None:
-            raise self.failure
-        _check_attempt_budget(self.root, self.policy)
 
 
 def _source_commit(explicit: str | None) -> str:
@@ -401,7 +345,6 @@ class PipelineJobExecutor:
         work_root = package_root / ".engine-work"
         staging = work_root / "publish"
         telemetry: TelemetryRecorder | None = None
-        budget_monitor: _AttemptDiskBudgetMonitor | None = None
         requested = 0
 
         # Correction execution needs an engine-owned retained-source resolver. Fail
@@ -447,8 +390,6 @@ class PipelineJobExecutor:
                 )
 
             work_root.mkdir(parents=True, exist_ok=True)
-            budget_monitor = _AttemptDiskBudgetMonitor(work_root, self.safety_policy)
-            budget_monitor.start()
             staged_input = work_root / "input" / "source.pdf"
             staged_input.parent.mkdir(parents=True, exist_ok=True)
             with resolved.open("rb") as source, staged_input.open("wb") as target:
@@ -481,7 +422,6 @@ class PipelineJobExecutor:
                 )
             meta = staged_meta
             requested = len(meta.selected_pages)
-            _check_attempt_budget(work_root, self.safety_policy)
 
             explicit_output_name = request.config_overrides.get("output_name")
             if explicit_output_name is not None and str(explicit_output_name).strip():
@@ -515,7 +455,6 @@ class PipelineJobExecutor:
                     telemetry_recorder=telemetry,
                 )
             )
-            _check_attempt_budget(work_root, self.safety_policy)
 
             internal_handoff = run_dir / ".review_work" / "manual_correction_input.json"
             if not internal_handoff.is_file():
@@ -554,7 +493,6 @@ class PipelineJobExecutor:
                 if not final_pdf.is_file():
                     raise RuntimeError("final materializer did not produce a PDF")
 
-            _check_attempt_budget(work_root, self.safety_policy)
             if request.output_profile is OutputProfile.DEBUG:
                 debug_root = staging / "debug" / job_id
                 debug_root.mkdir(parents=True, exist_ok=True)
@@ -569,10 +507,6 @@ class PipelineJobExecutor:
                     + "\n",
                     encoding="utf-8",
                 )
-
-            # Includes debug telemetry and catches a budget crossing observed by
-            # the monitor while the runner/materializers were writing.
-            budget_monitor.check()
 
             pages = self._page_summary(run_dir, requested)
             artifacts = self._artifacts(staging, final_pdf, request.output_profile, job_id)
@@ -602,8 +536,6 @@ class PipelineJobExecutor:
             telemetry.terminal(JobStatus.SUCCEEDED)
             return result
         except Exception as exc:
-            if budget_monitor is not None:
-                budget_monitor.stop()
             self._clear_public(package_root)
             if staging.exists():
                 shutil.rmtree(staging, ignore_errors=True)

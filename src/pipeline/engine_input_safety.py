@@ -18,13 +18,12 @@ from src.pipeline.engine_contract import (
 )
 
 _MIB = 1024 * 1024
-_GIB = 1024 * _MIB
 _URI_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 
 
 @dataclass(frozen=True)
 class JobSafetyPolicy:
-    """Configurable hard bounds for one untrusted PDF job."""
+    """Preflight input bounds for one PDF job; no runtime storage quota."""
 
     max_pdf_bytes: int = 256 * _MIB
     max_document_pages: int = 500
@@ -33,7 +32,6 @@ class JobSafetyPolicy:
     max_render_height_px: int = 12_000
     max_render_pixels_per_page: int = 64_000_000
     max_total_render_pixels: int = 1_000_000_000
-    max_attempt_disk_bytes: int = 16 * _GIB
     allow_symlinks: bool = False
     require_input_root: bool = True
 
@@ -46,7 +44,6 @@ class JobSafetyPolicy:
             "max_render_height_px",
             "max_render_pixels_per_page",
             "max_total_render_pixels",
-            "max_attempt_disk_bytes",
         ):
             value = getattr(self, name)
             if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
@@ -57,6 +54,7 @@ class JobSafetyPolicy:
             raise ValueError("safety policy flags must be boolean")
 
     def resource_budget(self) -> dict[str, int]:
+        """Return preflight limits, not runtime CPU/RAM/disk guarantees."""
         return {
             name: getattr(self, name)
             for name in (
@@ -67,7 +65,6 @@ class JobSafetyPolicy:
                 "max_render_height_px",
                 "max_render_pixels_per_page",
                 "max_total_render_pixels",
-                "max_attempt_disk_bytes",
             )
         }
 
@@ -518,22 +515,3 @@ def validate_local_pdf(
         pages=tuple(pages),
         total_render_pixels=total_pixels,
     )
-
-
-def enforce_attempt_disk_budget(
-    bytes_used: int,
-    *,
-    policy: JobSafetyPolicy = DEFAULT_JOB_SAFETY_POLICY,
-) -> None:
-    """Reusable hook for attempt-local temp/intermediate/output usage."""
-
-    if not isinstance(bytes_used, int) or isinstance(bytes_used, bool) or bytes_used < 0:
-        raise ValueError("bytes_used must be an integer >= 0")
-    if bytes_used > policy.max_attempt_disk_bytes:
-        raise _error(
-            ErrorCategory.RESOURCE,
-            "attempt_disk_budget_exceeded",
-            "The job exceeded its temporary storage budget.",
-            actionable=False,
-            debug={"bytes_used": bytes_used, "limit": policy.max_attempt_disk_bytes},
-        )

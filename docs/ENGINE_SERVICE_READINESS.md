@@ -16,6 +16,14 @@ result = executor(request, on_progress=handle_event)
 It accepts the v1 `JobRequest`, forwards v1 `ProgressEvent` records, and
 returns a v1 `JobResult` with a structured `EngineError` on failure.
 
+This local adapter applies input preflight bounds, but does not enforce a
+per-job runtime disk quota or stop opaque child processes on storage growth.
+A future public service needs external storage limits and process-tree
+cancellation; see [input safety](ENGINE_INPUT_SAFETY.md#9-future-public-service-workercontainer-requirements).
+OS `ENOSPC` returns `disk_capacity_exhausted` with best-effort cleanup. The local
+CLI records failed results when storage permits; persistence cannot be guaranteed
+on an exhausted/unwritable filesystem.
+
 The adapter owns `artifact_root/<job_id>` attempt storage. Internal generated
 configs, run directories, and `pipeline.log` remain implementation details.
 Only relative paths advertised by `JobResult.artifacts` are caller-facing.

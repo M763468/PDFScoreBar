@@ -1,15 +1,13 @@
 from __future__ import annotations
 
+import errno
 import json
 import subprocess
-import threading
-import time
 from pathlib import Path
 
 import fitz
 import pytest
 
-import src.pipeline.engine_executor as engine_executor_module
 from src.pipeline.engine_contract import (
     CONTRACT_VERSION,
     CorrectionSet,
@@ -21,7 +19,6 @@ from src.pipeline.engine_contract import (
     validate_progress_sequence,
 )
 from src.pipeline.engine_executor import PipelineJobExecutor
-from src.pipeline.engine_input_safety import JobSafetyPolicy
 
 
 @pytest.fixture
@@ -368,41 +365,103 @@ def test_debug_telemetry_contains_completed_materialization_stage(executor_fixtu
     )
 
 
-def test_executor_monitors_attempt_disk_budget_and_cleans_work(executor_fixture, monkeypatch):
+@pytest.mark.parametrize("phase", ["staging", "runner", "review", "final", "publish", "retention"])
+def test_disk_full_fails_without_publishing_and_cleans_work(executor_fixture, monkeypatch, phase):
     build, artifact_root = executor_fixture
-    monitor_checked = threading.Event()
-    original_check = engine_executor_module._check_attempt_budget
+    executor = build(f"job-disk-full-{phase}")
+    package = artifact_root / f"job-disk-full-{phase}"
 
-    def tracked_check(root, policy):
-        if threading.current_thread().name == "engine-disk-budget":
-            monitor_checked.set()
-        return original_check(root, policy)
+    def disk_full(*_args, **_kwargs):
+        raise OSError(errno.ENOSPC, "synthetic disk full")
 
-    monkeypatch.setattr(engine_executor_module, "_check_attempt_budget", tracked_check)
+    if phase in {"runner", "review", "final"}:
+        attribute = {
+            "runner": "pipeline_runner",
+            "review": "review_materializer",
+            "final": "final_materializer",
+        }[phase]
+        original = getattr(executor, attribute)
 
-    def oversized_runner(_config_path, *, run_id, output_root, **_kwargs):
-        run_dir = Path(output_root) / run_id
-        run_dir.mkdir(parents=True, exist_ok=True)
-        (run_dir / "oversized.bin").write_bytes(b"x" * 2048)
-        assert monitor_checked.wait(timeout=2)
-        time.sleep(0.3)
-        return run_dir
+        def fail_after_writing(*args, **kwargs):
+            original(*args, **kwargs)
+            disk_full()
 
-    result = build(
-        "job-over-budget",
-        pipeline_runner=oversized_runner,
-        safety_policy=JobSafetyPolicy(max_attempt_disk_bytes=1024),
-    )(
+        monkeypatch.setattr(executor, attribute, fail_after_writing)
+    elif phase == "staging":
+        original_open = Path.open
+
+        def fail_input_copy(path, mode="r", *args, **kwargs):
+            if path == package / ".engine-work/input/source.pdf" and mode == "wb":
+                disk_full()
+            return original_open(path, mode, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "open", fail_input_copy)
+    else:
+        original_replace = Path.replace
+
+        def fail_move(path, target):
+            target = Path(target)
+            if (phase == "publish" and target == package / "review") or (
+                phase == "retention" and target == package / ".engine-retained"
+            ):
+                disk_full()
+            return original_replace(path, target)
+
+        monkeypatch.setattr(Path, "replace", fail_move)
+
+    events = []
+    result = executor(
         JobRequest(
             input={"kind": "local_path", "reference": "score.pdf"},
-            output_profile=OutputProfile.FINAL,
-            config_overrides={"pages": [1]},
-        )
+            output_profile=OutputProfile.DEBUG,
+        ),
+        on_progress=events.append,
     )
     assert result.status is JobStatus.FAILED
-    assert result.failure is not None
-    assert result.failure.code == "attempt_disk_budget_exceeded"
-    assert not (artifact_root / result.job_id / ".engine-work").exists()
+    assert result.failure.category is ErrorCategory.RESOURCE
+    assert result.failure.code == "disk_capacity_exhausted"
+    assert result.failure.retryable is True
+    assert not result.artifacts
+    validate_progress_sequence(events)
+    assert [event.kind for event in events if event.terminal] == [ProgressKind.JOB_FAILED]
+    for name in ("final", "review", "debug", ".engine-work", ".engine-retained"):
+        assert not (package / name).exists()
+    assert (artifact_root.parent / "inputs/score.pdf").is_file()
+
+
+def test_local_adapter_persists_disk_full_result_after_cleanup(
+    executor_fixture, monkeypatch, capsys
+):
+    from docker import distribution_job
+
+    build, artifact_root = executor_fixture
+
+    def disk_full(_config_path, *, run_id, output_root, **_kwargs):
+        run = Path(output_root) / run_id
+        run.mkdir(parents=True)
+        (run / "partial.bin").write_bytes(b"partial")
+        raise OSError(errno.ENOSPC, "synthetic disk full")
+
+    executor = build("job-disk-full-persist", pipeline_runner=disk_full)
+    monkeypatch.setattr(distribution_job, "PipelineJobExecutor", lambda **_kwargs: executor)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "distribution_job",
+            str(artifact_root.parent / "inputs/score.pdf"),
+            "--output",
+            str(artifact_root),
+        ],
+    )
+    assert distribution_job.main() == 1
+    package = artifact_root / "job-disk-full-persist"
+    saved = json.loads((package / "result.json").read_text())
+    printed = json.loads(capsys.readouterr().out)
+    assert saved["status"] == printed["status"] == "failed"
+    assert saved["failure"]["code"] == printed["failure"]["code"] == "disk_capacity_exhausted"
+    assert saved["artifacts"] == []
+    assert "debug_context" not in saved["failure"]
+    assert {path.name for path in package.iterdir()} == {"result.json"}
 
 
 def test_retention_failure_emits_only_failed_terminal(executor_fixture, monkeypatch):

@@ -146,6 +146,21 @@ status and hashes for every shipped file. The machine-readable selection is
 job `result.json`, and correction consumed-input records provide the remaining runtime/model
 and result identity. A dirty extraction is a development candidate, not an immutable release.
 
+## Local storage capacity
+
+This release runs locally in Docker. Provide enough free disk space for model
+assets, temporary/intermediate files, retained review packages and final PDFs.
+The PDF size, page and render-pixel preflight limits do not bound intermediate
+storage. There is no enforced 16 GiB per-job quota, automatic cancellation on
+storage growth, or guarantee that an accepted job fits the available space.
+
+If the OS reports disk full (`ENOSPC`), the job fails with
+`disk_capacity_exhausted` and attempts to remove partial work/public artifacts.
+The adapter records a failed `result.json` when storage is writable after cleanup;
+a still-full or unwritable filesystem can prevent that record. Free space before
+retrying, and retain available failure output for diagnosis. Quotas and forced
+process-tree cancellation are deferred to a future public-service deployment.
+
 ## Distribution scope
 
 The distribution uses the maintained dense PDF configuration. Standalone numbering CLI,

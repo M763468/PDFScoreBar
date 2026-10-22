@@ -1,6 +1,7 @@
 import logging
 import re
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -74,6 +75,9 @@ class MMRClassifier:
 class MMROCREngine:
     """Handles RapidOCR and post-processing for MMR number detection."""
 
+    supports_staff_relative_hbar_geometry = True
+    supports_staff_relative_preprocess_geometry = True
+
     def __init__(self, enable_rotation_tta: bool = False, ocr_engine: Optional[RapidOCR] = None):
         if ocr_engine is not None:
             self.ocr_engine = ocr_engine
@@ -107,8 +111,32 @@ class MMROCREngine:
             "Moderato",
         ]
 
+    @staticmethod
+    def _hbar_mask_geometry(
+        staff_height: float, use_staff_relative_geometry: bool
+    ) -> Tuple[int, int, int, int, int]:
+        """Return vertical-kernel and contour-mask geometry for an OCR crop."""
+        if not use_staff_relative_geometry:
+            # Retain the legacy J2/baseline masking contract exactly by default.
+            return 4, 40, 4, 40, 5
+
+        def scaled(ratio: float) -> int:
+            return max(1, int(round(ratio * staff_height)))
+
+        return (
+            scaled(0.10),
+            scaled(1.00),
+            scaled(0.10),
+            scaled(1.00),
+            scaled(0.125),
+        )
+
     def mask_hbar_candidates(
-        self, img: np.ndarray, staff_top_rel: float, staff_height: float
+        self,
+        img: np.ndarray,
+        staff_top_rel: float,
+        staff_height: float,
+        use_staff_relative_geometry: bool = False,
     ) -> np.ndarray:
         if img is None:
             return img
@@ -116,7 +144,10 @@ class MMROCREngine:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-        v_erode_kernel = np.ones((4, 1), np.uint8)
+        kernel_height, min_width, min_height, max_center_distance, padding = (
+            self._hbar_mask_geometry(staff_height, use_staff_relative_geometry)
+        )
+        v_erode_kernel = np.ones((kernel_height, 1), np.uint8)
         thick_objects = cv2.erode(binary, v_erode_kernel, iterations=1)
         thick_objects = cv2.dilate(thick_objects, v_erode_kernel, iterations=1)
 
@@ -129,16 +160,54 @@ class MMROCREngine:
             cy = y + h / 2.0
             dist_center = abs(cy - staff_center)
 
-            if w > 40 and h > 4 and dist_center < 40:
-                pad = 5
+            if w > min_width and h > min_height and dist_center < max_center_distance:
                 cv2.rectangle(
                     masked_img,
-                    (max(0, x - pad), max(0, y - pad)),
-                    (min(img.shape[1], x + w + pad), min(img.shape[0], y + h + pad)),
+                    (max(0, x - padding), max(0, y - padding)),
+                    (
+                        min(img.shape[1], x + w + padding),
+                        min(img.shape[0], y + h + padding),
+                    ),
                     (255, 255, 255),
                     -1,
                 )
         return masked_img
+
+    def mask_hbar_candidates_calibrated(
+        self, img: np.ndarray, staff_top_rel: float, staff_height: float
+    ) -> np.ndarray:
+        """Use the prior fixed bar-mask expressed in candidate staff units."""
+        if img is None:
+            return img
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        scale = max(1.0, float(staff_height))
+        kernel_height, min_width, min_height, max_distance, padding = (
+            max(1, int(round(ratio * scale))) for ratio in (0.025, 0.25, 0.025, 0.25, 0.03125)
+        )
+        kernel = np.ones((kernel_height, 1), np.uint8)
+        thick = cv2.dilate(cv2.erode(binary, kernel, iterations=1), kernel, iterations=1)
+        contours, _ = cv2.findContours(thick, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        masked = img.copy()
+        center = staff_top_rel + scale / 2.0
+        for contour in contours:
+            x, y, width, height = cv2.boundingRect(contour)
+            if (
+                width > min_width
+                and height > min_height
+                and abs(y + height / 2.0 - center) < max_distance
+            ):
+                cv2.rectangle(
+                    masked,
+                    (max(0, x - padding), max(0, y - padding)),
+                    (
+                        min(img.shape[1], x + width + padding),
+                        min(img.shape[0], y + height + padding),
+                    ),
+                    (255, 255, 255),
+                    -1,
+                )
+        return masked
 
     def rotate_image(self, image: np.ndarray, angle: float) -> np.ndarray:
         if angle == 0:
@@ -150,8 +219,29 @@ class MMROCREngine:
             image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
         )
 
+    @staticmethod
+    def _preprocess_geometry(
+        mode: str, staff_height: Optional[float], use_staff_relative_geometry: bool
+    ) -> Tuple[int, int]:
+        """Return dilation-kernel size and border for an OCR preprocessing variant."""
+        if not use_staff_relative_geometry:
+            return (3 if mode == "heavy_dilate" else 2), 20
+
+        effective_staff_height = max(1.0, staff_height or 1.0)
+        border = max(1, int(round(0.5 * effective_staff_height)))
+        if mode == "heavy_dilate":
+            return max(1, int(round(0.075 * effective_staff_height))), border
+        if mode == "no_dilate":
+            return 0, border
+        return max(1, int(round(0.05 * effective_staff_height))), border
+
     def preprocess_variant(
-        self, img: np.ndarray, mode: str = "standard", angle: float = 0
+        self,
+        img: np.ndarray,
+        mode: str = "standard",
+        angle: float = 0,
+        staff_height: Optional[float] = None,
+        use_staff_relative_geometry: bool = False,
     ) -> Optional[np.ndarray]:
         if img is None:
             return None
@@ -162,16 +252,18 @@ class MMROCREngine:
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
         binary_white_bg = cv2.bitwise_not(binary)
 
+        kernel_size, border = self._preprocess_geometry(
+            mode, staff_height, use_staff_relative_geometry
+        )
         if mode == "no_dilate":
             final = binary_white_bg
-        elif mode == "heavy_dilate":
-            kernel = np.ones((3, 3), np.uint8)
-            final = cv2.dilate(binary_white_bg, kernel, iterations=1)
         else:
-            kernel = np.ones((2, 2), np.uint8)
+            kernel = np.ones((kernel_size, kernel_size), np.uint8)
             final = cv2.dilate(binary_white_bg, kernel, iterations=1)
 
-        return cv2.copyMakeBorder(final, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
+        return cv2.copyMakeBorder(
+            final, border, border, border, border, cv2.BORDER_CONSTANT, value=255
+        )
 
     def merge_ocr_results(self, ocr_result: List) -> List:
         if not ocr_result or len(ocr_result) < 2:
@@ -232,24 +324,104 @@ class MMROCREngine:
         merged.append(current_box)
         return merged
 
+    def _has_blacklisted_text(self, text: str) -> bool:
+        return any(b.lower() in text.lower() for b in self.blacklist)
+
+    def _candidate_items(self, ocr_result: List) -> List[Tuple[List, str]]:
+        """Return raw and merged OCR items so merges do not erase valid single digits."""
+        raw_items = [(item, "raw") for item in ocr_result]
+        merged_results = self.merge_ocr_results(list(ocr_result))
+        merged_items = [(item, "merged") for item in merged_results if item not in ocr_result]
+        return raw_items + merged_items
+
+    def _extract_numeric_candidates(self, text: str, blacklisted: bool) -> List[str]:
+        if blacklisted:
+            return re.findall(r"(?<![A-Za-z])\d+(?![A-Za-z])", text)
+        return re.findall(r"\d+", text)
+
+    def collect_one_bar_evidence(self, ocr_result: List) -> List[Dict]:
+        """Return OCR evidence for printed one-bar rest markers.
+
+        MMR overrides represent multi-measure rests only. A strong printed
+        "1" should not become skip=0; it is used as veto evidence instead.
+
+        Raw "1" OCR boxes that are part of a merged multi-digit candidate
+        are excluded so true 10-19 MMR counts do not become veto evidence.
+        """
+        if not ocr_result:
+            return []
+
+        def _bounds(item: List) -> Tuple[float, float, float, float]:
+            points = item[0]
+            xs = [p[0] for p in points]
+            ys = [p[1] for p in points]
+            return min(xs), min(ys), max(xs), max(ys)
+
+        def _contains(
+            outer: Tuple[float, float, float, float],
+            inner: Tuple[float, float, float, float],
+        ) -> bool:
+            ox1, oy1, ox2, oy2 = outer
+            ix1, iy1, ix2, iy2 = inner
+            return ox1 <= ix1 and oy1 <= iy1 and ix2 <= ox2 and iy2 <= oy2
+
+        def _has_multidigit_candidate(item: List) -> bool:
+            _box_points, text, _confidence = item
+            clean_text = re.sub(r"^[EP](\d)", r"\1", text)
+            clean_text = re.sub(r"[.,;]", "", clean_text)
+            blacklisted = self._has_blacklisted_text(text)
+            for n_str in self._extract_numeric_candidates(clean_text, blacklisted):
+                try:
+                    if int(n_str) >= 2:
+                        return True
+                except (TypeError, ValueError):
+                    pass
+            return False
+
+        candidate_items = self._candidate_items(ocr_result)
+        merged_multidigit_bounds = [
+            _bounds(item)
+            for item, source in candidate_items
+            if source == "merged" and _has_multidigit_candidate(item)
+        ]
+
+        evidence = []
+        for item, source in candidate_items:
+            _box_points, text, confidence = item
+            if source == "raw" and any(
+                _contains(bounds, _bounds(item)) for bounds in merged_multidigit_bounds
+            ):
+                continue
+
+            clean_text = re.sub(r"^[EP](\d)", r"\1", text)
+            clean_text = re.sub(r"[.,;]", "", clean_text)
+            blacklisted = self._has_blacklisted_text(text)
+            nums_found = self._extract_numeric_candidates(clean_text, blacklisted)
+            for n_str in nums_found:
+                try:
+                    val = int(n_str)
+                    conf = float(confidence)
+                except (TypeError, ValueError):
+                    continue
+                if val == 1:
+                    evidence.append({"text": text, "confidence": conf, "source": source})
+        return evidence
+
     def select_best_candidate(
         self, ocr_result: List, img_width: int, img_height: int
     ) -> Tuple[Optional[int], float, str]:
         if not ocr_result:
             return None, 0, ""
 
-        ocr_result = self.merge_ocr_results(ocr_result)
         candidates = []
         center_x = img_width / 2.0
 
-        for item in ocr_result:
+        for item, source in self._candidate_items(ocr_result):
             box_points, text, _ = item
-            if any(b.lower() in text.lower() for b in self.blacklist):
-                continue
-
             clean_text = re.sub(r"^[EP](\d)", r"\1", text)
             clean_text = re.sub(r"[.,;]", "", clean_text)
-            nums_found = re.findall(r"\d+", clean_text)
+            blacklisted = self._has_blacklisted_text(text)
+            nums_found = self._extract_numeric_candidates(clean_text, blacklisted)
             if not nums_found:
                 continue
 
@@ -281,11 +453,20 @@ class MMROCREngine:
                     if val > 20 and img_width < 100:
                         score -= 200
 
+                    debug_flags = [
+                        f"dx={dist_x_norm:.2f}",
+                        f"dy={dist_y_norm:.2f}",
+                        f"h={h_ratio:.2f}",
+                        source,
+                    ]
+                    if blacklisted:
+                        debug_flags.append("blacklist_digit")
+
                     candidates.append(
                         {
                             "val": val,
                             "score": score,
-                            "debug": f"dx={dist_x_norm:.2f},dy={dist_y_norm:.2f},h={h_ratio:.2f}",
+                            "debug": ",".join(debug_flags),
                         }
                     )
                 except ValueError:
@@ -299,6 +480,12 @@ class MMROCREngine:
 
 class MMRProcessor:
     """Integrated processor for batch MMR detection."""
+
+    ONE_BAR_VETO_PROB_MAX = 0.60
+    ONE_BAR_VETO_SCORE_MAX = 0.0
+    ONE_BAR_VETO_MIN_EVIDENCE = 2
+    ONE_BAR_VETO_MIN_CONFIDENCE = 0.80
+    UNMASKED_FALLBACK_MIN_SCORE = 0.0
 
     def __init__(
         self,
@@ -322,36 +509,103 @@ class MMRProcessor:
 
         self.threshold = threshold
         self.rescue_threshold = rescue_threshold
+        self.support_stats = {"phase_a_ocr_fallback": 0, "alternate_veto_suppression": 0}
+        # Runtime-only progress state.  This is deliberately separate from
+        # the MMR decision data so callers can record a useful failure report.
+        self.current_page_id: Optional[str] = None
+        self.last_completed_page_id: Optional[str] = None
+
+    def _count_high_confidence_one_bar_evidence(self, ocr_result: List) -> int:
+        collector = getattr(self.ocr, "collect_one_bar_evidence", None)
+        if collector is None:
+            return 0
+
+        count = 0
+        for evidence in collector(ocr_result):
+            try:
+                confidence = float(evidence["confidence"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if confidence >= self.ONE_BAR_VETO_MIN_CONFIDENCE:
+                count += 1
+        return count
+
+    def _should_veto_one_bar_rest(
+        self,
+        found_num: Optional[int],
+        prob: float,
+        final_score: float,
+        one_bar_evidence_count: int,
+    ) -> bool:
+        return bool(
+            found_num
+            and self.threshold < prob < self.ONE_BAR_VETO_PROB_MAX
+            and final_score < self.ONE_BAR_VETO_SCORE_MAX
+            and one_bar_evidence_count >= self.ONE_BAR_VETO_MIN_EVIDENCE
+        )
 
     def process_pages(
         self,
         pages_data: List[Dict],
         image_paths: List[Path],
         debug_root: Optional[Path] = None,
+        support_data: Optional[List[Optional[Dict]]] = None,
+        target_measure_keys: Optional[set[tuple[int, int, int]]] = None,
     ) -> List[Dict[str, List[Dict]]]:
         """
         Process multiple pages and return measure overrides for each.
         Returns a list of dictionaries, one per page, containing 'measure_overrides'.
         """
         results = []
-        for page_data, img_path in zip(pages_data, image_paths):
+        if support_data is not None and len(support_data) != len(pages_data):
+            raise ValueError("support_data must have one entry for each MMR page")
+        for page_index, (page_data, img_path) in enumerate(zip(pages_data, image_paths)):
+            page_num = page_data.get("pages", [{}])[0].get("page_number", 1)
+            page_id = f"page_{int(page_num):03d}"
+            self.current_page_id = page_id
+            print(f"MMR page start: {page_id}", flush=True)
             image = cv2.imread(str(img_path))
             if image is None:
                 logger.error(f"Could not read image: {img_path}")
                 results.append({"measure_overrides": []})
+                self.last_completed_page_id = page_id
+                print(f"MMR page complete: {page_id}", flush=True)
                 continue
 
             h_img, w_img = image.shape[:2]
             overrides = []
-            page_num = page_data.get("pages", [{}])[0].get("page_number", 1)
-
             debug_img = None
             if debug_root:
                 debug_img = image.copy()
 
+            support = support_data[page_index] if support_data is not None else None
+            if support is not None:
+                overrides = self._process_page_with_support(
+                    page_data=page_data,
+                    support=support,
+                    image=image,
+                    page_num=page_num,
+                    image_width=w_img,
+                    image_height=h_img,
+                    debug_img=debug_img,
+                    target_measure_keys=target_measure_keys,
+                )
+                if debug_img is not None and debug_root:
+                    debug_path = debug_root / f"page_{page_num:03d}_mmr_debug.png"
+                    cv2.imwrite(str(debug_path), debug_img)
+                results.append({"measure_overrides": overrides})
+                self.last_completed_page_id = page_id
+                print(f"MMR page complete: {page_id}", flush=True)
+                continue
+
             for page_entry in page_data.get("pages", []):
                 for sys_idx, system in enumerate(page_entry.get("systems", [])):
                     for m_idx, measure in enumerate(system.get("measures", [])):
+                        if (
+                            target_measure_keys is not None
+                            and (page_num - 1, sys_idx, m_idx) not in target_measure_keys
+                        ):
+                            continue
                         x1, y1, x2, y2 = measure["bbox"]
                         margin = 20
                         cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
@@ -360,14 +614,25 @@ class MMRProcessor:
 
                         prob = self.classifier.predict(crop)
                         if prob > self.rescue_threshold:
-                            found_num, final_score, final_debug = self._detect_number(
-                                image, system, x1, y1, x2, y2, prob, w_img, h_img
+                            found_num, final_score, final_debug, one_bar_evidence_count = (
+                                self._detect_number_with_evidence(
+                                    image, system, x1, y1, x2, y2, prob, w_img, h_img
+                                )
                             )
 
                             is_valid = False
                             status_label = ""
+                            one_bar_vetoed = False
                             if found_num:
-                                if prob > self.threshold:
+                                one_bar_vetoed = self._should_veto_one_bar_rest(
+                                    found_num,
+                                    prob,
+                                    final_score,
+                                    one_bar_evidence_count,
+                                )
+                                if one_bar_vetoed:
+                                    status_label = "one_bar_veto"
+                                elif prob > self.threshold:
                                     is_valid, status_label = True, "found"
                                 elif final_score > 60:
                                     is_valid, status_label = True, "rescue"
@@ -396,6 +661,18 @@ class MMRProcessor:
                                         f"R{found_num}",
                                         f"P{prob:.2f}",
                                     )
+                            elif one_bar_vetoed:
+                                logger.info(
+                                    "  [VETO] P%s S%s M%s: Prob=%.2f -> OCR=%s "
+                                    "(score=%.1f, one_bar_evidence=%s)",
+                                    page_num,
+                                    sys_idx,
+                                    measure["number"],
+                                    prob,
+                                    found_num,
+                                    final_score,
+                                    one_bar_evidence_count,
+                                )
                             elif prob > self.threshold:
                                 if debug_img is not None:
                                     self._draw_debug(
@@ -407,10 +684,526 @@ class MMRProcessor:
                 cv2.imwrite(str(debug_path), debug_img)
 
             results.append({"measure_overrides": overrides})
+            self.last_completed_page_id = page_id
+            print(f"MMR page complete: {page_id}", flush=True)
 
         return results
 
+    def _valid_status(
+        self,
+        found_num: Optional[int],
+        prob: float,
+        final_score: float,
+        one_bar_evidence_count: int,
+    ) -> tuple[bool, str, bool]:
+        if not found_num:
+            return False, "", False
+        vetoed = self._should_veto_one_bar_rest(
+            found_num, prob, final_score, one_bar_evidence_count
+        )
+        if vetoed:
+            return False, "one_bar_veto", True
+        if prob > self.threshold:
+            return True, "found", False
+        if final_score > 60:
+            return True, "rescue", False
+        return False, "", False
+
+    @staticmethod
+    def _support_view(support: Dict, name: str) -> Dict:
+        try:
+            view = support["views"][name]
+            if not isinstance(view, dict):
+                raise TypeError
+            return view
+        except (KeyError, TypeError) as error:
+            raise ValueError(f"Invalid MMR support sidecar: missing {name} view") from error
+
+    def _process_page_with_support(
+        self,
+        *,
+        page_data: Dict,
+        support: Dict,
+        image: np.ndarray,
+        page_num: int,
+        image_width: int,
+        image_height: int,
+        debug_img: Optional[np.ndarray],
+        target_measure_keys: Optional[set[tuple[int, int, int]]] = None,
+    ) -> List[Dict]:
+        """Apply current-x4 geometry without mutating Phase-A logical indices."""
+
+        primary_page = self._support_view(support, "primary")
+        alternate_page = self._support_view(support, "implicit_start_alternate")
+        fallback_page = self._support_view(support, "fallback")
+        primary_systems = primary_page.get("pages", [{}])[0].get("systems", [])
+        alternate_systems = alternate_page.get("pages", [{}])[0].get("systems", [])
+        fallback_systems = fallback_page.get("pages", [{}])[0].get("systems", [])
+        original_systems = page_data.get("pages", [{}])[0].get("systems", [])
+        if not (
+            len(primary_systems)
+            == len(alternate_systems)
+            == len(fallback_systems)
+            == len(original_systems)
+        ):
+            raise ValueError("MMR support topology differs from Phase-A numbering")
+
+        overrides: List[Dict] = []
+        for sys_idx, original_system in enumerate(original_systems):
+            primary_system = primary_systems[sys_idx]
+            alternate_system = alternate_systems[sys_idx]
+            fallback_system = fallback_systems[sys_idx]
+            original_measures = original_system.get("measures", [])
+            if not (
+                len(primary_system.get("measures", []))
+                == len(alternate_system.get("measures", []))
+                == len(fallback_system.get("measures", []))
+                == len(original_measures)
+            ):
+                raise ValueError("MMR support measure layout differs from Phase-A numbering")
+            for m_idx, original_measure in enumerate(original_measures):
+                if (
+                    target_measure_keys is not None
+                    and (page_num - 1, sys_idx, m_idx) not in target_measure_keys
+                ):
+                    continue
+                primary_measure = primary_system["measures"][m_idx]
+                x1, y1, x2, y2 = primary_measure["bbox"]
+                margin = 20
+                cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
+                cx2, cy2 = int(min(image_width, x2 + margin)), int(min(image_height, y2 + margin))
+                prob = self.classifier.predict(image[cy1:cy2, cx1:cx2])
+                if prob <= self.rescue_threshold:
+                    continue
+
+                found_num, final_score, _debug, evidence = self._detect_number_with_evidence(
+                    image, primary_system, x1, y1, x2, y2, prob, image_width, image_height
+                )
+                is_valid, status_label, vetoed = self._valid_status(
+                    found_num, prob, final_score, evidence
+                )
+
+                alternate_measure = alternate_system["measures"][m_idx]
+                if is_valid and alternate_measure["bbox"][0] != primary_measure["bbox"][0]:
+                    ax1, ay1, ax2, ay2 = alternate_measure["bbox"]
+                    alt_num, alt_score, _alt_debug, alt_evidence = (
+                        self._detect_number_with_evidence(
+                            image,
+                            alternate_system,
+                            ax1,
+                            ay1,
+                            ax2,
+                            ay2,
+                            prob,
+                            image_width,
+                            image_height,
+                        )
+                    )
+                    if self._should_veto_one_bar_rest(alt_num, prob, alt_score, alt_evidence):
+                        is_valid, status_label, vetoed = False, "one_bar_veto", True
+                        self.support_stats["alternate_veto_suppression"] += 1
+
+                # A Phase-A retry is OCR-only: it reuses the primary CNN probability.
+                if found_num is None and prob > self.threshold:
+                    self.support_stats["phase_a_ocr_fallback"] += 1
+                    fallback_measure = fallback_system["measures"][m_idx]
+                    fx1, fy1, fx2, fy2 = fallback_measure["bbox"]
+                    found_num, final_score, _fallback_debug, evidence = (
+                        self._detect_number_with_evidence(
+                            image,
+                            fallback_system,
+                            fx1,
+                            fy1,
+                            fx2,
+                            fy2,
+                            prob,
+                            image_width,
+                            image_height,
+                        )
+                    )
+                    is_valid, status_label, vetoed = self._valid_status(
+                        found_num, prob, final_score, evidence
+                    )
+
+                if is_valid:
+                    overrides.append(
+                        {
+                            "page": page_num - 1,
+                            "system": sys_idx,
+                            "measure": m_idx,
+                            "skip": found_num - 1,
+                            "comment": f"CNN({prob:.2f})+OCR({final_score:.1f}): {found_num}",
+                        }
+                    )
+                    if debug_img is not None:
+                        self._draw_debug(
+                            debug_img, x1, y1, x2, y2, status_label, f"R{found_num}", f"P{prob:.2f}"
+                        )
+                elif vetoed:
+                    logger.info(
+                        "  [VETO] P%s S%s M%s: Prob=%.2f",
+                        page_num,
+                        sys_idx,
+                        original_measure["number"],
+                        prob,
+                    )
+        return overrides
+
     def _detect_number(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
+        found_number, best_score, best_debug, _one_bar_evidence_count = (
+            self._detect_number_with_evidence(image, system, x1, y1, x2, y2, prob, w_img, h_img)
+        )
+        return found_number, best_score, best_debug
+
+    JITTER_SCORE_TRIGGER = 5.0
+    TARGETED_X1_SHIFT_FRACTION = 0.01
+    NATIVE_INSET_FRACTION = 0.0025
+    TARGETED_UPPER_STAFF_MARGIN_RATIO = 0.5
+    TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO = 0.2
+    TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO = 0.5
+
+    def _detect_number_with_evidence(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
+        """Retry low-reliability OCR with candidate-native Issue #277 crops."""
+        baseline = self._detect_number_with_evidence_once(
+            image, system, x1, y1, x2, y2, prob, w_img, h_img
+        )
+        found, score, debug, evidence = baseline
+
+        # Preserve the validated J2 behavior for low-CNN rescue and marginal
+        # one-bar cases. The targeted retries do not replace those contracts.
+        if prob <= self.threshold or (
+            self.threshold < prob < self.ONE_BAR_VETO_PROB_MAX
+            and evidence >= self.ONE_BAR_VETO_MIN_EVIDENCE
+        ):
+            return self._detect_number_with_evidence_j2(
+                image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline
+            )
+
+        measure_bbox = [int(x1), int(y1), int(x2), int(y2)]
+
+        # A high-CNN candidate with no OCR number has no semantic result to
+        # preserve. Retry exactly once with a symmetric, measure-relative crop
+        # inset; this excludes neighbouring notation without an external frame.
+        if found is None:
+            inset_bbox = self._native_inset_bbox(measure_bbox)
+            if inset_bbox != measure_bbox:
+                inset = self._detect_number_with_evidence_once(
+                    image, system, *inset_bbox, prob, w_img, h_img
+                )
+                inset_num, inset_score, inset_debug, inset_evidence = inset
+                if self._targeted_retry_candidate_acceptable(inset_num, inset_score):
+                    return (
+                        inset_num,
+                        inset_score,
+                        f"{inset_debug},issue277_native_symmetric_inset",
+                        inset_evidence,
+                    )
+
+        # A normal high-score OCR result stays authoritative. The left-wide
+        # fallback is deliberately broad, so corroborate only that generic
+        # fallback subtype with one narrow candidate-native crop before
+        # returning it. The standard fallback remains authoritative because
+        # its narrower crop has already been spatially constrained.
+        if found is not None and score > self.JITTER_SCORE_TRIGGER:
+            if "left_wide_unmasked_fallback" in str(debug):
+                retry_num, retry_score = self._run_calibrated_shifted_staff_values(
+                    image,
+                    self._targeted_shift_x1(measure_bbox),
+                    system.get("staves", []),
+                    w_img,
+                    h_img,
+                )
+                if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+                    return (
+                        retry_num,
+                        retry_score,
+                        "issue277_calibrated_shifted_unmasked_fallback_retry",
+                        evidence,
+                    )
+            return baseline
+
+        staves = system.get("staves", [])
+        full_span_values = [
+            self._run_targeted_full_span_staff(image, measure_bbox, stave["bbox"], w_img, h_img)
+            for stave in staves
+        ]
+        retry_num, retry_score = self._aggregate_targeted_staff_results(full_span_values)
+        if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+            return (
+                retry_num,
+                retry_score,
+                "issue277_targeted_full_span_unmasked_heavy_dilate",
+                evidence,
+            )
+
+        shifted_bbox = self._targeted_shift_x1(measure_bbox)
+        shifted_values = []
+        if shifted_bbox[0] != measure_bbox[0]:
+            shifted_values = [
+                self._run_targeted_shifted_staff(image, shifted_bbox, stave["bbox"], w_img, h_img)
+                for stave in staves
+            ]
+        retry_num, retry_score = self._aggregate_targeted_staff_results(shifted_values)
+        if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+            return (
+                retry_num,
+                retry_score,
+                "issue277_targeted_scale_relative_x1_masked_no_dilate",
+                evidence,
+            )
+
+        if found is None:
+            return baseline
+
+        return self._detect_number_with_evidence_j2(
+            image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline
+        )
+
+    @classmethod
+    def _targeted_shift_x1(cls, bbox: List[int]) -> List[int]:
+        x1, y1, x2, y2 = (int(value) for value in bbox)
+        width = x2 - x1
+        if width <= 1:
+            return [x1, y1, x2, y2]
+        dx = min(
+            width - 1,
+            max(1, int(round(width * cls.TARGETED_X1_SHIFT_FRACTION))),
+        )
+        return [x1 + dx, y1, x2, y2]
+
+    @classmethod
+    def _native_inset_bbox(cls, bbox: List[int]) -> List[int]:
+        x1, y1, x2, y2 = (int(value) for value in bbox)
+        width = x2 - x1
+        if width <= 2:
+            return [x1, y1, x2, y2]
+        inset = min(max(1, int(round(width * cls.NATIVE_INSET_FRACTION))), (width - 1) // 2)
+        if x1 + inset >= x2 - inset:
+            return [x1, y1, x2, y2]
+        return [x1 + inset, y1, x2 - inset, y2]
+
+    @staticmethod
+    def _targeted_retry_candidate_acceptable(number: Optional[int], score: float) -> bool:
+        return number is not None and number >= 2 and score > 0.0
+
+    @staticmethod
+    def _aggregate_targeted_staff_results(
+        values: List[Tuple[Optional[int], float]],
+    ) -> Tuple[Optional[int], float]:
+        votes = Counter(value for value, _score in values if value is not None and value >= 2)
+        if not votes:
+            return None, 0.0
+        support = max(votes.values())
+        leaders = [value for value, count in votes.items() if count == support]
+        if len(leaders) != 1:
+            return None, 0.0
+        selected = leaders[0]
+        score = max(score for value, score in values if value == selected)
+        return selected, score
+
+    def _run_targeted_full_span_staff(
+        self, image, measure_bbox, staff_bbox, w_img, h_img
+    ) -> Tuple[Optional[int], float]:
+        x1, _y1, x2, _y2 = (float(value) for value in measure_bbox)
+        _sx1, sy1, _sx2, sy2 = (float(value) for value in staff_bbox)
+        staff_height = max(1.0, sy2 - sy1)
+        ox1 = max(0, min(w_img, int(round(x1))))
+        ox2 = max(0, min(w_img, int(round(x2))))
+        oy1 = max(
+            0,
+            min(
+                h_img,
+                int(round(sy1 - self.TARGETED_UPPER_STAFF_MARGIN_RATIO * staff_height)),
+            ),
+        )
+        oy2 = max(0, min(h_img, int(round(sy2))))
+        crop = image[oy1:oy2, ox1:ox2]
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="heavy_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
+        else:
+            processed = self.ocr.preprocess_variant(crop, mode="heavy_dilate", angle=0)
+        if processed is None or processed.size == 0:
+            return None, 0.0
+        ocr_result, _ = self.ocr.ocr_engine(processed)
+        number, score, _debug = self.ocr.select_best_candidate(
+            ocr_result or [], processed.shape[1], processed.shape[0]
+        )
+        if number is None or number < 2:
+            return None, 0.0
+        return number, score
+
+    def _run_targeted_shifted_staff(
+        self, image, measure_bbox, staff_bbox, w_img, h_img
+    ) -> Tuple[Optional[int], float]:
+        x1, _y1, x2, _y2 = (int(value) for value in measure_bbox)
+        _sx1, sy1, _sx2, sy2 = (int(value) for value in staff_bbox)
+        staff_height = max(1.0, float(sy2 - sy1))
+        margin_x = int(round(staff_height * self.TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO))
+        margin_y = int(round(staff_height * self.TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO))
+        ox1 = max(0, min(w_img, x1 - margin_x))
+        ox2 = max(0, min(w_img, x2 + margin_x))
+        oy1 = max(0, min(h_img, sy1 - margin_y))
+        oy2 = max(0, min(h_img, sy2 + margin_y))
+        crop = image[oy1:oy2, ox1:ox2]
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        staff_top_rel = float(sy1 - oy1)
+        if getattr(self.ocr, "supports_staff_relative_hbar_geometry", False):
+            crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height, True)
+        else:
+            crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="no_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
+        else:
+            processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)
+        if processed is None or processed.size == 0:
+            return None, 0.0
+        ocr_result, _ = self.ocr.ocr_engine(processed)
+        number, score, _debug = self.ocr.select_best_candidate(
+            ocr_result or [], processed.shape[1], processed.shape[0]
+        )
+        if number is None or number < 2:
+            return None, 0.0
+        return number, score
+
+    def _run_calibrated_shifted_staff_values(self, image, measure_bbox, staves, w_img, h_img):
+        """One narrow retry for broad unmasked-fallback evidence only."""
+        values = []
+        x1, _y1, x2, _y2 = (int(value) for value in measure_bbox)
+        for stave in staves:
+            _sx1, sy1, _sx2, sy2 = (int(value) for value in stave["bbox"])
+            staff_height = max(1.0, float(sy2 - sy1))
+            margin_x = int(round(staff_height * self.TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO))
+            margin_y = int(round(staff_height * self.TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO))
+            top, bottom = max(0, sy1 - margin_y), min(h_img, sy2 + margin_y)
+            crop = image[top:bottom, max(0, x1 - margin_x) : min(w_img, x2 + margin_x)]
+            if crop is None or crop.size == 0:
+                continue
+            staff_top_rel = float(sy1 - top)
+            calibrated_mask = getattr(self.ocr, "mask_hbar_candidates_calibrated", None)
+            if callable(calibrated_mask):
+                crop = calibrated_mask(crop, staff_top_rel, staff_height)
+            else:
+                # Preserve the injected OCR adapter contract used before
+                # Issue #345. The calibrated mask is production-only; legacy
+                # adapters receive the original three-argument call.
+                crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
+            if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+                processed = self.ocr.preprocess_variant(
+                    crop,
+                    mode="no_dilate",
+                    angle=0,
+                    staff_height=staff_height,
+                    use_staff_relative_geometry=True,
+                )
+            else:
+                processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)
+            if processed is None or processed.size == 0:
+                continue
+            ocr_result, _ = self.ocr.ocr_engine(processed)
+            number, retry_score, _debug = self.ocr.select_best_candidate(
+                ocr_result or [], processed.shape[1], processed.shape[0]
+            )
+            values.append((number if number is not None and number >= 2 else None, retry_score))
+        return self._aggregate_targeted_staff_results(values)
+
+    def _detect_number_with_evidence_j2(
+        self, image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline=None
+    ):
+        """Retain merged J2 as the fallback for contracts targeted v2 cannot resolve."""
+        if baseline is None:
+            baseline = self._detect_number_with_evidence_once(
+                image, system, x1, y1, x2, y2, prob, w_img, h_img
+            )
+        found, score, debug, evidence = baseline
+        if found is None or score > self.JITTER_SCORE_TRIGGER:
+            return baseline
+        views = [baseline]
+        for dx in (-2, 2):
+            views.append(
+                self._detect_number_with_evidence_once(
+                    image, system, x1 + dx, y1, x2 + dx, y2, prob, w_img, h_img
+                )
+            )
+        for dy in (-2, 2):
+            shifted = deepcopy(system)
+            for stave in shifted.get("staves", []):
+                stave["bbox"][1] += dy
+                stave["bbox"][3] += dy
+            views.append(
+                self._detect_number_with_evidence_once(
+                    image, shifted, x1, y1, x2, y2, prob, w_img, h_img
+                )
+            )
+        votes = Counter(item[0] for item in views if item[0] is not None and item[0] >= 2)
+        if not votes:
+            return baseline
+        majority, count = votes.most_common(1)[0]
+        if count < 3:
+            return baseline
+        if majority == found:
+            return baseline
+        representative = max(
+            (item for item in views if item[0] == majority), key=lambda item: item[1]
+        )
+        return (
+            representative[0],
+            representative[1],
+            f"{representative[2]},j2_consensus={count}of5",
+            evidence,
+        )
+
+    def _select_staff_value(self, results, prob, measure_width=None):
+        """Keep staff support primary; break high-CNN ties by spatial score."""
+        counts = Counter(result[0] for result in results)
+        support = max(counts.values())
+        leaders = {value for value, count in counts.items() if count == support}
+        tied = len(leaders) > 1
+        if tied and prob > self.threshold:
+            # A rejected high count must not displace an admissible tied leader.
+            # Preserve the existing rejection of an unambiguous staff majority.
+            if measure_width is not None and measure_width < 100:
+                admissible = {value for value in leaders if value <= 20}
+                if admissible:
+                    leaders = admissible
+            value = max(
+                (result for result in results if result[0] in leaders),
+                key=lambda result: result[1],
+            )[0]
+        else:
+            value = counts.most_common(1)[0][0]
+        return value, tied
+
+    @staticmethod
+    def _select_variant_result(results, had_staff_conflict):
+        """Corroborate ambiguous staff choices without changing ordinary OCR."""
+        if had_staff_conflict:
+            votes = Counter(result[0] for result in results)
+            value, support = votes.most_common(1)[0]
+            if support >= 2 and support > len(results) / 2:
+                return max(
+                    (result for result in results if result[0] == value),
+                    key=lambda result: result[1],
+                )
+        return max(results, key=lambda result: result[1])
+
+    def _detect_number_with_evidence_once(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         variants = [("standard", 0)]
         if prob > self.threshold:
             variants = [("standard", 0), ("no_dilate", 0), ("heavy_dilate", 0)]
@@ -419,9 +1212,9 @@ class MMRProcessor:
                     [("standard", -2), ("standard", 2), ("heavy_dilate", -2), ("heavy_dilate", 2)]
                 )
 
-        found_number = None
-        best_score = 0
-        best_debug = ""
+        variant_results = []
+        had_staff_conflict = False
+        one_bar_evidences = {}
 
         for mode, angle in variants:
             stave_results = []
@@ -431,30 +1224,122 @@ class MMRProcessor:
                 ox1, ox2 = int(max(0, x1 - 30)), int(min(w_img, x2 + 30))
                 oy1, oy2 = int(max(0, s_bbox[1] - margin_y)), int(min(h_img, s_bbox[3] + 80))
                 stave_crop = image[oy1:oy2, ox1:ox2]
+                if stave_crop is None or stave_crop.size == 0:
+                    continue
+
                 stave_crop = self.ocr.mask_hbar_candidates(
                     stave_crop, margin_y, s_bbox[3] - s_bbox[1]
                 )
+                if stave_crop is None or stave_crop.size == 0:
+                    continue
 
                 proc_img = self.ocr.preprocess_variant(stave_crop, mode=mode, angle=angle)
                 if proc_img is None:
                     continue
 
                 ocr_res, _ = self.ocr.ocr_engine(proc_img)
-                num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
+                variant_key = (mode, angle)
+                one_bar_evidences[variant_key] = one_bar_evidences.get(
+                    variant_key, 0
+                ) + self._count_high_confidence_one_bar_evidence(ocr_res)
+                num, score, dbg = self.ocr.select_best_candidate(
+                    ocr_res, proc_img.shape[1], proc_img.shape[0]
+                )
                 stave_results.append((num, score, dbg))
 
             valid_results = [r for r in stave_results if r[0] is not None]
             if valid_results:
-                counts = Counter([r[0] for r in valid_results])
-                current_num = counts.most_common(1)[0][0]
+                current_num, tied = self._select_staff_value(valid_results, prob, x2 - x1)
+                had_staff_conflict |= tied
 
                 if not (current_num > 20 and (x2 - x1) < 100):
-                    best_entry = max(
+                    _, best_score, best_dbg = max(
                         [r for r in valid_results if r[0] == current_num], key=lambda x: x[1]
                     )
-                    found_number, best_score, best_debug = current_num, best_entry[1], best_entry[2]
+                    if best_dbg:
+                        variant_debug = f"{best_dbg},variant={mode}:{angle}"
+                    else:
+                        variant_debug = f"variant={mode}:{angle}"
+                    variant_results.append((current_num, best_score, variant_debug))
+
+        if not variant_results:
+            fallback_configs = [
+                {
+                    "name": "unmasked_fallback_standard",
+                    "margin_y": 80,
+                    "dx1": -30,
+                    "dx2": 30,
+                    "min_prob": self.rescue_threshold,
+                },
+                {
+                    "name": "left_wide_unmasked_fallback_standard",
+                    "margin_y": 120,
+                    "dx1": -180,
+                    "dx2": 60,
+                    "min_prob": self.threshold,
+                },
+            ]
+
+            for cfg in fallback_configs:
+                if variant_results:
                     break
-        return found_number, best_score, best_debug
+                if prob <= cfg["min_prob"]:
+                    continue
+
+                fallback_results = []
+                name = cfg["name"]
+                margin_y = cfg["margin_y"]
+                dx1 = cfg["dx1"]
+                dx2 = cfg["dx2"]
+
+                for stave in system.get("staves", []):
+                    s_bbox = stave["bbox"]
+                    ox1 = int(max(0, x1 + dx1))
+                    ox2 = int(min(w_img, x2 + dx2))
+                    oy1 = int(max(0, s_bbox[1] - margin_y))
+                    oy2 = int(min(h_img, s_bbox[3] + margin_y))
+                    stave_crop = image[oy1:oy2, ox1:ox2]
+                    if stave_crop is None or stave_crop.size == 0:
+                        continue
+
+                    proc_img = self.ocr.preprocess_variant(stave_crop, mode="standard", angle=0)
+                    if proc_img is None:
+                        continue
+
+                    ocr_res, _ = self.ocr.ocr_engine(proc_img)
+                    variant_key = (name, 0)
+                    one_bar_evidences[variant_key] = one_bar_evidences.get(
+                        variant_key, 0
+                    ) + self._count_high_confidence_one_bar_evidence(ocr_res)
+
+                    num, score, dbg = self.ocr.select_best_candidate(
+                        ocr_res, proc_img.shape[1], proc_img.shape[0]
+                    )
+                    if num is not None and score > self.UNMASKED_FALLBACK_MIN_SCORE:
+                        fallback_results.append((num, score, dbg))
+
+                if fallback_results:
+                    current_num, tied = self._select_staff_value(fallback_results, prob, x2 - x1)
+                    had_staff_conflict |= tied
+                    if not (current_num > 20 and (x2 - x1) < 100):
+                        _, best_score, best_dbg = max(
+                            [r for r in fallback_results if r[0] == current_num],
+                            key=lambda x: x[1],
+                        )
+                        if best_dbg:
+                            variant_debug = f"{best_dbg},variant={name}:0"
+                        else:
+                            variant_debug = f"variant={name}:0"
+                        variant_results.append((current_num, best_score, variant_debug))
+
+        one_bar_evidence_count = max(one_bar_evidences.values(), default=0)
+        if not variant_results:
+            return None, 0, "", one_bar_evidence_count
+
+        found_number, best_score, best_debug = self._select_variant_result(
+            variant_results, had_staff_conflict
+        )
+        return found_number, best_score, best_debug, one_bar_evidence_count
 
     def _draw_debug(self, img, x1, y1, x2, y2, status, text, details):
         colors = {"found": (0, 255, 0), "rescue": (0, 165, 255), "skip": (0, 255, 255)}
@@ -462,3 +1347,31 @@ class MMRProcessor:
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
         label = f"{text} ({details})" if details else text
         cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+
+def run_mmr_batch(
+    pages_data: List[Dict],
+    image_paths: List[Path],
+    model_path: Path,
+    device: torch.device,
+    debug_root: Optional[Path] = None,
+    rapidocr_instance: Optional[RapidOCR] = None,
+    threshold: float = 0.5,
+    rescue_threshold: float = 0.1,
+    enable_rotation_tta: bool = False,
+    support_data: Optional[List[Optional[Dict]]] = None,
+) -> List[Dict[str, List[Dict]]]:
+    ocr_engine = None
+    if rapidocr_instance is not None:
+        ocr_engine = MMROCREngine(
+            enable_rotation_tta=enable_rotation_tta, ocr_engine=rapidocr_instance
+        )
+    processor = MMRProcessor(
+        model_path,
+        device,
+        ocr_engine=ocr_engine,
+        threshold=threshold,
+        rescue_threshold=rescue_threshold,
+        enable_rotation_tta=enable_rotation_tta,
+    )
+    return processor.process_pages(pages_data, image_paths, debug_root, support_data)

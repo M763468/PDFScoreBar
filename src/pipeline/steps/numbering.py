@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import torch
 
+from src.pipeline.core import load_json
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.utils.images import load_image_size
+
+MOVEMENT_BOUNDARY_SCHEMA_VERSION = "issue268.movement_boundaries.v1"
+FINAL_NUMBERING_SCHEMA_VERSION = "issue268.final_numbering.v1"
+SYSTEM_INDEX_CONTRACT = "compact_nonempty_systems.v1"
 
 
 def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any]:
@@ -25,6 +31,171 @@ def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any
     }
 
 
+def load_movement_boundary_payload(raw_input: Any) -> Dict[str, Any]:
+    """Load and validate explicit, resolved movement boundaries.
+
+    The payload is intentionally detector-independent. Page and system indices
+    are zero-based: pages refer to the ordered pipeline input and systems to
+    the compact nonempty ``systems`` array in numbering JSON. A boundary is an
+    instruction to reset immediately before the selected system; it is not
+    inferred from page breaks, barlines, or ``MeasureAttribute.set_number``.
+    """
+    if raw_input is None:
+        return {"schema_version": MOVEMENT_BOUNDARY_SCHEMA_VERSION, "boundaries": []}
+
+    if isinstance(raw_input, (str, Path)):
+        payload = load_json(Path(raw_input))
+    else:
+        payload = raw_input
+    if not isinstance(payload, dict):
+        raise ValueError("movement boundaries must be a JSON object or input path")
+
+    schema_version = payload.get("schema_version", MOVEMENT_BOUNDARY_SCHEMA_VERSION)
+    if schema_version != MOVEMENT_BOUNDARY_SCHEMA_VERSION:
+        raise ValueError(
+            "Unsupported movement boundary schema_version: "
+            f"{schema_version!r}; expected {MOVEMENT_BOUNDARY_SCHEMA_VERSION!r}"
+        )
+
+    raw_boundaries = payload.get("boundaries", [])
+    if not isinstance(raw_boundaries, list):
+        raise ValueError("movement boundaries 'boundaries' must be a list")
+
+    boundaries: list[Dict[str, Any]] = []
+    seen: set[tuple[int, int]] = set()
+    for index, raw_boundary in enumerate(raw_boundaries):
+        if not isinstance(raw_boundary, dict):
+            raise ValueError(f"movement boundary {index} must be an object")
+        try:
+            page = _strict_boundary_int(raw_boundary["page"], "page")
+            system = _strict_boundary_int(raw_boundary["system"], "system")
+            reset_number = _strict_boundary_int(raw_boundary["reset_number"], "reset_number")
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "movement boundaries require integer page, system, and reset_number: "
+                f"{raw_boundary!r}"
+            ) from exc
+        if page < 0 or system < 0:
+            raise ValueError("movement boundary page and system must be non-negative")
+
+        key = (page, system)
+        if key in seen:
+            raise ValueError(f"duplicate movement boundary at page/system {key}")
+        seen.add(key)
+
+        source = raw_boundary.get("source")
+        provenance = raw_boundary.get("provenance")
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError(f"movement boundary {index} requires a non-empty source")
+        if not isinstance(provenance, dict):
+            raise ValueError(f"movement boundary {index} requires provenance object")
+
+        boundary = deepcopy(raw_boundary)
+        boundary.update({"page": page, "system": system, "reset_number": reset_number})
+        boundaries.append(boundary)
+
+    boundaries.sort(key=lambda item: (item["page"], item["system"]))
+    return {"schema_version": MOVEMENT_BOUNDARY_SCHEMA_VERSION, "boundaries": boundaries}
+
+
+def _strict_boundary_int(value: Any, field: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"movement boundary {field} must be an integer")
+    if isinstance(value, float) and not value.is_integer():
+        raise ValueError(f"movement boundary {field} must be an integer")
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"movement boundary {field} must be an integer") from exc
+
+
+def movement_boundaries_for_page(
+    payload: Mapping[str, Any], page_index: int
+) -> list[Dict[str, Any]]:
+    """Return resolved boundary records for one global page index."""
+    return [
+        deepcopy(boundary)
+        for boundary in payload.get("boundaries", [])
+        if isinstance(boundary, dict) and boundary.get("page") == page_index
+    ]
+
+
+def reject_movement_boundaries_on_excluded_pages(
+    payload: Mapping[str, Any], excluded_page_indices: set[int]
+) -> None:
+    """Reject resolved boundaries whose target page is excluded from numbering."""
+    invalid = [
+        boundary
+        for boundary in payload.get("boundaries", [])
+        if isinstance(boundary, dict) and boundary.get("page") in excluded_page_indices
+    ]
+    if invalid:
+        locations = ", ".join(
+            f"page={boundary['page']},system={boundary['system']}" for boundary in invalid
+        )
+        raise ValueError(
+            "Movement boundaries cannot target excluded pages; resolve the boundary input "
+            f"without excluded targets ({locations})"
+        )
+
+
+def final_numbering_metadata(
+    *,
+    page_index: int,
+    start_number: int,
+    next_number: int,
+    boundaries: list[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Build additive metadata shared by page-level final artifacts."""
+    return {
+        "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+        "system_index_contract": SYSTEM_INDEX_CONTRACT,
+        "page_index": page_index,
+        "start_number": start_number,
+        "next_number": next_number,
+        "movement_boundaries": deepcopy(boundaries),
+    }
+
+
+def persisted_final_next_number(
+    path: Path,
+    *,
+    expected_start_number: int,
+    expected_boundaries: list[Dict[str, Any]],
+) -> Optional[int]:
+    """Return reusable score state only from a matching final artifact.
+
+    Older page-local artifacts intentionally return ``None``. Reconstructing
+    score state from their visible maximum would lose MMR skip semantics.
+    """
+    try:
+        payload = load_json(path)
+    except (OSError, ValueError, TypeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    metadata = payload.get("numbering_metadata")
+    if not isinstance(metadata, dict):
+        return None
+    if metadata.get("schema_version") != FINAL_NUMBERING_SCHEMA_VERSION:
+        return None
+    # Pre-#413 artifacts can contain misapplied overrides even when their
+    # starting number and movement boundaries match. Rebuild them once.
+    if metadata.get("system_index_contract") != SYSTEM_INDEX_CONTRACT:
+        return None
+    if metadata.get("start_number") != expected_start_number:
+        return None
+    if metadata.get("movement_boundaries") != expected_boundaries:
+        return None
+    next_number = metadata.get("next_number")
+    if isinstance(next_number, bool):
+        return None
+    try:
+        return int(next_number)
+    except (TypeError, ValueError):
+        return None
+
+
 def build_add_measure_numbers_cmd(
     *,
     barlines: Path,
@@ -39,7 +210,8 @@ def build_add_measure_numbers_cmd(
 ) -> list[str]:
     python_cmd = get_pipeline_python("numbering")
     cmd = python_cmd + [
-        "tools/add_measure_numbers.py",
+        "-m",
+        "src.measure_numbering.cli",
         "--barlines",
         str(barlines),
         "--staff-mask",
@@ -62,6 +234,62 @@ def build_add_measure_numbers_cmd(
     return cmd
 
 
+def rebase_mmr_overrides_to_page_local(
+    payload: Optional[Dict[str, Any]],
+    *,
+    page_index: int,
+) -> Optional[Dict[str, Any]]:
+    """Select one global override page at the MMR Phase B -> Phase C boundary.
+
+    Phase B persists MMR overrides with batch-global page indices. Phase C
+    reconstructs one page at a time, so only overrides for the current global
+    page may cross this boundary. Manual corrections are merged in the same
+    global coordinate system before this helper is called, preserving their
+    precedence. The selected copies target the only page in the temporary Score
+    (page index 0); persisted Phase B and user payloads remain unchanged.
+    """
+    if payload is None:
+        return None
+
+    rebased = deepcopy(payload)
+    overrides = rebased.get("measure_overrides")
+    if not isinstance(overrides, list):
+        return rebased
+
+    selected = [
+        override
+        for override in overrides
+        if isinstance(override, dict) and override.get("page") == page_index
+    ]
+    for override in selected:
+        override["page"] = 0
+    rebased["measure_overrides"] = selected
+    if isinstance(rebased.get("overrides"), list):
+        rebased["overrides"] = deepcopy(selected)
+    return rebased
+
+
+def _is_default_mmr_ocr_engine(ocr_engine: Optional[Any]) -> bool:
+    if ocr_engine is None:
+        return False
+    from src.measure_numbering.mmr import MMROCREngine
+
+    return type(ocr_engine) is MMROCREngine
+
+
+def _should_replace_mmr_ocr_engine(
+    ocr_engine: Optional[Any], rapidocr_provider: str = "auto"
+) -> bool:
+    if ocr_engine is None:
+        return True
+    if not _is_default_mmr_ocr_engine(ocr_engine):
+        return False
+    from src.measure_numbering.rapidocr_provider import normalize_rapidocr_provider
+
+    provider_mode = normalize_rapidocr_provider(rapidocr_provider)
+    return getattr(ocr_engine, "_rapidocr_provider_mode", None) != provider_mode
+
+
 def run_mmr_batch(
     pages_data: list[dict],
     image_paths: list[Path],
@@ -74,10 +302,32 @@ def run_mmr_batch(
     debug_root: Optional[Path] = None,
     classifier: Optional[Any] = None,
     ocr_engine: Optional[Any] = None,
+    rapidocr_provider: str = "auto",
+    support_data: Optional[list[dict]] = None,
+    support_stats: Optional[dict[str, int]] = None,
+    processor_state: Optional[dict[str, Any]] = None,
+    target_measure_keys: Optional[set[tuple[int, int, int]]] = None,
 ) -> list[dict]:
     """Runs MMR detection in-process for a batch of pages."""
-    from src.measure_numbering.mmr import MMRProcessor
-    from src.pipeline.utils.io import write_json
+    from src.measure_numbering.mmr import MMROCREngine, MMRProcessor
+    from src.measure_numbering.rapidocr_provider import (
+        create_mmr_rapidocr,
+        normalize_rapidocr_provider,
+    )
+    from src.pipeline.core import write_json
+
+    provider_mode = normalize_rapidocr_provider(rapidocr_provider)
+    if _should_replace_mmr_ocr_engine(ocr_engine, provider_mode):
+        provider_ocr_engine = create_mmr_rapidocr(provider_mode)
+        if _is_default_mmr_ocr_engine(ocr_engine):
+            ocr_engine.ocr_engine = provider_ocr_engine
+            ocr_engine.enable_rotation_tta = enable_rotation_tta
+        else:
+            ocr_engine = MMROCREngine(
+                enable_rotation_tta=enable_rotation_tta,
+                ocr_engine=provider_ocr_engine,
+            )
+        setattr(ocr_engine, "_rapidocr_provider_mode", provider_mode)
 
     processor = MMRProcessor(
         model_path=model_path,
@@ -88,8 +338,26 @@ def run_mmr_batch(
         classifier=classifier,
         ocr_engine=ocr_engine,
     )
+    if processor_state is not None:
+        processor_state["processor"] = processor
 
-    results = processor.process_pages(pages_data, image_paths, debug_root=debug_root)
+    if support_data is None:
+        results = processor.process_pages(
+            pages_data,
+            image_paths,
+            debug_root=debug_root,
+            target_measure_keys=target_measure_keys,
+        )
+    else:
+        results = processor.process_pages(
+            pages_data,
+            image_paths,
+            debug_root=debug_root,
+            support_data=support_data,
+            target_measure_keys=target_measure_keys,
+        )
+    if support_stats is not None:
+        support_stats.update(processor.support_stats)
 
     for result, output_path in zip(results, output_paths):
         write_json(output_path, result)

@@ -1,11 +1,15 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import cv2
 import numpy as np
 
-from .builder import SystemBuilder
+from src.common.connector_artifacts import connector_mask_paths_for_numbering
+
+from .clipped_end import ClippedSystemEndDetector
+from .connector_aware_builder import ConnectorAwareSystemBuilder
+from .connector_evidence import SystemConnectorEvidenceExtractor
 from .numbering import MeasureNumberer
 from .types import Barline, BBox, Page, Score, Staff
 
@@ -14,6 +18,15 @@ logger = logging.getLogger(__name__)
 
 class StaffExtractor:
     """Extracts staff regions (BBoxes) from a binary staff mask image."""
+
+    STAFF_LINE_MIN_WIDTH_RATIO = 0.25
+    STAFF_SPACING_INLIER_MIN_RATIO = 0.5
+    STAFF_SPACING_INLIER_MAX_RATIO = 1.5
+    SHORT_FRAGMENT_MAX_LINE_RUNS = 2
+    SHORT_FRAGMENT_MAX_SPAN_UNITS = 2.0
+    CONVERGENCE_MIN_COLUMNS_UNITS = 1.0
+    CONVERGENCE_MIN_WIDTH_UNITS = 2.0
+    CONVERGENCE_MIN_BRANCH_SHIFT_UNITS = 0.25
 
     def __init__(self, min_height: int = 10, min_width_ratio: float = 0.1):
         self.min_height = min_height
@@ -29,53 +42,186 @@ class StaffExtractor:
         scale_x = target_w / w_mask
         scale_y = target_h / h_mask
 
-        # Binarize
         _, bin_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+        unit_size = self._estimate_unit_size(bin_mask, scale_y=scale_y)
 
-        # Merge staff lines and horizontal fragments
-        # Vertical kernel to merge 5 lines into one band
         v_kernel = np.ones((20, 1), np.uint8)
-        # Horizontal kernel to bridge small gaps between staff fragments
         h_kernel = np.ones((1, 50), np.uint8)
 
         processed = cv2.dilate(bin_mask, v_kernel, iterations=1)
         processed = cv2.morphologyEx(processed, cv2.MORPH_CLOSE, h_kernel)
 
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
-
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
-
         staves = []
-        for i in range(1, num_labels):
-            x = stats[i, cv2.CC_STAT_LEFT]
-            y = stats[i, cv2.CC_STAT_TOP]
-            w = stats[i, cv2.CC_STAT_WIDTH]
-            h = stats[i, cv2.CC_STAT_HEIGHT]
+        for x, y, w, h in self._component_bounds(
+            processed, min_width=target_w * self.min_width_ratio
+        ):
+            crop = bin_mask[y : y + h, x : x + w]
+            component_unit_size = unit_size
+            if component_unit_size is None:
+                # Short systems can be extractable even when no staff row spans
+                # the conservative page-wide persistence floor. Estimate within
+                # the accepted component's original-mask crop rather than
+                # lowering the page-wide gate and mistaking system spacing for
+                # staff-line spacing.
+                component_unit_size = self._estimate_unit_size(crop, scale_y=scale_y)
+            if self._is_short_line_fragment(
+                crop,
+                unit_size=(
+                    component_unit_size / scale_y if component_unit_size is not None else None
+                ),
+            ):
+                continue
+            bbox = BBox(
+                int(x * scale_x),
+                int(y * scale_y),
+                int((x + w) * scale_x),
+                int((y + h) * scale_y),
+            )
+            staves.append(Staff(bbox=bbox, unit_size=component_unit_size))
 
-            if h >= self.min_height and w > target_w * self.min_width_ratio:
-                # Scale coordinates to match original image/barline space
-                bbox = BBox(
-                    int(x * scale_x),
-                    int(y * scale_y),
-                    int((x + w) * scale_x),
-                    int((y + h) * scale_y),
-                )
-                staves.append(Staff(bbox=bbox))
-
-        # Sort by vertical position
         return sorted(staves, key=lambda s: s.bbox.y1)
+
+    def _is_short_line_fragment(self, crop: np.ndarray, *, unit_size: Optional[float]) -> bool:
+        """Reject short non-staff marks using original-mask coordinates.
+
+        Hairpins can become staff-sized components after vertical dilation.
+        Few rows and short height alone also describe legitimate percussion
+        staves. Require positive evidence of two opposing line trajectories
+        before rejecting a short component. Straight/parallel reduced-line
+        staves and uncertain masks remain accepted, including curved or tilted
+        parallel lines. This conservatively retains ambiguous non-staff marks.
+        """
+        if unit_size is None or unit_size <= 0 or crop.size == 0:
+            return False
+        foreground = crop > 0
+        rows = np.flatnonzero(np.mean(foreground, axis=1) >= self.STAFF_LINE_MIN_WIDTH_RATIO)
+        line_runs = int(rows.size > 0) + int(np.count_nonzero(np.diff(rows) > 1))
+        active = np.flatnonzero(np.any(foreground, axis=1))
+        span = int(active[-1] - active[0]) if active.size else 0
+        return (
+            line_runs <= self.SHORT_FRAGMENT_MAX_LINE_RUNS
+            and span < self.SHORT_FRAGMENT_MAX_SPAN_UNITS * unit_size
+            and self._has_opposing_line_trajectories(foreground, unit_size=unit_size)
+        )
+
+    def _has_opposing_line_trajectories(self, foreground: np.ndarray, *, unit_size: float) -> bool:
+        """Distinguish a converging/diverging pair from one/two-line staves.
+
+        Use original-mask column runs, not the dilated component box. A single
+        line has no paired runs; parallel lines retain the same slope even if
+        the scan bends. Missing/connected columns are ignored, and too little
+        paired support abstains instead of implying a non-staff component.
+        """
+        columns, upper, lower = [], [], []
+        for x in range(foreground.shape[1]):
+            rows = np.flatnonzero(foreground[:, x])
+            if not rows.size:
+                continue
+            runs = np.split(rows, np.flatnonzero(np.diff(rows) > 1) + 1)
+            if len(runs) == 2:
+                columns.append(x)
+                upper.append((runs[0][0] + runs[0][-1]) / 2)
+                lower.append((runs[1][0] + runs[1][-1]) / 2)
+        if len(columns) < max(2, self.CONVERGENCE_MIN_COLUMNS_UNITS * unit_size):
+            return False
+        width = columns[-1] - columns[0]
+        if width < self.CONVERGENCE_MIN_WIDTH_UNITS * unit_size:
+            return False
+        centered_x = np.asarray(columns, dtype=float) - np.mean(columns)
+        denominator = float(np.dot(centered_x, centered_x))
+        shifts = [
+            float(np.dot(centered_x, np.asarray(values) - np.mean(values))) / denominator * width
+            for values in (upper, lower)
+        ]
+        return (
+            shifts[0] * shifts[1] < 0
+            and min(abs(shift) for shift in shifts)
+            >= self.CONVERGENCE_MIN_BRANCH_SHIFT_UNITS * unit_size
+        )
+
+    def _component_bounds(
+        self, processed: np.ndarray, *, min_width: float
+    ) -> List[Tuple[int, int, int, int]]:
+        """Return accepted 8-connected component boxes in CCL scan order.
+
+        Contour extraction is substantially faster than OpenCV's connected
+        components implementation on full-page staff masks. The top-row pixel
+        ordering restores the scan order that connected component labels used
+        for stable equal-y results.
+        """
+        contours, hierarchy = cv2.findContours(processed, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        if hierarchy is None:
+            return []
+
+        accepted = []
+        for contour, node in zip(contours, hierarchy[0]):
+            if node[3] != -1:
+                continue
+            x, y, width, height = cv2.boundingRect(contour)
+            if height < self.min_height or width <= min_width:
+                continue
+            points = contour.reshape(-1, 2)
+            top_row_left = int(points[points[:, 1] == y, 0].min())
+            accepted.append(((y, top_row_left), (x, y, width, height)))
+
+        return [bounds for _, bounds in sorted(accepted, key=lambda item: item[0])]
+
+    def _estimate_unit_size(self, bin_mask: np.ndarray, *, scale_y: float) -> Optional[float]:
+        """Estimate page staff-line spacing from the unmodified staff mask.
+
+        This follows the same page-scale definition used by the canonical
+        barline staff-unit audit: identify horizontally persistent staff rows,
+        measure adjacent row-center spacing, reject system/inter-staff gaps, then
+        express the result in the target/page coordinate frame.
+        """
+        if bin_mask.size == 0:
+            return None
+
+        foreground = bin_mask > 0
+        row_coverage = np.mean(foreground, axis=1)
+        active_rows = np.flatnonzero(row_coverage >= self.STAFF_LINE_MIN_WIDTH_RATIO)
+        if active_rows.size < 2:
+            return None
+
+        runs: list[tuple[int, int]] = []
+        start = int(active_rows[0])
+        previous = start
+        for value in active_rows[1:]:
+            row = int(value)
+            if row != previous + 1:
+                runs.append((start, previous))
+                start = row
+            previous = row
+        runs.append((start, previous))
+
+        if len(runs) < 2:
+            return None
+
+        centers = np.asarray([(start + end) / 2.0 for start, end in runs], dtype=float)
+        spacings = np.diff(centers)
+        spacings = spacings[spacings > 0]
+        if spacings.size == 0:
+            return None
+
+        initial_median = float(np.median(spacings))
+        lower = initial_median * self.STAFF_SPACING_INLIER_MIN_RATIO
+        upper = initial_median * self.STAFF_SPACING_INLIER_MAX_RATIO
+        inliers = spacings[(spacings >= lower) & (spacings <= upper)]
+        if inliers.size == 0:
+            return None
+
+        return float(np.mean(inliers) * scale_y)
 
 
 class MeasureNumberingPipeline:
-    """
-    Integrated pipeline to assign measure numbers to a score
-    using detected barlines and staff masks.
-    """
+    """Integrated pipeline to assign measure numbers to a score."""
 
     def __init__(self):
         self.extractor = StaffExtractor()
-        self.builder = SystemBuilder()
+        self.connector_extractor = SystemConnectorEvidenceExtractor()
+        self.builder = ConnectorAwareSystemBuilder()
         self.numberer = MeasureNumberer()
+        self.clipped_end_detector = ClippedSystemEndDetector()
 
     def process_page(
         self,
@@ -85,24 +231,58 @@ class MeasureNumberingPipeline:
         page_number: int = 1,
         assume_one_staff_per_system: bool = False,
         image: Optional[np.ndarray] = None,
+        connector_evidence: Optional[Dict[Any, Any]] = None,
+        connector_masks: Optional[Mapping[str, np.ndarray]] = None,
+        connector_mask_paths: Optional[Mapping[str, Path | str]] = None,
+        connector_evidence_output_path: Optional[Path] = None,
     ) -> Page:
-        """
-        Processes a single page and returns a populated Page object.
-        """
-        # 1. Extract Staves from mask
         staves = self.extractor.extract(staff_mask_path, image_size)
 
-        # 2. Create Barline objects
+        if connector_evidence is None and not connector_masks and not connector_mask_paths:
+            connector_mask_paths = connector_mask_paths_for_numbering(staff_mask_path)
+
+        if connector_evidence is None:
+            if connector_masks or connector_mask_paths:
+                evidence_staves = self._connector_evidence_staves(
+                    staves,
+                    staff_mask_path,
+                    image_size,
+                    connector_mask_paths,
+                )
+                connector_evidence = self.connector_extractor.extract_from_mask_maps(
+                    evidence_staves,
+                    image_size,
+                    connector_masks=connector_masks,
+                    connector_mask_paths=connector_mask_paths,
+                )
+            elif image is not None:
+                connector_evidence = self.connector_extractor.extract(
+                    staves,
+                    image_size,
+                    symbol_mask=self._image_to_connector_mask(image),
+                    source="page_image_ink",
+                    include_absent_pairs=False,
+                    connector_density_threshold=0.01,
+                )
+
+        if connector_evidence is not None and connector_evidence_output_path is not None:
+            self.connector_extractor.write_json(connector_evidence, connector_evidence_output_path)
+
         barlines = [Barline(bbox=BBox(*box)) for box in barline_boxes]
 
-        # 3. Infer Systems
         if assume_one_staff_per_system:
             for i, staff in enumerate(staves):
                 staff.system_index = i
 
-        # 4. Group staves into systems and assign barlines
-        # Image is passed for connectivity check in geometric grouping
-        systems = self.builder.build_systems(staves, barlines, image=image)
+        systems = self.builder.build_systems(
+            staves,
+            barlines,
+            image=image,
+            connector_evidence=connector_evidence,
+        )
+
+        if image is not None and image.shape[:2] == (image_size[1], image_size[0]):
+            self.clipped_end_detector.apply(systems, image)
 
         page = Page(
             systems=systems, page_number=page_number, width=image_size[0], height=image_size[1]
@@ -111,15 +291,6 @@ class MeasureNumberingPipeline:
         return page
 
     def run_sequential(self, page_data_list: List[dict], start_number: int = 1) -> Score:
-        """
-        Processes multiple pages sequentially, maintaining measure count.
-        page_data_list elements should contain:
-        - 'barlines': List of [x1, y1, x2, y2]
-        - 'staff_mask': Path
-        - 'image_size': (W, H)
-        - 'page_number': int
-        - 'image': Optional[np.ndarray] (Source image for connectivity checks)
-        """
         score = Score()
         for data in page_data_list:
             page = self.process_page(
@@ -128,10 +299,70 @@ class MeasureNumberingPipeline:
                 data["image_size"],
                 data.get("page_number", 1),
                 image=data.get("image"),
+                connector_evidence=data.get("connector_evidence"),
+                connector_masks=data.get("connector_masks"),
+                connector_mask_paths=data.get("connector_mask_paths"),
+                connector_evidence_output_path=data.get("connector_evidence_output_path"),
             )
             score.pages.append(page)
 
-        # Assign numbers across the entire score
         self.numberer.number_score(score, start_number=start_number)
 
         return score
+
+    def _connector_evidence_staves(
+        self,
+        geometry_staves: List[Staff],
+        staff_mask_path: Path,
+        image_size: Tuple[int, int],
+        connector_mask_paths: Optional[Mapping[str, Path | str]],
+    ) -> List[Staff]:
+        """Measure semantic masks against the staff geometry from the same producer.
+
+        The selected Proxy/SR staff geometry remains authoritative for system
+        construction. When connector masks are resolved from current-HOMR support,
+        use the sibling current-HOMR staff mask only to define connector-evidence
+        ROIs, then apply that ordered pair evidence to the unchanged numbering
+        geometry.
+        """
+        if not connector_mask_paths:
+            return geometry_staves
+
+        symbols_value = connector_mask_paths.get("symbols")
+        if symbols_value is None:
+            symbols_value = connector_mask_paths.get("symbol")
+        if symbols_value is None:
+            return geometry_staves
+
+        symbols_path = Path(symbols_value)
+        suffix = "_connector_symbols.png"
+        if not symbols_path.name.endswith(suffix):
+            return geometry_staves
+
+        stem = symbols_path.name[: -len(suffix)]
+        semantic_staff_path = symbols_path.with_name(f"{stem}_staff_mask.png")
+        if semantic_staff_path == staff_mask_path or not semantic_staff_path.is_file():
+            return geometry_staves
+
+        semantic_staves = self.extractor.extract(semantic_staff_path, image_size)
+        if len(semantic_staves) != len(geometry_staves):
+            logger.warning(
+                "Connector semantic staff count mismatch for %s: geometry=%d semantic=%d; "
+                "keeping numbering geometry for evidence",
+                staff_mask_path,
+                len(geometry_staves),
+                len(semantic_staves),
+            )
+            return geometry_staves
+
+        return semantic_staves
+
+    def _image_to_connector_mask(self, image: np.ndarray) -> np.ndarray:
+        if image.ndim == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+        if gray.size == 0:
+            return gray.astype(np.uint8)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        return binary

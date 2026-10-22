@@ -1,1 +1,0 @@
-"""CNN classifier tooling package."""

@@ -1,0 +1,452 @@
+"""Materialize manual-correction review packages from pipeline run artifacts."""
+
+from __future__ import annotations
+
+import json
+import re
+import shutil
+from pathlib import Path
+from typing import Any
+
+
+class ManualCorrectionMaterializerError(ValueError):
+    """Raised when a review package cannot be built from a pipeline run."""
+
+
+_BARLINES_MANIFEST_FIELDS = (
+    "barlines_json",
+    "resolved_barlines_json",
+    "barlines_review",
+    "barlines_corrected",
+)
+
+
+def _load_json_object(path: Path, *, description: str) -> dict[str, Any]:
+    with path.open(encoding="utf-8") as fh:
+        payload = json.load(fh)
+    if not isinstance(payload, dict):
+        raise ManualCorrectionMaterializerError(f"{description} must be a JSON object: {path}")
+    return payload
+
+
+def _load_json(path: Path) -> Any:
+    with path.open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _require_inside(path: Path, *, root: Path, description: str) -> Path:
+    resolved = path.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as exc:
+        raise ManualCorrectionMaterializerError(
+            f"{description} must stay inside current pipeline run root: {path} (run root: {root})"
+        ) from exc
+    return resolved
+
+
+def _manifest_relative_base(manifest: dict[str, Any], *, run_root: Path) -> Path | None:
+    """Recover the base directory used by relative paths recorded in a manifest."""
+
+    raw_run_dir = manifest.get("run_dir")
+    if not isinstance(raw_run_dir, str) or not raw_run_dir:
+        return None
+    recorded_run_dir = Path(raw_run_dir)
+    if recorded_run_dir.is_absolute():
+        return None
+
+    recorded_parts = recorded_run_dir.parts
+    if len(recorded_parts) > len(run_root.parts):
+        return None
+    if tuple(run_root.parts[-len(recorded_parts) :]) != recorded_parts:
+        return None
+
+    base = run_root
+    for _ in recorded_parts:
+        base = base.parent
+    return base
+
+
+def _resolve_run_artifact(
+    raw_path: Any,
+    *,
+    run_root: Path,
+    page_id: str,
+    manifest_path: Path,
+    field: str,
+    manifest_relative_base: Path | None = None,
+    allow_external_manifest_input: bool = False,
+) -> Path:
+    if not isinstance(raw_path, str) or not raw_path:
+        raise ManualCorrectionMaterializerError(
+            f"{page_id}: manifest field {field} must be a non-empty artifact path "
+            f"(run root: {run_root}, manifest: {manifest_path})"
+        )
+
+    raw = Path(raw_path)
+    candidates = [raw] if raw.is_absolute() else [run_root / raw]
+    if not raw.is_absolute() and manifest_relative_base is not None:
+        candidates.append(manifest_relative_base / raw)
+    if not raw.is_absolute() and run_root.name in raw.parts:
+        run_root_index = len(raw.parts) - 1 - raw.parts[::-1].index(run_root.name)
+        candidates.append(run_root.joinpath(*raw.parts[run_root_index + 1 :]))
+    if not raw.is_absolute():
+        candidates.append(raw)
+
+    checked: list[str] = []
+    inside_candidates: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        checked.append(str(candidate))
+        try:
+            resolved.relative_to(run_root)
+        except ValueError:
+            if allow_external_manifest_input and resolved.exists():
+                return resolved
+            continue
+        inside_candidates.append(resolved)
+        if resolved.exists():
+            return resolved
+
+    if inside_candidates:
+        raise ManualCorrectionMaterializerError(
+            f"{page_id}: manifest field {field} points inside the current run but does not exist: "
+            f"{raw_path} (run root: {run_root}, manifest: {manifest_path})"
+        )
+    raise ManualCorrectionMaterializerError(
+        f"{page_id}: manifest field {field} points outside the current pipeline run: {raw_path} "
+        f"(run root: {run_root}, manifest: {manifest_path}, checked: {checked})"
+    )
+
+
+def _page_number_from_manifest(page: dict[str, Any], *, page_id: str) -> int:
+    """Return the physical PDF page, independently of its selected-list position."""
+    source = page.get("source_reference")
+    if isinstance(source, dict) and "source_page" in source:
+        source_page = source["source_page"]
+        if isinstance(source_page, bool) or not isinstance(source_page, int) or source_page < 0:
+            raise ManualCorrectionMaterializerError(
+                f"{page_id}: source_reference.source_page must be a non-negative integer"
+            )
+        return source_page + 1
+
+    match = re.search(r"(\d+)$", page_id)
+    if match:
+        return int(match.group(1))
+
+    status = page.get("status")
+    if isinstance(status, dict):
+        page_index = status.get("page_index")
+        if isinstance(page_index, int) and page_index >= 1:
+            return page_index
+
+    raise ManualCorrectionMaterializerError(f"{page_id}: cannot determine one-based page number")
+
+
+def _select_pages(
+    manifest: dict[str, Any], requested_pages: list[str] | None
+) -> list[dict[str, Any]]:
+    manifest_pages = manifest.get("pages")
+    if not isinstance(manifest_pages, list) or not manifest_pages:
+        raise ManualCorrectionMaterializerError("manifest pages must be a non-empty list")
+
+    by_id: dict[str, dict[str, Any]] = {}
+    for index, page in enumerate(manifest_pages):
+        if not isinstance(page, dict):
+            raise ManualCorrectionMaterializerError(f"manifest pages[{index}] must be an object")
+        page_id = page.get("page_id")
+        if not isinstance(page_id, str) or not page_id:
+            raise ManualCorrectionMaterializerError(f"manifest pages[{index}].page_id is required")
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", page_id):
+            raise ManualCorrectionMaterializerError(
+                f"manifest pages[{index}].page_id contains invalid characters: {page_id}"
+            )
+        by_id[page_id] = page
+
+    if requested_pages is None:
+        return list(by_id.values())
+
+    selected = []
+    for page_id in requested_pages:
+        if page_id not in by_id:
+            raise ManualCorrectionMaterializerError(f"page not found in manifest: {page_id}")
+        selected.append(by_id[page_id])
+    return selected
+
+
+def _copy_run_artifact(src: Path, dst: Path) -> None:
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+
+
+def _resolve_barlines_review_source(
+    page: dict[str, Any],
+    *,
+    run_root: Path,
+    page_id: str,
+    manifest_path: Path,
+) -> tuple[Path, str, str]:
+    for field in _BARLINES_MANIFEST_FIELDS:
+        if field in page and page[field]:
+            source = _resolve_run_artifact(
+                page[field],
+                run_root=run_root,
+                page_id=page_id,
+                manifest_path=manifest_path,
+                field=field,
+            )
+            source_kind = (
+                "manifest_resolved_detector_output"
+                if field == "barlines_json"
+                else f"manifest_{field}"
+            )
+            return source, source_kind, field
+
+    page_local = run_root / "intermediate" / page_id / "barlines_corrected.json"
+    if page_local.exists():
+        return (
+            page_local.resolve(),
+            "current_run_page_artifact",
+            "intermediate/page_id/barlines_corrected.json",
+        )
+
+    raise ManualCorrectionMaterializerError(
+        f"{page_id}: cannot materialize barlines_review.json from current run. "
+        f"run root: {run_root}; manifest: {manifest_path}; searched manifest fields: "
+        f"{', '.join(_BARLINES_MANIFEST_FIELDS)}; searched current-run page artifact: "
+        f"{page_local}; follow-up PR should connect a stable page-local barlines_review.json "
+        f"or manifest-resolved detector geometry artifact."
+    )
+
+
+def _extract_review_barline_records(payload: Any, *, source: Path) -> list[Any]:
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        if isinstance(payload.get("predictions"), list):
+            return payload["predictions"]
+        if isinstance(payload.get("boxes"), list):
+            return payload["boxes"]
+        raise ManualCorrectionMaterializerError(
+            f"barlines review source has no predictions or boxes list: {source}"
+        )
+    raise ManualCorrectionMaterializerError(
+        f"barlines review source must be a JSON list or object: {source}"
+    )
+
+
+def _is_engine_staged_pdf_path(raw_pdf_path: str) -> bool:
+    normalized = raw_pdf_path.replace("\\", "/").rstrip("/")
+    parts = [part for part in normalized.split("/") if part]
+    return (
+        len(parts) >= 3
+        and parts[-3] in {".engine-work", ".engine-retained"}
+        and parts[-2:] == ["input", "source.pdf"]
+    )
+
+
+def _resolve_handoff_output_name(
+    *,
+    explicit_output_name: str | None,
+    manifest: dict[str, Any],
+) -> str | None:
+    from src.pipeline.review.final_output import _sanitize_output_name
+
+    if isinstance(explicit_output_name, str) and explicit_output_name.strip():
+        sanitized = _sanitize_output_name(explicit_output_name, fallback="")
+        if sanitized:
+            return sanitized
+
+    manifest_config = manifest.get("config")
+    if isinstance(manifest_config, dict):
+        inputs = manifest_config.get("inputs")
+        if isinstance(inputs, dict):
+            pdf_path_raw = inputs.get("pdf_path")
+            if (
+                isinstance(pdf_path_raw, str)
+                and pdf_path_raw.strip()
+                and not _is_engine_staged_pdf_path(pdf_path_raw)
+            ):
+                sanitized = _sanitize_output_name(pdf_path_raw, fallback="", is_path=True)
+                if sanitized:
+                    return sanitized
+
+    pages = manifest.get("pages")
+    if isinstance(pages, list):
+        for page in pages:
+            if not isinstance(page, dict):
+                continue
+            source_ref = page.get("source_reference")
+            if not isinstance(source_ref, dict):
+                continue
+            source_doc = source_ref.get("source_document")
+            if not isinstance(source_doc, dict):
+                continue
+            doc_path = source_doc.get("path")
+            if (
+                isinstance(doc_path, str)
+                and doc_path.strip()
+                and not _is_engine_staged_pdf_path(doc_path)
+            ):
+                sanitized = _sanitize_output_name(doc_path, fallback="", is_path=True)
+                if sanitized:
+                    return sanitized
+
+    return None
+
+
+def materialize_manual_correction_review_package(
+    *,
+    run_root: str | Path,
+    review_root: str | Path,
+    pages: list[str] | None = None,
+    source_pipeline_command: str | None = None,
+    output_name: str | None = None,
+    overwrite: bool = True,
+) -> dict[str, Any]:
+    """Create a review manual-correction package from one pipeline run.
+
+    Derived review artifacts must stay inside ``run_root``. The source image
+    may be a manifest-declared input outside the per-score run directory (for
+    example, a shared batch ``input_images/`` directory). The materializer
+    resolves only the exact manifest path and never searches other runs.
+    """
+
+    run_root_path = Path(run_root).resolve()
+    review_root_path = Path(review_root).resolve()
+    manifest_path = run_root_path / "manifest.json"
+    if not manifest_path.exists():
+        raise ManualCorrectionMaterializerError(f"manifest does not exist: {manifest_path}")
+    if review_root_path.exists() and any(review_root_path.iterdir()) and not overwrite:
+        raise FileExistsError(f"Refusing to overwrite existing review package: {review_root_path}")
+
+    manifest = _load_json_object(manifest_path, description="pipeline manifest")
+    manifest_relative_base = _manifest_relative_base(manifest, run_root=run_root_path)
+    selected_pages = _select_pages(manifest, pages)
+    manifest_config = manifest.get("config")
+    manifest_steps = manifest_config.get("steps") if isinstance(manifest_config, dict) else None
+    mmr_required = bool(
+        manifest_steps.get("mmr_overrides") if isinstance(manifest_steps, dict) else False
+    )
+
+    handoff_pages: list[dict[str, Any]] = []
+    for page in selected_pages:
+        page_id = str(page["page_id"])
+        source_page_number = _page_number_from_manifest(page, page_id=page_id)
+        # Keep the established correction sequence independent of the physical label.
+        status = page.get("status")
+        page_number = status.get("page_index") if isinstance(status, dict) else None
+        if isinstance(page_number, bool) or not isinstance(page_number, int) or page_number < 1:
+            page_number = source_page_number
+
+        image_source = _resolve_run_artifact(
+            page.get("image_path"),
+            run_root=run_root_path,
+            page_id=page_id,
+            manifest_path=manifest_path,
+            field="image_path",
+            manifest_relative_base=manifest_relative_base,
+            allow_external_manifest_input=True,
+        )
+        numbering_final = _require_inside(
+            run_root_path / "outputs" / page_id / "numbering_final.json",
+            root=run_root_path,
+            description=f"{page_id}.numbering_final",
+        )
+        review_overlay = _require_inside(
+            run_root_path / "outputs" / page_id / "numbering_overlay.png",
+            root=run_root_path,
+            description=f"{page_id}.review_overlay",
+        )
+        mmr_overrides = _require_inside(
+            run_root_path / "intermediate" / page_id / "overrides_mmr.json",
+            root=run_root_path,
+            description=f"{page_id}.mmr_overrides",
+        )
+        barlines_source, barlines_source_kind, barlines_source_field = (
+            _resolve_barlines_review_source(
+                page,
+                run_root=run_root_path,
+                page_id=page_id,
+                manifest_path=manifest_path,
+            )
+        )
+
+        required = {
+            "numbering_final": numbering_final,
+            "barlines_review source": barlines_source,
+        }
+        if mmr_required:
+            required["mmr_overrides"] = mmr_overrides
+        missing = [f"{label}: {path}" for label, path in required.items() if not path.exists()]
+        if missing:
+            raise ManualCorrectionMaterializerError(
+                f"{page_id}: required current-run artifact(s) missing; run root: {run_root_path}; "
+                f"manifest: {manifest_path}; " + "; ".join(missing)
+            )
+
+        page_dir = review_root_path / "pages" / page_id
+        _copy_run_artifact(image_source, page_dir / "source.png")
+        _copy_run_artifact(numbering_final, page_dir / "numbering_final.json")
+        if review_overlay.exists():
+            _copy_run_artifact(review_overlay, page_dir / "review_overlay.png")
+        if mmr_overrides.exists():
+            _copy_run_artifact(mmr_overrides, page_dir / "mmr_overrides.json")
+        _write_json(
+            page_dir / "barlines_review.json",
+            _extract_review_barline_records(_load_json(barlines_source), source=barlines_source),
+        )
+
+        handoff_page = {
+            "page_id": page_id,
+            "page_number": page_number,
+            "source_page_number": source_page_number,
+            "source_image": f"pages/{page_id}/source.png",
+            "numbering_final": f"pages/{page_id}/numbering_final.json",
+            "barlines_review": f"pages/{page_id}/barlines_review.json",
+            "barlines_review_source": barlines_source.relative_to(run_root_path).as_posix(),
+            "barlines_review_source_kind": barlines_source_kind,
+            "barlines_review_source_manifest_field": barlines_source_field,
+            "correction_output": "corrections",
+        }
+        source_reference = page.get("source_reference")
+        if isinstance(source_reference, dict) and "page_size_points" in source_reference:
+            handoff_page["page_size_points"] = source_reference["page_size_points"]
+        if mmr_overrides.exists():
+            handoff_page["mmr_overrides"] = f"pages/{page_id}/mmr_overrides.json"
+        if review_overlay.exists():
+            handoff_page["review_overlay"] = f"pages/{page_id}/review_overlay.png"
+        handoff_pages.append(handoff_page)
+
+    (review_root_path / "corrections").mkdir(parents=True, exist_ok=True)
+    handoff = {
+        "schema_version": 1,
+        "kind": "manual_correction_input",
+        "source_artifact_root": str(run_root_path),
+        "source_manifest": "manifest.json",
+        "pages": handoff_pages,
+    }
+    resolved_output_name = _resolve_handoff_output_name(
+        explicit_output_name=output_name,
+        manifest=manifest,
+    )
+    if resolved_output_name:
+        handoff["output_name"] = resolved_output_name
+    if source_pipeline_command:
+        handoff["source_pipeline_command"] = source_pipeline_command
+
+    handoff_path = review_root_path / "manual_correction_input.json"
+    handoff_path.parent.mkdir(parents=True, exist_ok=True)
+    handoff_path.write_text(
+        json.dumps(handoff, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return handoff

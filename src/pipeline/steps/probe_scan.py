@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -19,10 +20,18 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
-from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
+from src.pipeline.core import (
+    build_probe_run_id,
+    build_probe_run_id_from_parts,
+    ensure_dir,
+    split_score_page_from_composite_stem,
+)
+from src.pipeline.steps.candidate_filters import (
+    filter_probe_candidates,
+    split_box_vertically,
+    trim_box_to_ink,
+)
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
-from src.pipeline.utils.io import ensure_dir
-from src.pipeline.utils.wide_split_utils import split_wide_candidates
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +62,14 @@ def _resolve_scale_aware_probe_kwargs(
     Supported pseudo keys (removed before detect_probe_scan call):
     - min_peak_distance_unit_ratio
     - x_merge_tol_unit_ratio
+    - scan_x_domain_pad_unit_ratio
     """
     resolved = dict(kwargs)
     unit_size = _estimate_unit_size_from_existing_boxes(existing_boxes)
     if unit_size is None:
         resolved.pop("min_peak_distance_unit_ratio", None)
         resolved.pop("x_merge_tol_unit_ratio", None)
+        resolved.pop("scan_x_domain_pad_unit_ratio", None)
         return resolved
 
     if "min_peak_distance_unit_ratio" in resolved and "min_peak_distance" not in resolved:
@@ -72,6 +83,12 @@ def _resolve_scale_aware_probe_kwargs(
         resolved["x_merge_tol"] = max(1, int(round(unit_size * ratio)))
     else:
         resolved.pop("x_merge_tol_unit_ratio", None)
+
+    if "scan_x_domain_pad_unit_ratio" in resolved and "scan_x_domain_pad" not in resolved:
+        ratio = float(resolved.pop("scan_x_domain_pad_unit_ratio"))
+        resolved["scan_x_domain_pad"] = max(0, int(round(unit_size * ratio)))
+    else:
+        resolved.pop("scan_x_domain_pad_unit_ratio", None)
 
     return resolved
 
@@ -224,25 +241,45 @@ def _load_bands_for_image(
     bands_from: Optional[Path],
     current_score_name: str,
     stem: str,
+    require_seed: bool = False,
 ) -> List[Tuple[int, int, int, int]]:
     if not bands_from:
+        if require_seed:
+            raise ValueError(f"Required rescue seed root missing for {current_score_name}/{stem}")
         return []
 
     if bands_from.is_file():
-        return load_json_boxes(bands_from)
+        return load_json_boxes(bands_from, strict=require_seed)
 
     run_subdir = build_probe_run_id_from_parts(current_score_name, stem)
     candidates = [
         bands_from / current_score_name / stem / "pipeline2_no_peak_candidates.json",
         bands_from / current_score_name / stem / "pipeline2_no_peak_scored.json",
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
-        bands_from / f"{stem}.json",
         bands_from / "hybrid_results" / f"{stem}_hybrid.json",
+        bands_from / "omr_sr" / stem / "predictions.json",
+        bands_from / f"{stem}.json",
         bands_from / f"{run_subdir}_scored.json",
     ]
+    split = split_score_page_from_composite_stem(stem)
+    if split is not None:
+        score, page = split
+        candidates.extend(
+            [
+                bands_from / score / page / "pipeline2_no_peak_candidates.json",
+                bands_from / score / page / "pipeline2_no_peak_scored.json",
+                bands_from / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
+                bands_from / f"eval2_{score}_{page}" / "pipeline2_no_peak_scored.json",
+            ]
+        )
     for path in candidates:
         if path.exists():
-            return load_json_boxes(path)
+            return load_json_boxes(path, strict=require_seed)
+    if require_seed:
+        raise FileNotFoundError(
+            f"Required rescue seed missing for {current_score_name}/{stem}; "
+            f"searched: {[str(path) for path in candidates]}"
+        )
     return []
 
 
@@ -250,12 +287,38 @@ def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
     staff_mask_map: Dict[str, Path] = {}
     if not staff_mask_dir or not staff_mask_dir.exists():
         return staff_mask_map
-    for path in staff_mask_dir.rglob("*_debug_3_staff.png"):
-        stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
-            "_debug_3_staff.png", ""
-        )
-        staff_mask_map[stem_key] = path
+    # Support both legacy Homr tool debug patterns and the new in-process filename pattern
+    patterns = ["*_debug_3_staff.png", "*_staff_mask.png"]
+    for pattern in patterns:
+        for path in staff_mask_dir.rglob(pattern):
+            stem_key = (
+                path.name.replace("_proxy_debug_3_staff.png", "")
+                .replace("_debug_3_staff.png", "")
+                .replace("_staff_mask.png", "")
+            )
+            if stem_key not in staff_mask_map or "sr" in path.parts:
+                staff_mask_map[stem_key] = path
     return staff_mask_map
+
+
+def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
+    clef_mask_map: Dict[str, Path] = {}
+    if not clef_mask_dir or not clef_mask_dir.exists():
+        return clef_mask_map
+
+    # Support both legacy Homr tool debug patterns and the new in-process filename pattern
+    patterns = ["*_debug_2_clefs.png", "*_clef_mask.png", "*_clefs_keys_mask.png"]
+    for pattern in patterns:
+        for path in clef_mask_dir.rglob(pattern):
+            stem_key = (
+                path.name.replace("_proxy_debug_2_clefs.png", "")
+                .replace("_debug_2_clefs.png", "")
+                .replace("_clef_mask.png", "")
+                .replace("_clefs_keys_mask.png", "")
+            )
+            if stem_key not in clef_mask_map or "sr" in path.parts:
+                clef_mask_map[stem_key] = path
+    return clef_mask_map
 
 
 def run_probe_scan_batch(
@@ -264,20 +327,28 @@ def run_probe_scan_batch(
     output_root: Path,
     bands_from: Optional[Path],
     staff_mask_dir: Optional[Path],
+    require_seed_files: bool = False,
+    clef_mask_dir: Optional[Path] = None,
     ink_threshold: int,
-    min_ratio: float,
-    min_height_ratio: float,
-    min_width_ratio: Optional[float] = None,
+    min_ratio: float = 0.50,
+    min_height_ratio: float = 0.012,
+    min_width_ratio: Optional[float] = 0.0001,
     score_name: Optional[str] = None,
     band_cluster_max_dist: Optional[float] = None,
     band_min_row_count: int = 1,
-    vertical_closing: int = 0,
+    vertical_closing: int = 4,
     detect_probe_kwargs: Optional[Dict[str, Any]] = None,
     probe_row_filter_mode: Optional[str] = None,
     probe_endpoint_x_scale: Optional[float] = None,
     probe_endpoint_y_scale: Optional[float] = None,
     skip_existing: bool = False,
     input_image_scale: float = 1.0,
+    enable_heuristic_filters: bool = False,
+    candidate_filter_kwargs: Optional[Dict[str, Any]] = None,
+    disable_seed_splitting: bool = False,
+    in_memory_images: Dict[str, Any] | None = None,
+    staff_mask_paths: Dict[str, Path] | None = None,
+    stats_summary_out: Path | None = None,
 ) -> int:
     """Generate probe candidates for all pages in-process.
 
@@ -288,8 +359,13 @@ def run_probe_scan_batch(
     if detect_probe_scan is None:
         raise ImportError("run_probe_scan_batch requires src.pipeline.probe_detector dependencies.")
 
+    from src.pipeline.utils.images import load_image
+
     ensure_dir(output_root)
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
+    if staff_mask_paths:
+        staff_mask_map.update(staff_mask_paths)
+    clef_mask_map = _build_clef_mask_map(clef_mask_dir)
 
     if probe_row_filter_mode is not None:
         logger.warning(
@@ -320,6 +396,7 @@ def run_probe_scan_batch(
         kwargs.update(detect_probe_kwargs)
 
     processed = 0
+    stats_records: List[Dict[str, Any]] = []
     for img_path in tqdm(images, desc="Probe Scan", unit="page"):
         stem = img_path.stem
         current_score_name = score_name or img_path.parent.name
@@ -332,17 +409,38 @@ def run_probe_scan_batch(
             processed += 1
             continue
 
-        img = cv2.imread(str(img_path))
-        if img is None:
+        try:
+            img = load_image(img_path, in_memory_images=in_memory_images)
+        except FileNotFoundError:
             logger.warning("Failed to load image: %s", img_path)
             continue
 
         staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        clef_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         band_source = "row_stats"
+
+        # An explicitly mask-bound x-domain must not silently scan full width
+        # when its required mask is missing or unreadable.
+        require_staff_mask = kwargs.get("scan_x_domain_mode") == "staff_mask"
         mask_path = staff_mask_map.get(stem)
+        if require_staff_mask and mask_path is None:
+            raise FileNotFoundError(
+                f"Required staff mask missing for {current_score_name}/{stem} "
+                "(scan_x_domain_mode=staff_mask)"
+            )
         if mask_path:
+            if require_staff_mask and not Path(mask_path).is_file():
+                raise FileNotFoundError(
+                    f"Required staff mask file missing for {current_score_name}/{stem}: {mask_path}"
+                )
             loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
-            if loaded_mask is not None:
+            if loaded_mask is None:
+                if require_staff_mask:
+                    raise ValueError(
+                        f"Required staff mask unreadable for {current_score_name}/{stem}: "
+                        f"{mask_path}"
+                    )
+            else:
                 if loaded_mask.shape[:2] != img.shape[:2]:
                     loaded_mask = cv2.resize(
                         loaded_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
@@ -350,43 +448,89 @@ def run_probe_scan_batch(
                 staff_mask = loaded_mask
                 band_source = "staff_mask"
 
+        clef_path = clef_mask_map.get(stem)
+        if clef_path:
+            loaded_clef = cv2.imread(str(clef_path), cv2.IMREAD_GRAYSCALE)
+            if loaded_clef is not None:
+                if loaded_clef.shape[:2] != img.shape[:2]:
+                    loaded_clef = cv2.resize(
+                        loaded_clef, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
+                    )
+                clef_mask = loaded_clef
+
         existing_boxes = _load_bands_for_image(
             bands_from=bands_from,
             current_score_name=current_score_name,
             stem=stem,
+            require_seed=require_seed_files,
         )
 
-        # Rescale existing boxes to match image resolution if using SR
         if input_image_scale > 1.0:
             existing_boxes = [
                 tuple(int(round(v * input_image_scale)) for v in b) for b in existing_boxes
             ]
 
+        if not disable_seed_splitting:
+            DEFAULT_UNIT_SIZE = 40.0
+            TALL_BAND_SPLIT_RATIO = 12.0
+            u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
+                DEFAULT_UNIT_SIZE * input_image_scale
+            )
+            split_threshold = TALL_BAND_SPLIT_RATIO * u_splitting
+            min_gap_px = int(1.25 * u_splitting)
+            min_segment_h_px = int(0.75 * u_splitting)
+            split_seeds = []
+            for b in existing_boxes:
+                h_b = abs(b[3] - b[1])
+                if h_b > split_threshold:
+                    split_seeds.extend(
+                        split_box_vertically(
+                            img,
+                            b,
+                            ink_threshold=ink_threshold,
+                            min_gap=min_gap_px,
+                            min_segment_h=min_segment_h_px,
+                        )
+                    )
+                else:
+                    split_seeds.append(b)
+            existing_boxes = split_seeds
+
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)
         if page_kwargs is not kwargs and (
-            "min_peak_distance" in page_kwargs or "x_merge_tol" in page_kwargs
+            "min_peak_distance" in page_kwargs
+            or "x_merge_tol" in page_kwargs
+            or "scan_x_domain_pad" in page_kwargs
         ):
             logger.info(
-                "Probe scan scale-aware params for %s/%s: min_peak_distance=%s x_merge_tol=%s",
+                "Probe scan scale-aware params for %s/%s: "
+                "min_peak_distance=%s x_merge_tol=%s scan_x_domain_pad=%s",
                 current_score_name,
                 stem,
                 page_kwargs.get("min_peak_distance"),
                 page_kwargs.get("x_merge_tol"),
+                page_kwargs.get("scan_x_domain_pad"),
             )
 
+        effective_band_source = page_kwargs.pop("band_source", band_source)
+        page_scan_stats: Dict[str, object] = {}
+        detect_started_at = time.perf_counter()
         candidates = detect_probe_scan(
             base_img=img,
             staff_mask=staff_mask,
             existing_boxes=existing_boxes,
-            band_source=band_source,
+            band_source=effective_band_source,
             band_cluster_max_dist=band_cluster_max_dist,
             band_min_row_count=band_min_row_count,
             ink_threshold=ink_threshold,
             min_ratio=min_ratio,
             vertical_closing=vertical_closing,
+            scan_stats=page_scan_stats,
             **page_kwargs,
         )
+        detect_elapsed = time.perf_counter() - detect_started_at
+        logger.debug(f"--- [DEBUG_FN] {stem}: detect_probe_scan found {len(candidates)} candidates")
 
         img_h, img_w = img.shape[:2]
         min_height_px = int(img_h * min_height_ratio)
@@ -399,12 +543,39 @@ def run_probe_scan_batch(
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(tuple(int(v) for v in c))
 
-        final_set = set()
-        for b in existing_boxes:
-            h = abs(b[3] - b[1])
-            w = abs(b[2] - b[0])
+        logger.debug(
+            f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates"
+        )
+
+        if enable_heuristic_filters:
+            filter_kwargs = candidate_filter_kwargs or {}
+            real_staff_mask = staff_mask if effective_band_source == "staff_mask" else None
+            filtered_candidates, dropped = filter_probe_candidates(
+                candidates=filtered_candidates,
+                image=img,
+                existing_boxes=existing_boxes,
+                staff_mask=real_staff_mask,
+                clef_mask=clef_mask,
+                **filter_kwargs,
+            )
+            if dropped:
+                logger.debug(f"Heuristic filter dropped {len(dropped)} candidates for {stem}")
+
+        trimmed = [
+            trim_box_to_ink(img, b, ink_threshold=ink_threshold) for b in filtered_candidates
+        ]
+        filtered_candidates = []
+        for c in trimmed:
+            h = abs(c[3] - c[1])
+            w = abs(c[2] - c[0])
             if h >= min_height_px and w >= min_width_px:
-                final_set.add(tuple(int(v) for v in b))
+                filtered_candidates.append(c)
+        final_set = set()
+        for sb in existing_boxes:
+            h = abs(sb[3] - sb[1])
+            w = abs(sb[2] - sb[0])
+            if h >= min_height_px and w >= min_width_px:
+                final_set.add(tuple(int(v) for v in sb))
         for c in filtered_candidates:
             final_set.add(tuple(int(v) for v in c))
 
@@ -419,6 +590,8 @@ def run_probe_scan_batch(
                     final_set.add(tuple(int(v) for v in nb))
 
             if post_cfg.get("split_wide_candidates"):
+                from src.pipeline.utils.wide_split_utils import split_wide_candidates
+
                 print(f"DEBUG: Attempting to split {len(final_set)} candidates...")
                 split_boxes, stats = split_wide_candidates(
                     boxes=list(final_set),
@@ -444,6 +617,60 @@ def run_probe_scan_batch(
 
         final_list = sorted(final_set)
         out_path.write_text(json.dumps(final_list, indent=2))
+        stats_records.append(
+            {
+                "score": current_score_name,
+                "page": stem,
+                "output": str(out_path),
+                "band_source": effective_band_source,
+                "scan_x_domain_mode": page_kwargs.get("scan_x_domain_mode", "full_width"),
+                "scan_x_domain_pad": page_kwargs.get("scan_x_domain_pad", 0),
+                "existing_count": len(existing_boxes),
+                "generated_count": len(candidates),
+                "final_count": len(final_list),
+                "detect_elapsed_seconds": detect_elapsed,
+                "detector_stats": page_scan_stats,
+            }
+        )
         processed += 1
+
+    if stats_summary_out is not None:
+        stats_summary_out.parent.mkdir(parents=True, exist_ok=True)
+        total_detect_elapsed = sum(
+            float(record["detect_elapsed_seconds"]) for record in stats_records
+        )
+        full_width_columns = sum(
+            int(record["detector_stats"].get("full_width_columns", 0)) for record in stats_records
+        )
+        eligible_domain_columns = sum(
+            int(record["detector_stats"].get("eligible_domain_columns", 0))
+            for record in stats_records
+        )
+        projected_columns = sum(
+            int(record["detector_stats"].get("projected_columns", 0)) for record in stats_records
+        )
+        stats_summary_out.write_text(
+            json.dumps(
+                {
+                    "processed": processed,
+                    "total_detect_elapsed_seconds": total_detect_elapsed,
+                    "full_width_columns": full_width_columns,
+                    "eligible_domain_columns": eligible_domain_columns,
+                    "projected_columns": projected_columns,
+                    "eligible_width_ratio": (
+                        eligible_domain_columns / float(full_width_columns)
+                        if full_width_columns
+                        else 1.0
+                    ),
+                    "projected_width_ratio": (
+                        projected_columns / float(full_width_columns) if full_width_columns else 1.0
+                    ),
+                    "pages": stats_records,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
     return processed

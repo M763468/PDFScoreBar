@@ -2,22 +2,31 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence
 
 import cv2
 import numpy as np
 
+from src.pipeline.probe_detector.measurements import (
+    measure_candidate_scan,
+    project_staff_band,
+    select_signal_peaks,
+)
+
 from .bands import (
     build_divisi_map,
     resolve_bands,
-    scan_staff_band_from_ink,
+    resolve_x_domains,
 )
-from .debug import write_debug_output
+from .existing import ExistingBarlines
 from .rescue import apply_gap_rescue, apply_rightmost_rescue
 from .types import (
+    BandProjectionConfig,
     BandSelectionConfig,
     Box,
+    CandidateScanConfig,
     DivisiRescueConfig,
     GapRescueConfig,
     RightmostRescueConfig,
@@ -46,6 +55,8 @@ def detect_probe_scan(
     band_scan_pad: int = 0,
     band_scan_pad_ratio: float = 0.0,
     save_row_profile: bool = False,
+    scan_x_domain_mode: str = "full_width",
+    scan_x_domain_pad: int = 0,
     probe_width: int = 4,
     ink_threshold: int = 180,
     min_ratio: float = 0.85,
@@ -97,7 +108,9 @@ def detect_probe_scan(
     divisi_min_ratio: float = 0.5,
     vertical_closing: int = 0,
     debug_path: Path | None = None,
+    scan_stats: Dict[str, object] | None = None,
 ) -> List[Box]:
+    scan_started_at = time.perf_counter()
     gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
     ink = (gray < ink_threshold).astype(np.uint8)
     if vertical_closing > 0:
@@ -116,7 +129,31 @@ def detect_probe_scan(
         config=band_selection,
     )
     if not bands:
+        if scan_stats is not None:
+            scan_stats.update(
+                {
+                    "band_count": 0,
+                    "image_width": w,
+                    "full_width_columns": 0,
+                    "eligible_domain_columns": 0,
+                    "projected_columns": 0,
+                    "full_width_domain_count": 0,
+                    "raw_peak_count": 0,
+                    "selected_peak_count": 0,
+                    "candidate_count": 0,
+                    "elapsed_seconds": time.perf_counter() - scan_started_at,
+                }
+            )
         return []
+
+    x_domains = resolve_x_domains(
+        mode=scan_x_domain_mode,
+        bands=bands,
+        staff_mask=staff_mask,
+        existing_boxes=existing_boxes,
+        image_width=w,
+        pad=scan_x_domain_pad,
+    )
 
     width = max(1, int(probe_width))
     kernel = np.ones(width, dtype=np.int32)
@@ -141,46 +178,56 @@ def detect_probe_scan(
         image_h=h,
         global_height=global_height,
         config=divisi_cfg,
+        x_domains=x_domains,
     )
 
-    def has_existing(x_center: float, y1: int, y2: int) -> bool:
-        band_h = max(1.0, y2 - y1)
-        for bx1, by1, bx2, by2 in existing_boxes:
-            cy = (by1 + by2) / 2.0
-            if cy < y1 or cy > y2:
-                continue
-            cx = (bx1 + bx2) / 2.0
-            if abs(cx - x_center) <= x_merge_tol:
-                if scan_existing_min_vertical_iou > 0:
-                    iy1 = max(y1, min(by1, by2))
-                    iy2 = min(y2, max(by1, by2))
-                    inter = max(0.0, iy2 - iy1)
-                    box_h = max(1.0, abs(by2 - by1))
-                    union = max(1.0, band_h + box_h - inter)
-                    v_iou = inter / union
-                    if v_iou < scan_existing_min_vertical_iou:
-                        continue
-                return True
-        return False
+    existing = ExistingBarlines(
+        existing_boxes,
+        x_merge_tol,
+        scan_existing_min_vertical_iou,
+        scan_disable_existing_suppression,
+    )
+    has_existing_for_suppression = existing.has_existing_for_suppression
+    closest_existing_band = existing.closest_existing_band
 
-    def has_existing_for_suppression(x_center: float, y1: int, y2: int) -> bool:
-        if scan_disable_existing_suppression:
-            return False
-        return has_existing(x_center, y1, y2)
+    projection_config = BandProjectionConfig(
+        band_source=band_source,
+        band_scan_pad_ratio=band_scan_pad_ratio,
+        band_scan_pad=band_scan_pad,
+        band_row_pad_ratio=band_row_pad_ratio,
+        band_row_pad_staff_mult=band_row_pad_staff_mult,
+        staff_space=staff_space,
+        band_height_mode=band_height_mode,
+        band_height_min=band_height_min,
+        band_height_scale=band_height_scale,
+        extend_scale=extend_scale,
+    )
 
-    def closest_existing_band(x_center: float, y1: int, y2: int) -> Tuple[int, int] | None:
-        best = None
-        best_dx = None
-        for bx1, by1, bx2, by2 in existing_boxes:
-            cy = (by1 + by2) / 2.0
-            if cy < y1 or cy > y2:
-                continue
-            cx = (bx1 + bx2) / 2.0
-            dx = abs(cx - x_center)
-            if best_dx is None or dx < best_dx:
-                best_dx = dx
-                best = (int(by1), int(by2))
-        return best
+    scan_config = CandidateScanConfig(
+        band_scan_line_ratio=band_scan_line_ratio,
+        band_scan_min_lines=band_scan_min_lines,
+        band_scan_width=band_scan_width,
+        band_source=band_source,
+        extend_scale=extend_scale,
+        save_row_profile=save_row_profile,
+        scan_center_on_peak=scan_center_on_peak,
+        scan_fallback_pred_band=scan_fallback_pred_band,
+        scan_peak_band_height=scan_peak_band_height,
+        scan_x_peak_rescue=scan_x_peak_rescue,
+        scan_x_peak_segment_height=scan_x_peak_segment_height,
+        scan_x_peak_segment_source=scan_x_peak_segment_source,
+        scan_x_peak_ignore_staff_peak=scan_x_peak_ignore_staff_peak,
+        scan_x_peak_ignore_radius=scan_x_peak_ignore_radius,
+        scan_x_peak_window=scan_x_peak_window,
+        scan_x_peak_ratio_min=scan_x_peak_ratio_min,
+    )
+
+    full_width_columns = 0
+    eligible_domain_columns = 0
+    projected_columns = 0
+    full_width_domain_count = 0
+    raw_peak_count = 0
+    selected_peak_count = 0
 
     candidates: List[Box] = []
     accepted_by_band: dict[int, list[float]] = {}
@@ -188,83 +235,30 @@ def detect_probe_scan(
     rejected_records: list[dict] = []
     debug_records = []
     for band_idx, (y1, y2) in enumerate(bands):
-        scan_base_y1 = y1
-        scan_base_y2 = y2
-        if band_source == "horiz_scan":
-            if band_scan_pad_ratio > 0:
-                pad = int(round((y2 - y1 + 1) * band_scan_pad_ratio))
-            else:
-                pad = int(band_scan_pad)
-            if pad > 0:
-                scan_base_y1 = max(0, int(y1) - pad)
-                scan_base_y2 = min(h - 1, int(y2) + pad)
-        band_center = int(round((y1 + y2) / 2))
-        band_h = max(1, y2 - y1 + 1)
-        if band_source == "row_stats":
-            band_y1 = max(0, int(y1))
-            band_y2 = min(h - 1, int(y2))
-            pad = 0
-            if band_row_pad_ratio > 0:
-                pad = int(round((band_y2 - band_y1 + 1) * band_row_pad_ratio))
-            elif band_row_pad_staff_mult > 0 and staff_space > 0:
-                pad = int(round(staff_space * band_row_pad_staff_mult))
-            if pad > 0:
-                band_y1 = max(0, band_y1 - pad)
-                band_y2 = min(h - 1, band_y2 + pad)
-        else:
-            if band_height_mode == "median_box":
-                heights = [
-                    abs(by2 - by1)
-                    for _, by1, _, by2 in existing_boxes
-                    if y1 <= (by1 + by2) / 2.0 <= y2 and abs(by2 - by1) > 0
-                ]
-                median_h = int(np.median(heights)) if heights else global_height
-                target_h = (
-                    max(band_height_min, int(round(median_h * band_height_scale)))
-                    if median_h
-                    else band_h
-                )
-            else:
-                target_h = band_h
-            band_y1 = max(0, int(band_center - target_h // 2))
-            band_y2 = min(h - 1, int(band_center + target_h // 2))
-        band = ink[band_y1 : band_y2 + 1, :]
-        band_h = max(1, band_y2 - band_y1 + 1)
-        target_h = band_h
-        ext_band = None
-        ext_band_h = None
-        ext_ratios = None
-        ext_top_ratios = None
-        ext_bottom_ratios = None
-        ext_y1 = None
-        ext_y2 = None
-        top_h = 0
-        bottom_h = 0
-        if extend_scale > 1.0:
-            ext_h = max(band_h, int(round(target_h * extend_scale)))
-            ext_y1 = max(0, int(round(band_center - ext_h / 2)))
-            ext_y2 = min(h - 1, int(round(band_center + ext_h / 2)))
-            ext_band = ink[ext_y1 : ext_y2 + 1, :]
-            ext_band_h = max(1, ext_y2 - ext_y1 + 1)
-        col_sums = band.sum(axis=0)
-        stripe_sums = np.convolve(col_sums, kernel, mode="same")
-        ratios = stripe_sums / float(band_h * width)
-        if ext_band is not None and ext_y1 is not None and ext_y2 is not None:
-            ext_col_sums = ext_band.sum(axis=0)
-            ext_stripe_sums = np.convolve(ext_col_sums, kernel, mode="same")
-            ext_ratios = ext_stripe_sums / float(ext_band_h * width)
-            top_h = max(0, band_y1 - ext_y1)
-            bottom_h = max(0, ext_y2 - band_y2)
-            if top_h > 0:
-                top_band = ink[ext_y1:band_y1, :]
-                top_col_sums = top_band.sum(axis=0)
-                top_stripe_sums = np.convolve(top_col_sums, kernel, mode="same")
-                ext_top_ratios = top_stripe_sums / float(top_h * width)
-            if bottom_h > 0:
-                bottom_band = ink[band_y2 + 1 : ext_y2 + 1, :]
-                bottom_col_sums = bottom_band.sum(axis=0)
-                bottom_stripe_sums = np.convolve(bottom_col_sums, kernel, mode="same")
-                ext_bottom_ratios = bottom_stripe_sums / float(bottom_h * width)
+        domain_x1, domain_x2 = x_domains[band_idx] if band_idx < len(x_domains) else (0, w - 1)
+        domain_width = max(0, domain_x2 - domain_x1 + 1)
+        full_width_columns += w
+        eligible_domain_columns += domain_width
+        if domain_x1 == 0 and domain_x2 == w - 1:
+            full_width_domain_count += 1
+        projection = project_staff_band(
+            ink,
+            y1=y1,
+            y2=y2,
+            existing_boxes=existing_boxes,
+            global_height=global_height,
+            kernel=kernel,
+            width=width,
+            x_domain=(domain_x1, domain_x2),
+            config=projection_config,
+        )
+        band_y1 = projection.band_y1
+        band_y2 = projection.band_y2
+        ratios = projection.ratios
+        ext_ratios = projection.ext_ratios
+        ext_top_ratios = projection.ext_top_ratios
+        ext_bottom_ratios = projection.ext_bottom_ratios
+        projected_columns += projection.projected_columns
         if ratios.size < 3:
             continue
 
@@ -272,23 +266,26 @@ def detect_probe_scan(
         if scan_gap_rescue:
             effective_min = min(effective_min, scan_gap_rescue_min_ratio)
 
-        peaks = np.where(
-            (ratios >= effective_min)
-            & (ratios >= np.roll(ratios, 1))
-            & (ratios >= np.roll(ratios, -1))
-        )[0]
-        if peaks.size == 0:
-            debug_records.append({"band": [y1, y2], "status": "no_peaks", "band_idx": band_idx})
+        peak_count, selected = select_signal_peaks(
+            ratios,
+            effective_min=effective_min,
+            domain_x1=domain_x1,
+            domain_x2=domain_x2,
+            min_peak_distance=min_peak_distance,
+            max_per_band=max_per_band,
+        )
+        raw_peak_count += peak_count
+        if peak_count == 0:
+            debug_records.append(
+                {
+                    "band": [y1, y2],
+                    "status": "no_peaks",
+                    "band_idx": band_idx,
+                    "scan_x_domain": [domain_x1, domain_x2],
+                }
+            )
             continue
-        peak_scores = [(int(x), float(ratios[x])) for x in peaks]
-        peak_scores.sort(key=lambda item: item[1], reverse=True)
-        selected: list[tuple[int, float]] = []
-        for x, score in peak_scores:
-            if any(abs(x - sx) < min_peak_distance for sx, _ in selected):
-                continue
-            selected.append((x, score))
-            if max_per_band > 0 and len(selected) >= max_per_band:
-                break
+        selected_peak_count += len(selected)
         for x, score in selected:
             left = max(0, int(x - refine_window))
             right = min(len(ratios) - 1, int(x + refine_window))
@@ -299,192 +296,26 @@ def detect_probe_scan(
             x1 = max(0, int(round(local_idx - width / 2)))
             x2 = min(w - 1, int(round(local_idx + width / 2)))
             pred_band = closest_existing_band(float(local_idx), y1, y2)
-            scan_band = None
-            scan_row_ratio_mean = None
-            scan_row_ratio_max = None
-            scan_row_ratio_lines = None
-            scan_top_h = None
-            scan_bottom_h = None
-            scan_row_profile = None
-            scan_peak_ratio = None
-            scan_peak_row = None
-            scan_x_peak_ratio = None
-            scan_x_peak_neighbor_median = None
-            scan_x_peak_segment_min = None
-            scan_x_peak_segment_pass = None
-            scan_peak_ratio_local = None
-            scan_x_peak_ignored_rows = 0
+            measurement = measure_candidate_scan(
+                ink,
+                local_idx=local_idx,
+                pred_band=pred_band,
+                staff_band=(y1, y2),
+                x_domain=(domain_x1, domain_x2),
+                projection=projection,
+                width=width,
+                kernel=kernel,
+                config=scan_config,
+            )
+            scan_ratio = measurement.scan_ratio
+            scan_ext_ratio = measurement.scan_ext_ratio
+            scan_top_ratio = measurement.scan_top_ratio
+            scan_bottom_ratio = measurement.scan_bottom_ratio
+            scan_peak_ratio_local = measurement.scan_peak_ratio_local
+            scan_x_peak_ratio = measurement.scan_x_peak_ratio
+            scan_x_peak_segment_pass = measurement.scan_x_peak_segment_pass
+            record_base = measurement.record_base
             rescue_reason = None
-            if band_source == "horiz_scan":
-                scan_band = scan_staff_band_from_ink(
-                    ink,
-                    int(local_idx),
-                    scan_base_y1,
-                    scan_base_y2,
-                    band_scan_width,
-                    band_scan_line_ratio,
-                    band_scan_min_lines,
-                )
-            if band_source in ("horiz_scan", "row_stats") and scan_base_y2 > scan_base_y1:
-                full_strip = ink[scan_base_y1 : scan_base_y2 + 1, :]
-                if full_strip.size > 0 and full_strip.shape[1] > 0:
-                    row_ratio_full = full_strip.sum(axis=1) / float(full_strip.shape[1])
-                    scan_row_ratio_mean = float(row_ratio_full.mean())
-                    scan_row_ratio_max = float(row_ratio_full.max())
-                    scan_row_ratio_lines = int((row_ratio_full >= band_scan_line_ratio).sum())
-                    scan_peak_ratio = scan_row_ratio_max
-                    if scan_peak_ratio is not None:
-                        peak_idx = int(np.argmax(row_ratio_full))
-                        scan_peak_row = int(scan_base_y1 + peak_idx)
-                    if save_row_profile:
-                        scan_row_profile = [float(v) for v in row_ratio_full.tolist()]
-            if scan_band is not None:
-                scan_y1, scan_y2 = scan_band
-            elif scan_fallback_pred_band and pred_band is not None:
-                scan_y1, scan_y2 = pred_band
-            else:
-                scan_y1, scan_y2 = band_y1, band_y2
-            if band_source == "horiz_scan" and scan_center_on_peak and scan_peak_row is not None:
-                peak_h = scan_peak_band_height if scan_peak_band_height > 0 else band_h
-                peak_h = max(1, int(peak_h))
-                scan_y1 = max(0, int(scan_peak_row - peak_h // 2))
-                scan_y2 = min(h - 1, int(scan_y1 + peak_h - 1))
-            scan_h = max(1, scan_y2 - scan_y1 + 1)
-            scan_ratio = None
-            scan_ext_ratio = None
-            scan_top_ratio = None
-            scan_bottom_ratio = None
-            scan_ext_y1 = None
-            scan_ext_y2 = None
-            if band_source == "horiz_scan":
-                sx1 = max(0, int(round(local_idx - width / 2)))
-                sx2 = min(w - 1, int(round(local_idx + width / 2)))
-                scan_ratio = float(ink[scan_y1 : scan_y2 + 1, sx1 : sx2 + 1].sum()) / float(
-                    scan_h * max(1, sx2 - sx1 + 1)
-                )
-                if scan_x_peak_rescue:
-
-                    def compute_xpeak(band_y1: int, band_y2: int) -> tuple[Optional[float], int]:
-                        ignored_rows = 0
-                        if band_y2 < band_y1:
-                            return None, ignored_rows
-                        scan_strip = ink[band_y1 : band_y2 + 1, :]
-                        if scan_strip.size == 0:
-                            return None, ignored_rows
-                        if scan_x_peak_ignore_staff_peak and scan_peak_row is not None:
-                            rel_peak = int(scan_peak_row - band_y1)
-                            radius = max(0, int(scan_x_peak_ignore_radius))
-                            y_start = max(0, rel_peak - radius)
-                            y_end = min(scan_strip.shape[0] - 1, rel_peak + radius)
-                            if y_start <= y_end:
-                                scan_strip = scan_strip.copy()
-                                scan_strip[y_start : y_end + 1, :] = 0
-                                ignored_rows += y_end - y_start + 1
-                        scan_col_sums = scan_strip.sum(axis=0)
-                        scan_stripe_sums = np.convolve(scan_col_sums, kernel, mode="same")
-                        band_h = max(1, band_y2 - band_y1 + 1)
-                        scan_ratios_full = scan_stripe_sums / float(band_h * width)
-                        wsize = max(1, int(scan_x_peak_window))
-                        left = max(0, int(local_idx - wsize))
-                        right = min(len(scan_ratios_full) - 1, int(local_idx + wsize))
-                        if right < left:
-                            return None, ignored_rows
-                        neighbor_vals = [
-                            scan_ratios_full[i] for i in range(left, right + 1) if i != local_idx
-                        ]
-                        if not neighbor_vals:
-                            return None, ignored_rows
-                        neighbor_median = float(np.median(neighbor_vals))
-                        if neighbor_median <= 0:
-                            return None, ignored_rows
-                        return float(scan_ratios_full[local_idx]) / neighbor_median, ignored_rows
-
-                    scan_x_peak_ratio, ignored_rows = compute_xpeak(scan_y1, scan_y2)
-                    scan_x_peak_ignored_rows += ignored_rows
-                    if scan_x_peak_ratio is not None:
-                        scan_x_peak_neighbor_median = scan_x_peak_ratio
-                    if scan_x_peak_segment_height > 0:
-                        seg_source_y1 = scan_y1
-                        seg_source_y2 = scan_y2
-                        if (
-                            scan_x_peak_segment_source == "scan_ext_band"
-                            and scan_ext_y1 is not None
-                            and scan_ext_y2 is not None
-                        ):
-                            seg_source_y1 = scan_ext_y1
-                            seg_source_y2 = scan_ext_y2
-                        seg_h = max(1, int(scan_x_peak_segment_height))
-                        segs = []
-                        for seg_y in range(seg_source_y1, seg_source_y2 + 1, seg_h):
-                            seg_y2 = min(seg_source_y2, seg_y + seg_h - 1)
-                            seg_ratio, _ = compute_xpeak(seg_y, seg_y2)
-                            if seg_ratio is not None:
-                                segs.append(seg_ratio)
-                        if segs:
-                            scan_x_peak_segment_min = float(min(segs))
-                            pass_count = sum(1 for v in segs if v >= scan_x_peak_ratio_min)
-                            scan_x_peak_segment_pass = pass_count / float(len(segs))
-                scan_peak_ratio_local = None
-                if scan_peak_row is not None:
-                    peak_y1 = scan_peak_row
-                    peak_h = scan_peak_band_height if scan_peak_band_height > 0 else scan_h
-                    peak_y2 = min(h - 1, int(peak_y1 + peak_h - 1))
-                    if peak_y1 <= peak_y2:
-                        scan_peak_ratio_local = float(
-                            ink[peak_y1 : peak_y2 + 1, sx1 : sx2 + 1].sum()
-                        ) / float(max(1, peak_y2 - peak_y1 + 1) * max(1, sx2 - sx1 + 1))
-                if extend_scale > 1.0:
-                    ext_h = max(scan_h, int(round(scan_h * extend_scale)))
-                    scan_center = int(round((scan_y1 + scan_y2) / 2))
-                    scan_ext_y1 = max(0, int(round(scan_center - ext_h / 2)))
-                    scan_ext_y2 = min(h - 1, int(round(scan_center + ext_h / 2)))
-                    ext_h = max(1, scan_ext_y2 - scan_ext_y1 + 1)
-                    scan_ext_ratio = float(
-                        ink[scan_ext_y1 : scan_ext_y2 + 1, sx1 : sx2 + 1].sum()
-                    ) / float(ext_h * max(1, sx2 - sx1 + 1))
-                    top_h_scan = max(0, scan_y1 - scan_ext_y1)
-                    bottom_h_scan = max(0, scan_ext_y2 - scan_y2)
-                    scan_top_h = int(top_h_scan)
-                    scan_bottom_h = int(bottom_h_scan)
-                    if top_h_scan > 0:
-                        scan_top_ratio = float(
-                            ink[scan_ext_y1:scan_y1, sx1 : sx2 + 1].sum()
-                        ) / float(top_h_scan * max(1, sx2 - sx1 + 1))
-                    if bottom_h_scan > 0:
-                        scan_bottom_ratio = float(
-                            ink[scan_y2 + 1 : scan_ext_y2 + 1, sx1 : sx2 + 1].sum()
-                        ) / float(bottom_h_scan * max(1, sx2 - sx1 + 1))
-            record_base = {
-                "band": [band_y1, band_y2],
-                "staff_band": [y1, y2],
-                "pred_band": list(pred_band) if pred_band is not None else None,
-                "ext_band": [int(ext_y1), int(ext_y2)]
-                if ext_y1 is not None and ext_y2 is not None
-                else None,
-                "top_h": int(top_h),
-                "bottom_h": int(bottom_h),
-                "scan_band": [int(scan_y1), int(scan_y2)] if scan_band is not None else None,
-                "scan_ext_band": [int(scan_ext_y1), int(scan_ext_y2)]
-                if scan_ext_y1 is not None and scan_ext_y2 is not None
-                else None,
-                "scan_base_band": [int(scan_base_y1), int(scan_base_y2)]
-                if band_source == "horiz_scan"
-                else None,
-                "scan_row_ratio_mean": scan_row_ratio_mean,
-                "scan_row_ratio_max": scan_row_ratio_max,
-                "scan_row_ratio_lines": scan_row_ratio_lines,
-                "scan_top_h": scan_top_h,
-                "scan_bottom_h": scan_bottom_h,
-                "scan_row_profile": scan_row_profile,
-                "scan_peak_ratio": scan_peak_ratio,
-                "scan_peak_row": scan_peak_row,
-                "scan_peak_ratio_local": scan_peak_ratio_local,
-                "scan_x_peak_ratio": scan_x_peak_ratio,
-                "scan_x_peak_neighbor_median": scan_x_peak_neighbor_median,
-                "scan_x_peak_segment_min": scan_x_peak_segment_min,
-                "scan_x_peak_segment_pass": scan_x_peak_segment_pass,
-                "scan_x_peak_ignored_rows": scan_x_peak_ignored_rows,
-            }
             if use_peak_relative_ratio and scan_peak_ratio_local:
                 peak_relative_ratio = scan_ratio / max(scan_peak_ratio_local, 1e-6)
             else:
@@ -867,6 +698,8 @@ def detect_probe_scan(
     )
 
     if debug_path is not None:
+        from .debug import write_debug_output
+
         debug_params = {
             "method": "probe_scan",
             "band_source": band_source,
@@ -881,6 +714,8 @@ def detect_probe_scan(
             "band_scan_pad": band_scan_pad,
             "band_scan_pad_ratio": band_scan_pad_ratio,
             "save_row_profile": save_row_profile,
+            "scan_x_domain_mode": scan_x_domain_mode,
+            "scan_x_domain_pad": scan_x_domain_pad,
             "probe_width": width,
             "ink_threshold": ink_threshold,
             "min_ratio": min_ratio,
@@ -928,7 +763,31 @@ def detect_probe_scan(
             width=width,
             params=debug_params,
             divisi_map=divisi_map,
+            x_domains=x_domains,
             extend_top_max_ratio=extend_top_max_ratio,
             extend_bottom_max_ratio=extend_bottom_max_ratio,
+        )
+    if scan_stats is not None:
+        scan_stats.update(
+            {
+                "band_count": len(bands),
+                "image_width": w,
+                "full_width_columns": full_width_columns,
+                "eligible_domain_columns": eligible_domain_columns,
+                "projected_columns": projected_columns,
+                "full_width_domain_count": full_width_domain_count,
+                "raw_peak_count": raw_peak_count,
+                "selected_peak_count": selected_peak_count,
+                "candidate_count": len(candidates),
+                "eligible_width_ratio": (
+                    eligible_domain_columns / float(full_width_columns)
+                    if full_width_columns
+                    else 1.0
+                ),
+                "projected_width_ratio": (
+                    projected_columns / float(full_width_columns) if full_width_columns else 1.0
+                ),
+                "elapsed_seconds": time.perf_counter() - scan_started_at,
+            }
         )
     return candidates

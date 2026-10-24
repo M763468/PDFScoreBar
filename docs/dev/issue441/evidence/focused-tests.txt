@@ -1,0 +1,10 @@
+test_corrupt_stream_digest_is_rejected_before_deletion (test_issue441_annotated_layer.AnnotatedNumberLayerTests.test_corrupt_stream_digest_is_rejected_before_deletion) ... ok
+test_invisible_white_annotation_still_blocks_placement (test_issue441_annotated_layer.AnnotatedNumberLayerTests.test_invisible_white_annotation_still_blocks_placement) ... ok
+test_no_free_space_refuses_without_creating_output (test_issue441_annotated_layer.AnnotatedNumberLayerTests.test_no_free_space_refuses_without_creating_output) ... ok
+test_unknown_modified_result_cannot_reuse_owned_layer_identity (test_issue441_annotated_layer.AnnotatedNumberLayerTests.test_unknown_modified_result_cannot_reuse_owned_layer_identity) ... ok
+test_update_removes_only_owned_numbers_and_preserves_cropped_score (test_issue441_annotated_layer.AnnotatedNumberLayerTests.test_update_removes_only_owned_numbers_and_preserves_cropped_score) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.251s
+
+OK

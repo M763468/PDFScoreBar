@@ -445,6 +445,7 @@ def run_preflight(
 
     omr_model = resolve_omr_dln_model_path(repository_root=workspace)
     if mode != "production":
+        cuda_visibility = os.environ.get("CUDA_VISIBLE_DEVICES")
         try:
             omr_model = resolve_omr_model(detection, workspace)
             import numpy as np
@@ -461,6 +462,13 @@ def run_preflight(
             del candidate
         except Exception as exc:
             errors.append(f"OMR-DLN candidate is incompatible: {exc}")
+        finally:
+            # Ultralytics CPU prediction changes this process environment. Do not
+            # let one candidate's device selection hide CUDA from the next probe.
+            if cuda_visibility is None:
+                os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            else:
+                os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visibility
     _require_file(omr_model, role="OMR-DLN external model", errors=errors)
 
     cnn_model = detection.get("cnn_model_path")

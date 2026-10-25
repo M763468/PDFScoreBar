@@ -250,3 +250,51 @@ def test_frozen_distribution_rejects_candidate_mode_before_loading(tmp_path, mon
         == 2
     )
     assert "Frozen distributions require production" in capsys.readouterr().err
+
+
+def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch):
+    import os
+
+    import onnxruntime
+    import torch
+    import yaml
+
+    from docker import runtime_contract
+    from src.common import model_artifacts
+    from src.pipeline.detection import omr_dln_worker
+    from src.pipeline.steps import cnn_scoring
+
+    cfg = _candidate_config(tmp_path)
+    cfg["omr_dln_device"] = "cpu"
+    config = tmp_path / "config.yaml"
+    config.write_text(yaml.safe_dump({"detection": cfg}))
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    monkeypatch.setattr(runtime_contract, "runtime_fingerprint", lambda root: "matching")
+    monkeypatch.setattr(runtime_contract, "_validate_production_provenance", lambda *args: None)
+    monkeypatch.setattr(runtime_contract, "RUNTIME_MODULES", ())
+    monkeypatch.setattr(
+        model_artifacts,
+        "resolve_realesrgan_weight",
+        lambda *args, **kwargs: Path(cfg["cnn_model_path"]),
+    )
+    monkeypatch.setattr(cnn_scoring, "validate_cnn_candidate", lambda *args: None)
+    monkeypatch.setattr(
+        torch.cuda, "is_available", lambda: os.environ.get("CUDA_VISIBLE_DEVICES") != "-1"
+    )
+    monkeypatch.setattr(torch.cuda, "current_device", lambda: 0)
+    monkeypatch.setattr(torch.cuda, "get_device_name", lambda device: "test GPU")
+    monkeypatch.setattr(onnxruntime, "get_available_providers", lambda: ["CUDAExecutionProvider"])
+
+    class CpuCandidate:
+        def predict(self, *args, **kwargs):
+            os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+            return [SimpleNamespace(boxes=[])]
+
+    monkeypatch.setattr(omr_dln_worker, "load_candidate", lambda *args: CpuCandidate())
+    assert (
+        runtime_contract.run_preflight(
+            tmp_path, config, tmp_path / "none", expected_fingerprint_value="matching"
+        )
+        == 0
+    )
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"

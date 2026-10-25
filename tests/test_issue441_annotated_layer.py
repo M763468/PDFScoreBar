@@ -2,15 +2,24 @@
 
 import io
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 
 import fitz
 from PIL import Image
 
-from tools.issue441.crop_label_layer import write_number_layer
+from tools.issue441 import crop_label_layer
+from tools.issue441.crop_label_layer import (
+    FONT_POINTS,
+    NumberLayerValidationError,
+    write_number_layer,
+)
 from tools.issue441.phase0_probe import sha
 
 
@@ -121,6 +130,138 @@ class AnnotatedNumberLayerTests(unittest.TestCase):
             )
         self.assertEqual(sha(self.root / "first.pdf"), before)
         self.assertFalse((self.root / "rejected.pdf").exists())
+
+    def test_different_staff_heights_use_one_document_font_size(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+        data[0]["rows"].append(
+            {
+                "row_id": "row_002",
+                "row_start_measure_number": 321,
+                "top_staff_bbox": [60, 190, 180, 245],
+            }
+        )
+        _, report = write_number_layer(source, source, data, self.root / "uniform.pdf")
+        self.assertEqual(
+            {x["font_size"] for p in report["pages"] for x in p["labels"]}, {FONT_POINTS}
+        )
+        with fitz.open(self.root / "uniform.pdf") as doc:
+            sizes = {
+                span["size"]
+                for block in doc[0].get_text("dict", flags=0)["blocks"]
+                if block["type"] == 0
+                for line in block["lines"]
+                for span in line["spans"]
+            }
+        self.assertEqual(sizes, {FONT_POINTS})
+        self.assertTrue(
+            all(x["distance_to_staff_start_points"] < 3 for x in report["pages"][0]["labels"])
+        )
+
+    def test_save_then_validation_failure_never_publishes_result(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+        previous = self.root / "previous.pdf"
+        sidecar, _ = write_number_layer(source, source, data, previous)
+        retained = {p: sha(p) for p in (source, previous, sidecar)}
+        output = self.root / "rejected.pdf"
+
+        def fail_after_save(candidate, *_):
+            self.assertTrue(candidate.is_file())
+            self.assertTrue(candidate.read_bytes().startswith(b"%PDF-"))
+            raise NumberLayerValidationError("injected post-save failure")
+
+        with patch.object(crop_label_layer, "_validate_saved_output", side_effect=fail_after_save):
+            with self.assertRaisesRegex(NumberLayerValidationError, "post-save"):
+                write_number_layer(previous, source, data, output, previous_sidecar=sidecar)
+        self.assertFalse(output.exists())
+        self.assertFalse(output.with_suffix(".layer.json").exists())
+        self.assertEqual(retained, {p: sha(p) for p in retained})
+        self.assertFalse(list(self.root.glob(".rejected-*")))
+
+    def test_pdf_publish_failure_removes_only_own_sidecar(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+        output = self.root / "rejected.pdf"
+        real_link = os.link
+
+        def fail_pdf_link(src, dst):
+            if Path(dst) == output:
+                raise OSError("injected publication failure")
+            return real_link(src, dst)
+
+        with patch.object(crop_label_layer.os, "link", side_effect=fail_pdf_link):
+            with self.assertRaisesRegex(OSError, "publication"):
+                write_number_layer(source, source, data, output)
+        self.assertFalse(output.exists())
+        self.assertFalse(output.with_suffix(".layer.json").exists())
+        self.assertFalse(list(self.root.glob(".rejected-*")))
+
+    def test_concurrent_output_is_not_overwritten_or_deleted(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+        output = self.root / "concurrent.pdf"
+        validate = crop_label_layer._validate_saved_output
+
+        def concurrent_write(*args):
+            validate(*args)
+            output.write_bytes(b"another writer")
+
+        with patch.object(crop_label_layer, "_validate_saved_output", side_effect=concurrent_write):
+            with self.assertRaises(FileExistsError):
+                write_number_layer(source, source, data, output)
+        self.assertEqual(output.read_bytes(), b"another writer")
+        self.assertFalse(output.with_suffix(".layer.json").exists())
+
+    def test_orphan_sidecar_is_not_reused(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+        output = self.root / "orphan.pdf"
+        sidecar = output.with_suffix(".layer.json")
+        sidecar.write_text("interrupted previous writer")
+        with self.assertRaises(FileExistsError):
+            write_number_layer(source, source, data, output)
+        self.assertEqual(sidecar.read_text(), "interrupted previous writer")
+        self.assertFalse(output.exists())
+
+    def test_post_save_checks_still_run_under_python_optimization(self):
+        source = self.root / "source.pdf"
+        fixture(source)
+        output = self.root / "optimized.pdf"
+        program = """
+from pathlib import Path
+import os, sys
+from unittest.mock import patch
+import fitz
+from tools.issue441 import crop_label_layer as layer
+source, output = map(Path, sys.argv[1:])
+data = [{"source_pixels": [200,260], "rows": [{"row_id":"row_001", "row_start_measure_number":12, "top_staff_bbox":[60,100,180,130]}]}]
+validate = layer._validate_saved_output
+def corrupt_then_validate(candidate, *args):
+    changed = candidate.with_name("corrupt.pdf")
+    with fitz.open(candidate) as doc:
+        crop = doc[0].cropbox
+        doc[0].set_cropbox(fitz.Rect(crop.x0, crop.y0, crop.x1-1, crop.y1))
+        doc.save(changed)
+    os.replace(changed, candidate)
+    validate(candidate, *args)
+with patch.object(layer, "_validate_saved_output", side_effect=corrupt_then_validate):
+    try:
+        layer.write_number_layer(source, source, data, output)
+    except layer.NumberLayerValidationError:
+        pass
+    else:
+        raise RuntimeError("post-save validation was disabled")
+if output.exists() or output.with_suffix(".layer.json").exists():
+    raise RuntimeError("failed result was published")
+"""
+        result = subprocess.run(
+            [sys.executable, "-O", "-c", program, str(source), str(output)],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

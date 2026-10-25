@@ -10,6 +10,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
+import tempfile
 from pathlib import Path
 
 import fitz
@@ -23,6 +25,11 @@ from tools.issue441.phase0_probe import sha
 ZOOM = 2
 WHITE_FLOOR = 250
 MARKER = "issue441.experimental.row_numbers.v1"
+FONT_POINTS = 9.0
+
+
+class NumberLayerValidationError(ValueError):
+    """A saved candidate failed validation and must not be published."""
 
 
 def records_from_run(handoff, run):
@@ -49,39 +56,74 @@ def pix_array(page):
     return np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, 3)
 
 
-def find_placement(page, pixels, text, staff, previous_top, occupied):
+def digit_ink_bounds(text, size):
+    """Glyph bounds relative to the insertion origin, in PDF page coordinates."""
     font = fitz.Font("hebo")
+    cursor = 0.0
+    result = None
+    for char in text:
+        glyph = font.glyph_bbox(ord(char))
+        box = fitz.Rect(
+            (cursor + glyph.x0) * size,
+            -glyph.y1 * size,
+            (cursor + glyph.x1) * size,
+            -glyph.y0 * size,
+        )
+        result = box if result is None else result | box
+        cursor += font.glyph_advance(ord(char))
+    if result is None or result.is_empty:
+        raise ValueError("Number has no visible glyph bounds")
+    return result
+
+
+def distance_to_staff_start(rect, staff):
+    dx = max(rect.x0 - staff.x0, staff.x0 - rect.x1, 0)
+    dy = max(rect.y0 - staff.y0, staff.y0 - rect.y1, 0)
+    return math.hypot(dx, dy)
+
+
+def find_placement(page, pixels, text, staff, previous_top, occupied, font_points=FONT_POINTS):
     unit = staff.height
-    gap = max(1, unit * 0.04)
+    gap = max(0.75, min(1.5, unit * 0.025))
     note_boxes = [a.rect for a in page.annots() or []]
-    preferred_size = min(10.0, max(8.0, unit * 0.20))
-    sizes = list(dict.fromkeys([preferred_size, 8.0]))
-    for size in sizes:
-        width = font.text_length(text, fontsize=size)
-        height = (font.ascender - font.descender) * size
-        min_y = max(gap, (previous_top + staff.y0) / 2 if previous_top is not None else gap)
-        max_y = min(page.rect.height - height - gap, staff.y0 + unit * 0.25)
-        min_x = gap
-        max_x = min(page.rect.width - width - gap, staff.x0 + unit)
-        preferred_x = max(min_x, min(max_x, staff.x0 - width - gap))
-        preferred_y = staff.y0 - height - gap
-        step = max(size / 4, unit * 0.08)
-        xs = [preferred_x] + list(np.arange(min_x, max_x + 0.001, step))
-        ys = sorted(np.arange(min_y, max_y + 0.001, step), key=lambda y: abs(y - preferred_y))
-        for y in ys:
-            for x in xs:
-                rect = fitz.Rect(x, y, x + width, y + height)
-                padded = rect + (-gap, -gap, gap, gap)
-                if not page.rect.contains(padded):
-                    continue
-                if any(padded.intersects(box) for box in note_boxes + occupied):
-                    continue
-                x0, y0 = math.floor(padded.x0 * ZOOM), math.floor(padded.y0 * ZOOM)
-                x1, y1 = math.ceil(padded.x1 * ZOOM), math.ceil(padded.y1 * ZOOM)
-                region = pixels[y0:y1, x0:x1]
-                if region.size and np.min(region) >= WHITE_FLOOR:
-                    return rect, float(size), float(y + font.ascender * size), padded
-    raise ValueError(f"No safe >=8pt placement for {text} near staff top {staff.y0:.2f}")
+    ink = digit_ink_bounds(text, font_points)
+    width, height = ink.width, ink.height
+    min_y = max(gap, (previous_top + staff.y0) / 2 if previous_top is not None else gap)
+    max_y = min(page.rect.height - height - gap, staff.y0 + unit * 0.25)
+    min_x = gap
+    max_x = min(page.rect.width - width - gap, staff.x0 + unit)
+    preferred_x = max(min_x, min(max_x, staff.x0 - width - gap))
+    preferred_y = staff.y0 - height - gap
+    step = max(font_points / 5, unit * 0.04)
+    xs = sorted(set([preferred_x, min_x] + list(np.arange(min_x, max_x + 0.001, step))))
+    ys = sorted(
+        set([min(max_y, max(min_y, preferred_y))] + list(np.arange(min_y, max_y + 0.001, step)))
+    )
+    candidates = [fitz.Rect(x, y, x + width, y + height) for y in ys for x in xs]
+    candidates.sort(
+        key=lambda r: (
+            distance_to_staff_start(r, staff),
+            abs(r.y1 - (staff.y0 - gap)),
+            abs(r.x1 - (staff.x0 - gap)),
+        )
+    )
+    for rect in candidates:
+        # Keep the label above or to the left of the staff, never inside it.
+        if rect.x1 > staff.x0 - gap and rect.y1 > staff.y0 - gap:
+            continue
+        padded = rect + (-gap, -gap, gap, gap)
+        if not page.rect.contains(padded):
+            continue
+        if any(padded.intersects(box) for box in note_boxes + occupied):
+            continue
+        x0, y0 = math.floor(padded.x0 * ZOOM), math.floor(padded.y0 * ZOOM)
+        x1, y1 = math.ceil(padded.x1 * ZOOM), math.ceil(padded.y1 * ZOOM)
+        region = pixels[y0:y1, x0:x1]
+        if region.size and np.min(region) >= WHITE_FLOOR:
+            return rect, font_points, rect.y0 - ink.y0, padded, rect.x0 - ink.x0
+    raise ValueError(
+        f"No safe uniform {font_points:g}pt placement for {text} near staff top {staff.y0:.2f}"
+    )
 
 
 def remove_owned_layer(doc, sidecar):
@@ -100,10 +142,61 @@ def remove_owned_layer(doc, sidecar):
         doc.xref_set_key(page.xref, "Contents", f"[{refs}]")
 
 
-def write_number_layer(input_pdf, original_pdf, numbering, output, *, previous_sidecar=None):
+def _validate_saved_output(candidate, original_pdf, report):
+    with fitz.open(candidate) as actual, fitz.open(original_pdf) as source:
+        if len(actual) != len(source):
+            raise NumberLayerValidationError("Saved page count changed")
+        for index, page in enumerate(actual):
+            reference = source[index]
+            if (
+                page.cropbox != reference.cropbox
+                or page.mediabox != reference.mediabox
+                or page.rotation != reference.rotation
+            ):
+                raise NumberLayerValidationError("Saved page geometry changed")
+            if note_signature(actual, page) != note_signature(source, reference):
+                raise NumberLayerValidationError("Saved annotations changed")
+            original_pixels, new_pixels = pix_array(reference), pix_array(page)
+            dark = np.min(original_pixels, axis=2) < WHITE_FLOOR
+            if not np.array_equal(original_pixels[dark], new_pixels[dark]):
+                raise NumberLayerValidationError("Original dark pixels changed")
+            if page.get_text().split() != [
+                str(x["number"]) for x in report["pages"][index]["labels"]
+            ]:
+                raise NumberLayerValidationError("Saved number sequence changed")
+            a, b = page.get_images()[0][0], reference.get_images()[0][0]
+            if actual.extract_image(a)["image"] != source.extract_image(b)["image"]:
+                raise NumberLayerValidationError("Original background bytes changed")
+
+
+def _publish_validated_pair(candidate, staged_sidecar, output):
+    """PDF is the commit point: its validated sidecar must already be present.
+
+    Hard links publish without replacing another writer's result. A process kill
+    between the two links can leave a sidecar alone, never an unchecked PDF.
+    Such an orphan is not a successful result and a retry refuses to overwrite it.
+    """
+    sidecar = output.with_suffix(".layer.json")
+    linked_sidecar = False
+    try:
+        os.link(staged_sidecar, sidecar)
+        linked_sidecar = True
+        os.link(candidate, output)
+    except BaseException:
+        if linked_sidecar:
+            sidecar.unlink()
+        raise
+
+
+def write_number_layer(
+    input_pdf, original_pdf, numbering, output, *, previous_sidecar=None, font_points=FONT_POINTS
+):
     input_pdf, original_pdf, output = map(Path, (input_pdf, original_pdf, output))
-    if output.exists():
+    sidecar = output.with_suffix(".layer.json")
+    if output.exists() or output.is_symlink() or sidecar.exists() or sidecar.is_symlink():
         raise FileExistsError(output)
+    if not math.isfinite(font_points) or font_points < 8:
+        raise ValueError("Document-wide font size must be finite and at least 8pt")
     old = json.loads(Path(previous_sidecar).read_text()) if previous_sidecar else None
     if old and (
         old["output_sha256"] != sha(input_pdf) or old["source_sha256"] != sha(original_pdf)
@@ -113,7 +206,14 @@ def write_number_layer(input_pdf, original_pdf, numbering, output, *, previous_s
         "source_sha256": sha(original_pdf),
         "input_sha256": sha(input_pdf),
         "pages": [],
-        "contract": {"zoom": ZOOM, "white_floor": WHITE_FLOOR, "min_font_points": 8},
+        "contract": {
+            "zoom": ZOOM,
+            "white_floor": WHITE_FLOOR,
+            "min_font_points": 8,
+            "font_points": font_points,
+            "bbox_kind": "digit_ink",
+            "placement_ranking": "nearest_staff_start",
+        },
     }
     with fitz.open(input_pdf) as doc, fitz.open(original_pdf) as source:
         if old:
@@ -150,12 +250,12 @@ def write_number_layer(input_pdf, original_pdf, numbering, output, *, previous_s
                     y1 * sy - page.cropbox.y0,
                 )
                 text = str(row["row_start_measure_number"])
-                rect, size, baseline, padded = find_placement(
-                    page, pixels, text, staff, previous_top, occupied
+                rect, size, baseline, padded, origin_x = find_placement(
+                    page, pixels, text, staff, previous_top, occupied, font_points
                 )
                 before = page.get_contents()
                 page.insert_text(
-                    (rect.x0, baseline), text, fontsize=size, fontname="hebo", color=(0, 0, 0)
+                    (origin_x, baseline), text, fontsize=size, fontname="hebo", color=(0, 0, 0)
                 )
                 added = [x for x in page.get_contents() if x not in before]
                 if len(added) != 1:
@@ -171,32 +271,27 @@ def write_number_layer(input_pdf, original_pdf, numbering, output, *, previous_s
                         "number": int(text),
                         "rect": list(rect),
                         "font_size": size,
+                        "staff_start": [staff.x0, staff.y0],
+                        "distance_to_staff_start_points": distance_to_staff_start(rect, staff),
                     }
                 )
                 occupied.append(padded)
                 previous_top = staff.y0
             report["pages"].append(current)
-        doc.save(output)
-    with fitz.open(output) as actual, fitz.open(original_pdf) as source:
-        for index, page in enumerate(actual):
-            reference = source[index]
-            assert note_signature(actual, page) == note_signature(source, reference)
-            original_pixels, new_pixels = pix_array(reference), pix_array(page)
-            dark = np.min(original_pixels, axis=2) < WHITE_FLOOR
-            assert np.array_equal(original_pixels[dark], new_pixels[dark]), (
-                "Original dark pixels changed"
-            )
-            assert page.get_text().split() == [
-                str(x["number"]) for x in report["pages"][index]["labels"]
-            ]
-            assert page.cropbox == reference.cropbox and page.mediabox == reference.mediabox
-            # The original embedded background bytes are retained, not JPEG-reencoded.
-            a, b = page.get_images()[0][0], reference.get_images()[0][0]
-            assert actual.extract_image(a)["image"] == source.extract_image(b)["image"]
-    report["output_sha256"] = sha(output)
-    report["label_count"] = sum(len(p["labels"]) for p in report["pages"])
-    report["all_original_dark_pixels_and_annotations_unchanged"] = True
-    report["previous_layer_removed_to_exact_original"] = bool(old)
-    sidecar = output.with_suffix(".layer.json")
-    sidecar.write_text(json.dumps(report, indent=2) + "\n")
+        # No final path exists until the saved candidate and its sidecar pass.
+        with tempfile.TemporaryDirectory(prefix=f".{output.stem}-", dir=output.parent) as temporary:
+            candidate = Path(temporary) / "candidate.pdf"
+            staged_sidecar = Path(temporary) / "candidate.layer.json"
+            doc.save(candidate)
+            _validate_saved_output(candidate, original_pdf, report)
+            report["output_sha256"] = sha(candidate)
+            report["label_count"] = sum(len(p["labels"]) for p in report["pages"])
+            report["all_original_dark_pixels_and_annotations_unchanged"] = True
+            report["previous_layer_removed_to_exact_original"] = bool(old)
+            report["publication"] = "validated_sidecar_first_pdf_last_commit"
+            staged_sidecar.write_text(json.dumps(report, indent=2) + "\n")
+            saved = json.loads(staged_sidecar.read_text())
+            if saved != report or saved["output_sha256"] != sha(candidate):
+                raise NumberLayerValidationError("Staged PDF and sidecar do not match")
+            _publish_validated_pair(candidate, staged_sidecar, output)
     return sidecar, report

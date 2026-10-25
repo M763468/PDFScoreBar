@@ -1,5 +1,10 @@
 # Issue #441: GitHubレビュー入口
 
+**最新の対応:** [PR #445レビュー対応: 全段9pt・段への近接・安全な確定処理](ISSUE441_PR445_REFINEMENT.md)。
+[新しい実験集計](issue441/evidence/typography_revision_snapshot.json)と
+[11テストの出力](issue441/evidence/typography-focused-tests.txt)を追加した。
+以下の8〜10pt・5テストは初回実験の履歴であり、現在の既定値は文書全体9pt。
+
 GitHub上のこのページから、手法・結果・コード・テスト・未実装範囲を確認できる。
 ローカルのPDFやログへのアクセスは閲覧の前提にしない。
 製品GUIを含む完成機能の受入依頼ではなく、実データで成立した再開方式と実装境界のレビュー。
@@ -99,8 +104,9 @@ GitHubで確認できるのは設計、再現コード、テスト、テスト�
 
 個人の楽譜PDF/MSF、書き込み画像、raw correction、アプリ内部metadataは公開しない。
 このレビューの明示的な保持対象は`issue441/evidence/annotated_resume_snapshot.json`と
-`issue441/evidence/focused-tests.txt`の2点だけとする。前者は固定tested commitのallowlist集計、
-後者は個人データを使わない5テストの標準出力であり、少量のレビュー用記録としてgitへ保持する。
+`issue441/evidence/focused-tests.txt`、および今回の`typography_revision_snapshot.json`と
+`typography-focused-tests.txt`とする。各固定tested commitのallowlist集計と、
+個人データを使わないテストの標準出力であり、少量のレビュー用記録としてgitへ保持する。
 生の評価出力や今後の実験結果を一括で追跡対象へ追加する方針ではない。
 そのため実楽譜の視覚的レビューや15ページ実験の独立再実行には非公開の入力が必要。
 この制約を「GitHub上の証拠だけで実PDFの見た目まで独立検証できる」とは表現しない。

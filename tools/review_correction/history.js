@@ -26,7 +26,16 @@
       return response.json();
     };
     const refresh = async () => {
-      checkpoints = (await request("/api/checkpoints")).checkpoints;
+      const history = await request("/api/checkpoints");
+      checkpoints = history.checkpoints;
+      const runs = document.getElementById("applicationHistory");
+      runs.replaceChildren();
+      for (const item of [...(history.applications || [])].reverse()) {
+        const row = document.createElement("li");
+        row.textContent = `${new Date(item.started_at).toLocaleString()} · ${copy().statuses[item.status] || item.status}`;
+        if (item.error) row.title = item.error;
+        runs.appendChild(row);
+      }
       list.replaceChildren();
       for (const item of [...checkpoints].reverse()) {
         const option = document.createElement("option");
@@ -64,6 +73,10 @@
       const result = await request("/api/resume", {checkpoint_id: item.id, pdf_base64: btoa(binary)});
       location.assign(result.url);
     });
+    panel.addEventListener("toggle", () => {
+      if (panel.open) refresh().catch(error => { status.textContent = error.message; });
+    });
+    window.addEventListener("review-language-changed", () => refresh().catch(() => {}));
     refresh().catch(error => { status.textContent = error.message; });
     window.addEventListener("review-corrections-recorded", () => refresh().catch(() => {}));
   });

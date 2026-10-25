@@ -89,6 +89,10 @@ def relocate_manifest(data, manifest_path):
     return convert(data)
 
 
+class ReviewBusyError(ValueError):
+    """A live operation owns the package transaction or application lock."""
+
+
 class CheckpointStore:
     def __init__(self, package):
         self.package = package
@@ -112,7 +116,7 @@ class CheckpointStore:
             try:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError as exc:
-                raise ValueError("Another review operation is in progress") from exc
+                raise ReviewBusyError("Another review operation is in progress") from exc
             if not allow_apply:
                 apply_lock = package_path(self.package.root, "application_runs/.apply.lock")
                 if apply_lock.exists() or apply_lock.is_symlink():
@@ -121,7 +125,7 @@ class CheckpointStore:
                         try:
                             fcntl.flock(active, fcntl.LOCK_EX | fcntl.LOCK_NB)
                         except BlockingIOError as exc:
-                            raise ValueError(
+                            raise ReviewBusyError(
                                 "Wait for corrected PDF generation before saving"
                             ) from exc
             yield
@@ -359,4 +363,42 @@ class CheckpointStore:
             raise ValueError("Application record must not be a symlink")
         if value is not None:
             atomic_bytes(path, encoded({"schema_version": 1, **value}))
-        return json.loads(path.read_text())
+        result = json.loads(path.read_text())
+        if not isinstance(result, dict) or result.get("schema_version") != 1:
+            raise ValueError("Invalid application history record")
+        return result
+
+    def list_applications(self):
+        """Retain every failure; recover abandoned runs only under the save lock."""
+        self._prepare()
+        names = sorted(path.stem for path in (self.root / "applications").glob("attempt_*.json"))
+        records = {name: self.application_record(name) for name in names}
+        if any(record.get("status") == "running" for record in records.values()):
+            try:
+                with self.transaction():
+                    package = self.package.state.snapshot()["package"]
+                    last = package["last_successful_result"] or {}
+                    for name in names:
+                        record = self.application_record(name)
+                        if record.get("status") != "running":
+                            continue
+                        attested = (
+                            (package.get("last_application") or {}).get("status") == "succeeded"
+                            and last.get("identity") == record.get("identity", {}).get("identity")
+                            and Path(last.get("corrected_run") or "").parent
+                            == self.package.root / "application_runs" / name
+                        )
+                        updated = {
+                            **record,
+                            "status": "succeeded" if attested else "interrupted",
+                            "finished_at": now(),
+                        }
+                        if attested:
+                            updated["result"] = last
+                        else:
+                            updated["error"] = "Application ended without an attested success"
+                        records[name] = self.application_record(name, updated)
+            except ReviewBusyError:
+                # A live apply owns the lock; its running record remains running.
+                pass
+        return [{"id": name, **records[name]} for name in names]

@@ -368,7 +368,12 @@ class ReviewHandler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/checkpoints":
             try:
-                self._json({"checkpoints": package.history.list()})
+                self._json(
+                    {
+                        "checkpoints": package.history.list(),
+                        "applications": package.history.list_applications(),
+                    }
+                )
             except (ValueError, OSError) as exc:
                 self.send_error(400, str(exc))
             return

@@ -36,15 +36,19 @@ def main():
         target = (repo / name).resolve()
         require(target.is_relative_to(repo) and sha(target) == expected, "Tested code changed")
     verification = json.loads((run / "actual-verification-final.json").read_text())
-    browser = json.loads((run / "browser-03/browser-report.json").read_text())
+    browser = json.loads((run / "browser-04/browser-report.json").read_text())
     require(browser["passed"] is True and browser["errors"] == [], "Browser did not pass")
     gates = (
         "baseline_matches_retained",
         "edit_changes_numbers",
         "undo_restores_all_numbers",
         "server_restart_restores_exact_result",
+        "all_three_attempts_retained_after_restart",
     )
     require(all(verification[k] is True for k in gates), "Artifact/restart gate did not pass")
+    require(
+        browser.get("applicationStatuses") == ["succeeded"] * 3, "Per-attempt history gate failed"
+    )
     outputs = {}
     for stage in ("baseline", "edited", "undone"):
         result = browser[stage]
@@ -57,6 +61,11 @@ def main():
         require(sha(sidecar) == result["number_layer_sidecar_sha256"], "Sidecar changed")
         layer = json.loads(sidecar.read_text())
         require(layer["output_sha256"] == sha(pdf), "Layer and PDF disagree")
+        require(
+            layer["input_sha256"]
+            == "c52167c534ebde75150c7c52c11f7051e864390cfa2103640f631b0644bb89c2",
+            "Experiment input PDF changed",
+        )
         require(
             layer["all_original_dark_pixels_and_annotations_unchanged"] is True,
             "Preservation gate failed",
@@ -100,7 +109,11 @@ def main():
         "pipeline_image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
         "browser_image": "sha256:8771dc4666e7c11440bfc6a0c6b00480e9a15b8891b45f29a52d7d995f8d1492",
         "chromium": browser["chromium"],
-        "checks": {**{key: verification[key] for key in gates}, "browser_workflow_passed": True},
+        "checks": {
+            **{key: verification[key] for key in gates},
+            "browser_workflow_passed": True,
+            "all_three_attempts_retained": True,
+        },
         "outputs": outputs,
         "mmr_providers": [{"text_rec": item["text_rec"]} for item in providers],
         "not_run": [
@@ -110,14 +123,17 @@ def main():
             "Physical printing / manual-placement UI",
         ],
         "adopted_private_logs": [
-            "regression-final.log",
-            "fast-final.log",
-            "browser-03.log",
-            "verify-public-harness.log",
+            "regression-journal-final-02.log",
+            "fast-journal-final.log",
+            "browser-04.log",
+            "verify-public-harness-journal.log",
         ],
     }
     args.output_root.mkdir(parents=True, exist_ok=True)
-    for filename, expected in [("regression-final.log", 188), ("fast-final.log", 122)]:
+    for filename, expected in [
+        ("regression-journal-final-02.log", 190),
+        ("fast-journal-final.log", 122),
+    ]:
         data = (run / filename).read_text()
         require(
             f"{expected} passed" in data and "FAILED" not in data and "ERROR" not in data,
@@ -129,7 +145,7 @@ def main():
             ),
             "Unexpected test log content; do not publish",
         )
-        target = "product-regression-tests.txt" if expected == 188 else "product-fast-tests.txt"
+        target = "product-regression-tests.txt" if expected == 190 else "product-fast-tests.txt"
         (args.output_root / target).write_text(data)
     (args.output_root / "product_integration_snapshot.json").write_text(
         json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n"

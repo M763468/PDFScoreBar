@@ -29,6 +29,9 @@
 - [state.py](../../tools/review_correction/state.py): 実際に検証・生成できた結果だけを成功として記録。
   running/failed/succeededを永続化し、OSのlockが残っていないrunningはinterruptedと判定する。
   過去の成功結果は後続の失敗でも保持する。PDFとsidecarは取得時にもhashを照合する。
+  `history/applications/attempt_*.json`に試行ごとの成功・失敗を残し、後続の成功で消さない。
+  未確定の試行は、packageの成功記録が同じidentity・同じattemptを指す場合だけ成功へ復旧し、
+  PDFの存在だけでは復旧しない。画面の「PDF生成の履歴」から試行一覧を確認できる。
 
 保存と適用の競合はpackage内の非待機process lockで拒否する。別サーバーの適用中も保存できない。
 保存や履歴確定が例外で失敗した場合、rawとresolvedの修正を保存前へ戻す。
@@ -53,12 +56,12 @@
 
 | 確認 | 今回の状態 | 結果・範囲 |
 | --- | --- | --- |
-| focused・既存修正・UI契約・配布・runtime/handoff | Passed | 188件。履歴破損、symlink、依存変更、保存rollback、別プロセス排他、失敗・中断復旧、4種類の修正保存、session再読込、PDF/sidecar検証を含む |
+| focused・既存修正・UI契約・配布・runtime/handoff | Passed | 190件。履歴破損、symlink、依存変更、保存rollback、別プロセス排他、失敗・中断復旧・起動失敗・試行別履歴の保持、4種類の修正保存、session再読込、PDF/sidecar検証を含む |
 | 維持されているfast test一覧 | Passed | 122件 |
 | 実ブラウザー | Passed | 古い履歴の選択、PDF取り込み、別セッション、画面からのMMR編集・Save/Apply・取消、再読込、元package不変。HTTP/engine mockなし |
 | 実データの番号列・注釈・9pt | Passed | baselineは保持結果と一致、編集で番号が変化、取消で全番号列が復帰。3出力とも15ページ・160番号・全9pt・729注釈・CropBox・元の濃い画素を保持 |
 | サーバー再起動後の成功PDF取得 | Passed | 同じsession IDでcurrentと成功PDF hashを復元・HTTP取得 |
-| 移行中のテスト | Failed・修正後再実行 | import誤記、rollback期待値、fixture形式、イベント契約の不一致。最終188件はPassed。初回ログも保持 |
+| 移行中のテスト | Failed・修正後再実行 | import誤記、rollback期待値、fixture形式、イベント契約の不一致、配布外の開発記録へのリンク。最終190件はPassed。初回ログも保持 |
 | 初回HTTPテスト | Blocked後に再実行 | sandbox内でsocket作成不可。許可された外側の実行で回帰テスト完了 |
 | 初回ブラウザー起動 | Blocked後に再実行 | headless-shell実体が未配置。イメージ内のChromium実体を明示して完了 |
 | ホスト側からの再起動後HTTP照合 | Blocked後に別経路 | localhost接続が到達せず待機。Dockerの同一networkから保存済み出力を照合 |
@@ -72,7 +75,7 @@
 
 worktreeは `.worktrees/issue441`。ホストPythonはmanager checkoutの `.venv_pdf/bin/python`。
 ローカル証拠rootは `logs/issue441/product-integration/`。公開JSONに採用ログを限定して集計する。
-最終コードの実ブラウザー証拠は `browser-03/`。`baseline.pdf`、`edited.pdf`、`undone.pdf`、
+最終コードの実ブラウザー証拠は `browser-04/`。`baseline.pdf`、`edited.pdf`、`undone.pdf`、
 各スクリーンショットと `browser-report.json` を非公開で保持する。
 [番号列・再起動後HTTP照合コード](../../tools/issue441/verify_product_integration.py)と
 [公開allowlist集計コード](../../tools/issue441/export_product_evidence.py)もコミットした。
@@ -115,7 +118,7 @@ node tools/review_correction/resume_browser_acceptance.cjs \
 ```bash
 python -m tools.issue441.verify_product_integration \
   --job /workspace/temp/pdfscorebar-results/job-5969eee679e540d282e23fb3ecdfe205 \
-  --report logs/issue441/product-integration/browser-03/browser-report.json \
+  --report logs/issue441/product-integration/browser-04/browser-report.json \
   --url http://127.0.0.1:8441 \
   --output logs/issue441/product-integration/actual-verification-final.json
 /home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python -m tools.issue441.export_product_evidence \

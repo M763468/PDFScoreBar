@@ -53,6 +53,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       if (!response.ok() || bytes.subarray(0, 5).toString() !== '%PDF-') throw new Error('Result PDF unavailable');
       fs.writeFileSync(path.join(evidence, `${name}.pdf`), bytes);
       await page.screenshot({path: path.join(evidence, `${name}.png`)});
+      await page.waitForFunction(async () => {
+        const history = await (await fetch('/api/checkpoints')).json();
+        return history.applications.at(-1)?.status === 'succeeded';
+      });
     };
     await apply('baseline');
     await page.locator('#typeSelect').selectOption('mmr_measure_span');
@@ -86,6 +90,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       throw new Error('Original package changed during resumed review');
     }
     if (report.errors.length) throw new Error(report.errors.join('\n'));
+    report.applicationStatuses = await page.evaluate(async () =>
+      (await (await fetch('/api/checkpoints')).json()).applications.map(item => item.status));
+    if (report.applicationStatuses.join(',') !== 'succeeded,succeeded,succeeded') throw new Error('Application history lost an attempt');
     report.passed = true;
     console.log('Checkpoint selection / annotated upload / isolated Save / Apply / undo / reload passed');
   } catch (error) {

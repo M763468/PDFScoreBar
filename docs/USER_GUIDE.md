@@ -134,6 +134,8 @@ checkpoint a name, and choose **Save checkpoint**. Select a saved checkpoint, ch
 an annotated PDF (up to 32 MB), then choose **Resume in new session**. The original
 review remains separate; the browser URL identifies the resumed session and can be
 reopened after server restart. Saves also retain checkpoints automatically.
+The panel's **PDF generation history** records successful, failed and interrupted
+attempts; a later success does not remove an earlier failure.
 
 The resumed canvas shows the uploaded annotations. PDF generation recalculates numbering
 from the retained recognition artifacts and adds uniformly sized 9 pt row numbers near
@@ -151,7 +153,7 @@ pages and other interactive PDF shapes require further validation and may be rej
 Export a copy with the original background and native annotations for this workflow.
 The application does not import MSF files or infer which handwritten numbers it may delete.
 Generated PDFs have been checked locally; a new MobileSheets export roundtrip is still
-unverified. See [the integration evidence](dev/ISSUE441_PRODUCT_INTEGRATION.md).
+unverified. See [the integration evidence in PR #445](https://github.com/M763468/PDFScoreBar/pull/445).
 
 ## Troubleshooting and provenance
 

@@ -23,6 +23,7 @@ from src.pipeline.review.manual_correction_handoff import (
     load_manual_correction_handoff,
     validate_manual_correction_handoff,
 )
+from tools.review_correction.history import now
 
 
 def preview_numbering(handoff_path: str | Path) -> dict:
@@ -143,6 +144,8 @@ class CorrectionApplication:
         if not self.lock.acquire(blocking=False):
             raise ValueError("A corrected result is already being generated")
         apply_started = False
+        attempt = None
+        event = {}
         try:
             self._safe_root()
             descriptor = os.open(
@@ -158,16 +161,26 @@ class CorrectionApplication:
             with self.package.history.transaction(allow_apply=True):
                 checkpoint = self.package.history.capture()
                 identity = self.package.state.begin_apply()
+                apply_started = True
                 if self.package.history.get(checkpoint)["identity"] != identity:
                     raise ValueError("Review changed while preparing application")
-            apply_started = True
+                attempt = self._allocate()
+                event = {
+                    "status": "running",
+                    "checkpoint_id": checkpoint,
+                    "identity": identity,
+                    "started_at": now(),
+                }
+                self.package.history.application_record(attempt.name, event)
             response = self.package.state.snapshot()
-            self.thread = Thread(target=self._run, args=(identity, checkpoint), daemon=True)
+            self.thread = Thread(
+                target=self._run, args=(identity, checkpoint, attempt, event), daemon=True
+            )
             self.thread.start()
             return response
         except Exception as exc:
             if apply_started:
-                self.package.state.fail_apply(str(exc))
+                self._fail_apply(exc, attempt, event)
             if self.process_lock is not None:
                 self.process_lock.close()
                 self.process_lock = None
@@ -185,10 +198,20 @@ class CorrectionApplication:
             except FileExistsError:
                 number += 1
 
-    def _run(self, identity, checkpoint):
+    def _fail_apply(self, error, attempt, event):
+        self.package.state.fail_apply(str(error))
+        if attempt is not None:
+            try:
+                self.package.history.application_record(
+                    attempt.name,
+                    {**event, "status": "failed", "finished_at": now(), "error": str(error)[:500]},
+                )
+            except (OSError, ValueError):
+                # The package error remains authoritative if journal storage fails.
+                pass
+
+    def _run(self, identity, checkpoint, attempt, event):
         try:
-            self._safe_root()
-            attempt = self._allocate()
             review = attempt / "input_review"
             self.package.history.materialize(checkpoint, review)
             payload = json.loads((review / "manual_correction_input.json").read_text())
@@ -277,7 +300,7 @@ class CorrectionApplication:
                 and (review / rel).is_file()
             }
             self.package.history.validate_dependencies(checkpoint)
-            self.package.state.finish_apply(
+            result = self.package.state.finish_apply(
                 {
                     **identity,
                     "source_handoff": str(self.handoff),
@@ -290,8 +313,12 @@ class CorrectionApplication:
                 final_pdf=str(final),
                 final_pdf_sha256=hashlib.sha256(data).hexdigest(),
             )
+            self.package.history.application_record(
+                attempt.name,
+                {**event, "status": "succeeded", "finished_at": now(), "result": result},
+            )
         except Exception as exc:
-            self.package.state.fail_apply(str(exc))
+            self._fail_apply(exc, attempt, event)
         finally:
             if self.process_lock is not None:
                 self.process_lock.close()

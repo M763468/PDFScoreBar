@@ -66,6 +66,14 @@ def main():
             == report["undone"]["final_pdf_sha256"],
             "Restart did not restore the exact current result",
         )
+        conn.request("GET", "/api/checkpoints" + query)
+        response = conn.getresponse()
+        history = json.loads(response.read())
+        require(
+            response.status == 200
+            and [item["status"] for item in history["applications"]] == ["succeeded"] * 3,
+            "Per-attempt history did not survive restart",
+        )
         conn.request("GET", "/api/result" + query)
         response = conn.getresponse()
         pdf = response.read()
@@ -83,6 +91,7 @@ def main():
             "edit_changes_numbers",
             "undo_restores_all_numbers",
             "server_restart_restores_exact_result",
+            "all_three_attempts_retained_after_restart",
         )
     }
     args.output.write_text(json.dumps(result, indent=2) + "\n")

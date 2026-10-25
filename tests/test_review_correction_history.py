@@ -297,3 +297,44 @@ def test_http_resume_session_survives_registry_reload_and_stays_isolated(review_
     )
     assert package.state.capture_identity() == original
     assert _request(server, "GET", "/file?path=resume/input.pdf&session=" + session)[0] == 403
+
+
+def test_every_failed_and_successful_application_is_retained(tmp_path, monkeypatch):
+    from test_review_correction_application import _fake_engine
+
+    app = _application(tmp_path)
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("retained failure")
+
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", fail)
+    app.start()
+    app.thread.join(5)
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", _fake_engine)
+    app.start()
+    app.thread.join(5)
+    restarted = ReviewPackage(app.handoff)
+    records = restarted.history.list_applications()
+    assert [r["status"] for r in records] == ["failed", "succeeded"]
+    assert records[0]["error"] == "retained failure"
+    assert (
+        records[1]["result"]["final_pdf_sha256"]
+        == restarted.state.snapshot()["package"]["current_result"]["final_pdf_sha256"]
+    )
+
+
+def test_abandoned_history_requires_state_attestation_not_pdf_existence(tmp_path, monkeypatch):
+    from test_review_correction_application import _fake_engine
+
+    app = _application(tmp_path)
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", _fake_engine)
+    app.start()
+    app.thread.join(5)
+    history = app.package.history
+    record = history.application_record("attempt_0001")
+    record.pop("result")
+    record["status"] = "running"  # Simulate death after state commit, before journal commit.
+    history.application_record("attempt_0001", record)
+    history.application_record("attempt_0002", record)  # Same identity/PDF, different attempt.
+    recovered = ReviewPackage(app.handoff).history.list_applications()
+    assert [r["status"] for r in recovered] == ["succeeded", "interrupted"]

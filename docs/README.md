@@ -27,9 +27,9 @@ the current proposed executable subset.
   [GT preparation](GT_PREPARATION_POLICY.md), and [barline matching](BARLINE_MATCHER.md)
   describe narrower output or validation behavior.
 - [Model artifact contract](MODEL_ARTIFACT_CONTRACT.md) defines current model identities;
-  [experiment model selection investigation](dev/EXPERIMENT_MODEL_SELECTION.md) is the
-  Japanese developer design proposal for candidate isolation (#448), with implementation
-  tracked in #450.
+  [exploration and comparison model selection](dev/EXPERIMENT_MODEL_SELECTION.md) is the
+  Japanese developer guide to explicit candidate paths, fixed comparisons, and production
+  validation (#448 / PR #451).
 - [Makefile surface](MAKEFILE_SURFACE.md), [regression workflow](REGRESSION_TEST_WORKFLOW.md),
   and [script management](SCRIPT_MANAGEMENT.md) guide repository development.
 - [Future service architecture](FUTURE_SERVICE_ARCHITECTURE.md) is a roadmap, not current

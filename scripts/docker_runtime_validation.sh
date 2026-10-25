@@ -11,7 +11,8 @@ selected, digest-verified version from the common model cache. One-time registra
 
   python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
 
-OMR_DLN_MODEL_PATH remains a verified explicit compatibility override.
+OMR_DLN_MODEL_PATH remains a verified explicit compatibility override in production.
+Exploration/comparison use detection.model_validation and explicit model paths in config.
 
 Environment:
   DOCKER_IMAGE              Canonical Docker image reference. Default: pdfscore_pipeline_gpu
@@ -112,54 +113,25 @@ if [[ ! -f "$config_host" ]]; then
   exit 2
 fi
 
+# Use one resolver for preflight and execution. Exploration paths are not
+# compared with production SHA; comparison paths require recorded hashes.
+selection=(python3 -m src.pipeline.detection.model_selection "$config_host")
+model_mode="$(PYTHONPATH="$repo_root" "${selection[@]}" --role mode)"
+model_cache_root="$(PYTHONPATH="$repo_root" "${selection[@]}" --role cache)"
+omr_host="$(PYTHONPATH="$repo_root" "${selection[@]}" --role omr_dln)"
+omr_host="$(realpath "$omr_host")"
 omr_manifest="$repo_root/models/omr_dln/manifest.json"
-model_cache_root="$(
-  PYTHONPATH="$repo_root" python3 -c \
-    'from pathlib import Path; import sys; from src.common.model_artifacts import get_model_cache_root; print(get_model_cache_root(project_root=Path(sys.argv[1])))' \
-    "$repo_root"
-)"
-omr_container="$(
-  python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtime_path"])' \
-    "$omr_manifest"
-)"
-
-verify_explicit_omr() {
-  local candidate="$1"
-  PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file \
-    "$omr_manifest" "$candidate"
-}
-
-resolve_cached_omr() {
-  PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify "$omr_manifest"
-}
-
-if [[ -n "${OMR_DLN_MODEL_PATH:-}" ]]; then
-  omr_host="$(verify_explicit_omr "$OMR_DLN_MODEL_PATH")"
-else
-  cached_omr="$(PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts path "$omr_manifest")"
-  if [[ -e "$cached_omr" || -L "$cached_omr" ]]; then
-    # A registered but corrupt artifact must fail; never hide it with a legacy fallback.
-    omr_host="$(resolve_cached_omr)"
-  else
-    legacy_omr="$repo_root/external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
-    if [[ -f "$legacy_omr" ]]; then
-      echo "Using verified legacy OMR-DLN path; import it into the common cache for canonical reuse." >&2
-      omr_host="$(verify_explicit_omr "$legacy_omr")"
-    else
-      cat >&2 <<EOF
-Selected OMR-DLN artifact is not registered in the common model cache.
-Manifest: $omr_manifest
-Register the official YOLOv8m_Measures.pt once with:
-  python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
-The import verifies the selected version digest before publishing to:
-  $model_cache_root
-OMR_DLN_MODEL_PATH remains available as a verified compatibility override.
-EOF
-      exit 2
-    fi
+omr_container="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["runtime_path"])' "$omr_manifest")"
+candidate_mounts=()
+if [[ "$model_mode" != production ]]; then
+  omr_container="$(PYTHONPATH="$repo_root" "${selection[@]}" --role omr_dln --container-path)"
+  cnn_host="$(PYTHONPATH="$repo_root" "${selection[@]}" --role cnn)"
+  cnn_container="$(PYTHONPATH="$repo_root" "${selection[@]}" --role cnn --container-path)"
+  candidate_mounts=(-v "$(realpath "$cnn_host"):$cnn_container:ro")
+  if [[ -d "$model_cache_root" ]]; then
+    candidate_mounts+=(-v "$model_cache_root:$model_cache_root:ro" -e "PDFSCOREBAR_MODEL_CACHE=$model_cache_root")
   fi
 fi
-omr_host="$(realpath "$omr_host")"
 
 extra_args=()
 if [[ -n "${DOCKER_EXTRA_ARGS:-}" ]]; then
@@ -179,6 +151,7 @@ common_args=(
   "${network_args[@]}"
   -v "$repo_root:/workspace"
   -v "$omr_host:$omr_container:ro"
+  "${candidate_mounts[@]}"
   -w /workspace
   -e PYTHONPATH=/workspace
   -e "OMR_DLN_MODEL_PATH=$omr_container"
@@ -201,7 +174,8 @@ Canonical Docker validation provenance:
   image_id:    $image_id
   runtime_fingerprint: $host_runtime_fingerprint
   model_cache: $model_cache_root
-  omr_manifest: models/omr_dln/manifest.json
+  model_validation: $model_mode
+  omr_manifest: models/omr_dln/manifest.json (production default only)
   omr_host:    $omr_host
   omr_runtime: $omr_container
 EOF
@@ -247,6 +221,11 @@ fi
 
 echo "Running canonical pipeline smoke..."
 docker "${common_args[@]}" "${pipeline_args[@]}"
+
+if [[ "$model_mode" != production ]]; then
+  echo "Candidate pipeline completed; run the declared evaluation contract separately."
+  exit 0
+fi
 
 echo "Running configured post-pipeline accuracy validation..."
 docker "${common_args[@]}" "${accuracy_args[@]}"

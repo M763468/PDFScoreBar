@@ -169,6 +169,10 @@
       "role": "detector config helpers"
     },
     {
+      "pattern": "src/pipeline/detection/model_selection.py",
+      "role": "Shared model selection policy and path resolution"
+    },
+    {
       "pattern": "src/pipeline/detection/connector_artifacts.py",
       "role": "connector artifact capture"
     },

@@ -1,171 +1,135 @@
-# 実験モデル選択とproduction preflightの分離（#448 調査・設計）
+# 開発用モデルの探索・正式比較とproduction選定（#448）
 
-本書は開発者向けの設計提案であり、実装済みの操作仕様ではない。
-現行調査対象は `9ccd57fb`（develop）。runtime、model bytes、設定、thresholdは変更していない。
-実装は [#450](https://github.com/M763468/PDFScoreBar/issues/450) で行う。
-現行の正規契約は [モデル契約](../MODEL_ARTIFACT_CONTRACT.md)、
+CNNとOMR-DLN候補は、既存configの明示パスで試せる。
+探索のたびにversion/SHA/provenanceを登録したり、production manifestを編集したりする必要はない。
+[PR #451](https://github.com/M763468/PDFScoreBar/pull/451) で調査と実装をまとめる。
+当初の別selection manifest/専用runner案と独立実装Issue #450は、
+[レビュー方針](https://github.com/M763468/PDFScoreBar/pull/451#issuecomment-6400645077) により置き換えた。
+
+現行productionの正規契約は [モデル契約](../MODEL_ARTIFACT_CONTRACT.md)、
 [モデル登録手順](../MODEL_ARTIFACTS.md)、[検証方針](VALIDATION_POLICY.md) を参照する。
 
-## 結論と用語
+## 検証の段階
 
-候補checkpointの登録には既存の `pdfscorebar.model_artifact.v1` と共有cacheを再利用できる。
-ただし、全モデルを安全に候補選択して実行する共通入口はまだない。
-**開発専用の明示的なexperiment selection manifestとrunnerを追加する**方式を推奨する。
-productionのpreflightを緩めるフラグや、候補ごとのpreflight本体書換えは追加しない。
+`detection.model_validation` を指定する。省略時は `production`。未知の値はエラー。
 
-- **production selected identity**: レビュー・採用済みのversion/provenance/digestと設定の組。
-- **experiment candidate**: 未採用の別version。登録・整合性検証できても採用済みとは限らない。
-- **runtime compatibility**: image-owned依存・patch・assetと実行sourceの互換性。
-- **source provenance**: 実際に実行したsource/configのidentity。image build時と異なっても
-  runtime互換性が保たれる場合があり、両者を同一視しない。
-- **preflight PASS**: 必要条件が揃い、対象runtimeで候補をload/最小実行できた状態。
-  experiment評価PASS、production採用PASSとは別に記録する。
-
-## 現行主要チェックの棚卸し
-
-「共通」は実験でも維持する要件、「production」は採用済み選定または配布の追加要件。
-既存コードが既にすべての共通要件を満たす、という意味ではない。
-
-| チェック・目的 | 現行根拠 | 適用と候補での扱い |
+| 設定 | モデル選択・検証 | 固定/記録 |
 | --- | --- | --- |
-| image存在・immutable ID固定、asset contract label | `docker/distribution.py:main`、`scripts/docker_image_resolver.py`、`scripts/docker_runtime_validation.sh` | 共通。mutable tagだけを実験identityにしない。explicit imageを別imageに自動置換しない |
-| runtime fingerprint一致 | `docker/runtime_contract.py:RUNTIME_CONTRACT_FILES, runtime_fingerprint, run_preflight` | 共通。Dockerfile/dependency/provider patch/image-owned CNN生成に関わる入力を保持。異なるruntimeは別build/identityが必要 |
-| source fingerprint記録 | 同 `SOURCE_CONTRACT_ROOTS, source_fingerprint, run_preflight` | 共通のprovenance。source mismatch自体は現在のpreflightの拒否条件ではない。runtime fingerprintとは別物 |
-| frozen配布のschema、path安全性、選択inventory、hash、release provenance | 同 `validate_distribution_provenance`、`docker/distribution.py:source_identity` | production/配布で必須。Gitありならtracked集合・dirty、展開配布なら実inventoryも検証。配布内の候補追加/編集で回避せず、開発checkoutを使う |
-| config/input/assetの存在、外部symlink mount診断 | 同 `_require_file, _resolve_input_path, run_preflight` | 共通。hostにあるだけではcontainerから利用可能とは限らない。現行はconfig全体のschema/意味検証ではない |
-| artifact schema/version/architecture名・SHA形式・安全なcache相対path | `src/common/model_artifacts.py:load_model_artifact_manifest` | 共通。現行architectureは非空文字列の検査であり、対応architectureや実tensorの検証とは別 |
-| 必須weight存在・SHA検証、明示import・atomic publish | 同 `resolve_model_artifact, import_model_artifact, materialize_model_artifact` | 共通。digestは選択versionのidentity。候補自身のmanifestに照合する。size/provenanceを一般loaderが強制検証するわけではない |
-| OMR-DLN選定version一致、RO mount | `scripts/docker_runtime_validation.sh:verify_explicit_omr`、`docker/distribution.py:main` | productionは固定manifestと照合。候補は専用selectionを使用。環境変数でpathを変えるだけでは候補選択にならない |
-| SR x2/x4のSHA、image-owned配置 | root `Dockerfile` のdownload/hash/copy、`src/common/model_artifacts.py:resolve_realesrgan_weight` | 共通integrity＋production選定。build時にhash検証、runtime preflightは存在検査。任意候補SRは現行generic manifest経路に統合されていない |
-| CNN manifest SHA・EfficientNet-B0 checkpoint・threshold一致・NMS無効 | `src/pipeline/detection/dense_orchestrator.py:_resolve_verified_cnn_artifact, _validate_verified_cnn_manifest, _run_cnn_scoring` | 共通のarchitecture/scoring契約＋production設定。別manifestを指定可能で、D27のdigestだけにhardcodeされてはいない |
-| maintained HOMR marker・必要path・source pin/direct_url照合 | `docker/runtime_contract.py:_validate_production_provenance`、`src/pipeline/detection/profile_contract.py`、`maintained_homr_worker.py` | productionはmaintained契約必須。候補runtimeにも同等の明示identityが必要。markerを削るのでなく別profile/adapterが必要 |
-| HOMR実model hashの記録 | `src/pipeline/detection/maintained_homr_worker.py:model_provenance` | 共通provenanceに再利用可能。ただし記録された実hashと、承認済み期待hashとの照合は別。preflightで全weightのdigestを照合しているとは言えない |
-| required moduleのimport origin | `docker/runtime_contract.py:RUNTIME_MODULES, run_preflight` | 共通。ただし存在確認だけではversion・I/O・load成功を保証しない |
-| CUDA可用性・ONNX CUDA provider一覧 | 同 `run_preflight` | 共通の必要条件。全sessionの実providerやCPU fallback不在を保証しない。候補runnerは実session確認を追加する |
-| MMR path存在・OCR provider | 同 `run_preflight`、`src/measure_numbering/rapidocr_provider.py:create_mmr_rapidocr` | 現行MMR weightはraw path。preflightはSHA未照合。OCRはCUDA未確認でもwarning後継続する経路があり、実験のno-fallback保証として流用不可 |
-| 精度・semantic regression・production smoke | `docs/dev/VALIDATION_POLICY.md`、`configs/smoke_test.yaml`、関連smoke scripts | preflight外の別gate。必要なdataset・metric・toleranceを実験前に固定し、全gateを報告する |
+| `exploration` | 明示パスの現在のcheckpointを実際にload。対応architecture、tensor shape、I/O、要求deviceを確認。採用済みbytesとの一致は要求しない | 実行時に現在のhashを自動記録。事前登録不要。同じパスの重みを更新して再実行できる |
+| `comparison` | 探索と同じ選択・load経路に加え、`model_sha256.cnn` / `model_sha256.omr_dln`との一致を必須とする | 探索結果からhashをコピーして固定。評価の入力・config・runtime・metric・seed・toleranceも実験前に固定する |
+| `production` | 従来のCNN manifest/architecture/threshold契約、OMR-DLN selected manifest SHA、maintained runtime、配布inventoryを検証 | 採用済みversion/provenance/integrity契約を維持する |
 
-補足: `run_preflight`単独ではOMR-DLNはpath resolver＋存在検査であり、採用済みSHA検証は
-host launcherが担う。CNN raw pathとmanifestを両方preflightが見ても、dense本実行はraw pathを拒否する。
-preflightだけの成功をend-to-end適合と解釈しない。
+Preflight成功、pipeline実行成功、精度比較合格、production採用は別の判定。
+候補モードのDocker実行はproduction専用のaccuracy smokeを自動流用しない。
+正式比較では、事前に宣言した評価コマンドと全regression gateを別途実行する。
 
-## モデル別の選択可能範囲
+## 対応範囲とチェックの整理
 
-| 種類 | 現在できること | 実験入口に必要な最小差分 |
-| --- | --- | --- |
-| CNN | 別のv1 manifestを共有cacheへimportし、別configの `detection.cnn_model_manifest` で指定。EfficientNet-B0、`production_contract.cnn_threshold`一致、NMS=falseが必要 | selectionから明示注入し、candidate provenance・cache衝突・load/実provider・結果identityを検証。`production_contract`という既存fieldは採用証明ではなくscoring契約として互換adapterで扱う |
-| OMR-DLN | generic importは別manifestにも対応。workerは `OMR_DLN_MODEL_PATH` を読むが、canonical launcherはproduction manifestで検証する | 候補manifestから解決・SHA検証・RO mountし、workerへ渡す専用経路。measure detectorのarchitecture/class mapping/出力座標互換性も検証 |
-| HOMR | maintained profileとinstalled sourceが固定。歴史的Stage-E componentは隔離済み | 新runtime/profile adapterと全ONNX asset inventoryが必要。初期実装は候補交換を明示拒否 |
-| Real-ESRGAN | directory overrideはあるがgeneric選択manifestではなくimage-owned release bytes | model constructor/scale/I/Oと期待hashのadapterが必要。初期実装は候補交換を明示拒否 |
-| MMR/OCRなど | MMR raw path、package-owned OCR assets/provider設定 | 個別asset identityとprovider契約が必要。初期実装は候補交換を拒否し、継続利用分も実hash/runtime identityを記録する |
+| 項目 | 探索・比較 | production/配布 | 根拠・目的 |
+| --- | --- | --- | --- |
+| CNNパス | `cnn_model_path`を優先。コピー元configにmanifestが残っていても候補パスを使う。未指定ならmanifestから解決 | raw pathを拒否しmanifestを要求 | `dense_orchestrator.py` / `model_selection.py`。候補差替と採用済み選定を区別 |
+| CNN architecture | 既存loaderが対応するResNet18 / EfficientNet-B0。binary headとstate_dictのshapeを検証 | EfficientNet-B0を維持 | `steps/cnn_scoring.py`。探索用のEfficientNet-B0固定チェックを除外し、実loadを共用 |
+| CNN threshold | configで明示、有限の0〜1。manifestの`production_contract`との一致は不要 | manifest thresholdとの一致を維持 | `dense_orchestrator.py`。threshold探索は比較条件として明示 |
+| CNN NMS/crop/geometry | dense経路のNMS=falseなど既存I/O/scoring条件は維持 | 従来どおり | model identityとは別の下流semantic契約 |
+| OMR-DLNパス | `omr_dln_model_path`を優先、次に環境変数。明示したmissing/corrupt候補から別モデルへfallbackしない | 同じoverrideでもproduction manifest SHA照合が必須 | `model_selection.py`。Docker launcherに重複していた解決/照合を共通化 |
+| OMR-DLN互換性 | native `.pt`、detection taskとbox I/O、明示device、予測I/Oを検証。モデルの意味が「小節」であることは候補作成者が保証する | 従来のselectedモデル | `omr_dln_worker.py`。exported ONNX/TensorRT候補は今回未対応 |
+| weight hash/version | 探索は実hashを自動記録、比較だけ指定hashと照合 | manifest選定versionのSHAを検証 | 全候補への事前SHA/version/provenance登録義務は設けない |
+| 古い検出出力の再利用 | モデル差替時に古い結果を使わないよう検出のskip-existingを無効化 | 従来どおり | `dense_orchestrator.py`。同じパスで再学習した重みの再実行に対応 |
+| HOMR source pin/marker | 現行maintained runtimeをそのまま利用。候補HOMR差替は未対応 | 必須 | `profile_contract.py` / `maintained_homr_worker.py`。対応しないruntimeまでチェックを削って実行可能とは扱わない |
+| SR / MMR / OCR | 候補交換の検証は今回の対象外 | 既存設定・assetを維持 | SRはimage-owned。MMR raw pathの存在検査は全weight SHA検証ではない |
+| image/runtime互換性 | image存在、immutable ID、runtime fingerprint照合を維持 | 必須 | `scripts/docker_image_resolver.py` / `docker/runtime_contract.py` |
+| source provenance | source fingerprintと実行sourceを記録。image build時とのsource一致自体は拒否条件ではない | frozen配布ではinventory/hash/dirty検証を追加 | runtime互換性とsource identityは別概念 |
+| provider/device | CNN/OMR候補は`cpu`または`cuda`を明示。既定は`cuda`。CUDA要求からCPUへfallbackしない | 現行CUDA/ONNX/maintained契約を維持 | GPU一覧だけで実load成功とは扱わない。MMR OCRのwarning後fallbackまで候補の保証範囲に含めない |
+| input/weight存在・mount | containerから見えることを検査し候補をRO mount | 従来どおり | hostの絶対symlink先がcontainerに見えるとは限らない |
+| 配布identity | frozen配布から候補モードを使うことを拒否。開発checkoutを使用する | schema/inventory/path/hash/release provenanceを厳格検証 | `distribution.py:source_identity` / `runtime_contract.py:validate_distribution_provenance` |
 
-CNNだけなら現行configで試せるが、generic artifact loaderはprovenance必須性、architecture実体、
-cache pathとmodel/versionの一対一性を強制しない。全候補に対する安全な入口としては不十分。
-既存shared cacheの優先順位（明示root → `PDFSCOREBAR_MODEL_CACHE` → XDG → user cache）は変更不要。
+共通artifact cacheの優先順位（明示root → `PDFSCOREBAR_MODEL_CACHE` → XDG → user cache）は変更しない。
+探索のraw checkpointはcache登録不要。manifestで指定したartifactは従来どおりそのmanifestのSHAを検証する。
 
-## 方式比較と推奨契約
+## 探索の操作例
 
-| 方式 | 評価 |
-| --- | --- |
-| production manifest/global defaultを候補ごとに変更 | 不採用。採用済みidentityやimage-owned CNN fingerprintに影響し、研究と配布の判定を混同する |
-| arbitrary path/環境変数＋skip-preflight | 不採用。selected digest検証、依存runtime、再現性を統一できない |
-| 各モデルのconfig overrideだけで運用 | CNNの限定試行には使えるが、OMR固定launcher・HOMR pin・結果provenanceを解決しない |
-| artifact v1＋明示selection＋開発専用runner | 推奨。artifact登録/cacheは共有し、選定policyと実行結線を分離する |
+`configs/dense_full_pipeline.yaml`等を作業用configへコピーし、次を変更する。
+データ/input/outputの設定は元configの用途に合わせる。下は追加・変更するfieldだけの例。
 
-提案selectionはversion付きschemaで、run ID、候補role→artifact manifest、training/source provenance、
-scoring/I/O契約、immutable image ID、runtime fingerprint、要求provider、config/input identity、
-評価契約参照、出力先を束ねる。manifest自体のhashと各artifactのexpected/actual hashを保存する。
-省略roleは「その時のdefault」へ再解決せず、選択時のproduction manifest/profileとbytesをsnapshotする。
-初期対応は同じimage/runtimeでload可能なCNNとOMR-DLNだけとし、未知role/architecture/runtime変更を拒否する。
+```yaml
+run:
+  run_id: candidate_01
+  output_root: logs/issue448/experiments
 
-検証と実行は同じ解決済みselectionを使用する。modelはversion別cacheからROでmountし、
-cache path/roleの衝突、root外escape、異なるbytesへの同じversion再利用を拒否する。
-既存 `import --force` を候補登録の通常操作にせず、production cacheを上書きしない。
-mount後に実際のファイルを再照合し、検証とloadの間の差替を検出する。
-state_dictのshape、class/出力座標、最小推論、sessionの実providerが揃うまではPASSを出さない。
-CPU利用が実験契約で明示許可される場合も要求providerと実providerを照合し、暗黙の代替は拒否する。
-
-失敗はnonzero＋機械可読の理由を返す。missing/corrupt/unknown schema、provenance不足、
-unsupported architecture/runtime/provider、load不適合、未確認provider、hash変更はすべて停止条件。
-部分成功をPASSとして保存せず、登録成功・preflight・評価・採用を独立した状態にする。
-
-## 入力・操作・出力案
-
-現行で実行可能なのは次の登録・照合。manifestはrepository配下に置く必要がある
-（CLIの `_find_project_root` が祖先のrepository rootを探す）。hashは正確な元checkpointから計算し、
-training commit/config/data/checkpoint provenanceを別manifestの `provenance` に記録する。
-
-```json
-{
-  "schema_version": "pdfscorebar.model_artifact.v1",
-  "model_id": "barline-cnn",
-  "version": "issue450-candidate-01",
-  "architecture": "efficientnet_b0",
-  "distribution": {"mode": "operator-supplied", "asset": "candidate.pth"},
-  "sha256": "<exact checkpoint SHA-256: replace before import>",
-  "cache_path": "barline_cnn/issue450-candidate-01/candidate.pth",
-  "provenance": {"training_commit": "<commit>", "training_config_sha256": "<digest>", "dataset_identity": "<identity>"},
-  "production_contract": {"cnn_threshold": 0.4965248107910156}
-}
+detection:
+  model_validation: exploration
+  cnn_model_path: /absolute/path/to/candidate.pth
+  cnn_threshold: 0.5
+  cnn_device: cuda
+  omr_dln_model_path: /absolute/path/to/measure_candidate.pt
+  omr_dln_device: cuda
 ```
 
-このJSONはplaceholderを含む説明例。thresholdはcheckpoint交換だけを比較する場合に固定する値で、
-新しい候補への最適値・採用済み精度を保証しない。threshold探索は別の事前宣言した実験にする。
+CNNの元manifestは残っていてもよい。`cnn_model_path`を削除するとmanifest選択へ戻る。
+片方のモデルだけを試す場合、もう片方は既存manifest/cacheまたは採用済みパスを利用できる。
+新しいweightを同じパスへ保存した後、configやpreflight本体を編集せず再実行できる。
+探索時も実行中のcheckpoint書換えは避ける。実行の前後で変更を検出した場合は結果を無効として停止する。
 
 ```bash
-python3 -m src.common.model_artifacts import \
-  experiments/issue450/candidate.json /path/to/candidate.pth
-python3 -m src.common.model_artifacts verify experiments/issue450/candidate.json
-python3 -m src.common.model_artifacts path experiments/issue450/candidate.json
+bash scripts/docker_runtime_validation.sh --config experiments/my_candidate.yaml --preflight-only
+bash scripts/docker_runtime_validation.sh --config experiments/my_candidate.yaml
 ```
 
-将来runnerの操作案（**未実装。現在実行できるコマンドではない**）:
+既存launcherが候補パスを解決し、CNN/OMRをRO mountして同じconfigでpreflightとpipelineを実行する。
+外部PDF等のmountは従来どおり `DOCKER_EXTRA_ARGS` で追加する。
+HOMR/SRのruntime互換性が変わらなければ、checkpoint更新のためのimage再buildは不要。
+候補用の新しいselection manifestや専用runnerはない。
+直接 `src/pipeline/main.py --config ...` を実行する場合も同じ選択policyを使うが、
+外部pathのmountとimage provenanceの記録は呼出し側の責任。Docker preflightの実load/I/O確認は別途必要。
 
-```text
-experiment-runner preflight --selection experiments/issue450/selection.json
-experiment-runner run --selection experiments/issue450/selection.json
+## 正式比較・再現
+
+候補実行の `<run-dir>/model_selection.json` には、選択したCNN/OMRのパスと実SHA、
+config、入力画像SHA、source/runtime fingerprint、launcherから渡されたsource commit/image IDを記録する。
+`status: selected` は観測記録であり、pipelineや精度評価の成功宣言ではない。
+検出sourceのmanifest/result、pipeline log、評価resultも同じIssue rootに保持する。
+
+```python
+import json
+import yaml
+
+config = yaml.safe_load(open("experiments/my_candidate.yaml"))
+observed = json.load(open("logs/issue448/experiments/candidate_01/model_selection.json"))
+config["detection"]["model_validation"] = "comparison"
+config["detection"]["model_sha256"] = {
+    role: model["sha256"] for role, model in observed["models"].items()
+}
+with open("experiments/fixed_comparison.yaml", "w") as output:
+    yaml.safe_dump(config, output)
 ```
 
-毎checkpointで変えるのはcandidate version/digest/provenance、selection、必要なら実験config。
-preflight本体、production選定manifest、global default、配布inventoryは変更不要。
-新worktreeでは同じmanifest/selectionと共有cacheを使い、同じbytesを再importしない。
-依存runtime/architectureが変わる場合は新adapter/imageの実装・検証が必要であり、無条件には再利用できない。
+実行時はimmutable image IDを `DOCKER_IMAGE` に指定し、source commit＋dirty diff、入力集合、
+config、baseline、metric、semantic gate、tolerance、seedを評価前に固定・保存する。
+`model_sha256`は2モデルのbytes照合であり、これだけで全実験条件の再現性が成立するわけではない。
+欠けたhashや変更済みcheckpointは比較モードで停止する。threshold探索後の結果は別実験として扱う。
 
-出力案は `logs/issue<N>/experiments/<run-id>/` にselection/config snapshot、source commitとdirty diff digest、
-input identity、image ID、runtime fingerprint、全model hash、実session providers、preflight結果、
-評価contract/resultを保存する。checkpointそのものは共有cache等の保持場所に置き、Gitへ追加しない。
-missingなら明示import、hash mismatchなら元checkpoint/manifest identityを確認し、新versionを割り当てる。
-runtime mismatchならbase/image provenanceを比較して適合imageを選び、必要な場合だけ別imageをbuildする。
-unknown providerならsession設定・runtimeを修正し、検証をskipして進めない。
+## production昇格と失敗時対応
 
-## productionへの昇格
+1. 同一入力で候補を評価し、accuracyと下流semantic regressionの全gateを確認する。
+2. accepted結果とレビューが揃った場合だけ別の採用変更でproduction version/provenance/digestを更新する。
+   公開可能なartifactは新Releaseへpublishし、fresh download・空cache materialize・SHA照合を行う。
+   operator-suppliedモデルは取得/import契約とlicense境界を維持する。
+3. image-owned asset/runtimeに影響すればimageをbuildする。canonical preflight/GPU smoke、
+   必要なaccuracy/semantic評価、engineと配布provenanceの検証を行う。
+4. mainへのrelease昇格は [ブランチ方針](../BRANCH_POLICY.md) に従う。古いcache/rollback assetは自動削除しない。
 
-1. 評価前にsource/candidate、baseline、dataset、metric、semantic gate、tolerance、seed/configを固定する。
-2. 同一入力で候補を実行し、accuracyと下流semantic regressionを全gateで比較する。
-   preflight成功は評価成功を意味しない。失敗後のthreshold変更・dataset縮小は別実験として記録する。
-3. accepted結果とレビューが揃った場合だけ、別PRでproduction selected version/provenance/digestを更新する。
-   公開可能なartifactは新Releaseへpublish→fresh download→空cache import/materialize→SHA照合する。
-   operator-suppliedモデルは取得・import契約とlicense境界を維持する。
-4. image-owned asset/runtimeに影響すればimageをbuildし、canonical preflight/GPU smoke、影響する
-   accuracy/semantic評価、engine契約と配布inventory/provenanceの検証を行う。
-5. release/mainへの昇格は [ブランチ方針](../BRANCH_POLICY.md) に従う別承認。
-   古いversion/cache/rollback用assetは自動削除しない。
+missing/corrupt候補はpath/checkpointを修正する。shape/task/device不適合は対応形式で作成し直す。
+比較hash不一致はモデルか比較対象が変わったことを意味するため、既存の比較結果を上書きして合格扱いにしない。
+runtime mismatchはbase/image provenanceを比較して適合imageを選び、必要な場合だけbuildする。
 
-## 受入条件・文書連携・調査限界
+## 設計の根拠と文書連携
 
-実装とテストの受入条件は [#450](https://github.com/M763468/PDFScoreBar/issues/450) に集約した。
-候補共存/新worktree再利用、破損・不適合・provider fallback拒否、production identity維持、
-同じselectionの検証→実行結線をfixtureと専用runtimeで確認する。
-モデル数値挙動が変わる検証では [検証方針](VALIDATION_POLICY.md) の評価gateを適用する。
-
-[#446](https://github.com/M763468/PDFScoreBar/issues/446) の開発ガイドは本書を設計提案として参照し、
-実装後の操作仕様は既存モデル契約/開発ガイドへ統合する。日英同期・配置方針は同Epicに従い、
-本調査で既存英語契約を重複翻訳したり最小配布へ研究用ファイルを追加したりしない。
-
-歴史的根拠: #329 / PR #331（version別SHAとoperator import）、#352 / PR #353
-（共有cacheとruntime/source fingerprint分離）、#398 / PR #401と
-[scope clarification](https://github.com/M763468/PDFScoreBar/issues/398#issuecomment-5969279832)
-（productionと歴史的Stage-E componentの分離）。過去のGPU/精度結果は今回再実行していない。
-`MODEL_ARTIFACT_CONTRACT.md` のmaintained HOMR inventoryは古いcommitを記載しているが、
+#329 / PR #331はversion別SHAとoperator import、#352 / PR #353は共有cacheとruntime/source fingerprintの分離、
+#398 / PR #401はproductionと歴史的Stage-E componentの分離を定めた。今回もこれらのproduction契約を維持する。
+過去のGPU/精度結果は今回の検証結果とは分ける。
+`MODEL_ARTIFACT_CONTRACT.md`のmaintained HOMR inventoryは古いcommitを記載しているが、
 現行Dockerfile/profileは `457e7c6518a10ba755db2e60883419e56c4d7369`。
-本書ではsource/profileを優先し、古いarchive hashを現行weightの保証として使用しない。
+古いarchive hashを現行weightの保証として使用しない。
+
+[#446](https://github.com/M763468/PDFScoreBar/issues/446) の開発ガイドは本書を現行操作への参照先とし、
+日英同期・配置方針は同Epicに従う。本書の追加だけで英語版翻訳が完了したとは扱わない。

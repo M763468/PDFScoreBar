@@ -414,6 +414,24 @@ def run_preflight(
     inputs = config.get("inputs") or {}
     detection = config.get("detection") or {}
     mmr = config.get("mmr") or {}
+    from src.pipeline.detection.model_selection import (
+        model_validation_mode,
+        resolve_cnn_candidate,
+        resolve_omr_model,
+    )
+
+    mode = model_validation_mode(detection)
+    if mode != "production" and (workspace / PROVENANCE_NAME).exists():
+        print(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "errors": ["Frozen distributions require production model validation"],
+                }
+            ),
+            file=sys.stderr,
+        )
+        return 2
 
     input_path = _resolve_input_path(workspace, inputs.get("pdf_path"))
     if input_path is not None:
@@ -426,6 +444,23 @@ def run_preflight(
         sr_weights[model_name] = str(path)
 
     omr_model = resolve_omr_dln_model_path(repository_root=workspace)
+    if mode != "production":
+        try:
+            omr_model = resolve_omr_model(detection, workspace)
+            import numpy as np
+
+            from src.pipeline.detection.omr_dln_worker import load_candidate
+
+            device = detection.get("omr_dln_device", "cuda")
+            candidate = load_candidate(omr_model, device)
+            result = candidate.predict(
+                np.zeros((64, 64, 3), dtype=np.uint8), device=device, verbose=False
+            )
+            if len(result) != 1 or result[0].boxes is None:
+                raise ValueError("OMR-DLN candidate returned incompatible prediction output")
+            del candidate
+        except Exception as exc:
+            errors.append(f"OMR-DLN candidate is incompatible: {exc}")
     _require_file(omr_model, role="OMR-DLN external model", errors=errors)
 
     cnn_model = detection.get("cnn_model_path")
@@ -433,7 +468,16 @@ def run_preflight(
     if cnn_model_path is not None:
         _require_file(cnn_model_path, role="configured CNN model", errors=errors)
 
-    cnn_manifest = detection.get("cnn_model_manifest")
+    if mode != "production":
+        try:
+            from src.pipeline.steps.cnn_scoring import validate_cnn_candidate
+
+            cnn_model_path = resolve_cnn_candidate(detection, workspace)
+            validate_cnn_candidate(cnn_model_path, detection.get("cnn_device", "cuda"))
+        except Exception as exc:
+            errors.append(f"CNN candidate is incompatible: {exc}")
+
+    cnn_manifest = detection.get("cnn_model_manifest") if mode == "production" else None
     resolved_manifest_model = None
     if cnn_manifest:
         manifest_path = _resolve_input_path(workspace, cnn_manifest)
@@ -486,6 +530,7 @@ def run_preflight(
             else None
         ),
         "host_provenance": host_provenance,
+        "model_validation": mode,
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
         "realesrgan_weights": sr_weights,

@@ -99,8 +99,8 @@ def test_canonical_docker_validation_uses_manifest_resolver_and_read_only_mount(
     script = (PROJECT_ROOT / "scripts" / "docker_runtime_validation.sh").read_text(encoding="utf-8")
 
     assert "models/omr_dln/manifest.json" in script
-    assert "src.common.model_artifacts verify" in script
-    assert "src.common.model_artifacts verify-file" in script
+    assert "src.pipeline.detection.model_selection" in script
+    # Production SHA checks now share the resolver exercised by selection tests.
     assert '"$omr_host:$omr_container:ro"' in script
     assert "PDFSCOREBAR_MODEL_CACHE" in script
 

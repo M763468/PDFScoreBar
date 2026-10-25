@@ -164,9 +164,10 @@ class CheckpointStore:
             raise ValueError("History blob changed or is incomplete")
         return data
 
-    def _source_context(self):
-        payload = json.loads(self.package.handoff_path.read_text())
-        path = _resolve_source_manifest_path(payload, self.package.root)
+    def _source_context(self, package=None):
+        package = package or self.package
+        payload = json.loads(package.handoff_path.read_text())
+        path = _resolve_source_manifest_path(payload, package.root)
         if not path.is_file():
             return None
         raw = path.read_bytes()
@@ -233,36 +234,41 @@ class CheckpointStore:
         dependencies(manifest.get("pages", []))
         return context
 
-    def capture(self, *, label="", force=False):
+    def capture(self, *, label="", force=False, snapshot=None, origin=None):
         """Caller holds transaction. Publish one immutable manifest last."""
         self._prepare()
         if not isinstance(label, str) or len(label) > 100:
             raise ValueError("Checkpoint label must be at most 100 characters")
-        identity = self.package.state.capture_identity()
+        package = snapshot or self.package
+        identity = package.state.capture_identity()
         if not force:
             for item in reversed(self.list()):
                 if item["identity"] == identity:
                     self.validate_dependencies(item["id"])
                     return item["id"]
         refs = {}
-        for rel in sorted(set(self.package.reads) | set(self.package.writes)):
-            path = (
-                self.package.readable(rel)
-                if rel in self.package.reads
-                else self.package.writable(rel)
-            )
+        for rel in sorted(set(package.reads) | set(package.writes)):
+            path = package.readable(rel) if rel in package.reads else package.writable(rel)
             refs[rel] = self.put(path.read_bytes()) if path.is_file() else None
-        refs["manual_correction_input.json"] = self.put(self.package.handoff_path.read_bytes())
+        refs["manual_correction_input.json"] = self.put(package.handoff_path.read_bytes())
         value = {
             "schema_version": 1,
             "created_at": now(),
             "label": label,
             "identity": identity,
             "files": refs,
-            "source_context": self._source_context(),
+            "source_context": self._source_context(package),
         }
-        if self.package.state.capture_identity() != identity:
+        if package.state.capture_identity() != identity:
             raise ValueError("Review changed while saving checkpoint")
+        if origin:
+            context = value.get("source_context") or {}
+            if (
+                context.get("original_manifest", {}).get("sha256")
+                != origin["source_manifest_sha256"]
+            ):
+                raise ValueError("Legacy source manifest changed during import")
+            value["origin"] = origin
         data = encoded(value)
         checkpoint = "cp_" + digest(data)
         directory = self.root / "checkpoints" / checkpoint

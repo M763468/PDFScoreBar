@@ -266,3 +266,61 @@ if output.exists() or output.with_suffix(".layer.json").exists():
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_four_and_ten_digit_numbers_are_inside_crop_and_do_not_touch_page_edges(tmp_path):
+    import numpy as np
+
+    from src.pipeline.review.number_layer import pix_array
+
+    source = tmp_path / "source.pdf"
+    data = fixture(source)
+    for number in [1003, 1011, 1234567890]:
+        data[0]["rows"][0]["row_start_measure_number"] = number
+        data[0]["rows"][0]["top_staff_bbox"] = [12, 24, 180, 40]
+        _, report = write_number_layer(source, source, data, tmp_path / f"{number}.pdf")
+        with fitz.open(tmp_path / f"{number}.pdf") as doc:
+            assert doc[0].rect.contains(fitz.Rect(report["pages"][0]["labels"][0]["rect"]))
+            assert doc[0].get_text().strip() == str(number)
+            pixels = pix_array(doc[0])
+            assert (
+                min(
+                    np.min(pixels[0]),
+                    np.min(pixels[-1]),
+                    np.min(pixels[:, 0]),
+                    np.min(pixels[:, -1]),
+                )
+                == 255
+            )
+
+
+def test_post_save_validator_rejects_an_outside_number_bbox(tmp_path):
+    import pytest
+
+    from src.pipeline.review.number_layer import _validate_saved_output
+
+    source = tmp_path / "source.pdf"
+    data = fixture(source)
+    output = tmp_path / "output.pdf"
+    _, report = write_number_layer(source, source, data, output)
+    report["pages"][0]["labels"][0]["rect"] = [-1, 0, 5, 5]
+    with pytest.raises(NumberLayerValidationError, match="CropBox"):
+        _validate_saved_output(output, source, report)
+
+
+def test_page_font_alias_cannot_bypass_number_ink_bounds(tmp_path):
+    import pytest
+
+    source = tmp_path / "source.pdf"
+    data = fixture(source)
+    changed = tmp_path / "wrong_font.pdf"
+    with fitz.open(source) as doc:
+        xref = doc[0].insert_font(fontname="cour")
+        resources = int(doc.xref_get_key(doc[0].xref, "Resources")[1].split()[0])
+        doc.xref_set_key(resources, "Font/hebo", f"{xref} 0 R")
+        doc.save(changed)
+    output = tmp_path / "rejected.pdf"
+    with pytest.raises(NumberLayerValidationError, match="metrics"):
+        write_number_layer(changed, changed, data, output)
+    assert not output.exists()
+    assert not output.with_suffix(".layer.json").exists()

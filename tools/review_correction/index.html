@@ -87,6 +87,9 @@
         <label><span data-copy="history.label">History label</span><input id="checkpointLabel" maxlength="100" /></label>
         <button id="checkpointBtn" class="btn" type="button" data-copy="history.save">Save checkpoint</button>
         <label><span data-copy="history.select">Saved checkpoint</span><select id="checkpointSelect"></select></label>
+        <label><span data-copy="history.legacy">Saved inputs from earlier versions</span><select id="legacySelect"></select></label>
+        <button id="legacyImportBtn" class="btn" type="button" data-copy="history.importLegacy">Import selected saved inputs</button>
+        <p class="small" data-copy="history.legacyHint">These inputs are verified separately; importing them does not mark an old PDF as successfully applied.</p>
         <label><span data-copy="history.pdf">Annotated PDF (32 MB maximum)</span><input id="resumePdf" type="file" accept="application/pdf,.pdf" /></label>
         <button id="resumeBtn" class="btn" type="button" data-copy="history.resume">Resume in new session</button>
         <p class="small" data-copy="history.scope">Requires the original PDF background and page order. Numbered or flattened exports need additional validation.</p>

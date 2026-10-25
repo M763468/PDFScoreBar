@@ -23,6 +23,9 @@ recognition inputs. Resumed applies reuse retained recognition and use
 annotations and CropBoxes. Annotation-only re-exports may remap xrefs: the resume adapter
 proves ordered content/stream hashes, markers and full-page rendering against attested
 package-local results before removing the old owned streams. Unknown rewrites are rejected.
+Legacy input snapshots are imported only after source/correction identity validation;
+old PDF presence does not establish success. Repeated resumes use a flat session registry
+under the original review, with checkpoint state and numbering ownership resolved separately.
 Checkpoint IDs and session IDs are local artifact identities;
 they do not add a public service/job API. See
 [`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).

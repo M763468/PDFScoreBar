@@ -338,3 +338,84 @@ def test_abandoned_history_requires_state_attestation_not_pdf_existence(tmp_path
     history.application_record("attempt_0002", record)  # Same identity/PDF, different attempt.
     recovered = ReviewPackage(app.handoff).history.list_applications()
     assert [r["status"] for r in recovered] == ["succeeded", "interrupted"]
+
+
+def _legacy_attempt(app, number=1):
+    import shutil
+
+    package = app.package
+    identity = package.state.capture_identity()
+    attempt = package.root / f"application_runs/attempt_{number:04d}"
+    review = attempt / "input_review"
+    review.mkdir(parents=True)
+    for rel in set(package.reads) | set(package.writes):
+        source = package.readable(rel) if rel in package.reads else package.writable(rel)
+        if source.is_file():
+            target = review / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+    data = json.loads(package.handoff_path.read_text())
+    data["source_manifest"] = str(package.root.parent / "manifest.json")
+    (review / "manual_correction_input.json").write_bytes(encoded(data))
+    (attempt / "consumed_inputs.json").write_bytes(encoded(identity))
+    return attempt, identity
+
+
+def test_legacy_import_reproduces_identities_without_certifying_pdf_success(tmp_path):
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    app = _application(tmp_path)
+    attempt, identity = _legacy_attempt(app)
+    # Existence of a PDF is deliberately irrelevant to saved-input import.
+    (attempt / "not_a_success.pdf").write_bytes(b"%PDF-invalid")
+    assert list_attempts(app.package) == [
+        {"id": "attempt_0001", "available": True, "status": "saved_inputs_only"}
+    ]
+    original = {
+        str(p.relative_to(attempt)): p.read_bytes() for p in attempt.rglob("*") if p.is_file()
+    }
+    with app.package.history.transaction():
+        cp = import_attempt(app.package, "attempt_0001")
+        assert import_attempt(app.package, "attempt_0001") == cp
+    saved = app.package.history.get(cp)
+    assert saved["origin"]["original_identity"] == identity
+    assert saved["identity"]["corrections_identity"] == identity["corrections_identity"]
+    assert app.package.state.snapshot()["package"]["last_successful_result"] is None
+    assert original == {
+        str(p.relative_to(attempt)): p.read_bytes() for p in attempt.rglob("*") if p.is_file()
+    }
+
+
+@pytest.mark.parametrize("changed", ["source", "corrections", "identity"])
+def test_legacy_import_rejects_changed_inputs_and_keeps_checkpoints(tmp_path, changed):
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    app = _application(tmp_path)
+    app.package.record_correction(0, "barline_construction", [])
+    attempt, _ = _legacy_attempt(app)
+    if changed == "source":
+        (attempt / "input_review/pages/page_001/source.png").write_bytes(b"changed")
+    elif changed == "corrections":
+        (attempt / "input_review/corrections/barlines.json").write_bytes(
+            encoded({"correction_type": "barline_construction", "items": [{"page": 0, "x": 100}]})
+        )
+        # Use the declared sink, independent of fixture filename conventions.
+        sink = next(
+            p
+            for rel, p in ReviewPackage(
+                attempt / "input_review/manual_correction_input.json"
+            ).writes.items()
+            if "barline" in rel
+        )
+        sink.write_bytes(
+            encoded({"correction_type": "barline_construction", "items": [{"page": 0, "x": 100}]})
+        )
+    else:
+        data = json.loads((attempt / "consumed_inputs.json").read_text())
+        data["source_identity"] = "0" * 64
+        (attempt / "consumed_inputs.json").write_bytes(encoded(data))
+    before = app.package.history.list()
+    assert not list_attempts(app.package)[0]["available"]
+    with app.package.history.transaction(), pytest.raises(ValueError):
+        import_attempt(app.package, "attempt_0001")
+    assert app.package.history.list() == before

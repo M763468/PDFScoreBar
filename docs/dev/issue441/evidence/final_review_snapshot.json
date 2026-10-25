@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "legacy_attempts_1_and_12_verified": true,
+  "listed_legacy_attempts": 12,
+  "four_gui_types_saved_applied_undone": true,
+  "mmr_row2": [
+    8,
+    9,
+    8
+  ],
+  "barline_row2": [
+    8,
+    7,
+    8
+  ],
+  "movement_row2": [
+    8,
+    1,
+    8
+  ],
+  "force_measure_consumed_idempotently": true,
+  "all_undo_number_sequences_restored": true,
+  "second_resume_older_checkpoint": true,
+  "synthetic_second_round": true,
+  "notes_accumulated": [
+    729,
+    730
+  ],
+  "rejected_return_preserves_success": true,
+  "outputs": {
+    "attempt_0001": {
+      "pdf_sha256": "ff47c0ec5ea36a3d05dbddd18aec131ee7c7e75519cc10e271fb0040372454c5",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "attempt_0012": {
+      "pdf_sha256": "0a8741d722614e1ad9d8d479a5f238228c32245713fdddfa4f6b02bda2b77aa1",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "mmr": {
+      "pdf_sha256": "9889da3a9d6eacc30e6715a0ae4272003954c030d535c4db31608f1d4d183f0f",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "mmr_undo": {
+      "pdf_sha256": "fd0dbb2ea4ceecef687d4229158a604ebe3201bda85b909a3509de7d9cbf3aa0",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "measure": {
+      "pdf_sha256": "4e2ce05d8367290c376e750dddd4f5baf525c5a9d3083387f8dc254ec25aca23",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "measure_undo": {
+      "pdf_sha256": "9fae9af5655fbb6c1932cd39cfbcc92c1a2a7a4aa64696b11b1c311bdf14c0c9",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "barline": {
+      "pdf_sha256": "b85bbb6738550de967e4888ee979d25ed0706bba7249511d13c9ddb833ca0674",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "barline_undo": {
+      "pdf_sha256": "2c78fc164cc4671561baf2f276cb5c23e07080e7eb2dab4d87c70cf1289f1d28",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "movement": {
+      "pdf_sha256": "872cdcb5de3d0d05cc2b25dceb9e3719755d07296152233c2fc9edd3fe11cd88",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "movement_undo": {
+      "pdf_sha256": "f460dfc77a1f531abd3eb8837b1dcadeefaa4ca32d8388fd327018a8c9d3c5c4",
+      "labels": 160,
+      "annotations": 729,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    },
+    "second_resume": {
+      "pdf_sha256": "df93952a4d0dc0111f618553e75a82889087cca42a031781a8ecb80bd7a91277",
+      "labels": 160,
+      "annotations": 730,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "notes_and_nonowned_dark_pixels_preserved": true
+    }
+  },
+  "restart_restores_exact_second_result": true,
+  "final_font_metrics_verified": true,
+  "producer_plan": {
+    "base_commit": "fff311f2cdd9641ba5c74e82568ba4bb57b3a0b8",
+    "cases": {
+      "legacy_attempts": [
+        1,
+        12
+      ],
+      "mmr_row2": [
+        8,
+        9,
+        8
+      ],
+      "barline_row2": [
+        8,
+        7,
+        8
+      ],
+      "movement_row2": [
+        8,
+        1,
+        8
+      ],
+      "force_measure": "existing interval0, idempotent numbering but consumed force flag required",
+      "repeat": "product result + one FreeText, older checkpoint from resumed session, notes729->730, owned streams160, reject rotated return without losing success"
+    },
+    "code_hashes": {
+      "tools/review_correction/legacy.py": "442c536ffc7e99294883a97e254db6cf568580e26a5dfe7f0bf11c9b22659912",
+      "tools/review_correction/history.py": "37237044d721cb6103d47c4c8590997e25c84f9eda31a3cfa11ea94b6cd31a1c",
+      "tools/review_correction/history.js": "55a918d5b3980b63f6dfc8bf1b7685c2c03b2e5e3ed3ba1c8758db1ebd6c2dee",
+      "tools/review_correction/resume.py": "6d1349981c1d98dbb6813b445850887d6160520a389683825f925c1806f62e76",
+      "tools/review_correction/server.py": "8cb02c4fb310a44e5cebfe897485152a6a1e26ed9f14063fda50634b9c3d4773",
+      "tools/review_correction/continuation_browser_acceptance.cjs": "08e7f7af08adf6934f4e42bf57c49e024d72966ceab0683046bfa601f6e92319"
+    }
+  },
+  "pipeline_image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "browser_image": "sha256:8771dc4666e7c11440bfc6a0c6b00480e9a15b8891b45f29a52d7d995f8d1492",
+  "mmr_providers": [
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    }
+  ],
+  "owner_visual_feedback": "https://github.com/M763468/PDFScoreBar/pull/445#issuecomment-6400289337",
+  "not_run": [
+    "Second physical MobileSheets roundtrip (synthetic annotation-only tested)",
+    "Manual placement UI",
+    "Physical print",
+    "General compatibility of flatten/rewrite and other export settings",
+    "Full68 / upstream recognition"
+  ],
+  "tested_source": {
+    "base_commit": "fff311f2cdd9641ba5c74e82568ba4bb57b3a0b8",
+    "files": {
+      "docker/runtime_contract.py": "5eb5dca910b01e0e20576ebec2bc2201403a5aa56e7058b666c31612933237b8",
+      "docs/MINIMAL_MAINLINE_SURFACE.json": "bc0f0a67319ddbcd9a8674a589703b5d2c1d99a3f0a924749c6913338d3e62dd",
+      "src/pipeline/review/number_layer.py": "d9065d455f537b881e4b0d86297ecc7af0ddd0f41774ecd0e98c4b3137eebe7a",
+      "tests/test_issue441_annotated_layer.py": "1f4c4f187249360900c7a8047f9b16cfb21b84037434247fa7d008d503c3c67b",
+      "tests/test_issue441_mobilesheets_roundtrip.py": "42e42b95f11a7cb4741cd78ee9261891329a63492cfbed52c5fe2039e51946ca",
+      "tests/test_review_correction_history.py": "cea9d8b20624d156b29d397e64ae1247461118b8e331a1dfe12dc0deae74dacb",
+      "tools/issue441/verify_remaining_review.py": "21da81c8bf8f5784b7fd089dde96dc063207136b6155d21608648da075205455",
+      "tools/review_correction/continuation_browser_acceptance.cjs": "08e7f7af08adf6934f4e42bf57c49e024d72966ceab0683046bfa601f6e92319",
+      "tools/review_correction/history.js": "55a918d5b3980b63f6dfc8bf1b7685c2c03b2e5e3ed3ba1c8758db1ebd6c2dee",
+      "tools/review_correction/history.py": "37237044d721cb6103d47c4c8590997e25c84f9eda31a3cfa11ea94b6cd31a1c",
+      "tools/review_correction/legacy.py": "442c536ffc7e99294883a97e254db6cf568580e26a5dfe7f0bf11c9b22659912",
+      "tools/review_correction/resume.py": "6d1349981c1d98dbb6813b445850887d6160520a389683825f925c1806f62e76",
+      "tools/review_correction/server.py": "8cb02c4fb310a44e5cebfe897485152a6a1e26ed9f14063fda50634b9c3d4773",
+      "tools/review_correction/strings.js": "4b8511d37debaddcf6766818404073b1285dd567145e796f881c20905017c916"
+    }
+  },
+  "final_crop_validator_rescored_retained_outputs": true
+}

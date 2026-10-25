@@ -145,3 +145,68 @@ def test_product_resume_records_original_and_cleaned_pdf_and_preserves_test(tmp_
     before = resumed.state.capture_identity()
     (resumed.root / payload["background_pdf"]).write_bytes(b"changed")
     assert resumed.state.capture_identity() != before
+
+
+def test_second_resume_uses_product_result_and_selected_session_checkpoint(tmp_path, monkeypatch):
+    from tools.review_correction import application
+
+    package, annotated = _pdf_package(tmp_path)
+    first_id = create_session(package, _checkpoint(package), annotated)
+    first = ReviewPackage(
+        package.root / f"resumed_sessions/{first_id}/review/manual_correction_input.json"
+    )
+    older = _checkpoint(first)
+    first.record_correction(0, "barline_construction", [])
+
+    def engine(handoff, **kwargs):
+        run = kwargs["output_root"] / kwargs["run_id"]
+        (run / "review").mkdir(parents=True)
+        (run / "review/correction_summary.json").write_text("{}")
+        target = run / "outputs/page_001/numbering_final.json"
+        target.parent.mkdir(parents=True)
+        target.write_text(
+            json.dumps(
+                {
+                    "pages": [
+                        {
+                            "systems": [
+                                {
+                                    "staves": [{"bbox": [60, 100, 180, 125]}],
+                                    "measures": [{"number": 12, "bbox": [60, 100, 180, 125]}],
+                                }
+                            ]
+                        }
+                    ]
+                }
+            )
+        )
+        return run
+
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", engine)
+    app = application.CorrectionApplication(first, first.handoff_path)
+    app.start()
+    app.thread.join(5)
+    with fitz.open(app.result()) as doc:
+        doc[0].add_freetext_annot(fitz.Rect(80, 20, 150, 40), "second round").update()
+        returned = doc.tobytes(garbage=4, deflate=True)
+    second_id = create_session(
+        first, older, returned, session_root=package.root, ownership_package=package
+    )
+    second = ReviewPackage(
+        package.root / f"resumed_sessions/{second_id}/review/manual_correction_input.json"
+    )
+    assert (
+        second.state.capture_identity()["corrections_identity"]
+        == first.history.get(older)["identity"]["corrections_identity"]
+    )
+    assert (
+        second.state.capture_identity()["corrections_identity"]
+        != first.state.capture_identity()["corrections_identity"]
+    )
+    app2 = application.CorrectionApplication(second, second.handoff_path)
+    app2.start()
+    app2.thread.join(5)
+    with fitz.open(app2.result()) as doc:
+        assert len(list(doc[0].annots())) == 2
+        assert Counter(doc[0].get_text().split()) == Counter(["second", "round", "12"])
+    assert first.state.snapshot()["package"]["current_result"] is not None

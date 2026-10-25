@@ -134,6 +134,13 @@ checkpoint a name, and choose **Save checkpoint**. Select a saved checkpoint, ch
 an annotated PDF (up to 32 MB), then choose **Resume in new session**. The original
 review remains separate; the browser URL identifies the resumed session and can be
 reopened after server restart. Saves also retain checkpoints automatically.
+For jobs created before checkpoints were introduced, select an entry under **Saved
+inputs from earlier versions** and choose **Import selected saved inputs**. The app
+verifies the original source and recorded correction identities before making a
+checkpoint. An unavailable entry includes a validation reason. Import certifies the
+saved inputs; it does not certify an old PDF as a successful current result.
+You can also choose a checkpoint from a resumed session and resume another annotated
+copy; each new URL remains separate and uses the original review's ownership evidence.
 The panel's **PDF generation history** records successful, failed and interrupted
 attempts; a later success does not remove an earlier failure.
 

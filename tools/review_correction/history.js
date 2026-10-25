@@ -27,7 +27,21 @@
     };
     const refresh = async () => {
       const history = await request("/api/checkpoints");
+      const selected = list.value;
       checkpoints = history.checkpoints;
+      const legacy = document.getElementById("legacySelect");
+      const legacySelected = legacy.value;
+      legacy.replaceChildren();
+      for (const item of history.legacy_attempts || []) {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.disabled = !item.available;
+        option.textContent = `${item.id}${item.available ? "" : " · " + copy().unverified}`;
+        if (item.error) option.title = item.error;
+        legacy.appendChild(option);
+      }
+      if (legacySelected && [...legacy.options].some(x => x.value === legacySelected)) legacy.value = legacySelected;
+      document.getElementById("legacyImportBtn").disabled = ![...legacy.options].some(x => !x.disabled);
       const runs = document.getElementById("applicationHistory");
       runs.replaceChildren();
       for (const item of [...(history.applications || [])].reverse()) {
@@ -43,7 +57,8 @@
         option.textContent = `${new Date(item.created_at).toLocaleString()} ${item.label || item.id.slice(0, 11)}`;
         list.appendChild(option);
       }
-      document.getElementById("resumeBtn").disabled = Boolean(session) || !checkpoints.some(x => x.can_resume_pdf);
+      if (selected && checkpoints.some(x => x.id === selected)) list.value = selected;
+      document.getElementById("resumeBtn").disabled = !checkpoints.some(x => x.can_resume_pdf);
     };
     const action = (id, callback) => {
       document.getElementById(id).addEventListener("click", async () => {
@@ -57,6 +72,11 @@
         }
       });
     };
+    action("legacyImportBtn", async () => {
+      const result = await request("/api/legacy/import", {attempt_id: document.getElementById("legacySelect").value});
+      await refresh();
+      list.value = result.checkpoint_id;
+    });
     action("checkpointBtn", async () => {
       await request("/api/checkpoints", {label: document.getElementById("checkpointLabel").value});
     });

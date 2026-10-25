@@ -28,6 +28,7 @@ from src.pipeline.review.manual_correction_handoff import (  # noqa: E402
 )
 from tools.review_correction.application import CorrectionApplication, preview_numbering
 from tools.review_correction.history import CheckpointStore, atomic_bytes, package_path
+from tools.review_correction.legacy import import_attempt, list_attempts
 from tools.review_correction.resume import create_session
 from tools.review_correction.state import CorrectionState
 
@@ -375,6 +376,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
                     {
                         "checkpoints": package.history.list(),
                         "applications": package.history.list_applications(),
+                        "legacy_attempts": list_attempts(package),
                     }
                 )
             except (ValueError, OSError) as exc:
@@ -436,6 +438,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
         if parsed.path not in {
             "/api/save",
             "/api/checkpoints",
+            "/api/legacy/import",
             "/api/resume",
             "/api/export_movement_boundaries",
             "/api/state/pending",
@@ -456,10 +459,17 @@ class ReviewHandler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(size))
             if not isinstance(payload, dict):
                 raise ValueError("Request body must be an object")
-            if parsed.path in {"/api/checkpoints", "/api/resume"}:
+            if parsed.path in {"/api/checkpoints", "/api/legacy/import", "/api/resume"}:
                 snap = package.state.snapshot()
                 if snap["package"]["counts"]["pending"] or package.state.record_errors:
                     raise ValueError("Save or resolve current edits before history operations")
+            if parsed.path == "/api/legacy/import":
+                if set(payload) != {"attempt_id"}:
+                    raise ValueError("Legacy import accepts only an attempt ID")
+                with package.history.transaction():
+                    checkpoint = import_attempt(package, payload["attempt_id"])
+                self._json({"checkpoint_id": checkpoint})
+                return
             if parsed.path == "/api/checkpoints":
                 if set(payload) - {"label"}:
                     raise ValueError("Checkpoint accepts only a label")
@@ -470,11 +480,15 @@ class ReviewHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/resume":
                 if set(payload) != {"checkpoint_id", "pdf_base64"}:
                     raise ValueError("Resume requires a checkpoint ID and uploaded PDF")
-                if package is not self.server.package:
-                    raise ValueError("Create another resume from the original review session")
                 data = base64.b64decode(payload["pdf_base64"], validate=True)
                 with package.history.transaction():
-                    session = create_session(package, payload["checkpoint_id"], data)
+                    session = create_session(
+                        package,
+                        payload["checkpoint_id"],
+                        data,
+                        session_root=self.server.package.root,
+                        ownership_package=self.server.package,
+                    )
                 self._json({"session": session, "url": "/?session=" + session})
                 return
             if parsed.path == "/api/apply":

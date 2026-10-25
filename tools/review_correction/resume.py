@@ -139,7 +139,7 @@ def prepare_pdf(package, uploaded, original, output):
     return uploaded, None
 
 
-def create_session(package, checkpoint, pdf_bytes):
+def create_session(package, checkpoint, pdf_bytes, *, session_root=None, ownership_package=None):
     if not isinstance(pdf_bytes, bytes) or not 0 < len(pdf_bytes) <= MAX_PDF_BYTES:
         raise ValueError("Resume PDF must be at most 32 MB")
     if not pdf_bytes.startswith(b"%PDF-"):
@@ -148,7 +148,7 @@ def create_session(package, checkpoint, pdf_bytes):
     context = value.get("source_context") or {}
     if not context.get("source_pdf"):
         raise ValueError("This checkpoint has no verified original PDF provenance")
-    root = package_path(package.root, "resumed_sessions")
+    root = package_path(session_root or package.root, "resumed_sessions")
     root.mkdir(exist_ok=True)
     session_id = "s_" + uuid.uuid4().hex
     staged = root / (".preparing_" + session_id)
@@ -157,11 +157,13 @@ def create_session(package, checkpoint, pdf_bytes):
         review = staged / "review"
         package.history.materialize(checkpoint, review)
         resume = review / "resume"
-        resume.mkdir()
+        resume.mkdir(exist_ok=True)
         uploaded = resume / "input.pdf"
         uploaded.write_bytes(pdf_bytes)
         original = staged / "retained/source.pdf"
-        background, proof = prepare_pdf(package, uploaded, original, resume / "background.pdf")
+        background, proof = prepare_pdf(
+            ownership_package or package, uploaded, original, resume / "background.pdf"
+        )
         payload = json.loads((review / "manual_correction_input.json").read_text())
         # A partial selection or reordered source pages requires an explicit mapping.
         if context.get("source_pages") != list(range(len(payload["pages"]))):

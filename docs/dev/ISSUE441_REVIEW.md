@@ -1,6 +1,9 @@
 # Issue #441: GitHubレビュー入口
 
-**最新の対応:** [MobileSheetsで番号付きPDFへ追記・再輸出した実データの往復検証と組み込み](ISSUE441_MOBILESHEETS_ROUNDTRIP.md)。
+**最新の対応:** [最終レビュー: CI分類・旧履歴GUI・反復往復・4種類のGUI受入](ISSUE441_FINAL_REVIEW.md)。
+ユーザー目視結果はPRコメントを正とし、番号の完全な正確性/印刷/merge承認と混同しない。
+
+**前段の往復対応:** [MobileSheetsで番号付きPDFへ追記・再輸出した実データの往復検証と組み込み](ISSUE441_MOBILESHEETS_ROUNDTRIP.md)。
 追加された「test」を含む820注釈を保持し、xrefが変わった旧番号160個の交換を検証した。
 
 **前段の画面統合:** [保存履歴・書き込み済みPDF再開の画面統合](ISSUE441_PRODUCT_INTEGRATION.md)。

@@ -67,6 +67,10 @@ and input identities, result attestation, original-session isolation and fail-cl
 correspondence; arbitrary host paths must not become remote API inputs. The local app can
 verify an annotation-only re-export against an attested result despite xref remapping;
 future artifact storage must retain that ownership evidence with the generation session.
+Pre-checkpoint inputs can now be imported with reproduced source/correction identities,
+and a resumed session can produce another independent resume under the original registry.
+Storage adapters must preserve the original identity as provenance while assigning the
+restored state its own current identity; input import alone is not successful application.
 See [`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).
 
 Current correction semantics include, as applicable to the current workflow:

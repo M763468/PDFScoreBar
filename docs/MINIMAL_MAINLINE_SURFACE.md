@@ -1,7 +1,7 @@
 # Minimal distributable surface (#100 / #409)
 
-The candidate has **108 tracked files** in
-[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 85 files under `src/`,
+The candidate has **113 tracked files** in
+[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 86 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
 application, minimum user documentation, and checkout-local ignore rules. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and
@@ -25,7 +25,7 @@ and inspectable runtime/model/input identity.
 | Two canonical configs | Dense algorithm base and pinned maintained HOMR profile |
 | Three model files | CNN/download contract, verified external OMR-DLN contract, tracked production MMR checkpoint |
 | Production Docker helpers and metadata | Clean build, compatibility/preflight, normal PDF and correction operation |
-| Seven `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
+| Eleven `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
 | README + user guide | Install, run, review/correct, troubleshooting and asset ownership |
 | Distribution metadata and ignore rules | Auditable exact release selection; keep generated runtime files out of Git |
 
@@ -36,9 +36,13 @@ and production geometry callers. Unchanged geometric functions/constants now liv
 module is excluded. No thresholds or model bytes changed.
 
 The previous blanket exclusion of the user correction application is removed at the
-**distribution** boundary. Its seven operational files are selected individually;
+**distribution** boundary. Its eleven operational files are selected individually;
 `acceptance.py` and `browser_acceptance.cjs` remain development validation. User and
 GT applications are already independent (#393); no GT server/assets are included.
+The maintained number-layer module is classified under the runtime source bundle.
+Issue441 probe/export/verification scripts and browser acceptance runners are retained
+as development validation, while tests for numbering ownership, checkpoints and
+returned-PDF safety are maintained contracts. None of their private inputs ship.
 
 The release supports only maintained_original/dense_full_pipeline. Develop-only probe
 images, wide-candidate splitting and standalone numbering CLI/overlay are excluded;

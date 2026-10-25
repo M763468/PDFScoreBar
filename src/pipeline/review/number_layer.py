@@ -190,6 +190,16 @@ def _validate_saved_output(candidate, original_pdf, report):
             dark = np.min(original_pixels, axis=2) < WHITE_FLOOR
             if not np.array_equal(original_pixels[dark], new_pixels[dark]):
                 raise NumberLayerValidationError("Original dark pixels changed")
+            if report["pages"][index]["labels"]:
+                _number_font_signature(actual, page)
+            for label in report["pages"][index]["labels"]:
+                rect = label["rect"]
+                if not all(math.isfinite(value) for value in rect) or not page.rect.contains(
+                    fitz.Rect(rect)
+                ):
+                    raise NumberLayerValidationError(
+                        "Saved number ink bounds escape the visible CropBox"
+                    )
             expected_text = Counter(reference.get_text().split())
             expected_text.update(str(x["number"]) for x in report["pages"][index]["labels"])
             if Counter(page.get_text().split()) != expected_text:
@@ -356,7 +366,16 @@ def _number_font_signature(doc, page):
     keys = set(doc.xref_get_keys(xref))
     if keys != {"Type", "Subtype", "BaseFont", "Encoding"}:
         raise NumberLayerValidationError("Unsupported numbering font dictionary")
-    return {key: doc.xref_get_key(xref, key) for key in sorted(keys)}
+    signature = {key: doc.xref_get_key(xref, key) for key in sorted(keys)}
+    expected = {
+        "Type": ("name", "/Font"),
+        "Subtype": ("name", "/Type1"),
+        "BaseFont": ("name", "/Helvetica-Bold"),
+        "Encoding": ("name", "/WinAnsiEncoding"),
+    }
+    if signature != expected:
+        raise NumberLayerValidationError("Numbering font does not match the measured digit metrics")
+    return signature
 
 
 def strip_returned_layer(input_pdf, trusted_pdf, trusted_sidecar, original_pdf, output):

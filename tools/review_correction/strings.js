@@ -1,6 +1,6 @@
 /* Controlled reviewer copy for the English and Japanese application surfaces. */
 const reviewEnglish = {
-  history: {runs: "PDF generation history", statuses: {running: "Generating", succeeded: "Succeeded", failed: "Failed", interrupted: "Interrupted"}, title: "Saved history / resume", label: "History label", save: "Save checkpoint", select: "Saved checkpoint", pdf: "Annotated PDF (32 MB maximum)", resume: "Resume in new session", scope: "Keep the original background and page order. Import numbered PDFs from the review that generated them; its saved results are required. Flattened exports are unsupported.", failed: "History operation failed", working: "Working…", saved: "Saved", noSource: "This checkpoint has no verified original PDF", choosePdf: "Choose a PDF of at most 32 MB"},
+  history: {legacy: "Saved inputs from earlier versions", importLegacy: "Import selected saved inputs", legacyHint: "Verified saved inputs only. Import does not certify that an old PDF was successfully applied.", unverified: "Cannot verify", runs: "PDF generation history", statuses: {running: "Generating", succeeded: "Succeeded", failed: "Failed", interrupted: "Interrupted"}, title: "Saved history / resume", label: "History label", save: "Save checkpoint", select: "Saved checkpoint", pdf: "Annotated PDF (32 MB maximum)", resume: "Resume in new session", scope: "Keep the original background and page order. Import numbered PDFs from the review that generated them; its saved results are required. Flattened exports are unsupported.", failed: "History operation failed", working: "Working…", saved: "Saved", noSource: "This checkpoint has no verified original PDF", choosePdf: "Choose a PDF of at most 32 MB"},
   taskSummary: {
     mmr_measure_span: "Enter the printed rest count for the selected measure.",
     barline_construction: "Add a divider to split a measure, or remove one to join measures.",
@@ -167,7 +167,7 @@ const reviewEnglish = {
 };
 
 const reviewJapanese = {
-  history: {runs: "PDF生成の履歴", statuses: {running: "生成中", succeeded: "成功", failed: "失敗", interrupted: "中断"}, title: "保存履歴・再開", label: "履歴の名前", save: "現在の修正を履歴に保存", select: "再開する保存履歴", pdf: "書き込み済みPDF（最大32 MB）", resume: "別セッションで再開", scope: "元の背景・ページ順を保持してください。番号付きPDFは生成元のレビューから取り込み、保存済みの結果を残してください。画像化された書き込みは未対応です。", failed: "履歴の操作に失敗しました", working: "処理中…", saved: "保存しました", noSource: "この履歴には検証済みの元PDFがありません", choosePdf: "32 MB以内のPDFを選択してください"},
+  history: {legacy: "旧バージョンの保存済み入力", importLegacy: "選択した保存入力を取り込む", legacyHint: "入力の整合性を検証して取り込みます。旧PDFが正常適用済みであることの認定には使いません。", unverified: "検証できません", runs: "PDF生成の履歴", statuses: {running: "生成中", succeeded: "成功", failed: "失敗", interrupted: "中断"}, title: "保存履歴・再開", label: "履歴の名前", save: "現在の修正を履歴に保存", select: "再開する保存履歴", pdf: "書き込み済みPDF（最大32 MB）", resume: "別セッションで再開", scope: "元の背景・ページ順を保持してください。番号付きPDFは生成元のレビューから取り込み、保存済みの結果を残してください。画像化された書き込みは未対応です。", failed: "履歴の操作に失敗しました", working: "処理中…", saved: "保存しました", noSource: "この履歴には検証済みの元PDFがありません", choosePdf: "32 MB以内のPDFを選択してください"},
   taskSummary: {
     mmr_measure_span: "選択した休符の数字を、小節数に入力します。",
     barline_construction: "区切りの追加で小節を分割し、削除で結合します。",

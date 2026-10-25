@@ -25,6 +25,7 @@ SOURCE_CONTRACT_FILES = (
     Path("tools/review_correction/application.py"),
     Path("tools/review_correction/state.py"),
     Path("tools/review_correction/history.py"),
+    Path("tools/review_correction/legacy.py"),
     Path("tools/review_correction/resume.py"),
     Path("tools/review_correction/history.js"),
     Path("src/pipeline/review/number_layer.py"),

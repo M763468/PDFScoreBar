@@ -147,13 +147,19 @@ it does not create a portable archive of all recognition artifacts.
 
 Currently supported resume inputs contain all original pages in order, have zero rotation
 and unchanged MediaBoxes/background image bytes, and use native Ink, Circle, Square,
-Stamp, FreeText or Highlight annotations. CropBox changes are supported. Numbered PDFs
-exported again through MobileSheets, flattened/re-encoded backgrounds, partial/reordered
-pages and other interactive PDF shapes require further validation and may be rejected.
-Export a copy with the original background and native annotations for this workflow.
-The application does not import MSF files or infer which handwritten numbers it may delete.
-Generated PDFs have been checked locally; a new MobileSheets export roundtrip is still
-unverified. See [the integration evidence in PR #445](https://github.com/M763468/PDFScoreBar/pull/445).
+Stamp, FreeText or Highlight annotations. CropBox changes are supported.
+An annotation-only MobileSheets re-export of a numbered PDF can also be resumed
+from the review that generated it, while its successful PDF and `.layer.json` remain
+available. The application verifies the complete page content, owned numbering streams,
+background and rendering against that saved result, removes only its old numbers, and
+preserves the new handwriting. Internal PDF object numbers may change. A rewritten
+background, changed page content or missing provenance is rejected.
+
+Partial/reordered pages, flattened/re-encoded backgrounds and other interactive PDF
+shapes require further validation. Export a copy with the original background and
+native annotations. The application does not import MSF files or infer which handwritten numbers it may delete.
+A supplied 15-page MobileSheets annotation-only roundtrip has been checked; other
+versions/export settings and physical printing remain unverified. See [the integration evidence in PR #445](https://github.com/M763468/PDFScoreBar/pull/445).
 
 ## Troubleshooting and provenance
 

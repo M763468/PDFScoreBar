@@ -64,7 +64,9 @@ into a separate annotated-PDF session and persists application success/failure/i
 This is a local filesystem contract with retained recognition dependencies, not a portable
 snapshot or authenticated multi-user service. Future storage adapters must preserve checkpoint
 and input identities, result attestation, original-session isolation and fail-closed PDF
-correspondence; arbitrary host paths must not become remote API inputs.
+correspondence; arbitrary host paths must not become remote API inputs. The local app can
+verify an annotation-only re-export against an attested result despite xref remapping;
+future artifact storage must retain that ownership evidence with the generation session.
 See [`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).
 
 Current correction semantics include, as applicable to the current workflow:

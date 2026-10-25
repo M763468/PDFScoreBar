@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "plan": {
+    "input_sha256": "77018813d3c7e9d16aa51eef234c92af7069bb797fdeb0e043324a3791f83574",
+    "pages": 15,
+    "labels": 160,
+    "annotations": 820,
+    "font_points": 9,
+    "source_base_commit": "705a4a288b560f1da531f2394dcacfc2c96491f1",
+    "pipeline_image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+    "browser_image": "sha256:8771dc4666e7c11440bfc6a0c6b00480e9a15b8891b45f29a52d7d995f8d1492",
+    "code_sha256": {
+      "src/pipeline/review/number_layer.py": "c7b03ef333a91d04d4ba6d1671141e3eb5931092e880bb3bc7ebf836d4e70731",
+      "tools/review_correction/resume.py": "0028805679ff75fdea93221c24776aa7c0f49f2b435be6a9db39fc963291eb57",
+      "tools/review_correction/application.py": "5b7766136198266e5d9387a7872382e6d4cc9b14f6eb6f41ad36210cb493f366",
+      "tools/review_correction/server.py": "5d67226b2af44185d0f727457fd0496fe6a49f9936f2bbe6f8b9b83f851ff022",
+      "tools/review_correction/state.py": "e07f779424a2faa31ea64279d62ac4781f2b730f6707349e0cc61f15ef46c3e8",
+      "tools/review_correction/strings.js": "171be16b2dfaea5d0c874f4d264826bb7426f87e7293b2eefa98b415a9134d65",
+      "tests/test_issue441_mobilesheets_roundtrip.py": "8459fdb6640220bff15eb4c781da2ba67997d33466eedfa44a7863ea32ccbbc6",
+      "tools/issue441/mobilesheets_roundtrip_acceptance.py": "c2857d1c82705013c1ddec56d6a2d3e8e8b2d1878d642228c367018f8775090e"
+    },
+    "seed_pdf_sha256": "afcd28ea19e7f3b3d96d5c5c04d3a8095bef37cec42da4aa27db843ea230e59a",
+    "seed_sidecar_sha256": "7b66b1a3d26296b122e72745b1ce730a46e0d59bccef351c5ca8d085f15ca65e",
+    "checkpoint_id": "cp_98be0c5a0e8ef39077d9a908c0420d7611f7ff5be3be89a3fc123e7d7382a52c"
+  },
+  "checks": {
+    "baseline_matches_retained": true,
+    "edit_changes_numbers": true,
+    "undo_restores_all_numbers": true,
+    "server_restart_restores_exact_result": true,
+    "all_three_attempts_retained_after_restart": true
+  },
+  "ownership_verified": true,
+  "removed_old_numbers": 160,
+  "input_annotations": 820,
+  "previous_annotations": 729,
+  "added_annotations": 91,
+  "outputs": {
+    "baseline": {
+      "pdf_sha256": "903f8dfd3cbc1a567aeb60fd62332bdfc68b75b1a039d13219e857c6eaf6aebf",
+      "sidecar_sha256": "ce01b73c4ad569341faa3f99f8ea8b1ebfe5cfee3c8f17497853c80d5b4543c4",
+      "labels": 160,
+      "font_points": 9,
+      "annotations": 820,
+      "active_number_streams": 160,
+      "cropbox_preserved": true,
+      "all_nonowned_dark_pixels_and_annotations_preserved": true
+    },
+    "edited": {
+      "pdf_sha256": "4acce6b23b30d4f93684f4f90f31a0649a9fa6dea49598f30a18abb6df08c6df",
+      "sidecar_sha256": "5f2e1addf625ac8bd65515d45eca1063420a4496233310cb717116be7a66c400",
+      "labels": 160,
+      "font_points": 9,
+      "annotations": 820,
+      "active_number_streams": 160,
+      "cropbox_preserved": true,
+      "all_nonowned_dark_pixels_and_annotations_preserved": true
+    },
+    "undone": {
+      "pdf_sha256": "e81e3417fe1265a02bb20dfd1e87ba99fa261625c6af464aaae4ccb621dc2312",
+      "sidecar_sha256": "9bc0058f912a8794391eeba8d845b19095c05f69455116ed5c8c4be9be2848d6",
+      "labels": 160,
+      "font_points": 9,
+      "annotations": 820,
+      "active_number_streams": 160,
+      "cropbox_preserved": true,
+      "all_nonowned_dark_pixels_and_annotations_preserved": true
+    }
+  },
+  "mmr_providers": [
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    }
+  ],
+  "browser_chromium": "149.0.7827.22",
+  "not_run": [
+    "Other MobileSheets export settings/versions",
+    "Flattened/re-encoded or native-content edits",
+    "Full four-correction-type browser combination",
+    "Manual placement UI",
+    "Physical print",
+    "Full68 / upstream inference"
+  ]
+}

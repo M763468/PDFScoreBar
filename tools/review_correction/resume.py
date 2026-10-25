@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import uuid
+from pathlib import Path
 
 import fitz
 from PIL import Image
 
+from src.pipeline.review.number_layer import strip_returned_layer
 from tools.review_correction.history import digest, encoded, package_path
 
 MAX_PDF_BYTES = 32_000_000
@@ -72,6 +75,70 @@ def validate_pdf(source, candidate):
                 )
 
 
+def trusted_numbered_results(package):
+    """Only attested results under this server's package/session directories."""
+    roots = [package.root]
+    sessions = package_path(package.root, "resumed_sessions")
+    if sessions.is_dir():
+        for item in sorted(sessions.iterdir()):
+            if re.fullmatch(r"s_[0-9a-f]{32}", item.name):
+                review = package_path(package.root, f"resumed_sessions/{item.name}/review")
+                if review.is_dir():
+                    roots.append(review)
+    seen = set()
+    for root in roots:
+        records = package_path(root, "history/applications")
+        if not records.is_dir():
+            continue
+        for item in sorted(records.glob("attempt_*.json")):
+            if not re.fullmatch(r"attempt_[0-9]{4,}\.json", item.name):
+                continue
+            item = package_path(root, str(item.relative_to(root)))
+            record = json.loads(item.read_text())
+            if record.get("status") != "succeeded":
+                continue
+            result = record.get("result") or {}
+            if not result.get("number_layer_sidecar"):
+                continue
+            try:
+                pdf_rel = Path(result["final_pdf"]).relative_to(root)
+                layer_rel = Path(result["number_layer_sidecar"]).relative_to(root)
+            except ValueError:
+                continue
+            pdf = package_path(root, str(pdf_rel))
+            layer = package_path(root, str(layer_rel))
+            if (
+                pdf_rel.parts[0] != "application_runs"
+                or layer.parent != pdf.parent
+                or not pdf.is_file()
+                or not layer.is_file()
+                or digest(pdf.read_bytes()) != result.get("final_pdf_sha256")
+                or digest(layer.read_bytes()) != result.get("number_layer_sidecar_sha256")
+            ):
+                continue
+            identity = (str(pdf), str(layer))
+            if identity not in seen:
+                seen.add(identity)
+                yield pdf, layer
+
+
+def prepare_pdf(package, uploaded, original, output):
+    try:
+        validate_pdf(original, uploaded)
+    except ValueError as original_error:
+        for trusted, sidecar in trusted_numbered_results(package):
+            try:
+                proof = strip_returned_layer(uploaded, trusted, sidecar, original, output)
+            except ValueError:
+                continue
+            validate_pdf(original, output)
+            return output, proof
+        raise ValueError(
+            "PDF background/content does not match the source or an attested numbering result in this review package"
+        ) from original_error
+    return uploaded, None
+
+
 def create_session(package, checkpoint, pdf_bytes):
     if not isinstance(pdf_bytes, bytes) or not 0 < len(pdf_bytes) <= MAX_PDF_BYTES:
         raise ValueError("Resume PDF must be at most 32 MB")
@@ -94,12 +161,12 @@ def create_session(package, checkpoint, pdf_bytes):
         uploaded = resume / "input.pdf"
         uploaded.write_bytes(pdf_bytes)
         original = staged / "retained/source.pdf"
-        validate_pdf(original, uploaded)
+        background, proof = prepare_pdf(package, uploaded, original, resume / "background.pdf")
         payload = json.loads((review / "manual_correction_input.json").read_text())
         # A partial selection or reordered source pages requires an explicit mapping.
         if context.get("source_pages") != list(range(len(payload["pages"]))):
             raise ValueError("Resume currently requires all original pages in source order")
-        with fitz.open(uploaded) as doc:
+        with fitz.open(background) as doc:
             if len(doc) != len(payload["pages"]):
                 raise ValueError("Checkpoint page selection does not match PDF")
             for page, spec in zip(doc, payload["pages"]):
@@ -127,6 +194,10 @@ def create_session(package, checkpoint, pdf_bytes):
             "checkpoint_id": checkpoint,
             "source_identity": value["identity"],
         }
+        if proof:
+            payload["resume"]["background_pdf"] = "resume/background.pdf"
+            payload["resume"]["background_sha256"] = proof["cleaned_sha256"]
+            payload["resume"]["roundtrip"] = proof
         (review / "manual_correction_input.json").write_bytes(encoded(payload))
         final = root / session_id
         staged.rename(final)

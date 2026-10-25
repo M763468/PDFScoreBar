@@ -268,6 +268,13 @@ class CorrectionApplication:
                 annotated = package_path(review, resume["input_pdf"])
                 if hashlib.sha256(annotated.read_bytes()).hexdigest() != resume["input_sha256"]:
                     raise ValueError("Annotated input changed after resume")
+                if resume.get("background_pdf"):
+                    annotated = package_path(review, resume["background_pdf"])
+                    if (
+                        hashlib.sha256(annotated.read_bytes()).hexdigest()
+                        != resume["background_sha256"]
+                    ):
+                        raise ValueError("Normalized annotated background changed after resume")
                 final_dir = run / "final"
                 final_dir.mkdir(exist_ok=True)
                 numbered = final_dir / "annotated_score_numbered.pdf"
@@ -279,6 +286,10 @@ class CorrectionApplication:
                     "number_layer_sidecar": str(sidecar.resolve()),
                     "number_layer_sidecar_sha256": hashlib.sha256(sidecar.read_bytes()).hexdigest(),
                     "resume_checkpoint_id": resume["checkpoint_id"],
+                    "resume_input_sha256": resume["input_sha256"],
+                    "removed_returned_number_count": (resume.get("roundtrip") or {}).get(
+                        "removed_number_count", 0
+                    ),
                 }
                 summary_path = run / "review/correction_summary.json"
                 report = json.loads(summary_path.read_text())

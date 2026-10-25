@@ -236,6 +236,10 @@ class CorrectionState:
             source_files["resume_input_pdf"] = _file_identity(
                 package_path(self.root, handoff_data["resume"]["input_pdf"])
             )
+        if handoff_data.get("resume", {}).get("background_pdf"):
+            source_files["resume_background_pdf"] = _file_identity(
+                package_path(self.root, handoff_data["resume"]["background_pdf"])
+            )
         correction_files: dict[str, Any] = {}
         for page in self.pages:
             page_id = str(page.get("page", page.get("name", page.get("page_id", ""))))

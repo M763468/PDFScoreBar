@@ -1,6 +1,9 @@
 # Issue #441: GitHubレビュー入口
 
-**最新の対応:** [保存履歴・書き込み済みPDF再開の画面統合](ISSUE441_PRODUCT_INTEGRATION.md)。
+**最新の対応:** [MobileSheetsで番号付きPDFへ追記・再輸出した実データの往復検証と組み込み](ISSUE441_MOBILESHEETS_ROUNDTRIP.md)。
+追加された「test」を含む820注釈を保持し、xrefが変わった旧番号160個の交換を検証した。
+
+**前段の画面統合:** [保存履歴・書き込み済みPDF再開の画面統合](ISSUE441_PRODUCT_INTEGRATION.md)。
 実ブラウザーから保存履歴選択・取り込み・別セッション・Save/Apply・取消を検証。
 製品統合に関する現状と未受入範囲はこの追記を優先する。
 

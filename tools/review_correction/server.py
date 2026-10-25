@@ -85,6 +85,9 @@ class ReviewPackage:
         if payload.get("resume"):
             rel = payload["resume"]["input_pdf"]
             self.reads[rel] = package_path(self.root, rel)
+            if payload["resume"].get("background_pdf"):
+                rel = payload["resume"]["background_pdf"]
+                self.reads[rel] = package_path(self.root, rel)
         self.state = CorrectionState(self.root, self.pages, handoff)
         self.history = CheckpointStore(self)
 

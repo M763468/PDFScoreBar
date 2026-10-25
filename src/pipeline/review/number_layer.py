@@ -336,3 +336,126 @@ def write_number_layer(
                 raise NumberLayerValidationError("Staged PDF and sidecar do not match")
             _publish_validated_pair(candidate, staged_sidecar, output)
     return sidecar, report
+
+
+def _full_pixels(page, *, annotations):
+    crop = page.cropbox
+    try:
+        page.set_cropbox(page.mediabox)
+        pix = page.get_pixmap(matrix=fitz.Matrix(ZOOM, ZOOM), alpha=False, annots=annotations)
+        return pix.width, pix.height, pix.samples
+    finally:
+        page.set_cropbox(crop)
+
+
+def _number_font_signature(doc, page):
+    fonts = [font for font in page.get_fonts() if font[4] == "hebo"]
+    if len(fonts) != 1:
+        raise NumberLayerValidationError("Numbering font resource is ambiguous")
+    xref = fonts[0][0]
+    keys = set(doc.xref_get_keys(xref))
+    if keys != {"Type", "Subtype", "BaseFont", "Encoding"}:
+        raise NumberLayerValidationError("Unsupported numbering font dictionary")
+    return {key: doc.xref_get_key(xref, key) for key in sorted(keys)}
+
+
+def strip_returned_layer(input_pdf, trusted_pdf, trusted_sidecar, original_pdf, output):
+    """Remove only streams proven against an attested pre-export result.
+
+    Whole-file identity and xrefs may change during an annotation-only export.
+    The complete ordered content, owned stream digests/markers, image bytes and
+    full-page non-annotation pixels must still match the retained result.
+    New annotations are never compared to the old annotations or removed.
+    """
+    input_pdf, trusted_pdf, trusted_sidecar, original_pdf, output = map(
+        Path, (input_pdf, trusted_pdf, trusted_sidecar, original_pdf, output)
+    )
+    if output.exists() or output.is_symlink():
+        raise FileExistsError(output)
+    layer = json.loads(trusted_sidecar.read_text())
+    if layer["output_sha256"] != sha(trusted_pdf):
+        raise NumberLayerValidationError("Trusted PDF and numbering sidecar disagree")
+    removed = 0
+    with (
+        fitz.open(input_pdf) as incoming,
+        fitz.open(trusted_pdf) as trusted,
+        fitz.open(original_pdf) as original,
+    ):
+        if not (len(incoming) == len(trusted) == len(original) == len(layer["pages"])):
+            raise NumberLayerValidationError("Returned PDF page count changed")
+        for index, page in enumerate(incoming):
+            reference = trusted[index]
+            saved = layer["pages"][index]
+            baseline_refs = saved["source_contents"]
+            owned = saved["number_streams"]
+            expected = baseline_refs + [item["xref"] for item in owned]
+            refs = page.get_contents()
+            if (
+                reference.get_contents() != expected
+                or len(refs) != len(expected)
+                or len(set(expected)) != len(expected)
+                or page.mediabox != reference.mediabox
+                or page.rotation != reference.rotation
+                or page.rotation
+            ):
+                raise NumberLayerValidationError("Returned content layout or geometry changed")
+            if [incoming.xref_stream(x) for x in refs] != [
+                trusted.xref_stream(x) for x in expected
+            ]:
+                raise NumberLayerValidationError("Returned page content changed")
+            for xref, item in zip(refs[len(baseline_refs) :], owned):
+                if (
+                    hashlib.sha256(incoming.xref_stream(xref)).hexdigest() != item["sha256"]
+                    or incoming.xref_get_key(xref, "PDFScoreBarNumbers")[1] != MARKER
+                    or trusted.xref_get_key(item["xref"], "PDFScoreBarNumbers")[1] != MARKER
+                ):
+                    raise NumberLayerValidationError(
+                        "Returned number ownership could not be verified"
+                    )
+            if _number_font_signature(incoming, page) != _number_font_signature(trusted, reference):
+                raise NumberLayerValidationError("Returned numbering font changed")
+            images = [incoming.extract_image(x[0])["image"] for x in page.get_images()]
+            old_images = [trusted.extract_image(x[0])["image"] for x in reference.get_images()]
+            if images != old_images or _full_pixels(page, annotations=False) != _full_pixels(
+                reference, annotations=False
+            ):
+                raise NumberLayerValidationError("Returned background or resources changed")
+            keep = " ".join(f"{xref} 0 R" for xref in refs[: len(baseline_refs)])
+            incoming.xref_set_key(page.xref, "Contents", f"[{keep}]")
+            page = incoming.reload_page(page)
+            if page.mediabox != original[index].mediabox or _full_pixels(
+                page, annotations=False
+            ) != _full_pixels(original[index], annotations=False):
+                raise NumberLayerValidationError(
+                    "Removing owned numbers did not recover source background"
+                )
+            removed += len(owned)
+        if not removed:
+            raise NumberLayerValidationError("No attested numbering layer to remove")
+        with tempfile.TemporaryDirectory(prefix=".returned-layer-", dir=output.parent) as temporary:
+            candidate = Path(temporary) / "clean.pdf"
+            incoming.save(candidate)
+            with fitz.open(candidate) as saved:
+                for index, page in enumerate(saved):
+                    reference = incoming[index]
+                    if (
+                        page.cropbox != reference.cropbox
+                        or page.mediabox != reference.mediabox
+                        or page.rotation != reference.rotation
+                        or note_signature(saved, page) != note_signature(incoming, reference)
+                        or _full_pixels(page, annotations=True)
+                        != _full_pixels(reference, annotations=True)
+                    ):
+                        raise NumberLayerValidationError(
+                            "Returned annotations or drawing changed during normalization"
+                        )
+            os.link(candidate, output)
+    return {
+        "input_sha256": sha(input_pdf),
+        "trusted_pdf_sha256": sha(trusted_pdf),
+        "trusted_sidecar_sha256": sha(trusted_sidecar),
+        "cleaned_sha256": sha(output),
+        "removed_number_count": removed,
+        "annotations_preserved": True,
+        "method": "attested_ordered_streams_and_full_page_render_v1",
+    }

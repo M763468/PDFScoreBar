@@ -1,5 +1,9 @@
 # Issue #441 / PR #445: 保存履歴と書き込み済みPDFの再開
 
+**追加検証:** [MobileSheetsの番号付きPDF再輸出への対応](ISSUE441_MOBILESHEETS_ROUNDTRIP.md)。
+以下のMobileSheets往復Not runはcommit 705a4a28時点の履歴。追加提供された1ファイルの
+annotation-only往復は新しい記録で検証済みとし、他の形式・設定まで一般化しない。
+
 保存した修正状態を画面から選び、共有された書き込み済みPDFを取り込んで、元packageとは
 独立したセッションで修正・PDF生成を再開できるようにした。既定の番号は文書全体9ptで統一し、
 段の近くの安全な空白へ配置する。[前段の配置比較](ISSUE441_PR445_REFINEMENT.md)は履歴として保持する。

@@ -20,7 +20,10 @@ resume sessions and process-locked application state. An uploaded annotated PDF 
 validated against the checkpoint's original source and displayed separately from clean
 recognition inputs. Resumed applies reuse retained recognition and use
 `review/number_layer.py` to add a verified 9 pt numbering layer while preserving native
-annotations and CropBoxes. Checkpoint IDs and session IDs are local artifact identities;
+annotations and CropBoxes. Annotation-only re-exports may remap xrefs: the resume adapter
+proves ordered content/stream hashes, markers and full-page rendering against attested
+package-local results before removing the old owned streams. Unknown rewrites are rejected.
+Checkpoint IDs and session IDs are local artifact identities;
 they do not add a public service/job API. See
 [`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).
 The exact selection and develop-only boundary are in

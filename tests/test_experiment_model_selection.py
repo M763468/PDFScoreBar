@@ -252,7 +252,7 @@ def test_frozen_distribution_rejects_candidate_mode_before_loading(tmp_path, mon
     assert "Frozen distributions require production" in capsys.readouterr().err
 
 
-def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch):
+def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, capsys):
     import os
 
     import onnxruntime
@@ -298,3 +298,4 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch):
         == 0
     )
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
+    assert json.loads(capsys.readouterr().out)["cuda_device"] == "test GPU"

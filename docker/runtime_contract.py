@@ -420,6 +420,12 @@ def run_preflight(
         resolve_omr_model,
     )
 
+    # Probe the native runtime before candidate libraries initialize or alter
+    # CUDA visibility/device-count caches (Ultralytics CPU inference does both).
+    cuda_available = torch.cuda.is_available()
+    device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
+    onnx_providers = ort.get_available_providers()
+
     mode = model_validation_mode(detection)
     if mode != "production" and (workspace / PROVENANCE_NAME).exists():
         print(
@@ -452,10 +458,10 @@ def run_preflight(
 
             from src.pipeline.detection.omr_dln_worker import load_candidate
 
-            device = detection.get("omr_dln_device", "cuda")
-            candidate = load_candidate(omr_model, device)
+            candidate_device = detection.get("omr_dln_device", "cuda")
+            candidate = load_candidate(omr_model, candidate_device)
             result = candidate.predict(
-                np.zeros((64, 64, 3), dtype=np.uint8), device=device, verbose=False
+                np.zeros((64, 64, 3), dtype=np.uint8), device=candidate_device, verbose=False
             )
             if len(result) != 1 or result[0].boxes is None:
                 raise ValueError("OMR-DLN candidate returned incompatible prediction output")
@@ -516,12 +522,8 @@ def run_preflight(
     # Historical profile validation belongs to its explicit reproduction runner.
     _validate_production_provenance(workspace, errors)
 
-    cuda_available = torch.cuda.is_available()
     if not cuda_available:
         errors.append("CUDA is not available inside the canonical Docker runtime")
-    device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
-
-    onnx_providers = ort.get_available_providers()
     if "CUDAExecutionProvider" not in onnx_providers:
         errors.append(
             "onnxruntime CUDAExecutionProvider is unavailable inside the canonical Docker runtime"

@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import json
 import mimetypes
 import os
+import re
 import sys
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -24,6 +27,8 @@ from src.pipeline.review.manual_correction_handoff import (  # noqa: E402
     load_manual_correction_handoff,
 )
 from tools.review_correction.application import CorrectionApplication, preview_numbering
+from tools.review_correction.history import CheckpointStore, atomic_bytes, package_path
+from tools.review_correction.resume import create_session
 from tools.review_correction.state import CorrectionState
 
 
@@ -56,6 +61,7 @@ class ReviewPackage:
         for page in self.pages:
             for key in (
                 "image",
+                "display_image",
                 "numbering",
                 "mmr",
                 "barlines",
@@ -75,7 +81,12 @@ class ReviewPackage:
 
         if set(self.reads.values()) & set(self.writes.values()):
             raise ValueError("Correction outputs overlap review artifacts")
+        payload = load_manual_correction_handoff(handoff)
+        if payload.get("resume"):
+            rel = payload["resume"]["input_pdf"]
+            self.reads[rel] = package_path(self.root, rel)
         self.state = CorrectionState(self.root, self.pages, handoff)
+        self.history = CheckpointStore(self)
 
     def _resolve(self, rel: str) -> Path:
         if not isinstance(rel, str) or Path(rel).is_absolute():
@@ -112,6 +123,33 @@ class ReviewPackage:
         return self.writable(rel)
 
     def record_correction(self, page: object, kind: object, items: object) -> dict:
+        """Save and publish its immutable checkpoint in one serialized transition."""
+        with self.history.transaction():
+            previous = {
+                rel: path.read_bytes() if path.is_file() else None
+                for rel in self.writes
+                for path in [self.writable(rel)]
+            }
+            pending = dict(self.state.pending)
+            try:
+                result = self._record_correction(page, kind, items)
+                result["checkpoint_id"] = self.history.capture()
+                return result
+            except Exception as exc:
+                for rel, data in previous.items():
+                    path = self.writable(rel)
+                    if data is not None:
+                        atomic_bytes(path, data)
+                    elif path.exists():
+                        path.unlink()
+                self.state.pending = pending
+                try:
+                    self.state.note_record_error(page, kind, str(exc))
+                except ValueError:
+                    pass
+                raise
+
+    def _record_correction(self, page: object, kind: object, items: object) -> dict:
         """Record any correction type through one package-bound atomic transition.
 
         Explicit Save and immediate movement confirmation are UI triggers for the
@@ -292,14 +330,30 @@ class ReviewHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _context(self):
+        ids = parse_qs(urlparse(self.path).query).get("session", [])
+        if not ids:
+            return self.server.package, self.server.application
+        if len(ids) != 1 or not re.fullmatch(r"s_[0-9a-f]{32}", ids[0]):
+            raise ValueError("Invalid review session")
+        session = ids[0]
+        if session not in self.server.sessions:
+            path = package_path(
+                self.server.package.root,
+                f"resumed_sessions/{session}/review/manual_correction_input.json",
+            )
+            package = ReviewPackage(path)
+            self.server.sessions[session] = (package, CorrectionApplication(package, path))
+        return self.server.sessions[session]
+
     def do_GET(self) -> None:
         if not self._trusted_host():
             return
         parsed = urlparse(self.path)
-        package = self.server.package
         assets = {
             "/": "index.html",
             "/app.js": "app.js",
+            "/history.js": "history.js",
             "/app_manual.js": "app.js",
             "/strings.js": "strings.js",
             "/correction_state.js": "correction_state.js",
@@ -307,9 +361,20 @@ class ReviewHandler(BaseHTTPRequestHandler):
         if parsed.path in assets:
             self._file(UI_ROOT / assets[parsed.path])
             return
+        try:
+            package, application = self._context()
+        except (ValueError, OSError) as exc:
+            self.send_error(400, str(exc))
+            return
+        if parsed.path == "/api/checkpoints":
+            try:
+                self._json({"checkpoints": package.history.list()})
+            except (ValueError, OSError) as exc:
+                self.send_error(400, str(exc))
+            return
         if parsed.path == "/api/result":
             try:
-                result_path = self.server.application.result()
+                result_path = application.result()
                 self._file(result_path, download_filename=result_path.name)
             except (ValueError, OSError, KeyError) as exc:
                 self.send_error(400, str(exc))
@@ -336,7 +401,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
         if parsed.path in {"/file", "/api/template", "/api/boxes"}:
             rel = parse_qs(parsed.query).get("path", [None])[0]
             allowed_fields = {
-                "/file": {"image", "review_overlay"},
+                "/file": {"image", "display_image", "review_overlay"},
                 "/api/template": {"numbering", "mmr", "movement_boundary_evidence"},
                 "/api/boxes": {"barlines"},
             }
@@ -362,6 +427,8 @@ class ReviewHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path not in {
             "/api/save",
+            "/api/checkpoints",
+            "/api/resume",
             "/api/export_movement_boundaries",
             "/api/state/pending",
             "/api/state/pending/clear",
@@ -372,33 +439,55 @@ class ReviewHandler(BaseHTTPRequestHandler):
             return
         if not self._trusted_write():
             return
-        package = self.server.package
         try:
+            package, application = self._context()
             size = int(self.headers.get("Content-Length", "0"))
-            if size < 0 or size > 10_000_000:
+            limit = 43_000_000 if parsed.path == "/api/resume" else 10_000_000
+            if size < 0 or size > limit:
                 raise ValueError("Invalid request size")
             payload = json.loads(self.rfile.read(size))
             if not isinstance(payload, dict):
                 raise ValueError("Request body must be an object")
+            if parsed.path in {"/api/checkpoints", "/api/resume"}:
+                snap = package.state.snapshot()
+                if snap["package"]["counts"]["pending"] or package.state.record_errors:
+                    raise ValueError("Save or resolve current edits before history operations")
+            if parsed.path == "/api/checkpoints":
+                if set(payload) - {"label"}:
+                    raise ValueError("Checkpoint accepts only a label")
+                with package.history.transaction():
+                    checkpoint = package.history.capture(label=payload.get("label", ""), force=True)
+                self._json({"checkpoint_id": checkpoint})
+                return
+            if parsed.path == "/api/resume":
+                if set(payload) != {"checkpoint_id", "pdf_base64"}:
+                    raise ValueError("Resume requires a checkpoint ID and uploaded PDF")
+                if package is not self.server.package:
+                    raise ValueError("Create another resume from the original review session")
+                data = base64.b64decode(payload["pdf_base64"], validate=True)
+                with package.history.transaction():
+                    session = create_session(package, payload["checkpoint_id"], data)
+                self._json({"session": session, "url": "/?session=" + session})
+                return
             if parsed.path == "/api/apply":
                 if payload:
                     raise ValueError(
                         "Apply uses the active review package and accepts no paths or options"
                     )
-                self._json(self.server.application.start())
+                self._json(application.start())
                 return
             if parsed.path == "/api/preview_numbering":
                 if payload:
                     raise ValueError(
                         "Numbering preview uses saved corrections and accepts no options"
                     )
-                if self.server.application.lock.locked():
+                if application.lock.locked():
                     raise ValueError(
                         "Wait for corrected PDF generation before previewing numbering"
                     )
                 self._json(preview_numbering(package.handoff_path))
                 return
-            if self.server.application.lock.locked():
+            if application.lock.locked():
                 raise ValueError("Wait for corrected PDF generation before editing corrections")
             if parsed.path in {"/api/state/pending", "/api/state/pending/clear"}:
                 page = payload.get("page")
@@ -432,22 +521,44 @@ class ReviewHandler(BaseHTTPRequestHandler):
             if not review.is_file():
                 raise ValueError("Save movement review decisions before export")
             evidence_bytes = evidence.read_bytes()
+            review_bytes = review.read_bytes()
             resolved = build_resolved_movement_boundaries(
                 evidence=json.loads(evidence_bytes.decode("utf-8")),
-                review=json.loads(review.read_text(encoding="utf-8")),
+                review=json.loads(review_bytes),
                 evidence_artifact=evidence_rel,
                 evidence_sha256=hashlib.sha256(evidence_bytes).hexdigest(),
             )
-            _atomic_write(output, resolved)
-            package.state.note_record_success(config["page"], "movement_boundary")
+            with package.history.transaction():
+                if evidence.read_bytes() != evidence_bytes or review.read_bytes() != review_bytes:
+                    raise ValueError("Movement inputs changed during finalization")
+                output = package.writable(output_rel)
+                previous = output.read_bytes() if output.exists() else None
+                try:
+                    _atomic_write(output, resolved)
+                    checkpoint = package.history.capture()
+                    package.state.note_record_success(config["page"], "movement_boundary")
+                except Exception:
+                    if previous is None:
+                        output.unlink(missing_ok=True)
+                    else:
+                        atomic_bytes(output, previous)
+                    raise
             self._json(
                 {
                     "output": str(output),
                     "count": len(resolved.get("boundaries", [])),
+                    "checkpoint_id": checkpoint,
                     "schema_version": resolved.get("schema_version"),
                 }
             )
-        except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        except (
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            binascii.Error,
+            json.JSONDecodeError,
+        ) as exc:
             if parsed.path == "/api/export_movement_boundaries" and "config" in locals():
                 try:
                     package.state.note_record_error(config["page"], "movement_boundary", str(exc))
@@ -459,6 +570,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
 def create_server(handoff: Path, *, port: int = 8010) -> HTTPServer:
     package = ReviewPackage(handoff)
     server = HTTPServer(("127.0.0.1", port), ReviewHandler)
+    server.sessions = {}
     server.package = package
     server.application = CorrectionApplication(package, handoff)
     return server

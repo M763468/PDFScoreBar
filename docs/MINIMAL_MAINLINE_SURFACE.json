@@ -877,6 +877,22 @@
     {
       "pattern": ".dockerignore",
       "role": "Keep user data and generated output outside production build context"
+    },
+    {
+      "pattern": "tools/review_correction/history.py",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/resume.py",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/history.js",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "src/pipeline/review/number_layer.py",
+      "role": "Supported immutable review history and annotated PDF resume"
     }
   ],
   "distribution_metadata_patterns": [

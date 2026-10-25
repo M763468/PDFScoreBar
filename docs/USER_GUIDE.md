@@ -128,6 +128,31 @@ stores immutable input copies and consumed-input provenance under `application_r
 Successful corrected PDFs are in each attempt's `corrected/final/` directory. Previous
 successful output remains available after a failed attempt. Stop the server with Ctrl+C.
 
+To continue a saved correction state on an annotated copy of the original PDF, open
+**Saved history / resume** (**保存履歴・再開**). Save pending edits, optionally give the
+checkpoint a name, and choose **Save checkpoint**. Select a saved checkpoint, choose
+an annotated PDF (up to 32 MB), then choose **Resume in new session**. The original
+review remains separate; the browser URL identifies the resumed session and can be
+reopened after server restart. Saves also retain checkpoints automatically.
+
+The resumed canvas shows the uploaded annotations. PDF generation recalculates numbering
+from the retained recognition artifacts and adds uniformly sized 9 pt row numbers near
+the staff. It preserves the annotated PDF's CropBoxes, original annotations and background.
+If there is no safe placement, generation reports an error; it does not erase handwriting.
+Keep the review package, its `history/`, `resumed_sessions/`, retained source artifacts,
+and generated `.layer.json` files together. History checks external retained dependencies;
+it does not create a portable archive of all recognition artifacts.
+
+Currently supported resume inputs contain all original pages in order, have zero rotation
+and unchanged MediaBoxes/background image bytes, and use native Ink, Circle, Square,
+Stamp, FreeText or Highlight annotations. CropBox changes are supported. Numbered PDFs
+exported again through MobileSheets, flattened/re-encoded backgrounds, partial/reordered
+pages and other interactive PDF shapes require further validation and may be rejected.
+Export a copy with the original background and native annotations for this workflow.
+The application does not import MSF files or infer which handwritten numbers it may delete.
+Generated PDFs have been checked locally; a new MobileSheets export roundtrip is still
+unverified. See [the integration evidence](dev/ISSUE441_PRODUCT_INTEGRATION.md).
+
 ## Troubleshooting and provenance
 
 - Build failure: retain the build output; check network access and disk space.

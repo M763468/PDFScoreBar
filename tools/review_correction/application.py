@@ -6,7 +6,6 @@ import fcntl
 import hashlib
 import json
 import os
-import shutil
 import tempfile
 from pathlib import Path
 from threading import Lock, Thread
@@ -156,10 +155,14 @@ class CorrectionApplication:
                 raise ValueError(
                     "A corrected result is already being generated for this package"
                 ) from exc
-            identity = self.package.state.begin_apply()
+            with self.package.history.transaction(allow_apply=True):
+                checkpoint = self.package.history.capture()
+                identity = self.package.state.begin_apply()
+                if self.package.history.get(checkpoint)["identity"] != identity:
+                    raise ValueError("Review changed while preparing application")
             apply_started = True
             response = self.package.state.snapshot()
-            self.thread = Thread(target=self._run, args=(identity,), daemon=True)
+            self.thread = Thread(target=self._run, args=(identity, checkpoint), daemon=True)
             self.thread.start()
             return response
         except Exception as exc:
@@ -182,28 +185,16 @@ class CorrectionApplication:
             except FileExistsError:
                 number += 1
 
-    def _run(self, identity):
+    def _run(self, identity, checkpoint):
         try:
             self._safe_root()
             attempt = self._allocate()
             review = attempt / "input_review"
-            review.mkdir()
-            # Snapshot only declared package artifacts and correction files. Derived
-            # canonical files are generated in this copy, leaving recorded inputs intact.
-            for rel in self.package.reads:
-                source = self.package.readable(rel)
-                target = review / rel
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, target)
-            for rel in self.package.writes:
-                source = self.package.writable(rel)
-                if source.is_file():
-                    target = review / rel
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(source, target)
-            payload = json.loads(self.handoff.read_text(encoding="utf-8"))
-            manifest = _resolve_source_manifest_path(payload, self.package.root)
-            payload["source_manifest"] = str(manifest)
+            self.package.history.materialize(checkpoint, review)
+            payload = json.loads((review / "manual_correction_input.json").read_text())
+            if not self.package.history.get(checkpoint).get("source_context"):
+                manifest = _resolve_source_manifest_path(payload, self.package.root)
+                payload["source_manifest"] = str(manifest)
             if not (isinstance(payload.get("output_name"), str) and payload["output_name"].strip()):
                 final_dir = self.package.root.parent / "final"
                 if final_dir.is_dir():
@@ -233,17 +224,43 @@ class CorrectionApplication:
                 **identity,
                 "source_handoff": str(self.handoff),
                 "snapshot_handoff": str(snapshot_handoff),
+                "checkpoint_id": checkpoint,
             }
             (attempt / "consumed_inputs.json").write_text(
                 json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
             )
+            resume = payload.get("resume")
             run = apply_corrections_and_rerun(
                 snapshot_handoff,
                 output_root=attempt,
                 run_id="corrected",
                 overwrite=False,
-                generate_final_pdf=True,
+                generate_final_pdf=not bool(resume),
             )
+            layer_identity = {}
+            if resume:
+                from src.pipeline.review.number_layer import records_from_run, write_number_layer
+                from tools.review_correction.history import package_path
+
+                annotated = package_path(review, resume["input_pdf"])
+                if hashlib.sha256(annotated.read_bytes()).hexdigest() != resume["input_sha256"]:
+                    raise ValueError("Annotated input changed after resume")
+                final_dir = run / "final"
+                final_dir.mkdir(exist_ok=True)
+                numbered = final_dir / "annotated_score_numbered.pdf"
+                write_number_layer(
+                    annotated, annotated, records_from_run(snapshot_handoff, run), numbered
+                )
+                sidecar = numbered.with_suffix(".layer.json")
+                layer_identity = {
+                    "number_layer_sidecar": str(sidecar.resolve()),
+                    "number_layer_sidecar_sha256": hashlib.sha256(sidecar.read_bytes()).hexdigest(),
+                    "resume_checkpoint_id": resume["checkpoint_id"],
+                }
+                summary_path = run / "review/correction_summary.json"
+                report = json.loads(summary_path.read_text())
+                report["final_pdf"] = str(numbered.resolve())
+                summary_path.write_text(json.dumps(report, indent=2) + "\n")
             summary = json.loads(
                 (run / "review" / "correction_summary.json").read_text(encoding="utf-8")
             )
@@ -259,12 +276,15 @@ class CorrectionApplication:
                 if (rel := page.get("movement_boundary_resolved_output"))
                 and (review / rel).is_file()
             }
+            self.package.history.validate_dependencies(checkpoint)
             self.package.state.finish_apply(
                 {
                     **identity,
                     "source_handoff": str(self.handoff),
+                    "checkpoint_id": checkpoint,
                     "consumed_inputs": str(attempt / "consumed_inputs.json"),
                     "movement_review_inputs": movement_inputs,
+                    **layer_identity,
                 },
                 corrected_run=str(run.resolve()),
                 final_pdf=str(final),
@@ -288,4 +308,13 @@ class CorrectionApplication:
             raise ValueError("The corrected final PDF is unavailable")
         if hashlib.sha256(final.read_bytes()).hexdigest() != result["final_pdf_sha256"]:
             raise ValueError("The corrected final PDF changed after generation")
+        if result.get("number_layer_sidecar"):
+            sidecar = Path(result["number_layer_sidecar"])
+            if (
+                sidecar.resolve() != sidecar
+                or sidecar.parent != final.parent
+                or hashlib.sha256(sidecar.read_bytes()).hexdigest()
+                != result["number_layer_sidecar_sha256"]
+            ):
+                raise ValueError("The validated numbering sidecar changed")
         return final

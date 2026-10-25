@@ -1,5 +1,6 @@
 /* Controlled reviewer copy for the English and Japanese application surfaces. */
 const reviewEnglish = {
+  history: {title: "Saved history / resume", label: "History label", save: "Save checkpoint", select: "Saved checkpoint", pdf: "Annotated PDF (32 MB maximum)", resume: "Resume in new session", scope: "Requires the original PDF background and page order. Numbered or flattened exports need additional validation.", failed: "History operation failed", working: "Working…", saved: "Saved", noSource: "This checkpoint has no verified original PDF", choosePdf: "Choose a PDF of at most 32 MB"},
   taskSummary: {
     mmr_measure_span: "Enter the printed rest count for the selected measure.",
     barline_construction: "Add a divider to split a measure, or remove one to join measures.",
@@ -166,6 +167,7 @@ const reviewEnglish = {
 };
 
 const reviewJapanese = {
+  history: {title: "保存履歴・再開", label: "履歴の名前", save: "現在の修正を履歴に保存", select: "再開する保存履歴", pdf: "書き込み済みPDF（最大32 MB）", resume: "別セッションで再開", scope: "元のPDF背景・ページ順との一致が必要です。番号付き出力や書き込みを画像化したPDFには追加検証が必要です。", failed: "履歴の操作に失敗しました", working: "処理中…", saved: "保存しました", noSource: "この履歴には検証済みの元PDFがありません", choosePdf: "32 MB以内のPDFを選択してください"},
   taskSummary: {
     mmr_measure_span: "選択した休符の数字を、小節数に入力します。",
     barline_construction: "区切りの追加で小節を分割し、削除で結合します。",

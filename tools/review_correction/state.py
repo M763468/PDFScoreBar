@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
 import tempfile
 from pathlib import Path
 from typing import Any
+
+from tools.review_correction.history import now, package_path
 
 SCHEMA_VERSION = 1
 STATE_FILENAME = ".correction_state.json"
@@ -59,7 +62,14 @@ class CorrectionState:
         self.source_paths = {
             rel: (self.root / rel).resolve()
             for page in pages
-            for field in ("image", "numbering", "mmr", "barlines", "movement_boundary_evidence")
+            for field in (
+                "image",
+                "display_image",
+                "numbering",
+                "mmr",
+                "barlines",
+                "movement_boundary_evidence",
+            )
             if (rel := page.get(field))
         }
         self.pending: dict[tuple[str, str], str] = {}
@@ -72,6 +82,9 @@ class CorrectionState:
         if self.metadata_path.is_symlink():
             raise ValueError("Correction state metadata must not be a symlink")
         self._metadata = self._read_metadata()
+        self._own_apply = False
+        self._unpersisted_error = False
+        self._sync_application()
 
     def _read_metadata(self) -> dict:
         path = self.metadata_path
@@ -87,7 +100,45 @@ class CorrectionState:
             raise ValueError("Unsupported correction state metadata")
         if not isinstance(data.get("last_successful_result"), (dict, type(None))):
             raise ValueError("Invalid last successful result metadata")
+        if not isinstance(data.get("last_application"), (dict, type(None))):
+            raise ValueError("Invalid application state metadata")
         return data
+
+    def _sync_application(self):
+        if self._own_apply or self._unpersisted_error:
+            return
+        self._metadata = self._read_metadata()
+        last = self._metadata.get("last_application") or {}
+        self.applying = False
+        if last.get("status") == "running":
+            # Hold the process lock while recovering. A separate server may
+            # finish or start an application between the first read and lock.
+            path = package_path(self.root, "application_runs/.apply.lock")
+            path.parent.mkdir(exist_ok=True)
+            descriptor = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(descriptor, "r+") as stream:
+                try:
+                    fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    self.applying = True
+                else:
+                    self._metadata = self._read_metadata()
+                    last = self._metadata.get("last_application") or {}
+                    if last.get("status") == "running":
+                        last = {
+                            **last,
+                            "status": "interrupted",
+                            "error": "Previous PDF generation was interrupted",
+                            "finished_at": now(),
+                        }
+                        self._metadata["last_application"] = last
+                        try:
+                            self._safe_write_metadata()
+                        except Exception:
+                            self._unpersisted_error = True
+        self.apply_error = (
+            last.get("error") if last.get("status") in {"failed", "interrupted"} else None
+        )
 
     def _safe_write_metadata(self) -> None:
         path = self.metadata_path
@@ -158,7 +209,14 @@ class CorrectionState:
     def capture_identity(self) -> dict:
         source_files: dict[str, str | None] = {}
         for page in self.pages:
-            for field in ("image", "numbering", "mmr", "barlines", "movement_boundary_evidence"):
+            for field in (
+                "image",
+                "display_image",
+                "numbering",
+                "mmr",
+                "barlines",
+                "movement_boundary_evidence",
+            ):
                 rel = page.get(field)
                 if rel:
                     source_files[rel] = self._source_identity(rel)
@@ -174,6 +232,10 @@ class CorrectionState:
         manifest_path = _resolve_source_manifest_path(handoff_data, self.root)
         if manifest_path.is_file():
             source_files["source_manifest"] = _file_identity(manifest_path)
+        if handoff_data.get("resume"):
+            source_files["resume_input_pdf"] = _file_identity(
+                package_path(self.root, handoff_data["resume"]["input_pdf"])
+            )
         correction_files: dict[str, Any] = {}
         for page in self.pages:
             page_id = str(page.get("page", page.get("name", page.get("page_id", ""))))
@@ -236,6 +298,19 @@ class CorrectionState:
             or any(state["edit_status"] == "pending" for state in snap["states"])
         ):
             raise ValueError("Resolve pending edits or errors before generating a corrected result")
+        previous = self._metadata.get("last_application")
+        self._metadata["last_application"] = {
+            "status": "running",
+            "identity": identity,
+            "started_at": now(),
+        }
+        try:
+            self._safe_write_metadata()
+        except Exception:
+            self._metadata["last_application"] = previous
+            raise
+        self._own_apply = True
+        self._unpersisted_error = False
         self.applying = True
         self.apply_error = None
         return identity
@@ -271,22 +346,44 @@ class CorrectionState:
             "final_pdf_sha256": final_pdf_sha256,
         }
         previous = self._metadata.get("last_successful_result")
+        previous_application = self._metadata.get("last_application")
         self._metadata["last_successful_result"] = result
+        self._metadata["last_application"] = {
+            **(previous_application or {}),
+            "status": "succeeded",
+            "finished_at": now(),
+            "result_identity": result["result_identity"],
+        }
         try:
             self._safe_write_metadata()
         except Exception as exc:
             self._metadata["last_successful_result"] = previous
+            self._metadata["last_application"] = previous_application
             self.fail_apply(f"Could not record corrected result identity: {exc}")
             raise
         self.applying = False
+        self._own_apply = False
         self.apply_error = None
         return result
 
     def fail_apply(self, error: str) -> None:
         self.applying = False
+        self._own_apply = False
         self.apply_error = str(error)[:500]
+        self._metadata["last_application"] = {
+            **(self._metadata.get("last_application") or {}),
+            "status": "failed",
+            "error": self.apply_error,
+            "finished_at": now(),
+        }
+        try:
+            self._safe_write_metadata()
+            self._unpersisted_error = False
+        except Exception:
+            self._unpersisted_error = True
 
     def snapshot(self) -> dict:
+        self._sync_application()
         current = self.capture_identity()
         last = self._metadata.get("last_successful_result")
         matched = bool(last and last.get("identity") == current["identity"])
@@ -367,6 +464,7 @@ class CorrectionState:
                 "current_result": last if matched else None,
                 "last_successful_result": last,
                 "current_identity": current,
+                "last_application": self._metadata.get("last_application"),
             },
             "states": states,
             "labels": LABELS,

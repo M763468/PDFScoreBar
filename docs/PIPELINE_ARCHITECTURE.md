@@ -15,6 +15,14 @@
 The user distribution adds `docker/distribution.py` as a Linux Docker launcher and
 `docker/distribution_job.py` as a thin adapter to the existing v1 `PipelineJobExecutor`.
 It ships the package-bound `tools/review_correction` application alongside the engine.
+The local review application owns immutable `history/` checkpoints, package-scoped
+resume sessions and process-locked application state. An uploaded annotated PDF is
+validated against the checkpoint's original source and displayed separately from clean
+recognition inputs. Resumed applies reuse retained recognition and use
+`review/number_layer.py` to add a verified 9 pt numbering layer while preserving native
+annotations and CropBoxes. Checkpoint IDs and session IDs are local artifact identities;
+they do not add a public service/job API. See
+[`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).
 The exact selection and develop-only boundary are in
 [`MINIMAL_MAINLINE_SURFACE.md`](MINIMAL_MAINLINE_SURFACE.md); user operation is in
 [`USER_GUIDE.md`](USER_GUIDE.md). Shared barline geometry lives in

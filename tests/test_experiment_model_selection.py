@@ -221,7 +221,9 @@ def test_candidate_run_records_current_hashes_and_rejects_mid_run_changes(tmp_pa
 @pytest.mark.parametrize("key", ["cnn_device", "omr_dln_device"])
 def test_candidate_device_must_be_explicit_supported_value(key):
     with pytest.raises(ValueError, match=key):
-        model_validation_mode({"model_validation": "exploration", key: None})
+        model_validation_mode(
+            {"model_validation": "exploration", "detector_route": "dense_full_pipeline", key: None}
+        )
 
 
 def test_production_threshold_contract_remains_required(tmp_path):
@@ -239,7 +241,16 @@ def test_frozen_distribution_rejects_candidate_mode_before_loading(tmp_path, mon
     from docker import runtime_contract
 
     config = tmp_path / "config.yaml"
-    config.write_text(yaml.safe_dump({"detection": {"model_validation": "exploration"}}))
+    config.write_text(
+        yaml.safe_dump(
+            {
+                "detection": {
+                    "model_validation": "exploration",
+                    "detector_route": "dense_full_pipeline",
+                }
+            }
+        )
+    )
     (tmp_path / runtime_contract.PROVENANCE_NAME).write_text("{}")
     monkeypatch.setattr(runtime_contract, "validate_distribution_provenance", lambda root: {})
     monkeypatch.setattr(runtime_contract, "runtime_fingerprint", lambda root: "matching")
@@ -299,3 +310,92 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
     )
     assert os.environ["CUDA_VISIBLE_DEVICES"] == "0"
     assert json.loads(capsys.readouterr().out)["cuda_device"] == "test GPU"
+
+
+@pytest.mark.parametrize("mode", ["exploration", "comparison"])
+@pytest.mark.parametrize("route", [None, "standard", "unsupported_route"])
+def test_candidate_routes_are_rejected_before_standard_dispatch(tmp_path, monkeypatch, mode, route):
+    import yaml
+
+    from src.pipeline import detection
+    from src.pipeline.main import run_pipeline
+
+    cfg = _candidate_config(tmp_path)
+    cfg["model_validation"] = mode
+    if route is None:
+        cfg.pop("detector_route")
+    else:
+        cfg["detector_route"] = route
+    config = {"detection": cfg}
+    monkeypatch.setattr(
+        detection, "_install_standard_detector_hooks", lambda: pytest.fail("standard route entered")
+    )
+    message = "requires detector_route='dense_full_pipeline'"
+    with pytest.raises(ValueError, match=message):
+        detection.DetectorOrchestrator(config, [], "test", tmp_path / "run", dry_run=False)
+    with pytest.raises(ValueError, match=message):
+        detection.run_detection_step(config, [], [], "test", tmp_path / "run", dry_run=False)
+    config_path = tmp_path / "candidate.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    with pytest.raises(ValueError, match=message):
+        run_pipeline(config_path, run_id="test", output_root=tmp_path)
+
+
+@pytest.mark.parametrize("mode", ["exploration", "comparison"])
+@pytest.mark.parametrize("route", [None, "standard", "unsupported_route"])
+def test_preflight_rejects_candidate_routes_before_gpu_or_model_work(
+    tmp_path, monkeypatch, capsys, mode, route
+):
+    import torch
+    import yaml
+
+    from docker import runtime_contract
+
+    cfg = {"model_validation": mode}
+    if route is not None:
+        cfg["detector_route"] = route
+    config = tmp_path / "candidate.yaml"
+    config.write_text(yaml.safe_dump({"detection": cfg}))
+    monkeypatch.setattr(runtime_contract, "runtime_fingerprint", lambda root: "matching")
+    monkeypatch.setattr(
+        torch.cuda, "is_available", lambda: pytest.fail("GPU probed before route validation")
+    )
+    monkeypatch.setattr(
+        runtime_contract, "_require_file", lambda *a, **k: pytest.fail("asset work entered")
+    )
+    assert (
+        runtime_contract.run_preflight(
+            tmp_path, config, tmp_path / "none", expected_fingerprint_value="matching"
+        )
+        == 2
+    )
+    result = json.loads(capsys.readouterr().err)
+    assert result["status"] == "fail"
+    assert "requires detector_route='dense_full_pipeline'" in result["errors"][0]
+
+
+@pytest.mark.parametrize("mode", ["exploration", "comparison"])
+def test_supported_candidate_route_dispatch_preserves_selection(tmp_path, monkeypatch, mode):
+    from src.pipeline import detection
+    from src.pipeline.detection import dense_orchestrator_batch_sr
+
+    cfg = _candidate_config(tmp_path)
+    observed = model_observation(cfg, tmp_path)
+    cfg["model_validation"] = mode
+    if mode == "comparison":
+        cfg["model_sha256"] = {role: model["sha256"] for role, model in observed.items()}
+    config = {"detection": cfg}
+    constructor = detection.DetectorOrchestrator(
+        config, [], "test", tmp_path / "run", dry_run=False
+    )
+    assert isinstance(constructor, dense_orchestrator_batch_sr.DetectorOrchestrator)
+    assert constructor.model_validation == mode
+
+    def selected_model_run(config, *args, **kwargs):
+        return model_observation(config["detection"], tmp_path)
+
+    monkeypatch.setattr(dense_orchestrator_batch_sr, "run_detection_step", selected_model_run)
+    assert (
+        detection.run_detection_step(config, [], [], "test", tmp_path / "run", dry_run=False)
+        == observed
+    )

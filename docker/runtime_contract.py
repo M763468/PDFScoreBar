@@ -400,8 +400,6 @@ def run_preflight(
 
     sys.path.insert(0, str(workspace))
 
-    import onnxruntime as ort
-    import torch
     import yaml
 
     from src.common.model_artifacts import (
@@ -420,13 +418,11 @@ def run_preflight(
         resolve_omr_model,
     )
 
-    # Probe the native runtime before candidate libraries initialize or alter
-    # CUDA visibility/device-count caches (Ultralytics CPU inference does both).
-    cuda_available = torch.cuda.is_available()
-    device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
-    onnx_providers = ort.get_available_providers()
-
-    mode = model_validation_mode(detection)
+    try:
+        mode = model_validation_mode(detection)
+    except ValueError as exc:
+        print(json.dumps({"status": "fail", "errors": [str(exc)]}), file=sys.stderr)
+        return 2
     if mode != "production" and (workspace / PROVENANCE_NAME).exists():
         print(
             json.dumps(
@@ -438,6 +434,15 @@ def run_preflight(
             file=sys.stderr,
         )
         return 2
+
+    import onnxruntime as ort
+    import torch
+
+    # Probe the native runtime before candidate libraries initialize or alter
+    # CUDA visibility/device-count caches (Ultralytics CPU inference does both).
+    cuda_available = torch.cuda.is_available()
+    device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
+    onnx_providers = ort.get_available_providers()
 
     input_path = _resolve_input_path(workspace, inputs.get("pdf_path"))
     if input_path is not None:

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -60,6 +61,30 @@ def _scale_to_source(
     ]
 
 
+def load_candidate(model_path: Path, device_name: str = "cuda") -> Any:
+    """Load an explicit native detection checkpoint without production identity checks."""
+    import torch
+    from ultralytics import YOLO
+
+    if not model_path.is_file():
+        raise FileNotFoundError(model_path)
+    if model_path.suffix != ".pt":
+        raise ValueError("Candidate OMR-DLN currently requires a native .pt checkpoint")
+    if device_name not in {"cpu", "cuda"}:
+        raise ValueError(f"Unsupported OMR-DLN device: {device_name!r}")
+    if device_name == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("OMR-DLN requested CUDA but it is unavailable; refusing CPU fallback")
+    model = YOLO(model_path)
+    if model.task != "detect":
+        raise ValueError("OMR-DLN requires a detection checkpoint with measure-box output")
+    model.to(device_name)
+    if model.device.type != device_name:
+        raise RuntimeError(
+            f"OMR-DLN device mismatch: requested={device_name} actual={model.device}"
+        )
+    return model
+
+
 def run(
     images: list[Path],
     *,
@@ -67,10 +92,15 @@ def run(
     precomputed_sr: Path,
     confidence: float = 0.25,
     model: Any | None = None,
+    model_path: Path | None = None,
+    device_name: str | None = None,
 ) -> list[Path]:
     """Run OMR-DLN for pages using the already-generated x4 image contract."""
     if not images:
         raise ValueError("OMR-DLN runtime requires at least one image")
+
+    if model is None and model_path is not None:
+        model = load_candidate(model_path, device_name or "cuda")
 
     if model is None:
         from ultralytics import YOLO
@@ -111,13 +141,16 @@ def run(
                 f"OMR-DLN precomputed SR has unexpected y scale: {scale_y:.4f} for {source}"
             )
 
-        results = model.predict(sr, conf=confidence, save=False, verbose=False)
+        device_args = {"device": device_name} if device_name is not None else {}
+        results = model.predict(sr, conf=confidence, save=False, verbose=False, **device_args)
         if not results:
             raise RuntimeError(f"OMR-DLN returned no result object for {source}")
 
         measure_boxes: list[tuple[int, int, int, int]] = []
         for box in results[0].boxes:
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+            if not all(math.isfinite(float(v)) for v in (x1, y1, x2, y2)) or x2 <= x1 or y2 <= y1:
+                raise ValueError("OMR-DLN returned invalid measure coordinates")
             measure_boxes.append((int(x1), int(y1), int(x2), int(y2)))
 
         source_barlines = _scale_to_source(
@@ -139,6 +172,8 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--pre-computed-sr", type=Path, required=True)
     parser.add_argument("--conf", type=float, default=0.25)
+    parser.add_argument("--model-path", type=Path)
+    parser.add_argument("--device", choices=("cpu", "cuda"))
     args = parser.parse_args()
     try:
         outputs = run(
@@ -146,6 +181,8 @@ def main() -> int:
             output_dir=args.output_dir,
             precomputed_sr=args.pre_computed_sr,
             confidence=args.conf,
+            model_path=args.model_path,
+            device_name=args.device,
         )
     except Exception as error:  # noqa: BLE001
         print(

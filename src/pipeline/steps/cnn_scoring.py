@@ -90,6 +90,9 @@ def _infer_model_architecture(state_dict: Dict[str, torch.Tensor]) -> str:
 def _load_model(model_path: Path, device: torch.device) -> torch.nn.Module:
     state_dict = torch.load(model_path, map_location=device)
 
+    if not isinstance(state_dict, dict):
+        raise ValueError("CNN checkpoint must contain a state_dict mapping")
+
     # Handle torch.compile prefix
     if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
         state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
@@ -100,6 +103,26 @@ def _load_model(model_path: Path, device: torch.device) -> torch.nn.Module:
     model.to(device)
     model.eval()
     return model
+
+
+def _select_device(device_name: str | None) -> torch.device:
+    if device_name is None:
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device_name not in {"cpu", "cuda"}:
+        raise ValueError(f"Unsupported CNN device: {device_name!r}; use cpu or cuda")
+    if device_name == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CNN requested CUDA but it is unavailable; refusing CPU fallback")
+    return torch.device(device_name)
+
+
+def validate_cnn_candidate(model_path: Path, device_name: str = "cuda") -> None:
+    """Load the actual supported architecture and validate binary scoring I/O."""
+    device = _select_device(device_name)
+    model = _load_model(model_path, device)
+    with torch.inference_mode():
+        output = model(torch.zeros(1, 3, *IMG_SIZE, device=device))
+    if tuple(output.shape) != (1, 1) or not torch.isfinite(output).all():
+        raise ValueError("CNN checkpoint must produce one finite score per input crop")
 
 
 def _crop_size_from_bbox(
@@ -448,9 +471,10 @@ def run_cnn_scoring_batch(
     apply_nms_enabled: bool = True,
     in_memory_images: Dict[str, Any] | None = None,
     stroke_dedup_units: Dict[str, float] | None = None,
+    device_name: str | None = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = _select_device(device_name)
     resolved_model_path = _resolve_model_path(model_path)
     model = _load_model(resolved_model_path, device)
     gpu_norm = GPUNormalize(MEAN, STD).to(device)

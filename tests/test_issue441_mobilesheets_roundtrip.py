@@ -98,6 +98,40 @@ def test_marker_without_attested_result_is_not_authority(tmp_path):
     assert not (tmp_path / "rejected.pdf").exists()
 
 
+def test_return_with_unnumbered_page_preserves_annotations_and_rejects_background_change(tmp_path):
+    source = tmp_path / "source.pdf"
+    data = fixture(source)
+    with fitz.open(source) as doc:
+        page = doc.new_page(width=200, height=260)
+        page.insert_text((30, 80), "unnumbered page")
+        doc.save(tmp_path / "two_pages.pdf")
+    (tmp_path / "two_pages.pdf").replace(source)
+    data.append({"source_pixels": [200, 260], "rows": []})
+    numbered = tmp_path / "numbered.pdf"
+    sidecar, _ = write_number_layer(source, source, data, numbered)
+    returned = tmp_path / "returned.pdf"
+    with fitz.open(numbered) as doc:
+        assert not any(font[4] == "hebo" for font in doc[1].get_fonts())
+        doc[1].add_freetext_annot(fitz.Rect(30, 120, 160, 150), "new note").update()
+        doc.save(returned, garbage=4, deflate=True)
+    cleaned = tmp_path / "cleaned.pdf"
+    proof = strip_returned_layer(returned, numbered, sidecar, source, cleaned)
+    assert proof["removed_number_count"] == 1
+    with fitz.open(cleaned) as doc, fitz.open(returned) as incoming:
+        assert len(doc) == 2
+        assert "12" not in doc[0].get_text().split()
+        assert "unnumbered page" in doc[1].get_text()
+        assert note_signature(doc, doc[1]) == note_signature(incoming, incoming[1])
+    corrupted = tmp_path / "changed.pdf"
+    with fitz.open(returned) as doc:
+        doc[1].insert_text((30, 180), "unexpected content")
+        doc.save(corrupted)
+    rejected = tmp_path / "rejected.pdf"
+    with pytest.raises(ValueError):
+        strip_returned_layer(corrupted, numbered, sidecar, source, rejected)
+    assert not rejected.exists()
+
+
 def test_product_resume_records_original_and_cleaned_pdf_and_preserves_test(tmp_path):
     package, annotated = _pdf_package(tmp_path)
     original = tmp_path / "annotated.pdf"
@@ -210,3 +244,32 @@ def test_second_resume_uses_product_result_and_selected_session_checkpoint(tmp_p
         assert len(list(doc[0].annots())) == 2
         assert Counter(doc[0].get_text().split()) == Counter(["second", "round", "12"])
     assert first.state.snapshot()["package"]["current_result"] is not None
+
+    # A checkpoint captured from the normalized session retains background.pdf.
+    # Exercise two more returns and keep the existing session's artifacts immutable.
+    for index in (3, 4):
+        previous_pdf = app2.result()
+        previous_hash = sha(previous_pdf)
+        previous_background = second.root / "resume/background.pdf"
+        background_hash = sha(previous_background)
+        checkpoint = _checkpoint(second)
+        with fitz.open(previous_pdf) as doc:
+            doc[0].add_freetext_annot(
+                fitz.Rect(80, 40 + index * 20, 150, 55 + index * 20), f"round{index}"
+            ).update()
+            returned = doc.tobytes(garbage=4, deflate=True)
+        next_id = create_session(
+            second, checkpoint, returned, session_root=package.root, ownership_package=package
+        )
+        assert sha(previous_background) == background_hash
+        assert sha(previous_pdf) == previous_hash
+        second = ReviewPackage(
+            package.root / f"resumed_sessions/{next_id}/review/manual_correction_input.json"
+        )
+        app2 = application.CorrectionApplication(second, second.handoff_path)
+        app2.start()
+        app2.thread.join(5)
+        with fitz.open(app2.result()) as doc:
+            assert len(list(doc[0].annots())) == index
+            assert doc[0].get_text().split().count("12") == 1
+            assert f"round{index}" in doc[0].get_text()

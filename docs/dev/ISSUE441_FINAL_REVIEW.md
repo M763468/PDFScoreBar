@@ -1,5 +1,8 @@
 # Issue #441 / PR #445: 最終レビュー指摘の対応
 
+追記: [通常レビュー後の3件の修正・今回の検証](ISSUE441_ADDITIONAL_REVIEW.md)を参照。
+以下は451b4209時点の履歴。ownerによる範囲確定・Draft解除はその後のPR記録を正とする。
+
 対象レビューは [fff311f2に対するレビュー](https://github.com/M763468/PDFScoreBar/pull/445#pullrequestreview-5644080686)。
 CI分類エラーを修正し、旧jobの履歴をGUIから取り込む導線と、再開セッションから再び再開する経路を追加した。
 事前に作ったcheckpointを使わず、実旧jobのattempt 1/12を選択するブラウザー受入、

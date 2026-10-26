@@ -161,8 +161,12 @@ def create_session(package, checkpoint, pdf_bytes, *, session_root=None, ownersh
         uploaded = resume / "input.pdf"
         uploaded.write_bytes(pdf_bytes)
         original = staged / "retained/source.pdf"
+        # materialize may restore a prior normalized background. Only discard
+        # this staged copy; the selected checkpoint and parent session stay intact.
+        normalized = resume / "background.pdf"
+        normalized.unlink(missing_ok=True)
         background, proof = prepare_pdf(
-            ownership_package or package, uploaded, original, resume / "background.pdf"
+            ownership_package or package, uploaded, original, normalized
         )
         payload = json.loads((review / "manual_correction_input.json").read_text())
         # A partial selection or reordered source pages requires an explicit mapping.

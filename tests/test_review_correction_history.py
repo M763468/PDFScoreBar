@@ -57,6 +57,35 @@ def _checkpoint(package):
         return package.history.capture()
 
 
+def test_null_source_reference_preserves_correction_save_and_apply(tmp_path, monkeypatch):
+    from test_review_correction_application import _fake_engine
+
+    app = _application(tmp_path)
+    manifest = app.package.root.parent / "manifest.json"
+    payload = json.loads(manifest.read_text())
+    payload["pages"] = [{"source_reference": None}]
+    manifest.write_bytes(encoded(payload))
+    package = app.package
+    package.record_correction(0, "barline_construction", [])
+    checkpoint = _checkpoint(package)
+    assert "source_pdf" not in package.history.get(checkpoint)["source_context"]
+    assert package.history.list()[0]["can_resume_pdf"] is False
+    restored = tmp_path / "restored/review"
+    package.history.materialize(checkpoint, restored)
+    restored_package = ReviewPackage(restored / "manual_correction_input.json")
+    assert (
+        restored_package.state.capture_identity()["corrections_identity"]
+        == package.state.capture_identity()["corrections_identity"]
+    )
+    with pytest.raises(ValueError, match="no verified original PDF"):
+        create_session(package, checkpoint, b"%PDF-no-provenance")
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", _fake_engine)
+    app.start()
+    app.thread.join(5)
+    assert app.result().is_file()
+    assert package.state.snapshot()["package"]["current_result"] is not None
+
+
 def test_immutable_checkpoints_survive_restart_and_all_four_correction_types(tmp_path):
     package = ReviewPackage(_handoff(tmp_path))
     empty = _checkpoint(package)

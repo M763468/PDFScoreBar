@@ -187,8 +187,8 @@ class CheckpointStore:
                 context["bases"][page["page_id"]] = self.put(base.read_bytes())
         documents = []
         for page in manifest.get("pages", []):
-            reference = page.get("source_reference", {})
-            document = reference.get("source_document", {})
+            reference = page.get("source_reference") or {}
+            document = reference.get("source_document") or {}
             if document.get("path"):
                 documents.append(
                     (document["path"], document.get("sha256"), reference.get("source_page"))

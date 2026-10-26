@@ -1,6 +1,9 @@
 # Issue #441: GitHubレビュー入口
 
-**最新の対応:** [最終レビュー: CI分類・旧履歴GUI・反復往復・4種類のGUI受入](ISSUE441_FINAL_REVIEW.md)。
+**最新の対応:** [通常レビュー後の3件: null由来情報・3回目以降の再開・番号なしページ](ISSUE441_ADDITIONAL_REVIEW.md)。
+オーナーの範囲確定によりPRは通常レビューへ移行済み。以下のDraft/owner待ちの記録は各時点の履歴。
+
+**前段の対応:** [最終レビュー: CI分類・旧履歴GUI・反復往復・4種類のGUI受入](ISSUE441_FINAL_REVIEW.md)。
 ユーザー目視結果はPRコメントを正とし、番号の完全な正確性/印刷/merge承認と混同しない。
 
 **前段の往復対応:** [MobileSheetsで番号付きPDFへ追記・再輸出した実データの往復検証と組み込み](ISSUE441_MOBILESHEETS_ROUNDTRIP.md)。

@@ -431,7 +431,9 @@ def strip_returned_layer(input_pdf, trusted_pdf, trusted_sidecar, original_pdf, 
                     raise NumberLayerValidationError(
                         "Returned number ownership could not be verified"
                     )
-            if _number_font_signature(incoming, page) != _number_font_signature(trusted, reference):
+            if owned and _number_font_signature(incoming, page) != _number_font_signature(
+                trusted, reference
+            ):
                 raise NumberLayerValidationError("Returned numbering font changed")
             images = [incoming.extract_image(x[0])["image"] for x in page.get_images()]
             old_images = [trusted.extract_image(x[0])["image"] for x in reference.get_images()]

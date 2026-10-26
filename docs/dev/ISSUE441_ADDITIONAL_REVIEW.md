@@ -1,5 +1,65 @@
 # Issue #441 / PR #445: 通常レビュー後の3件の修正
 
+## develop統合後の再検証（2026-10-27）
+
+作業head `c67a92958a7b81be51466370349156ee1ce7d61a` に、develop
+`a25b06baed50e303fefcda52d0ee9f0651f2ad05`（PR #451）を通常mergeした。
+競合は `docs/MINIMAL_MAINLINE_SURFACE.md` の配布件数1か所のみ。
+両ブランチのmanifest選定を残し、再計算した **114 tracked files / src 87 files** へ解消した。
+自動統合されたruntime fingerprint対象にもIssue441のlegacy/number layerを保持し、
+両方の元manifestのruntime entriesが欠けていないことを確認した。
+detector・launcher・追加モデル選択テストは取り込み元developと同一で、独自改変はない。
+
+検証対象は上記headと、統合差分
+`logs/issue441/develop-integration/integrated.patch`（SHA-256
+`136cb379a94cf33471c59082004fa3491a124f957af7c61cdd09efcb79f89e6d`）。
+以下は今回再実行した結果で、下のc67a9295以前の履歴と区別する。
+
+| Check | 今回の状態 | 結果・ログ（`logs/issue441/develop-integration/`以下） |
+| --- | --- | --- |
+| Issue441回帰・runtime/配布・develop追加テスト | Blocked（hostの1件） | pytest表示は276 passed / 1 failed、exit 1。モデル選択1件でultralytics未導入。`regression.log`。残りの276件は成功 |
+| モデル選択一式を既存検証containerで実行 | Passed | 31 passed、exit 0、`model-selection-container.log`。上記の実行不能1件も含む。host結果との重複30件を含み、合計277件の対象ケースを両環境でカバー |
+| maintained fast + engine追加2モジュール | Passed | 145 passed、exit 0、`fast-engine.log`。CI engine gate全7モジュール・101件もこの集合内で実行 |
+| surface | Passed | 97 runtime patterns、exit 0、`surface.log` |
+| lint/format | Passed | 1147 files、exit 0、`lint.log` |
+| Makefile・shell・diff | Passed | `make check-makefile`（`makefile.log`）、`bash -n scripts/docker_runtime_validation.sh`、`git diff --cached --check`、各exit 0 |
+| GPU推論・Full68・15ページbrowser・実機往復 | Not run | 手動競合解消は配布件数だけ。developの認識/runtime変更をそのまま取り込み、モデル・閾値・認識ロジックの追加変更はない。既存の実楽譜/GPU証拠は今回の再実行扱いにしない |
+
+host cwdは `.worktrees/issue441`、Pythonはmanagerの `.venv_pdf/bin/python`。
+HTTPテストはsocketを利用できるsandbox外で実行した。
+モデル選択の再実行先は既存 `pdfscore_pipeline_pytest_dev`、image
+`sha256:5311cf22ab0198c3384ada62101f195b0bacf6d2079574167a0edb3f66854005`。
+managerの実mount `/workspace` と作業treeの可視性を確認し、UID/GID 1000:1001、
+cwd/PYTHONPATH `/workspace/.worktrees/issue441`、`PYTHONDONTWRITEBYTECODE=1`、
+`/opt/venv_pipeline/bin/python`（pytest 8.4.2、ultralytics 8.3.239）を使用した。
+環境・依存関係を変更せず、既存containerも停止/削除していない。
+
+```bash
+issue441_python=/home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python
+"$issue441_python" -m pytest \
+  tests/test_issue441_mobilesheets_roundtrip.py tests/test_review_correction_history.py \
+  tests/test_review_correction_application.py tests/test_review_correction_server.py \
+  tests/test_review_correction_state.py tests/test_issue441_annotated_layer.py \
+  tests/test_distribution_surface.py tests/test_docker_runtime_contract.py \
+  tests/test_manual_correction_handoff.py tests/test_issue396_review_ui.py \
+  tests/test_review_correction_client.py tests/test_numbering_preview.py \
+  tests/test_reviewed_movement_apply.py tests/test_release_candidate.py \
+  tests/test_experiment_model_selection.py tests/test_issue329_model_artifact_contract.py \
+  tests/test_cnn_scoring_model_path.py -q --disable-warnings
+docker exec -u 1000:1001 -w /workspace/.worktrees/issue441 \
+  -e PYTHONDONTWRITEBYTECODE=1 -e PYTHONPATH=/workspace/.worktrees/issue441 \
+  pdfscore_pipeline_pytest_dev /opt/venv_pipeline/bin/python -m pytest \
+  tests/test_experiment_model_selection.py -q --disable-warnings
+mapfile -t issue441_fast_tests < <(sed -n 's/^FAST_TESTS ?= //p' Makefile | tr ' ' '\n')
+"$issue441_python" -m pytest "${issue441_fast_tests[@]}" \
+  tests/test_corrected_final_output.py tests/test_final_pdf_page_size.py -q --disable-warnings
+```
+
+merge commitの最終SHA・GitHub Actionsと競合解消状態はPRの最新記録へ追記する。
+developへのマージ・Issue完了は実行しない。
+
+## c67a9295での追加レビュー対応の記録
+
 対象は `451b42099d222847620e1584f0412f315bada443` に対する追加レビュー。
 3件とも明確な変更要求として分類し、修正前のfixtureで再現した後に修正した。
 

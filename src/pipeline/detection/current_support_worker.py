@@ -266,6 +266,17 @@ def run(request_path: Path, result_path: Path) -> Path:
         "--pre-computed-sr",
         str(sr_directory),
     ]
+    from .model_selection import model_validation_mode, resolve_omr_model
+
+    mode = model_validation_mode(det_cfg)
+    if mode != "production":
+        model_path = resolve_omr_model(det_cfg, Path(__file__).resolve().parents[3])
+        omr_cmd += [
+            "--model-path",
+            str(model_path),
+            "--device",
+            str(det_cfg.get("omr_dln_device", "cuda")),
+        ]
     run_with_logging(omr_cmd, env=env, check=True)
 
     omr_predictions = omr_output / stem / "predictions.json"

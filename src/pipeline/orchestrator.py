@@ -19,6 +19,7 @@ from src.pipeline.detection import (
     resolve_paths_from_detection,
     run_detection_step,
 )
+from src.pipeline.detection.model_selection import model_validation_mode
 from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.review.manual_correction_materializer import (
     materialize_manual_correction_review_package,
@@ -79,6 +80,7 @@ class PipelineOrchestrator:
         debug: bool = False,
         telemetry: TelemetryRecorder | None = None,
     ):
+        model_validation_mode(config.get("detection") or {})
         self.config = config
         self.run_id = run_id
         self.run_dir = run_dir

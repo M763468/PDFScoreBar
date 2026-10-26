@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from src.pipeline.core import get_nested
 
+from .model_selection import model_validation_mode
 from .utils import resolve_barlines_and_masks_config, resolve_paths_from_detection
 
 __all__ = [
@@ -31,6 +32,7 @@ def _install_standard_detector_hooks() -> None:
 
 def _detector_route(config: Dict[str, Any]) -> str:
     det_cfg = get_nested(config, "detection", default={}) or {}
+    model_validation_mode(det_cfg)
     return str(det_cfg.get("detector_route", "standard"))
 
 

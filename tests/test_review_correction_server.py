@@ -384,8 +384,9 @@ def test_manual_movement_partial_save_cannot_apply_stale_reset(review_server, mo
         patch.setattr(review_server_module, "_atomic_write", fail_resolved)
         with pytest.raises(OSError, match="resolved write failed"):
             package.record_correction(0, "movement_boundary", changed)
-    with pytest.raises(ValueError, match="stale"):
-        _load_saved_movement(package)
+    # A failed save rolls back both raw and resolved decisions atomically.
+    assert len(_load_saved_movement(package)["boundaries"]) == 1
+    assert package.state.snapshot()["package"]["status"] == "error"
     package.record_correction(0, "movement_boundary", changed)
     assert len(_load_saved_movement(package)["boundaries"]) == 1
 

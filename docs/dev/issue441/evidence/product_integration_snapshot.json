@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "tested_code": {
+    "base_commit": "1431feb2935008d93c263dcd73b8da95469637a6",
+    "files": {
+      "docker/runtime_contract.py": "c5b3bfc147d4dc920a44f34ad78935334161fc6ddaf10cd9abd49f17719ff0d3",
+      "docs/MINIMAL_MAINLINE_SURFACE.json": "d32d873e473f7d9bcca52a9fbf1718d77e3fc90bff54a4bb9581c683f5c59477",
+      "src/pipeline/review/manual_correction_handoff.py": "b4a81caa6881cc5e8c7a30779a4545e89cb53652c8461bee44596b439d6ee209",
+      "src/pipeline/review/number_layer.py": "3aa09d72c17d9e934268d3bc520f77b2fdf6f0750b85b5bc01532eab48a52cbd",
+      "tests/test_issue396_review_ui.py": "842a7c7dc76063f637df7c3d99ec2622597cba581f03095641f2395dd67b3f12",
+      "tests/test_issue441_annotated_layer.py": "951295982e78a52f08ca73fa22e5a210a01d86720696a8185ef2a8937325c738",
+      "tests/test_review_correction_history.py": "0745aac4328c9b3e985b3e58ad62f708de1551dacb43c86602a5caeeac233fc2",
+      "tests/test_review_correction_server.py": "40794c5bab5ba6bbb4aec3a3c8779fa8ba5b625503815fb2cbabdd6eb7bf9cea",
+      "tools/issue441/crop_label_layer.py": "656285b19d7cacecb2ea96f82a3a08b6fe75facc3b1b10e33a1ccc2dc28e62ef",
+      "tools/issue441/export_product_evidence.py": "ae3f85404389008934aaea4af1e29563da29b22abaaada7a8a09f0c082fd2ec9",
+      "tools/review_correction/app.js": "f4e17c638d109519fed89be70ce597134685ac5df3c965ae95501f0599d9edfc",
+      "tools/review_correction/application.py": "c28c8b843b76a2c9a6f5cc982d077939b60f4fcbee68198bc5e497f1adadb0b5",
+      "tools/review_correction/correction_state.js": "f46e2390a231e845c56692f9d3bbcdd40219ab93fc60aacfcfe40d151f332988",
+      "tools/review_correction/history.js": "4694a985ef3f0746b177be6971663a34df239093ea484240d7bded0c5556a7bc",
+      "tools/review_correction/history.py": "d5219be7f9f466df2f225455dbb48f89fee951d7b16817534ba6e7e28566f4f2",
+      "tools/review_correction/index.html": "6e92f78cef0d5e8a5f2ba9a461fb04c157c89d6277782f4d8d2c9342c10b38f0",
+      "tools/review_correction/resume.py": "abd1e10edc105286ad70b89f9bfb2a860b55f53a951f7ac5187eed6fa8bffbe1",
+      "tools/review_correction/resume_browser_acceptance.cjs": "17c1eff1da5b7313ca934ce97eab1845a1416581bad2e26dbafd250ae8590cc9",
+      "tools/review_correction/server.py": "91e1374ab244acb9dd7b69a4d0d24a13f418fc7de3bca1b350337fa125d574bb",
+      "tools/review_correction/state.py": "354e5c8f96c27d3966a719b2ed8948d2e5aae1e8cd4fbad559b00366d434a1ef",
+      "tools/review_correction/strings.js": "281d6d36e7129adda7f19319a8eb845d23260f044ae7e6e001c965371a866241",
+      "tools/issue441/verify_product_integration.py": "1d2faa6b2802f7321668a9f598f2cad89acd64318bb924292f222356819e2be9"
+    }
+  },
+  "exporter_sha256": "ae3f85404389008934aaea4af1e29563da29b22abaaada7a8a09f0c082fd2ec9",
+  "verification_tool_sha256": "1d2faa6b2802f7321668a9f598f2cad89acd64318bb924292f222356819e2be9",
+  "input_pdf_sha256": "c52167c534ebde75150c7c52c11f7051e864390cfa2103640f631b0644bb89c2",
+  "pipeline_image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "browser_image": "sha256:8771dc4666e7c11440bfc6a0c6b00480e9a15b8891b45f29a52d7d995f8d1492",
+  "chromium": "149.0.7827.22",
+  "checks": {
+    "baseline_matches_retained": true,
+    "edit_changes_numbers": true,
+    "undo_restores_all_numbers": true,
+    "server_restart_restores_exact_result": true,
+    "all_three_attempts_retained_after_restart": true,
+    "browser_workflow_passed": true,
+    "all_three_attempts_retained": true
+  },
+  "outputs": {
+    "baseline": {
+      "pdf_sha256": "afcd28ea19e7f3b3d96d5c5c04d3a8095bef37cec42da4aa27db843ea230e59a",
+      "sidecar_sha256": "7b66b1a3d26296b122e72745b1ce730a46e0d59bccef351c5ca8d085f15ca65e",
+      "pages": 15,
+      "annotations": 729,
+      "labels": 160,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "original_dark_pixels_and_annotations_preserved": true
+    },
+    "edited": {
+      "pdf_sha256": "e881f9a33df7825cd55d195711648149aecc0ee417c3b2fad5aeec8348a22824",
+      "sidecar_sha256": "3d5b2d2436e9611d0c813183bbbe93070984db5eff3c29a31dbe46bc26d211da",
+      "pages": 15,
+      "annotations": 729,
+      "labels": 160,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "original_dark_pixels_and_annotations_preserved": true
+    },
+    "undone": {
+      "pdf_sha256": "5b67dbdbc83296eb49cb178a62cbfc43655fc3c0d67fb9773c223ca9c7a6b3d4",
+      "sidecar_sha256": "1ab8c45fc10a4d636c914c27561878a8b3dda77ae3ca64216461b922f672cb84",
+      "pages": 15,
+      "annotations": 729,
+      "labels": 160,
+      "font_points": 9,
+      "all_labels_inside_cropbox": true,
+      "original_dark_pixels_and_annotations_preserved": true
+    }
+  },
+  "mmr_providers": [
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    },
+    {
+      "text_rec": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ]
+    }
+  ],
+  "not_run": [
+    "MobileSheets numbered-PDF re-export roundtrip",
+    "All four correction types in annotated-PDF browser E2E",
+    "Full68 / upstream recognition",
+    "Physical printing / manual-placement UI"
+  ],
+  "adopted_private_logs": [
+    "regression-journal-final-02.log",
+    "fast-journal-final.log",
+    "browser-04.log",
+    "verify-public-harness-journal.log"
+  ]
+}

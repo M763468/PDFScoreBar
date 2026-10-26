@@ -82,6 +82,7 @@
       try {
         const result = await originalSave(type, page, captured);
         recordedDrafts.set(draftKey(page, type), JSON.stringify(captured));
+        window.dispatchEvent(new CustomEvent("review-corrections-recorded", {detail: {}}));
         return result;
       }
       finally { await refresh(); }
@@ -173,7 +174,7 @@
     apply.disabled = running || pending || errors;
     const last = summary.last_successful_result;
     open.hidden = !last;
-    open.href = "/api/result"; open.target = "_blank"; open.rel = "noopener";
+    open.href = (window.reviewURL || (url => url))("/api/result"); open.target = "_blank"; open.rel = "noopener";
     status.textContent = running ? strings.running : pending ? strings.pending
       : last && !summary.current_result ? strings.stale
       : last ? strings.current : strings.ready;

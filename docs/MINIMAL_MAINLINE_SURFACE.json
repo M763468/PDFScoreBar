@@ -387,6 +387,10 @@
     {
       "pattern": "src/pipeline/steps/staff_strokes.py",
       "role": "Maintained dense CNN input adapter using current producer evidence"
+    },
+    {
+      "pattern": "src/pipeline/review/number_layer.py",
+      "role": "Production annotation-preserving numbering layer and returned-PDF ownership validation"
     }
   ],
   "development_validation_patterns": [
@@ -413,6 +417,16 @@
     {
       "pattern": "tools/verification/**",
       "role": "verification tooling; production candidate helpers now live under src",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/issue441/**",
+      "role": "Retained Issue441 experiment/provenance reproducers; private inputs and generated outputs remain outside git",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/review_correction/*acceptance*",
+      "role": "Developer-only real-artifact and browser acceptance runners",
       "include_in_runtime_bundle": false
     }
   ],
@@ -804,7 +818,10 @@
       "tests/test_distribution_surface.py",
       "tests/test_issue409_failure_contracts.py",
       "tests/test_issue413_system_identity.py",
-      "tests/test_staff_strokes.py"
+      "tests/test_staff_strokes.py",
+      "tests/test_issue441_annotated_layer.py",
+      "tests/test_issue441_mobilesheets_roundtrip.py",
+      "tests/test_review_correction_history.py"
     ]
   },
   "test_support_patterns": [
@@ -882,6 +899,22 @@
     {
       "pattern": ".dockerignore",
       "role": "Keep user data and generated output outside production build context"
+    },
+    {
+      "pattern": "tools/review_correction/history.py",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/resume.py",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/history.js",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/legacy.py",
+      "role": "Validated import of pre-checkpoint saved correction inputs"
     }
   ],
   "distribution_metadata_patterns": [

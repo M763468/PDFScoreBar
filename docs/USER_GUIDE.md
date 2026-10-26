@@ -128,6 +128,46 @@ stores immutable input copies and consumed-input provenance under `application_r
 Successful corrected PDFs are in each attempt's `corrected/final/` directory. Previous
 successful output remains available after a failed attempt. Stop the server with Ctrl+C.
 
+To continue a saved correction state on an annotated copy of the original PDF, open
+**Saved history / resume** (**保存履歴・再開**). Save pending edits, optionally give the
+checkpoint a name, and choose **Save checkpoint**. Select a saved checkpoint, choose
+an annotated PDF (up to 32 MB), then choose **Resume in new session**. The original
+review remains separate; the browser URL identifies the resumed session and can be
+reopened after server restart. Saves also retain checkpoints automatically.
+For jobs created before checkpoints were introduced, select an entry under **Saved
+inputs from earlier versions** and choose **Import selected saved inputs**. The app
+verifies the original source and recorded correction identities before making a
+checkpoint. An unavailable entry includes a validation reason. Import certifies the
+saved inputs; it does not certify an old PDF as a successful current result.
+You can also choose a checkpoint from a resumed session and resume another annotated
+copy; each new URL remains separate and uses the original review's ownership evidence.
+The panel's **PDF generation history** records successful, failed and interrupted
+attempts; a later success does not remove an earlier failure.
+
+The resumed canvas shows the uploaded annotations. PDF generation recalculates numbering
+from the retained recognition artifacts and adds uniformly sized 9 pt row numbers near
+the staff. It preserves the annotated PDF's CropBoxes, original annotations and background.
+If there is no safe placement, generation reports an error; it does not erase handwriting.
+Keep the review package, its `history/`, `resumed_sessions/`, retained source artifacts,
+and generated `.layer.json` files together. History checks external retained dependencies;
+it does not create a portable archive of all recognition artifacts.
+
+Currently supported resume inputs contain all original pages in order, have zero rotation
+and unchanged MediaBoxes/background image bytes, and use native Ink, Circle, Square,
+Stamp, FreeText or Highlight annotations. CropBox changes are supported.
+An annotation-only MobileSheets re-export of a numbered PDF can also be resumed
+from the review that generated it, while its successful PDF and `.layer.json` remain
+available. The application verifies the complete page content, owned numbering streams,
+background and rendering against that saved result, removes only its old numbers, and
+preserves the new handwriting. Internal PDF object numbers may change. A rewritten
+background, changed page content or missing provenance is rejected.
+
+Partial/reordered pages, flattened/re-encoded backgrounds and other interactive PDF
+shapes require further validation. Export a copy with the original background and
+native annotations. The application does not import MSF files or infer which handwritten numbers it may delete.
+A supplied 15-page MobileSheets annotation-only roundtrip has been checked; other
+versions/export settings and physical printing remain unverified. See [the integration evidence in PR #445](https://github.com/M763468/PDFScoreBar/pull/445).
+
 ## Troubleshooting and provenance
 
 - Build failure: retain the build output; check network access and disk space.

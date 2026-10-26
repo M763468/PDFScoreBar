@@ -1,0 +1,502 @@
+{
+  "schema": "issue441.typography_revision.v1",
+  "retained_numbering_reused_no_OCR_rerun": true,
+  "font_points": 9.0,
+  "original_inputs_unchanged": true,
+  "input_pdf_sha256": "c52167c534ebde75150c7c52c11f7051e864390cfa2103640f631b0644bb89c2",
+  "annotation_counts": {
+    "Stamp": 15,
+    "Ink": 705,
+    "Circle": 9
+  },
+  "stages": [
+    {
+      "labels": 160,
+      "pages": [
+        {
+          "page": 1,
+          "labels": 9,
+          "font_points": 9.0
+        },
+        {
+          "page": 2,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 3,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 4,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 5,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 6,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 7,
+          "labels": 8,
+          "font_points": 9.0
+        },
+        {
+          "page": 8,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 9,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 10,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 11,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 12,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 13,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 14,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 15,
+          "labels": 11,
+          "font_points": 9.0
+        }
+      ],
+      "font_points_before": {
+        "min": 8.0,
+        "median": 8.0,
+        "mean": 8.5172,
+        "max": 10.0
+      },
+      "font_points_after": 9.0,
+      "distance_before_points": {
+        "min": 2.868967239499057,
+        "median": 4.581504244142499,
+        "mean": 4.639560254567069,
+        "max": 10.050906965346439
+      },
+      "distance_after_points": {
+        "min": 0.75,
+        "median": 0.9929999999999914,
+        "mean": 1.0637662431543973,
+        "max": 3.0300001633167213
+      },
+      "closer": 160,
+      "farther": 0,
+      "same_distance": 0,
+      "checkpoint": "attempt_0001",
+      "stage": "baseline",
+      "output_sha256": "410c6511326806a6e5c248e49f27184ef76dfcf5f3f65222372c98cc4afa8e27",
+      "annotation_dark_pixels_and_background_preserved": true,
+      "publication": "validated_sidecar_first_pdf_last_commit"
+    },
+    {
+      "labels": 160,
+      "pages": [
+        {
+          "page": 1,
+          "labels": 9,
+          "font_points": 9.0
+        },
+        {
+          "page": 2,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 3,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 4,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 5,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 6,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 7,
+          "labels": 8,
+          "font_points": 9.0
+        },
+        {
+          "page": 8,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 9,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 10,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 11,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 12,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 13,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 14,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 15,
+          "labels": 11,
+          "font_points": 9.0
+        }
+      ],
+      "font_points_before": {
+        "min": 8.0,
+        "median": 8.0,
+        "mean": 8.5172,
+        "max": 10.0
+      },
+      "font_points_after": 9.0,
+      "distance_before_points": {
+        "min": 2.8422827310173813,
+        "median": 4.587505215667813,
+        "mean": 4.6697651647598795,
+        "max": 10.050906965346439
+      },
+      "distance_after_points": {
+        "min": 0.75,
+        "median": 0.9929999999999914,
+        "mean": 1.0587599941080714,
+        "max": 3.0300001633167213
+      },
+      "closer": 160,
+      "farther": 0,
+      "same_distance": 0,
+      "checkpoint": "attempt_0012",
+      "stage": "baseline",
+      "output_sha256": "f31bc0bf4359d7c492c9bf22e99ca6e4fc3dfe9cfb3863fcd25732fd08996015",
+      "annotation_dark_pixels_and_background_preserved": true,
+      "publication": "validated_sidecar_first_pdf_last_commit"
+    },
+    {
+      "labels": 160,
+      "pages": [
+        {
+          "page": 1,
+          "labels": 9,
+          "font_points": 9.0
+        },
+        {
+          "page": 2,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 3,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 4,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 5,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 6,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 7,
+          "labels": 8,
+          "font_points": 9.0
+        },
+        {
+          "page": 8,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 9,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 10,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 11,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 12,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 13,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 14,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 15,
+          "labels": 11,
+          "font_points": 9.0
+        }
+      ],
+      "font_points_before": {
+        "min": 8.0,
+        "median": 8.0,
+        "mean": 8.5172,
+        "max": 10.0
+      },
+      "font_points_after": 9.0,
+      "distance_before_points": {
+        "min": 2.813958998997665,
+        "median": 4.587961490649462,
+        "mean": 4.652771338375914,
+        "max": 9.535472751194678
+      },
+      "distance_after_points": {
+        "min": 0.75,
+        "median": 0.9929999999999914,
+        "mean": 1.0563412389105462,
+        "max": 2.9130002090930915
+      },
+      "closer": 160,
+      "farther": 0,
+      "same_distance": 0,
+      "checkpoint": "attempt_0012",
+      "stage": "edited",
+      "output_sha256": "6bb01af67ec22af6e99a15afd184ebcac6bca75b771c1d5c6f80d097b9582d88",
+      "annotation_dark_pixels_and_background_preserved": true,
+      "publication": "validated_sidecar_first_pdf_last_commit"
+    },
+    {
+      "labels": 160,
+      "pages": [
+        {
+          "page": 1,
+          "labels": 9,
+          "font_points": 9.0
+        },
+        {
+          "page": 2,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 3,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 4,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 5,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 6,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 7,
+          "labels": 8,
+          "font_points": 9.0
+        },
+        {
+          "page": 8,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 9,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 10,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 11,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 12,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 13,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 14,
+          "labels": 11,
+          "font_points": 9.0
+        },
+        {
+          "page": 15,
+          "labels": 11,
+          "font_points": 9.0
+        }
+      ],
+      "font_points_before": {
+        "min": 8.0,
+        "median": 8.0,
+        "mean": 8.5172,
+        "max": 10.0
+      },
+      "font_points_after": 9.0,
+      "distance_before_points": {
+        "min": 2.8422827310173813,
+        "median": 4.587505215667813,
+        "mean": 4.6697651647598795,
+        "max": 10.050906965346439
+      },
+      "distance_after_points": {
+        "min": 0.75,
+        "median": 0.9929999999999914,
+        "mean": 1.0587599941080714,
+        "max": 3.0300001633167213
+      },
+      "closer": 160,
+      "farther": 0,
+      "same_distance": 0,
+      "checkpoint": "attempt_0012",
+      "stage": "undone",
+      "output_sha256": "5dbb3a8b8e0b9bc901ead8cc3ae59468c82be09cfdaaf04544fcad9d98deb33c",
+      "annotation_dark_pixels_and_background_preserved": true,
+      "publication": "validated_sidecar_first_pdf_last_commit"
+    }
+  ],
+  "tested_code_sha256": {
+    "crop_label_layer.py": "e83e50f8b0acc4453636f97348005400b0014987914e30daef0d0575bac5af93",
+    "refine_annotated_layout.py": "e84d34896b0831e4ed0f0f1194ad183959206d51df549520de39ab419ceec7a1"
+  },
+  "tested_layout_commit": "20fe8e1e4578edb87722ef51ce2bdf5002f942b6",
+  "retained_numbering_commit": "d3b8fa95861a50887217f6a0a9494f744d1f8f58",
+  "runtime_image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "actual_pdf_font_checks": [
+    {
+      "checkpoint": "attempt_0001",
+      "output": "annotated_numbered_uniform9.pdf",
+      "actual_pdf_font_points": [
+        9.0
+      ],
+      "actual_number_text_count": 160
+    },
+    {
+      "checkpoint": "attempt_0012",
+      "output": "annotated_numbered_edited_uniform9.pdf",
+      "actual_pdf_font_points": [
+        9.0
+      ],
+      "actual_number_text_count": 160
+    },
+    {
+      "checkpoint": "attempt_0012",
+      "output": "annotated_numbered_undone_uniform9.pdf",
+      "actual_pdf_font_points": [
+        9.0
+      ],
+      "actual_number_text_count": 160
+    },
+    {
+      "checkpoint": "attempt_0012",
+      "output": "annotated_numbered_uniform9.pdf",
+      "actual_pdf_font_points": [
+        9.0
+      ],
+      "actual_number_text_count": 160
+    }
+  ],
+  "focused_tests": {
+    "count": 11,
+    "status": "passed",
+    "command": "python -m unittest discover -s tests -p test_issue441_annotated_layer.py -v",
+    "output_sha256": "70233ae2c0b540ab2773f6566d3113b9bba727af86a5d519f4b2192611c7d3cb"
+  },
+  "publication_contract": {
+    "staged_pdf_reopened_and_validated_before_publication": true,
+    "post_save_checks_use_explicit_exceptions": true,
+    "validated_sidecar_published_before_pdf_commit": true,
+    "no_overwrite_of_other_writer": true,
+    "orphan_sidecar_is_not_a_successful_result": true
+  },
+  "not_run": [
+    "MobileSheets_numbered_PDF_reexport_roundtrip",
+    "product_checkpoint_selection_persistence_and_UI",
+    "physical_print",
+    "product_browser_E2E"
+  ]
+}

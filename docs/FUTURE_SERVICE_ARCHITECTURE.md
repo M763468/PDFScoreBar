@@ -59,6 +59,19 @@ user correction app can review the package, stage/save supported corrections, an
 canonicalize those corrections and regenerate corrected final numbering/PDF output.
 The maintained user entry is `tools/review_correction/server.py`; GT/evaluation editing remains a
 separate developer tool. See [`USER_CORRECTION_BOUNDARY.md`](USER_CORRECTION_BOUNDARY.md).
+The local application now retains immutable checkpoints, restores a selected checkpoint
+into a separate annotated-PDF session and persists application success/failure/interruption.
+This is a local filesystem contract with retained recognition dependencies, not a portable
+snapshot or authenticated multi-user service. Future storage adapters must preserve checkpoint
+and input identities, result attestation, original-session isolation and fail-closed PDF
+correspondence; arbitrary host paths must not become remote API inputs. The local app can
+verify an annotation-only re-export against an attested result despite xref remapping;
+future artifact storage must retain that ownership evidence with the generation session.
+Pre-checkpoint inputs can now be imported with reproduced source/correction identities,
+and a resumed session can produce another independent resume under the original registry.
+Storage adapters must preserve the original identity as provenance while assigning the
+restored state its own current identity; input import alone is not successful application.
+See [`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).
 
 Current correction semantics include, as applicable to the current workflow:
 

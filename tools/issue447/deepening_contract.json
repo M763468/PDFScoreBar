@@ -1,0 +1,101 @@
+{
+  "schema": "issue447.deepening.contract.v1",
+  "runtime_source": "2ac7d5245fe65dbfa2093b4e0d60119c58192f86",
+  "review_fix_commit": "b5e03b2c",
+  "image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "config": "configs/dense_full_pipeline.yaml",
+  "uid_gid": "1000:1001",
+  "original_contract_preserved": "tools/issue447/contract.json",
+  "primary_metric": "trace OFF fresh-container Docker E2E wall, same inputs/models/thresholds; startup/teardown included, observer teardown separate",
+  "cache_repetition": {
+    "input": "Shostakovich-Sym5-Va/page_013",
+    "pairs": 3,
+    "order": "cold1,warm1,cold2,warm2,cold3,warm3",
+    "cold": "new initially empty private Inductor/Triton directory for each pair; OS/driver cache not flushed",
+    "warm": "fresh container, same directory as its cold partner; no persistent model",
+    "summary": "all observations, paired deltas, median/range; historical single-observation results remain separate"
+  },
+  "parallel_component": {
+    "inputs": [
+      "page_012",
+      "page_014"
+    ],
+    "reference_sr": "retained multi-off-warm",
+    "order": [
+      1,
+      2,
+      2,
+      1
+    ],
+    "repetitions_per_condition": 2,
+    "treatment": "same fresh image/container/env/memory cap; only disposable source concurrency differs",
+    "metric": "component wall in same harness; no sampled-residency substitution"
+  },
+  "parallel_e2e": {
+    "inputs": [
+      "page_012",
+      "page_013",
+      "page_014"
+    ],
+    "workers": [
+      1,
+      2
+    ],
+    "runs_each": 1,
+    "cache": "same existing compiled shape inventory snapshot, per-condition private copy",
+    "treatment": "same experimental scheduling shim both modes; SR batch completes/exits before sources; ordered consumption",
+    "quality": [
+      "all pages ordered manifest identities and mapping geometry",
+      "original/x4 ordered source predictions and decoded staff/connector masks",
+      "OMR ordered source predictions",
+      "ordered final detector geometries",
+      "combined and per-page base/final numbering pages+metadata including movement boundaries",
+      "MMR override targets/skips and geometry mapping",
+      "filters/correction-related metadata"
+    ]
+  },
+  "guards": {
+    "numerical": "strict semantic equality, no threshold/model/input retuning; preserve any failure",
+    "resources": "16 GiB cgroup cap for both source concurrency conditions; device VRAM samples <=7 GiB to call resource screen passed",
+    "gpu": "discard known external competition; retain events/process queries and WSL attribution limitations",
+    "adoption": "investigation only, no production implementation or full68; remain Draft/unmerged"
+  },
+  "additional_priorities": [
+    "compiler/cache CPU/GPU timeline and initialization",
+    "interpreter import/cache permissions with CPU-only matching-class comparisons",
+    "compiled SR tile batch/stream timings if bounded screening remains warranted"
+  ],
+  "supersedes_only_by_adding_probes": "contract-v1.json",
+  "additional_probes": {
+    "python_imports": {
+      "order": "first A/default, first B/private-prefix, warm ABBA",
+      "fixed": "same image, UID, interpreter and YOLO class identity; no model/GPU inference",
+      "metric": "fresh child process wall and internal imports, initial prefix preparation separately",
+      "gate": "same imported class/version and CUDA not initialized; not an E2E adoption claim"
+    },
+    "omr_reuse": {
+      "order": [
+        "serial",
+        "batch",
+        "batch",
+        "serial"
+      ],
+      "inputs": "retained compiled SR for pages_012-014",
+      "factor": "3 disposable per-page OMR processes versus 1 process accepting same three pages",
+      "gates": "all ordered source predictions identical, fixed selected model/default confidence/device; no integrated speed claim"
+    },
+    "compiled_tiles": {
+      "order": [
+        1,
+        2,
+        2,
+        1
+      ],
+      "input": "two fixed interior 400-core/10-pad tiles from page_013 at x,y (400,400),(800,400)",
+      "fixed": "production FP16/channels-last/reduce-overhead model and CPU uint8 readback",
+      "samples": "one setup call plus 6 warm two-tile calls per fresh process/block",
+      "timing": "host wall, enqueue/readback host, CUDA event intervals; first-call event may contain idle compile time, never count as GPU busy",
+      "advance": "warm median >=1.05 speed ratio, reserved <=6 GiB, exact tested-core pixels; full-page/source/downstream remains unverified"
+    }
+  }
+}

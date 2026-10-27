@@ -43,10 +43,25 @@ def snapshot() -> dict:
                     "command": command,
                     "start_ticks": int(fields[19]),
                     "cpu_seconds": (int(fields[11]) + int(fields[12])) / clock_ticks,
+                    "cpu_user_seconds": int(fields[11]) / clock_ticks,
+                    "cpu_system_seconds": int(fields[12]) / clock_ticks,
+                    "state": fields[0],
+                    "minor_faults": int(fields[7]),
+                    "major_faults": int(fields[9]),
                     "rss_bytes": int(fields[21]) * page_size,
                     "io": io,
                 }
             )
+            try:
+                scheduler = [int(v) for v in (entry / "schedstat").read_text().split()]
+                processes[-1]["scheduler"] = {
+                    "runtime_ns": scheduler[0],
+                    "runqueue_wait_ns": scheduler[1],
+                    "timeslices": scheduler[2],
+                }
+                processes[-1]["wait_channel"] = (entry / "wchan").read_text().strip()
+            except (OSError, ValueError, IndexError):
+                pass
         except (OSError, ValueError, IndexError):
             continue
     cgroup = {}

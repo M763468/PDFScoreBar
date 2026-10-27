@@ -22,6 +22,15 @@ def main() -> int:
     parser.add_argument("--compile-mode", choices=("production", "off"), default="production")
     parser.add_argument("--trace", action="store_true")
     parser.add_argument(
+        "--source-workers",
+        type=int,
+        choices=(1, 2),
+        help="Experimental ordered source prefetch only; production source remains unchanged",
+    )
+    parser.add_argument(
+        "--python-cache", type=Path, help="Optional private writable interpreter bytecode cache"
+    )
+    parser.add_argument(
         "--compile-cache",
         type=Path,
         help="Explicit cache directory; use a new empty directory for a cold reproduction",
@@ -35,10 +44,20 @@ def main() -> int:
             "source-parallel",
             "homr-wall",
             "omr-wall",
+            "source-paired",
+            "python-imports",
+            "omr-serial",
+            "omr-batch",
+            "compiled-tiles1",
+            "compiled-tiles2",
         ),
     )
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
+    if args.component == "source-paired" and args.source_workers is None:
+        parser.error("source-paired requires explicit --source-workers")
+    if args.component not in (None, "source-paired") and args.source_workers is not None:
+        parser.error("--source-workers applies only to E2E or source-paired")
     if not args.image.startswith("sha256:") or len(args.image) != 71:
         parser.error("--image must be an immutable full sha256 ID")
     if not args.label.replace("-", "").replace("_", "").isalnum():
@@ -116,8 +135,24 @@ def main() -> int:
         "-e",
         f"OMR_DLN_MODEL_PATH={omr}",
     ]
-    if args.component == "source-parallel":
+    if args.component in {"source-parallel", "source-serial"} or args.source_workers is not None:
         command += ["--memory", "16g"]
+    if args.python_cache is not None:
+        args.python_cache = args.python_cache.resolve()
+        args.python_cache.mkdir(parents=True, exist_ok=True)
+        command += [
+            "-v",
+            f"{args.python_cache}:/python-cache",
+            "-e",
+            "PYTHONPYCACHEPREFIX=/python-cache",
+        ]
+    if args.source_workers is not None:
+        command += [
+            "-e",
+            f"ISSUE447_SOURCE_WORKERS={args.source_workers}",
+            "-e",
+            f"ISSUE447_SOURCE_EVENTS=/workspace/{rel}/source-schedule.jsonl",
+        ]
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     command += ["-e", f"PDFSCORE_HOST_SOURCE_COMMIT={commit}"]
     if args.trace:
@@ -128,7 +163,30 @@ def main() -> int:
             f"PDFSCORE_PERF_TRACE_RUN={args.label}",
         ]
     command += [args.image, "/opt/venv_pipeline/bin/python"]
-    if args.component:
+    if args.component == "source-paired":
+        command += [
+            "tools/issue447/pipeline_poc.py",
+            "--source-component",
+            "--workers",
+            str(args.source_workers),
+            "--output",
+            str(rel / "component"),
+        ]
+    elif args.component in {
+        "python-imports",
+        "omr-serial",
+        "omr-batch",
+        "compiled-tiles1",
+        "compiled-tiles2",
+    }:
+        command += [
+            "tools/issue447/deepening_components.py",
+            "--kind",
+            args.component,
+            "--output",
+            str(rel / "component"),
+        ]
+    elif args.component:
         command += [
             "tools/issue447/component_poc.py",
             "--kind",
@@ -140,7 +198,9 @@ def main() -> int:
         ]
     else:
         command += [
-            "src/pipeline/main.py",
+            "tools/issue447/pipeline_poc.py"
+            if args.source_workers is not None
+            else "src/pipeline/main.py",
             "--config",
             str(rel / "config.yaml"),
             "--telemetry-summary",
@@ -212,6 +272,10 @@ def main() -> int:
                     time.sleep(0.1)
             for filename, monitor in [
                 ("docker-stats.jsonl", ["docker", "stats", "--format", "{{json .}}", name]),
+                (
+                    "container-events.jsonl",
+                    ["docker", "events", "--filter", "type=container", "--format", "{{json .}}"],
+                ),
                 (
                     "proc-observer.log",
                     [

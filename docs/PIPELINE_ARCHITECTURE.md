@@ -1,5 +1,7 @@
 # Current Production Pipeline Architecture
 
+[日本語](PIPELINE_ARCHITECTURE.ja.md)
+
 > **Canonical architecture source.** This document describes the current production
 > pipeline on `develop`, with emphasis on the `dense_full_pipeline` route. Source code,
 > tests, and machine-readable profiles remain authoritative when they disagree with prose.

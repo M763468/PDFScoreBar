@@ -7,7 +7,7 @@ executable package.
 | Question | Read first |
 | --- | --- |
 | What is the minimum executable subset, and is it ready to extract? | [Minimal mainline surface](MINIMAL_MAINLINE_SURFACE.md) and its [exact file list](MINIMAL_MAINLINE_SURFACE.json) |
-| How does the current pipeline work? | [Pipeline architecture](PIPELINE_ARCHITECTURE.md) |
+| How does the current pipeline work? | [Pipeline architecture (English)](PIPELINE_ARCHITECTURE.md) / [日本語（draft）](PIPELINE_ARCHITECTURE.ja.md) |
 | How do I run the current repository? | [Environments](ENVIRONMENTS.md), then [manual correction workflow](manual_correction_review_package.md) if needed |
 | How are user corrections separated from GT/developer tools? | [User correction boundary](USER_CORRECTION_BOUNDARY.md) |
 | What does an engine caller send and receive? | [Engine job contract](ENGINE_JOB_CONTRACT.md) |

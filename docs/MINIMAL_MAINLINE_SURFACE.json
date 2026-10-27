@@ -714,6 +714,7 @@
       "tests/test_issue43_full68_harness.py"
     ],
     "validation_harness": [
+      "tests/test_doc_translations.py",
       "tests/test_experiment_model_selection.py",
       "tests/test_release_candidate.py",
       "tests/test_cnn_scoring_model_path.py",

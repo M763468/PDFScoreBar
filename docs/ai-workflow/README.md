@@ -13,6 +13,13 @@ This directory contains optional guidance for AI-assisted development in PDFScor
 - [Prompt Library](PROMPTS.md): optional prompt snippets.
 - [Lessons Learned](LESSONS.md): historical heuristics; verify against current source/tests before use.
 
+## Documentation translations
+
+Use the [coverage inventory](../DOCUMENTATION_INVENTORY.md#bilingual-coverage-and-translation-scope)
+and [language policy](../DOCUMENTATION_LANGUAGE_POLICY.md)
+([日本語](../DOCUMENTATION_LANGUAGE_POLICY.ja.md)) to select and synchronize translations.
+Archived task workflows remain historical even if translated.
+
 ## Deprecated historical workflows
 
 - [AI Agent Strategy 2026](AI_AGENT_STRATEGY_2026.md)

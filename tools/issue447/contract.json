@@ -1,0 +1,69 @@
+{
+  "issue": 447,
+  "source_commit": "2ac7d5245fe65dbfa2093b4e0d60119c58192f86",
+  "baseline_runs": [
+    "single-off-cold",
+    "single-off-warm",
+    "single-on-warm"
+  ],
+  "multi_run": "multi-off-warm",
+  "trace_roles": "OFF docker E2E primary, ON/profiler/component and sampled residency diagnostic only; nested durations never summed as exclusive E2E shares",
+  "experiments": {
+    "sr_eager": {
+      "change": "sr_compile_mode: reduce-overhead -> null; all other detector/model/threshold settings fixed",
+      "input": "Shostakovich-Sym5-Va/page_013",
+      "primary": "trace OFF E2E, using retained compiled baseline as historical comparison; component ABBA paired screen for batch experiment",
+      "correctness_gates": [
+        "ordered source-coordinate detector barline geometry identical",
+        "ordered base/final page/system/staff/measure geometry and numbers identical",
+        "MMR override targets/skips identical",
+        "page identities and MMR support geometry mappings identical",
+        "x4 HOMR detector geometry and staff/connector masks inspected for equality; differences fail strict source-semantic gate"
+      ],
+      "full_acceptance": "one-page result only, no production adoption without broader fixed semantic regression and fresh repeated E2E comparisons"
+    },
+    "sr_tile_batch2": {
+      "change": "tile batch size 1 -> 2 on current FP16/channels-last/GPU uint8/CPU-stitch implementation; eager mode fixed for both",
+      "input": "same original page_013 and same selected weight",
+      "timing": "first call separately; warmed ABBA page-enhance timings, CUDA sync before/after; init/serialization excluded and reported separately",
+      "advance_criteria": {
+        "minimum_median_speedup_ratio": 1.05,
+        "peak_reserved_limit_bytes": 6442450944,
+        "pixel_difference_allowed": 0,
+        "downstream": "advance only if exact pixel identity plus sr_eager E2E source and downstream semantic gates pass; otherwise not adoption-ready"
+      },
+      "limits": "eager microbenchmark is screening, not compiled-production E2E or permanent rejection of batching"
+    },
+    "cpu_profile": {
+      "scope": "one retained current-HOMR request and/or downstream replay, no new SR; profiler timing diagnostic only",
+      "acceptance": "no production mutation; compare reused versus replayed semantic artifacts"
+    },
+    "source_parallel": {
+      "change": "two independent source-page workers overlap; SR already materialized, each worker remains disposable",
+      "inputs": [
+        "page_012",
+        "page_014"
+      ],
+      "baseline": "retained same inputs/requests/weights/SR from sequential multi-off-warm; component residency sampled at 0.2 s, comparison exploratory rather than controlled repeated causal E2E",
+      "gates": [
+        "source original/x4 HOMR ordered predictions and decoded staff/connector masks identical",
+        "OMR ordered source-coordinate predictions identical",
+        "sampled total device VRAM <= 7 GiB",
+        "container cgroup memory peak <= 16 GiB",
+        "component wall at least 1.2x faster than sum of retained sequential source worker residencies"
+      ],
+      "acceptance": "source-component screen only; integration page/movement ordering, numbering/MMR/correction and full fixed regression not run, cannot adopt production based on this PoC"
+    }
+  },
+  "resource_observation": "multi off sampled /proc,cgroup at 0.2 s plus docker stats; sampler adds CPU overhead, exact process start/end not instrumented; report first/last observation bounds and overlap",
+  "gpu_competition": "record GPU process/device/container state before and throughout additional jobs; discard known overlap",
+  "forbidden": [
+    "production changes",
+    "threshold/model retuning",
+    "full68 solely for timing",
+    "shared image mutation",
+    "automatic merge",
+    "destructive cleanup"
+  ],
+  "supersedes_for_additional_experiments_only": "logs/issue447/followup/contract-v2.json"
+}

@@ -56,6 +56,117 @@ Issue #280 established the repository documentation audit against the accepted #
 | `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | authoritative for current selected model/threshold/runtime values |
 | `configs/detector_profiles/stage_e_verified_homr.json` | pinned HOMR profile provenance | canonical machine-readable reference | keep |
 
+## Bilingual coverage and translation scope
+
+This inventory classifies document intent and observed language; it does **not** certify
+that every claim matches current source/tests. For translation placement, source revisions,
+review and drift handling, use the [language policy](DOCUMENTATION_LANGUAGE_POLICY.md)
+([日本語](DOCUMENTATION_LANGUAGE_POLICY.ja.md)). This extends the existing audit instead
+of replacing its history or creating a competing runtime/distribution manifest.
+
+Language labels describe explanatory prose: **EN** = English, **JA** = Japanese,
+**mixed** = substantial prose in both languages. Code, identifiers, Japanese UI examples,
+and translated status labels alone do not establish a complete counterpart.
+At the initial #452 audit, none of the documents in the table below has a separate,
+reviewed full counterpart. Thus **JA needed** and **EN needed** mean untranslated;
+**split/review** means the mixed original must first be reviewed as a whole.
+No entry is currently certified as synchronized.
+
+Priority expresses reading dependencies, not a requirement to finish all rows in one PR:
+**P1** = entry points and core architecture/engine/model/operation/validation;
+**P2** = supporting contracts and developer/agent guidance;
+**P3** = future direction or optional references, translated when needed.
+`current/reference` describes intended scope, with technical currency still to be checked
+when translating. Historical and scoped records follow the exclusions below.
+
+| Document | Intended role / authority | Language | Counterpart action | Priority |
+| --- | --- | --- | --- | --- |
+| [../README.md](../README.md) | canonical/current | EN | JA needed | P1 |
+| [../AGENTS.md](../AGENTS.md) | canonical/current | EN | JA needed | P1 |
+| [README.md](README.md) | canonical/current | EN | JA needed | P1 |
+| [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | JA needed | P1 |
+| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current | EN | JA needed | P1 |
+| [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN | JA needed | P1 |
+| [ENGINE_JOB_LIFECYCLE.md](ENGINE_JOB_LIFECYCLE.md) | current/reference | EN | JA needed | P1 |
+| [ENGINE_INPUT_SAFETY.md](ENGINE_INPUT_SAFETY.md) | current/reference | EN | JA needed | P1 |
+| [ENGINE_TELEMETRY.md](ENGINE_TELEMETRY.md) | current/reference | EN | JA needed | P1 |
+| [ENGINE_SERVICE_READINESS.md](ENGINE_SERVICE_READINESS.md) | current/reference | EN | JA needed | P1 |
+| [MODEL_ARTIFACT_CONTRACT.md](MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN | JA needed | P1 |
+| [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN | JA needed | P1 |
+| [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN | JA needed | P1 |
+| [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | JA needed | P1 |
+| [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | JA needed | P1 |
+| [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN | JA needed | P1 |
+| [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN | JA needed | P1 |
+| [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN | JA needed | P1 |
+| [USER_CORRECTION_BOUNDARY.md](USER_CORRECTION_BOUNDARY.md) | current/reference | EN | JA needed | P2 |
+| [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | JA needed | P2 |
+| [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
+| [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
+| [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | JA needed | P2 |
+| [BARLINE_MATCHER.md](BARLINE_MATCHER.md) | current/reference | EN | JA needed | P2 |
+| [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN | JA needed | P2 |
+| [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN | JA needed | P2 |
+| [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | JA needed | P2 |
+| [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | JA needed | P2 |
+| [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | JA needed | P2 |
+| [dev/codex_local_automation.md](dev/codex_local_automation.md) | current/reference | EN | JA needed | P2 |
+| [dev/local_worktree_data.md](dev/local_worktree_data.md) | current/reference | EN | JA needed | P2 |
+| [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | JA needed | P2 |
+| [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | EN needed | P1 |
+| [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | mixed | split/review | P2 |
+| [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | JA needed | P2 |
+| [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | JA needed | P2 |
+| [ai-workflow/GRAPHIFY.md](ai-workflow/GRAPHIFY.md) | current/reference | EN | JA needed | P2 |
+| [ai-workflow/CODEX_GEMINI_COLLAB.md](ai-workflow/CODEX_GEMINI_COLLAB.md) | current/reference | EN | JA needed | P2 |
+| [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | JA needed | P2 |
+| [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
+| [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed | P3 |
+| [GOALS.md](GOALS.md) | future/direction; currency needs review | mixed | split/review | P3 |
+| [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; includes frozen evidence | EN | JA needed; preserve evidence labels | P2 |
+| [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | translate navigation/rules as needed | P2 |
+| [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |
+| [ai-workflow/RUNNER_DESIGN.md](ai-workflow/RUNNER_DESIGN.md) | legacy runner proposal; conflicts with active task-state rules | EN | review disposition before translating | P3 |
+
+### Scope boundaries and review queue
+
+- **Scoped contracts are not automatically obsolete.** `ISSUE120_EVALUATION_CONTRACT.md`,
+  `ISSUE120_ARTIFACT_RETENTION.md`, `ISSUE158_DENSE_ROUTE_NAMING.md`, and
+  `ISSUE162_PIPELINE_LOGGING_TAXONOMY.md` are English Issue-scoped references. Verify their
+  current consumers and translate needed contracts selectively, preserving scope.
+- **Frozen history:** `TWO_HOMR_MILESTONE.md`, `REPOSITORY_SURFACE_INVENTORY.md`,
+  `DEVELOPMENT_LOG.md`, `DEVLOG_MEASURE_NUMBERING.md`, `ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`,
+  and `ISSUE363_RUNTIME_DEPENDENCY_REVIEW.md` are English historical/reference records;
+  `ISSUE44_ITER7_FINAL_REPORT.md` is Japanese. No blanket translation is required.
+- **Issue designs and experiments:** `refactors/**`, `dev/ISSUE441_*.md`, and
+  `releases/issue410/**` need individual authority/lifecycle review, not automatic promotion
+  to current design. The #441 and #410 records are Japanese-centered; `refactors/**`
+  is predominantly English with mixed Japanese records (notably #94 and the rebuild plan).
+  Read through the history index only when the active task needs that evidence.
+- **Known review needs:** #226–#229 documents describe their own eventual migration into
+  standing user/operation docs. Check unique surviving contracts before any retirement.
+  `ai-workflow/RUNNER_DESIGN.md` requires task bundles under `docs/refactors/`, while
+  current `AGENTS.md` / `ai-workflow/WORKFLOW.md` reject mandatory task-state copies.
+  Record this conflict; do not translate the runner proposal as an active instruction.
+  `GOALS.md` contains older optimization non-goals; check current Issue decisions before
+  treating them as current planning constraints. These are review items, not runtime fixes.
+- **Archived/deprecated:** `archive/**`, `ai-workflow/AI_AGENT_STRATEGY_2026.md`, and
+  `ai-workflow/LONG_HORIZON_WORKFLOW.md` remain historical pointers, not translation gates.
+  `ai-workflow/templates/task/**` are optional English templates, not mandatory task setup.
+- **Machine-readable and generated:** JSON/YAML contracts, examples, model manifests,
+  configs, and `graphify-out/**` are not prose translation targets. Preserve keys, paths,
+  hashes and schema values. Translate their explanatory docs; never create localized
+  machine contracts or silently expand the distribution selection.
+- **Adjacent documentation:** data, tools, experiments, skills and model-specific READMEs
+  outside `docs/` are not exhaustively inventoried here. Audit the ones reached by a
+  selected current guide when translating that guide. Their absence here is not a claim
+  that they are obsolete or bilingual.
+
+The next translation batch should start with architecture and engine/model contracts,
+using the P1 rows to bound work. Operation/validation and user onboarding can be separate
+batches after checking their link dependencies. Directory relocation and new design layers
+remain deferred until Japanese content review establishes a need; track decisions in #446.
+
 ## Historical navigation and retirement rule
 
 Historical records remain evidence, but agents should not scan or preload them indiscriminately. Use `docs/HISTORY_INDEX.md` to select the lineage relevant to the active Issue/PR, then open only the accepted milestone or forensic record needed for that task.

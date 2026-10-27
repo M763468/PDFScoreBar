@@ -19,6 +19,15 @@ and documentation inventories are broader historical audits. They must not be us
 runtime file list. `docs/**` and `tests/**` remain available to developers but are absent from
 the current proposed executable subset.
 
+## Documentation languages
+
+The [coverage inventory](DOCUMENTATION_INVENTORY.md#bilingual-coverage-and-translation-scope)
+records original languages, missing counterparts and translation priorities. Follow the
+[language and maintenance policy](DOCUMENTATION_LANGUAGE_POLICY.md)
+([日本語](DOCUMENTATION_LANGUAGE_POLICY.ja.md)) when adding or updating a translation.
+Most existing guides currently have no complete Japanese counterpart; Japanese UI examples
+do not indicate full translation.
+
 ## More specific contracts
 
 - [Engine lifecycle](ENGINE_JOB_LIFECYCLE.md), [input safety](ENGINE_INPUT_SAFETY.md),

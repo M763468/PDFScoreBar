@@ -128,7 +128,7 @@ probeディレクトリは、rescue、アダプター、CNNを通じて画像の
 アダプターディレクトリの選択には使わない。
 inventoryはシンボリックリンクを解決せずに画像パスを絶対化し、rescueとCNNの出力先について
 呼び出し元の親ディレクトリ/stemを保持する。サポートメタデータはこのidentity、または使い捨ての
-source-page worker内で解決したidentityを使える。アダプターは、これら既知の場所に実際の結果が
+source-page worker内で解決したidentityを使える。アダプターは、これら既知の場所に結果の実体が
 ちょうど1つ存在することを要求し、その画像と完了状態を確認する。unit-mapの検索は引き続き
 ファイルidentityを解決する。
 重複除去が有効なら、正常に得られた空のCNN結果にも空の抑制監査を出力し、
@@ -139,7 +139,7 @@ source-page worker内で解決したidentityを使える。アダプターは、
 これにより、混在ページ上の未知の声部も保持される。
 固定入力での検証は`tools/issue416/IMPLEMENTATION.md`を参照。
 
-`pdf_to_images`は、有効な場合、現在は`PipelineOrchestrator`内のプロセス内処理である。
+`pdf_to_images`は、有効な場合、現在は`PipelineOrchestrator`内でインプロセス実行される。
 検証済みdenseルート自体は永続化済みのページ画像ファイルを要求し、
 detector境界でメモリ内にしかない画像を拒否する。
 
@@ -170,7 +170,7 @@ probeの診断レンダリングと任意の幅広候補分割は、要求され
 `sr_mode=page_local`は明示的なdevelop互換モードであり、バッチ失敗からの復旧手段ではない。
 旧形式の非バッチプロファイルは、このモードを明示的に記録する。
 ページ単位のSRは`strict=True`で汎用ヘルパーを呼び、正確なx4形状を確認する。
-汎用の開発用呼び出し元は`strict=False`の互換性を維持する。バッチSRは実行時エラーと形状不一致を伝播する。
+汎用の開発用呼び出し元は`strict=False`の互換性を維持する。バッチSRは実行時エラーと形状チェックの失敗を伝播する。
 正規のHOMR/OMR合意判定は、有限の数値座標と有効な境界を含む厳密な検出JSON解析を行う。
 有効な空予測は引き続き正常として扱う。正規のdense rescueはseedファイルを要求する一方、
 汎用probeは引き続きseedなしでも動作できる。エラーはworkerを通じて伝播し、
@@ -187,7 +187,7 @@ final/reviewを公開する前にengine jobをFAILEDにする。
 | 画像特徴とセグメンテーションによる小節線候補 | `barline_candidates.py` |
 | 譜表/記号の組み立てと互換性用のパッチ箇所 | `heuristics.py` |
 | 符頭/譜表のフィルタリングと終端小節線の回復 | `filtering.py`, `end_barlines.py` |
-| モデル予測、Segnetキャッシュ、呼び出し可能APIの適合 | `predictor.py`, `segnet_cache.py`, `api_compat.py` |
+| モデル予測、Segnetキャッシュ、callable APIの適合 | `predictor.py`, `segnet_cache.py`, `api_compat.py` |
 | ロギングと予測/マスクのシリアライズ | `utils.py`, `reporting.py` |
 
 `maintained_profile.py`は保守対象baselineの実行を所有する。
@@ -199,7 +199,7 @@ final/reviewを公開する前にengine jobをFAILEDにする。
 `src/homr_eval_scripts/core/`は旧importアダプターに加え、評価指標、診断CSV生成、比較レポートを保持する。
 productionはこのパッケージをimportしない。
 
-呼び出し互換性とコネクター取得の処理は、引き続きconsumerが保持する実際のpredictor/heuristicsの
+callable互換性とコネクター取得の処理は、引き続きconsumerが保持する実際のpredictor/heuristicsの
 bindingへパッチを適用する。heuristics、predictor、Segnetキャッシュのアダプターは、
 正規モジュールオブジェクトの別名となり、古いimportパスでのcallableのパッチ箇所と
 クラス/キャッシュidentityを保持する。これらの所有権変更によって、以下のTwo-HOMRの
@@ -305,7 +305,7 @@ override_keys = []
 チェックポイント/事前計算ルートは、過去結果に対する回帰確認、CNN比較、downstreamの切り分けに
 引き続き有用だが、その指標には入力モードを明記し続ける必要がある。
 この区別を確立した原因調査はIssue #245とPR #251に保持されている。
-現在の正本は現行source/testsと機械可読manifestである。
+現在の正本は現行のソース/テストと機械可読manifestである。
 
 CNNスコアリングのNMSは`src/pipeline/detection/config.py`でデフォルト無効
 （`DEFAULT_CNN_APPLY_NMS = False`）であり、引き続き`detection.cnn_apply_nms: true`による
@@ -324,21 +324,21 @@ PR #154を記録している。将来デフォルトを変更する場合は、�
 
 hybridステップは、x4 HOMRまたはOMR-DLNの裏付けを使ってbaseline HOMRのboxをフィルタリングする。
 返すbaseline boxへx4座標を混ぜ込むことはない。以前の固定HOMRをx4上で実行する推論は、
-この合意判定には含まない。現行x4 HOMRの出力が唯一のx4 HOMRの所有元であり、再利用する。
+この合意判定には含まない。current x4 HOMRの出力が唯一のx4 HOMRの所有元であり、再利用する。
 
 続いて`dense_orchestrator_batch_sr.py`は採択済みのdense orchestratorルートに従い、
 現行実行のinventoryを書き出して`reconstruct_dense_full_pipeline_route()`を呼ぶ。
 候補/probeの再構築とCNNスコアリングは現行実行に対して動作する。
 検証済みproductionルートでは`historical_detector_artifact_runtime_input`はfalseである。
 
-## グルーピング、コネクターの意味、座標の所有権
+## グルーピング、コネクターの意味情報、座標の所有権
 
 Phase A（`run_base_numbering_and_barline_correction`）は、
 `MeasureNumberingPipeline`で物理的な番号付けレイアウトを構築する。
 
 - **小節線のxジオメトリ:** 任意のユーザー小節線補正を適用した後の、採択済みdense detector出力。
 - **譜表/段のジオメトリ:** 保守対象の元画像譜表マスク。
-- **コネクターの意味情報:** 宣言されたcurrent-supportサブツリーから検出した、current-x4 HOMRのコネクター意味情報成果物。
+- **コネクターの意味情報:** 宣言されたcurrent-supportサブツリーから取得した、current-x4 HOMRのコネクター意味情報成果物。
 - **番号付けに使う画像:** ソース/元のページ画像。
 - **出力:** `intermediate/<page>/numbering_base.json`。
 
@@ -367,9 +367,9 @@ dense MMRは、元ページでHOMRを**再実行せず**、MMR専用サブツリ
 - MMRサポートのprovenanceでは、`original_image_homr`はfalse、`second_numbering_rebuild`はfalseである。
 
 `run_mmr_batch()`は、Phase-Aのページpayload、元のページ画像、任意のMMRサポートビューを利用する。
-永続的な`MMRClassifier`と`MMROCREngine`（RapidOCR）は、orchestratorプロセス内でページ間で再利用する。
+永続的な`MMRClassifier`と`MMROCREngine`（RapidOCR）は、orchestratorプロセス内でページをまたいで再利用する。
 
-## 最終番号付けと削除済みのMMR再構築の区別
+## 最終番号付けは削除済みのMMR再構築ではない
 
 Phase Cは引き続き`numbering_final.json`を実体化する。採択済みの小節線と譜表マスクを再ロードし、
 通常の`MeasureNumberingPipeline`でページオブジェクトを再構築してから、
@@ -434,7 +434,7 @@ current-supportのページサブツリーには、全ページSRフェーズに
 
 以下を暗黙のdownstream操作として導入してはならない。
 
-- dense productionの各ページで、ページごとにReal-ESRGANモデルを初期化すること。
+- dense productionの各ページで、ページ単位のReal-ESRGANモデル初期化を行うこと。
 - productionのReal-ESRGANの寿命と後続の重いHOMR/OMRフェーズを重ねること。
 - detectorの合意判定だけを目的として、固定したStage-E HOMRをx4で実行すること。
 - MMRの譜表ジオメトリだけを目的として、current-runtime HOMRを元ページで実行すること。

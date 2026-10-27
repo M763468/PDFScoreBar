@@ -228,9 +228,28 @@ def source_semantics(root: Path, baseline: Path, candidate: Path) -> dict:
     return result
 
 
+def select_process_samples(
+    directory: Path, legacy_multi_proc: Path | None = None
+) -> tuple[Path | None, str]:
+    """Keep observations attached to their run; legacy evidence requires opt-in."""
+    local = directory / "proc-samples.jsonl"
+    if local.is_file():
+        return local, "run-local"
+    if directory.name == "multi-off-warm" and legacy_multi_proc is not None:
+        if not legacy_multi_proc.is_file():
+            raise FileNotFoundError(legacy_multi_proc)
+        return legacy_multi_proc, "explicit-legacy-fallback"
+    return None, "no-run-local-samples"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("logs/issue447/followup/summary.json"))
+    parser.add_argument(
+        "--legacy-multi-proc",
+        type=Path,
+        help="Explicit observer file for the original multi-off-warm attempt only; run-local samples always take precedence",
+    )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     issue = root / "logs/issue447"
@@ -250,10 +269,10 @@ def main() -> None:
         run["maintained_original_homr"] = [
             load(p)["timings_sec"] for p in sorted(directory.rglob("worker_result.json"))
         ]
-        proc = directory / "proc-samples.jsonl"
-        if directory.name == "multi-off-warm":
-            proc = issue / "followup/multi-off-proc.jsonl"
-        if proc.is_file():
+        proc, association = select_process_samples(directory, args.legacy_multi_proc)
+        run["process_sample_association"] = association
+        if proc is not None:
+            run["process_sample_path"] = str(proc.resolve())
             run["process_observations"] = proc_summary(proc)
         component = directory / "component/result.json"
         if component.is_file():

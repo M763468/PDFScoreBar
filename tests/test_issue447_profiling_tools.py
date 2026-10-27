@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import torch
 
-from tools.issue447.analyze import proc_summary
+from tools.issue447.analyze import proc_summary, select_process_samples
 from tools.issue447.component_poc import batched_enhance, pixel_difference
 
 
@@ -96,3 +96,27 @@ def test_process_summary_keeps_nested_residencies_and_cumulative_io_separate(tmp
         1,
     ]
     assert summary["process_residency_not_additive"][0]["right_censored"]
+
+
+def test_process_sample_selection_prefers_run_local_over_legacy(tmp_path):
+    run = tmp_path / "multi-off-warm"
+    run.mkdir()
+    local = run / "proc-samples.jsonl"
+    local.write_text("new attempt\n")
+    legacy = tmp_path / "old.jsonl"
+    legacy.write_text("old attempt\n")
+    assert select_process_samples(run, legacy) == (local, "run-local")
+
+
+def test_legacy_process_samples_require_explicit_matching_run(tmp_path):
+    legacy = tmp_path / "old.jsonl"
+    legacy.write_text("old attempt\n")
+    run = tmp_path / "multi-off-warm"
+    assert select_process_samples(run) == (None, "no-run-local-samples")
+    assert select_process_samples(run, legacy) == (legacy, "explicit-legacy-fallback")
+    assert select_process_samples(tmp_path / "another-attempt", legacy) == (
+        None,
+        "no-run-local-samples",
+    )
+    with pytest.raises(FileNotFoundError):
+        select_process_samples(run, tmp_path / "missing.jsonl")

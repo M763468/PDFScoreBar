@@ -1,7 +1,8 @@
 # Current production performance investigation — Issue #447
 
-This completes the measurement and bounded-PoC investigation for
-[Issue #447](https://github.com/M763468/PDFScoreBar/issues/447). No optimization is adopted.
+This records the initial measurement and bounded-PoC investigation for
+[Issue #447](https://github.com/M763468/PDFScoreBar/issues/447). Investigation continues
+at the user's request; this initial record is not final acceptance. No optimization is adopted.
 The highest-priority follow-up is explicit compiler-cache lifecycle for short-lived
 Docker jobs, filed as [Issue #454](https://github.com/M763468/PDFScoreBar/issues/454).
 Bounded page-source concurrency is promising but needs integration/regression
@@ -199,6 +200,12 @@ python3 tools/issue447/run_experiment.py --label source-parallel-two --image <im
 # Rescore existing evidence; this launches no inference.
 python3 tools/issue447/analyze.py
 ```
+
+Run-local `proc-samples.jsonl` always takes precedence. To rescore the frozen original
+`multi-off-warm` attempt, whose observer was started externally, explicitly add
+`--legacy-multi-proc logs/issue447/followup/multi-off-proc.jsonl`. The selected association
+and exact file path are recorded in the summary. Without that argument the analyzer does
+not attach historical observations to a new run.
 
 Exact actual image IDs/commands/config digests/cache states are in run provenance. The
 measurement contract is fixed to this source/config/input identity; another runtime/dataset

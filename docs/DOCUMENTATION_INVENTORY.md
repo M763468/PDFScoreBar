@@ -82,7 +82,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | Document | Intended role / authority | Language | Counterpart action | Priority |
 | --- | --- | --- | --- | --- |
 | [../README.md](../README.md) | canonical/current | EN | JA needed | P1 |
-| [../AGENTS.md](../AGENTS.md) | canonical/current | EN | JA needed | P1 |
+| [../AGENTS.md](../AGENTS.md) | canonical/current; agent instructions | EN | not required (agent-only) | N/A |
 | [README.md](README.md) | canonical/current | EN | JA needed | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | JA needed | P1 |
 | [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current | EN | JA needed | P1 |
@@ -130,6 +130,10 @@ when translating. Historical and scoped records follow the exclusions below.
 
 ### Scope boundaries and review queue
 
+- **Agent instructions:** keep `AGENTS.md` as the single English operational instruction
+  source; it is excluded from the translation backlog. Reconsider a human reading aid only
+  if a concrete future need arises. User/developer guide translation remains in scope.
+
 - **Scoped contracts are not automatically obsolete.** `ISSUE120_EVALUATION_CONTRACT.md`,
   `ISSUE120_ARTIFACT_RETENTION.md`, `ISSUE158_DENSE_ROUTE_NAMING.md`, and
   `ISSUE162_PIPELINE_LOGGING_TAXONOMY.md` are English Issue-scoped references. Verify their
@@ -162,8 +166,9 @@ when translating. Historical and scoped records follow the exclusions below.
   selected current guide when translating that guide. Their absence here is not a claim
   that they are obsolete or bilingual.
 
-The next translation batch should start with architecture and engine/model contracts,
-using the P1 rows to bound work. Operation/validation and user onboarding can be separate
+The next translation batches start with **production architecture**, then **engine/model
+contracts**, in small independently reviewed units. P1 is not a single translation batch.
+Use the P1 rows to bound work. Operation/validation and user onboarding can be separate
 batches after checking their link dependencies. Directory relocation and new design layers
 remain deferred until Japanese content review establishes a need; track decisions in #446.
 

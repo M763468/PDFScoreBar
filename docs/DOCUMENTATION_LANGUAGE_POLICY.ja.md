@@ -1,9 +1,11 @@
 # 文書の言語・更新方針
 
+<!-- translation: {"original":"DOCUMENTATION_LANGUAGE_POLICY.md","source":{"sha256":"0722ffcb0693a9683168ff746edb584a64f2d7b958ffba2ec1e092b1bd897f16"},"state":"draft"} -->
+
 [English / 原文](DOCUMENTATION_LANGUAGE_POLICY.md)
 
 - 原文: [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md)（英語）。
-- 翻訳元: same PR。原文ファイルの SHA-256: `483867fc656bc9b4bd4fe2af960834d4f7967b2038339369c8a85e03a6aae96c`。
+- 翻訳元: same PR。原文ファイルの SHA-256: `0722ffcb0693a9683168ff746edb584a64f2d7b958ffba2ec1e092b1bd897f16`。
 - 状態: `draft`。全文に対応する日本語版。意味・網羅性のレビューはPRで記録する。
 
 本方針はEpic #446に対応する。[文書台帳](DOCUMENTATION_INVENTORY.md)で適用範囲と
@@ -21,7 +23,8 @@
 実装と記述が異なる場合は、問題の節、対応するsource/test、必要なIssue/PRの判断を
 記録する。元の受入契約を保持し、レビューを通じて原文を修正した後、翻訳を同期する。
 production動作を暗黙に変更したり、原文にない保証を翻訳に加えたりして解決しない。
-`AGENTS.md`を運用指示の入口として維持し、その翻訳は読解の補助とする。
+`AGENTS.md`はエージェント専用として翻訳対象から外し、英語の単一の運用指示として
+保持する。人間向けの読解補助は将来具体的な必要性が生じた場合だけ再検討する。
 別の指示階層を作らない。
 
 ## 配置とナビゲーション
@@ -29,7 +32,7 @@ production動作を暗黙に変更したり、原文にない保証を翻訳に�
 既存原文のパスを保持する。翻訳は原文の隣に、日本語は`.ja.md`、英語は`.en.md`として
 配置する。例: `PIPELINE_ARCHITECTURE.md`と`PIPELINE_ARCHITECTURE.ja.md`、
 `dev/EXPERIMENT_MODEL_SELECTION.md`と`dev/EXPERIMENT_MODEL_SELECTION.en.md`。
-ルート文書にも同じ規約を適用する。翻訳だけを理由に原文を新しい階層へ移動しない。
+除外した`AGENTS.md`以外のルート文書にも同じ規約を適用する。翻訳だけを理由に原文を新しい階層へ移動しない。
 
 両ファイルが存在したら相互の言語リンクを追加する。対応言語のリンク先があれば使用し、
 なければ原文へリンクして言語と未翻訳であることを示す。作成予定だけのファイルには
@@ -50,7 +53,10 @@ production動作を暗黙に変更したり、原文にない保証を翻訳に�
 
 レビュー済みの翻訳は制約、注意、例外、表、例を含め全文をカバーする。要約・部分訳は
 欠けている範囲を示し、草稿のままとする。機械翻訳にも同じ網羅性・技術レビューを
-求める。英語ガイド内の日本語の例やUIラベルは日本語版ではない。凍結実験の結果には
+求める。レビューでは(1)原文との意味・制約・例外の一致と、(2)日本語文章の自然さを
+分けて評価する。Antigravity経由のGemini等による文章レビューは任意の補助であり、
+提案文の技術的意味は主担当が原文・source/testsに照らして確認する。特定モデルの
+利用を必須ゲートにしない。英語ガイド内の日本語の例やUIラベルは日本語版ではない。凍結実験の結果には
 元のrevision、範囲、履歴としての位置付けを保持する。
 
 ## 更新とレビューの責任
@@ -75,3 +81,29 @@ docs-onlyの変更は`git diff --check`と、変更したローカルリンク�
 機械可読契約と正確な配布manifestを保持する。`develop`に翻訳を追加しても、`main`や
 最小配布へ含まれるわけではない。配布変更には範囲を明示した別の判断と対応する検証が
 必要。履歴の一括翻訳、物理的な再配置、新しい設計階層はEpicで別に判断する。
+
+## 再実行可能な静的チェック
+
+ローカルでは`python3 tools/verification/check_doc_translations.py`を実行する。
+既存のPR検証workflowも同じコマンドと、追加依存のない回帰テストを実行する。
+対象はルートおよび`docs/**`に実在する`.ja.md` / `.en.md`ファイル。
+計画中の対応訳は台帳で未翻訳として管理し、このチェックで存在を要求しない。
+
+各対応訳にJSONコメントをちょうど1件置く。パスはそのファイルからの相対パスとする。
+
+```text
+<!-- translation: {"original":"guide.md","source":{"sha256":"<64 lowercase hex>"},"state":"draft"} -->
+```
+
+`source.sha256`が`same PR`形式に相当する。代わりに
+`"source":{"commit":"<40 lowercase hex>"}`を指定できる。人間向けの記録もこの
+機械可読記録と一致させる。状態は`draft`、`reviewed`、`update required`のいずれか。
+チェックはメタデータ、原文の存在、相互のMarkdownリンクを検証する。SHA-256は現在の
+原文bytesと一致する必要がある。commit形式は指定commitの当該ファイルと現在の原文の
+bytesを比較し、HEADのcommit identityとは比較しない。変更済みの原文には
+`update required`を要求する。commit/pathの履歴が取得できない場合は`UNKNOWN`とし、
+同期済みとは判定しない。同期を主張する前に原文revisionを取得する。
+shallow checkoutのCIでは、履歴が利用可能になるまで由来不明と表示される場合がある。
+
+このツールは構文・参照・provenanceの確認用であり、翻訳の忠実性、自然さ、実装との
+技術的整合性を保証しない。一般のMarkdownアンカー検証は重複実装しない。

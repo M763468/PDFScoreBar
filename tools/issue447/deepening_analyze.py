@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import argparse
-import csv
-import datetime as dt
 import json
 import statistics
-from bisect import bisect_right
 from pathlib import Path
 
 from tools.issue447.analyze import compare_bundle, gpu_summary, load, local_path, proc_summary
@@ -113,24 +110,8 @@ def timeline(run: Path) -> dict:
                 samples.append(json.loads(line))
             except json.JSONDecodeError:
                 pass
-    gpu = []
-    with (run / "gpu-samples.csv").open() as stream:
-        for row in csv.DictReader(stream):
-            row = {k.strip(): v.strip() for k, v in row.items() if k is not None}
-            try:
-                stamp = (
-                    dt.datetime.strptime(row["timestamp"], "%Y/%m/%d %H:%M:%S.%f")
-                    .replace(tzinfo=dt.timezone.utc)
-                    .timestamp()
-                )
-                gpu.append((stamp, float(row["utilization.gpu [%]"].split()[0])))
-            except (KeyError, ValueError):
-                pass
-    if not samples or not gpu:
-        return {"status": "Blocked", "reason": "no valid process/GPU timestamps"}
-    offset_hours = round((gpu[0][0] - samples[0]["epoch"]) / 3600)
-    gpu = [(t - offset_hours * 3600, utilization) for t, utilization in gpu]
-    times = [t for t, _ in gpu]
+    if not samples:
+        return {"status": "Blocked", "reason": "no valid process samples"}
     phases = {}
     cpu_last = None
     time_last = None
@@ -138,7 +119,7 @@ def timeline(run: Path) -> dict:
     for sample in samples:
         fields = dict(line.split() for line in sample["cgroup"].get("cpu.stat", "").splitlines())
         cpu = int(fields.get("usage_usec", 0)) / 1e6
-        now = sample["epoch"]
+        now = sample["monotonic"]
         if any("current_sr_batch_worker" in p["command"] for p in sample["processes"]):
             phase = "SR"
         elif any("maintained_source_page_worker" in p["command"] for p in sample["processes"]):
@@ -147,30 +128,9 @@ def timeline(run: Path) -> dict:
             phase = "other"
         if time_last is not None and cpu_last is not None:
             elapsed = now - time_last
-            index = max(0, min(len(gpu) - 1, bisect_right(times, now) - 1))
-            utilization = gpu[index][1]
-            item = phases.setdefault(
-                phase,
-                {
-                    "sampled_seconds": 0.0,
-                    "gpu_high_seconds": 0.0,
-                    "gpu_low_cpu_active_seconds": 0.0,
-                    "gpu_low_cpu_low_seconds": 0.0,
-                    "mixed_seconds": 0.0,
-                },
-            )
+            item = phases.setdefault(phase, {"sampled_seconds": 0.0, "cgroup_cpu_seconds": 0.0})
             item["sampled_seconds"] += elapsed
-            if utilization >= 80:
-                key = "gpu_high_seconds"
-            elif utilization < 10:
-                key = (
-                    "gpu_low_cpu_active_seconds"
-                    if cpu - cpu_last > elapsed * 0.5
-                    else "gpu_low_cpu_low_seconds"
-                )
-            else:
-                key = "mixed_seconds"
-            item[key] += elapsed
+            item["cgroup_cpu_seconds"] += max(0.0, cpu - cpu_last)
         for process in sample["processes"]:
             key = (process["pid"], process["start_ticks"])
             queues[key] = max(
@@ -179,10 +139,10 @@ def timeline(run: Path) -> dict:
         cpu_last, time_last = cpu, now
     return {
         "status": "Passed",
-        "gpu_timestamp_inferred_offset_hours": offset_hours,
-        "phase_utilization_correlation_not_causal_wait": phases,
+        "host_phase_samples_not_exclusive_stages": phases,
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
         "sum_sampled_main_thread_runqueue_wait_seconds": sum(queues.values()) / 1e9,
-        "limits": "GPU samples ~1 second, CPU threshold 0.5 cores; clock-hour offset inferred; scheduler counters are sampled main threads, not all process threads; low GPU is not automatically CPU/I/O waiting",
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait.",
     }
 
 

@@ -8,6 +8,8 @@ Docker jobs, filed as [Issue #454](https://github.com/M763468/PDFScoreBar/issues
 Bounded page-source concurrency is promising but needs integration/regression
 work. Disabling compilation and eager tile batching did not pass their experiment gates.
 
+Continued results: [repeated cache, matched concurrency, initialization and compiled batching](issue447-deepening.md). PR remains Draft.
+
 ## Evidence identity and limits
 
 Source is `2ac7d5245fe65dbfa2093b4e0d60119c58192f86`, still current `origin/develop` after

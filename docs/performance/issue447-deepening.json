@@ -1,0 +1,3772 @@
+{
+  "cache_observations": [
+    {
+      "pair": 1,
+      "condition": "cold",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 230.82185538503109,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.0880121709778905
+      }
+    },
+    {
+      "pair": 1,
+      "condition": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 108.44872656598454,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.3672497139777988
+      }
+    },
+    {
+      "pair": 2,
+      "condition": "cold",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 233.2417029570206,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.105934214021545
+      }
+    },
+    {
+      "pair": 2,
+      "condition": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 111.6515624189633,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.033023686031811
+      }
+    },
+    {
+      "pair": 3,
+      "condition": "cold",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 243.139401249995,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 0.34908464801264927
+      }
+    },
+    {
+      "pair": 3,
+      "condition": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 112.38227151503088,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.0513105519930832
+      }
+    }
+  ],
+  "runs": {
+    "deep-cache-p1-cold": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 230.82185538503109,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.0880121709778905
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 231,
+          "mean": 16.27705627705628,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 231,
+          "mean": 1907.0562770562772,
+          "peak": 3459.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 15.258299004053697,
+            "cgroup_cpu_seconds": 25.959322000000014
+          },
+          "SR": {
+            "sampled_seconds": 181.19348867802182,
+            "cgroup_cpu_seconds": 206.14359399999998
+          },
+          "source": {
+            "sampled_seconds": 33.272270748973824,
+            "cgroup_cpu_seconds": 98.76298700000001
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.580706477,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 1141,
+        "first_monotonic": 508154.285504633,
+        "last_monotonic": 508384.009563064,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 8537694208,
+        "observer_cpu_seconds": 1.6,
+        "cgroup_memory_peak_bytes": 5099753472,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 331119974,
+          "user_usec": 299108513,
+          "system_usec": 32011461,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 39882752,
+          "wbytes": 55676928,
+          "rios": 390,
+          "wios": 600
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 226.529
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 220815,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 291,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 4886,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 261,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 30,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 176.79907034605276,
+        "model_initialization_wall_sec": 10.50599501497345,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-cache-p1-cold/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 166.29118748003384,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-cache-p1-cold",
+      "cache-semantic-check.json": {
+        "reference": "single-off-warm",
+        "all_equal": true,
+        "checks": {
+          "numbering_base.json": true,
+          "numbering_final.json": true,
+          "ordered_detector_geometry": true,
+          "mmr_targets_and_skips": true,
+          "x4_homr_ordered_predictions": true,
+          "x4_staff_mask": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              4210,
+              2960
+            ],
+            "shape_b": [
+              4210,
+              2960
+            ]
+          },
+          "x4_connector_symbols": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "x4_connector_brace_dot": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "page_identity_and_mmr_geometry_mappings": true,
+          "original_homr_predictions": true,
+          "original_staff_mask": true,
+          "original_connector_symbols": true,
+          "original_connector_brace_dot": true
+        }
+      }
+    },
+    "deep-cache-p1-warm": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 108.44872656598454,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.3672497139777988
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 109,
+          "mean": 32.03669724770642,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 109,
+          "mean": 1929.7614678899083,
+          "peak": 3455.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 15.466862306988332,
+            "cgroup_cpu_seconds": 26.129578999999996
+          },
+          "SR": {
+            "sampled_seconds": 58.59453374304576,
+            "cgroup_cpu_seconds": 69.176325
+          },
+          "source": {
+            "sampled_seconds": 33.47445787698962,
+            "cgroup_cpu_seconds": 99.41460799999999
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.384651793,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 535,
+        "first_monotonic": 508387.140219925,
+        "last_monotonic": 508494.676073852,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7302823936,
+        "observer_cpu_seconds": 0.66,
+        "cgroup_memory_peak_bytes": 5131239424,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 194970916,
+          "user_usec": 182090252,
+          "system_usec": 12880663,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 28241920,
+          "rios": 0,
+          "wios": 49
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 103.945
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 98002,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 297,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 5044,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 302,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 32,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 56.59896574699087,
+        "model_initialization_wall_sec": 9.765848334005568,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-cache-p1-warm/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 46.83120878098998,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-cache-p1-warm",
+      "cache-semantic-check.json": {
+        "reference": "single-off-warm",
+        "all_equal": true,
+        "checks": {
+          "numbering_base.json": true,
+          "numbering_final.json": true,
+          "ordered_detector_geometry": true,
+          "mmr_targets_and_skips": true,
+          "x4_homr_ordered_predictions": true,
+          "x4_staff_mask": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              4210,
+              2960
+            ],
+            "shape_b": [
+              4210,
+              2960
+            ]
+          },
+          "x4_connector_symbols": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "x4_connector_brace_dot": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "page_identity_and_mmr_geometry_mappings": true,
+          "original_homr_predictions": true,
+          "original_staff_mask": true,
+          "original_connector_symbols": true,
+          "original_connector_brace_dot": true
+        }
+      }
+    },
+    "deep-cache-p2-cold": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 233.2417029570206,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.105934214021545
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 233,
+          "mean": 16.025751072961373,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 233,
+          "mean": 1932.4721030042917,
+          "peak": 3458.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 15.668416918080766,
+            "cgroup_cpu_seconds": 26.55424799999996
+          },
+          "SR": {
+            "sampled_seconds": 182.2406327839708,
+            "cgroup_cpu_seconds": 208.35170100000002
+          },
+          "source": {
+            "sampled_seconds": 34.461032619001344,
+            "cgroup_cpu_seconds": 100.13870700000001
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.829766386,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 1154,
+        "first_monotonic": 508497.63561569,
+        "last_monotonic": 508730.005698011,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 8559456256,
+        "observer_cpu_seconds": 1.64,
+        "cgroup_memory_peak_bytes": 5052809216,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 335231977,
+          "user_usec": 304381317,
+          "system_usec": 30850659,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 55738368,
+          "rios": 0,
+          "wios": 602
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 228.947
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 222755,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 294,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 5318,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 293,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 32,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 177.70832455699565,
+        "model_initialization_wall_sec": 9.231972011039034,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-cache-p2-cold/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 168.47443420201307,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-cache-p2-cold",
+      "cache-semantic-check.json": {
+        "reference": "single-off-warm",
+        "all_equal": true,
+        "checks": {
+          "numbering_base.json": true,
+          "numbering_final.json": true,
+          "ordered_detector_geometry": true,
+          "mmr_targets_and_skips": true,
+          "x4_homr_ordered_predictions": true,
+          "x4_staff_mask": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              4210,
+              2960
+            ],
+            "shape_b": [
+              4210,
+              2960
+            ]
+          },
+          "x4_connector_symbols": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "x4_connector_brace_dot": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "page_identity_and_mmr_geometry_mappings": true,
+          "original_homr_predictions": true,
+          "original_staff_mask": true,
+          "original_connector_symbols": true,
+          "original_connector_brace_dot": true
+        }
+      }
+    },
+    "deep-cache-p2-warm": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 111.6515624189633,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.033023686031811
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 112,
+          "mean": 29.705357142857142,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 112,
+          "mean": 1919.392857142857,
+          "peak": 3452.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 17.27751637500478,
+            "cgroup_cpu_seconds": 28.39711400000001
+          },
+          "SR": {
+            "sampled_seconds": 58.566976049973164,
+            "cgroup_cpu_seconds": 69.44616699999999
+          },
+          "source": {
+            "sampled_seconds": 34.87273458001437,
+            "cgroup_cpu_seconds": 99.932477
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.517053884,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 551,
+        "first_monotonic": 508732.830488421,
+        "last_monotonic": 508843.547715426,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7223902208,
+        "observer_cpu_seconds": 0.66,
+        "cgroup_memory_peak_bytes": 5054640128,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 198016667,
+          "user_usec": 184707336,
+          "system_usec": 13309330,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 28971008,
+          "rios": 0,
+          "wios": 55
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 107.284
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 100622,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 312,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 5715,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 343,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 32,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 56.537279220006894,
+        "model_initialization_wall_sec": 9.432557855034247,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-cache-p2-warm/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 47.10261795402039,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-cache-p2-warm",
+      "cache-semantic-check.json": {
+        "reference": "single-off-warm",
+        "all_equal": true,
+        "checks": {
+          "numbering_base.json": true,
+          "numbering_final.json": true,
+          "ordered_detector_geometry": true,
+          "mmr_targets_and_skips": true,
+          "x4_homr_ordered_predictions": true,
+          "x4_staff_mask": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              4210,
+              2960
+            ],
+            "shape_b": [
+              4210,
+              2960
+            ]
+          },
+          "x4_connector_symbols": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "x4_connector_brace_dot": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "page_identity_and_mmr_geometry_mappings": true,
+          "original_homr_predictions": true,
+          "original_staff_mask": true,
+          "original_connector_symbols": true,
+          "original_connector_brace_dot": true
+        }
+      }
+    },
+    "deep-cache-p3-cold": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 243.139401249995,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 0.34908464801264927
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 243,
+          "mean": 15.444444444444445,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 243,
+          "mean": 1878.7366255144034,
+          "peak": 3460.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 16.072352639981546,
+            "cgroup_cpu_seconds": 26.75184400000001
+          },
+          "SR": {
+            "sampled_seconds": 190.51119859697064,
+            "cgroup_cpu_seconds": 218.860956
+          },
+          "source": {
+            "sampled_seconds": 35.26116296101827,
+            "cgroup_cpu_seconds": 103.49430599999997
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.995390431,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 1201,
+        "first_monotonic": 508846.498747139,
+        "last_monotonic": 509088.343461337,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 8556863488,
+        "observer_cpu_seconds": 1.78,
+        "cgroup_memory_peak_bytes": 5030711296,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 349456804,
+          "user_usec": 316674786,
+          "system_usec": 32782017,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 8192,
+          "wbytes": 57139200,
+          "rios": 2,
+          "wios": 613
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 238.158
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 232175,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 281,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 5143,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 279,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 29,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 185.9654093979625,
+        "model_initialization_wall_sec": 11.188421724014916,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-cache-p3-cold/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 174.77492292696843,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-cache-p3-cold",
+      "cache-semantic-check.json": {
+        "reference": "single-off-warm",
+        "all_equal": true,
+        "checks": {
+          "numbering_base.json": true,
+          "numbering_final.json": true,
+          "ordered_detector_geometry": true,
+          "mmr_targets_and_skips": true,
+          "x4_homr_ordered_predictions": true,
+          "x4_staff_mask": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              4210,
+              2960
+            ],
+            "shape_b": [
+              4210,
+              2960
+            ]
+          },
+          "x4_connector_symbols": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "x4_connector_brace_dot": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "page_identity_and_mmr_geometry_mappings": true,
+          "original_homr_predictions": true,
+          "original_staff_mask": true,
+          "original_connector_symbols": true,
+          "original_connector_brace_dot": true
+        }
+      }
+    },
+    "deep-cache-p3-warm": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 112.38227151503088,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.0513105519930832
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 113,
+          "mean": 30.831858407079647,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 113,
+          "mean": 1941.9026548672566,
+          "peak": 3456.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 16.07090976991458,
+            "cgroup_cpu_seconds": 27.055524000000023
+          },
+          "SR": {
+            "sampled_seconds": 59.570086762018036,
+            "cgroup_cpu_seconds": 70.53919300000001
+          },
+          "source": {
+            "sampled_seconds": 35.72373386804247,
+            "cgroup_cpu_seconds": 103.43068899999999
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.040539938,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 554,
+        "first_monotonic": 509092.033872723,
+        "last_monotonic": 509203.398603123,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7314374656,
+        "observer_cpu_seconds": 0.69,
+        "cgroup_memory_peak_bytes": 5103325184,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 201244636,
+          "user_usec": 187937017,
+          "system_usec": 13307619,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 28160000,
+          "rios": 0,
+          "wios": 51
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 107.852
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 101694,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 286,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 5241,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 341,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 33,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 57.56325794401346,
+        "model_initialization_wall_sec": 9.825487771013286,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-cache-p3-warm/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 47.7349113500095,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-cache-p3-warm",
+      "cache-semantic-check.json": {
+        "reference": "single-off-warm",
+        "all_equal": true,
+        "checks": {
+          "numbering_base.json": true,
+          "numbering_final.json": true,
+          "ordered_detector_geometry": true,
+          "mmr_targets_and_skips": true,
+          "x4_homr_ordered_predictions": true,
+          "x4_staff_mask": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              4210,
+              2960
+            ],
+            "shape_b": [
+              4210,
+              2960
+            ]
+          },
+          "x4_connector_symbols": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "x4_connector_brace_dot": {
+            "equal": true,
+            "different_values": 0,
+            "shape_a": [
+              2732,
+              1920
+            ],
+            "shape_b": [
+              2732,
+              1920
+            ]
+          },
+          "page_identity_and_mmr_geometry_mappings": true,
+          "original_homr_predictions": true,
+          "original_staff_mask": true,
+          "original_connector_symbols": true,
+          "original_connector_brace_dot": true
+        }
+      }
+    },
+    "deep-compiled-b1-1": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 52.95785885595251,
+        "timed_out": false,
+        "trace": "off",
+        "component": "compiled-tiles1",
+        "scope": "single",
+        "monitor_teardown_seconds": 0.6280639960314147
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 53,
+          "mean": 12.962264150943396,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 53,
+          "mean": 831.0754716981132,
+          "peak": 1867.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 51.94348538201302,
+            "cgroup_cpu_seconds": 69.033508
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.415684424,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 259,
+        "first_monotonic": 510353.35351441,
+        "last_monotonic": 510405.296999792,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7862104064,
+        "observer_cpu_seconds": 0.37,
+        "cgroup_memory_peak_bytes": 3882246144,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 69637368,
+          "user_usec": 60693005,
+          "system_usec": 8944363,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 790528,
+          "wbytes": 589824,
+          "rios": 193,
+          "wios": 7
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "compiled-tiles",
+        "batch_size": 1,
+        "initialization_wall_seconds": 9.680418464005925,
+        "rows": [
+          {
+            "wall_seconds": 33.02727797598345,
+            "model_host_call_seconds": 32.96822055999655,
+            "uint8_and_readback_host_seconds": 0.058471844997256994,
+            "model_stream_interval_seconds": 34.19392724609375,
+            "phase": "first"
+          },
+          {
+            "wall_seconds": 0.7641248960280791,
+            "model_host_call_seconds": 0.004058794933371246,
+            "uint8_and_readback_host_seconds": 0.7596076329937205,
+            "model_stream_interval_seconds": 0.7804158935546875,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7647940150345676,
+            "model_host_call_seconds": 0.0036756210611201823,
+            "uint8_and_readback_host_seconds": 0.7607055770349689,
+            "model_stream_interval_seconds": 0.7810901489257812,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7651219280087389,
+            "model_host_call_seconds": 0.00450684898532927,
+            "uint8_and_readback_host_seconds": 0.7601894230465405,
+            "model_stream_interval_seconds": 0.78184375,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7646746090031229,
+            "model_host_call_seconds": 0.003956298984121531,
+            "uint8_and_readback_host_seconds": 0.760243795986753,
+            "model_stream_interval_seconds": 0.780644775390625,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7660745339817367,
+            "model_host_call_seconds": 0.004222721036057919,
+            "uint8_and_readback_host_seconds": 0.7614420070312917,
+            "model_stream_interval_seconds": 0.7805303649902344,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7654330230434425,
+            "model_host_call_seconds": 0.004577981017064303,
+            "uint8_and_readback_host_seconds": 0.7603549199993722,
+            "model_stream_interval_seconds": 0.7817778625488281,
+            "phase": "warm"
+          }
+        ],
+        "warm_median_wall_seconds": 0.7649579715216532,
+        "peak_allocated_bytes": 858864128,
+        "peak_reserved_bytes": 1524629504,
+        "reference_core_comparisons": [
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          },
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          }
+        ],
+        "runtime": {
+          "runtime": "current_x4_channels_last_gpu_uint8_cpu_stitch",
+          "model": "RealESRGAN_x4plus",
+          "scale": 4,
+          "tile": -1,
+          "tile_pad": 10,
+          "fp32": false,
+          "channels_last": true,
+          "compile_mode": "reduce-overhead",
+          "output_mode": "gpu_uint8_cpu_stitch",
+          "device": "NVIDIA GeForce RTX 4060",
+          "torch_version": "2.14.0+cu130",
+          "torch_cuda_version": "13.0",
+          "cudnn_version": 92400
+        },
+        "limits": "two fixed interior tiles only; event intervals include stream idle/enqueue gaps, not pure kernel busy; first-call stream time includes compilation and is not GPU compute; no full-page/downstream acceptance"
+      },
+      "evidence_root": "logs/issue447/runs/deep-compiled-b1-1"
+    },
+    "deep-compiled-b1-4": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 24.856311176961754,
+        "timed_out": false,
+        "trace": "off",
+        "component": "compiled-tiles1",
+        "scope": "single",
+        "monitor_teardown_seconds": 0.27549873903626576
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 25,
+          "mean": 23.84,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 25,
+          "mean": 942.92,
+          "peak": 1855.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 23.70040331198834,
+            "cgroup_cpu_seconds": 32.640175
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.007844451,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 119,
+        "first_monotonic": 510492.768281853,
+        "last_monotonic": 510516.468685165,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 6627733504,
+        "observer_cpu_seconds": 0.16,
+        "cgroup_memory_peak_bytes": 2822127616,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 33296119,
+          "user_usec": 30719856,
+          "system_usec": 2576262,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 24576,
+          "rios": 0,
+          "wios": 6
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "compiled-tiles",
+        "batch_size": 1,
+        "initialization_wall_seconds": 9.623119496973231,
+        "rows": [
+          {
+            "wall_seconds": 5.939760425011627,
+            "model_host_call_seconds": 5.88772631197935,
+            "uint8_and_readback_host_seconds": 0.0514983200118877,
+            "model_stream_interval_seconds": 6.110422821044922,
+            "phase": "first"
+          },
+          {
+            "wall_seconds": 0.768122770008631,
+            "model_host_call_seconds": 0.0038519440568052232,
+            "uint8_and_readback_host_seconds": 0.7638120949850418,
+            "model_stream_interval_seconds": 0.7841513061523437,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7634052410139702,
+            "model_host_call_seconds": 0.004212589003145695,
+            "uint8_and_readback_host_seconds": 0.7587308869697154,
+            "model_stream_interval_seconds": 0.7797218933105469,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7680868009920232,
+            "model_host_call_seconds": 0.004008775053080171,
+            "uint8_and_readback_host_seconds": 0.7636477799969725,
+            "model_stream_interval_seconds": 0.7846544189453125,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7684282410191372,
+            "model_host_call_seconds": 0.0045671730185858905,
+            "uint8_and_readback_host_seconds": 0.763427524943836,
+            "model_stream_interval_seconds": 0.7846533508300781,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7684609580319375,
+            "model_host_call_seconds": 0.0045490009360946715,
+            "uint8_and_readback_host_seconds": 0.7634573830291629,
+            "model_stream_interval_seconds": 0.7847745361328125,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7682762779877521,
+            "model_host_call_seconds": 0.004160246055107564,
+            "uint8_and_readback_host_seconds": 0.7637050150078721,
+            "model_stream_interval_seconds": 0.7849734191894531,
+            "phase": "warm"
+          }
+        ],
+        "warm_median_wall_seconds": 0.7681995239981916,
+        "peak_allocated_bytes": 833698304,
+        "peak_reserved_bytes": 1512046592,
+        "reference_core_comparisons": [
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          },
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          }
+        ],
+        "runtime": {
+          "runtime": "current_x4_channels_last_gpu_uint8_cpu_stitch",
+          "model": "RealESRGAN_x4plus",
+          "scale": 4,
+          "tile": -1,
+          "tile_pad": 10,
+          "fp32": false,
+          "channels_last": true,
+          "compile_mode": "reduce-overhead",
+          "output_mode": "gpu_uint8_cpu_stitch",
+          "device": "NVIDIA GeForce RTX 4060",
+          "torch_version": "2.14.0+cu130",
+          "torch_cuda_version": "13.0",
+          "cudnn_version": 92400
+        },
+        "limits": "two fixed interior tiles only; event intervals include stream idle/enqueue gaps, not pure kernel busy; first-call stream time includes compilation and is not GPU compute; no full-page/downstream acceptance"
+      },
+      "evidence_root": "logs/issue447/runs/deep-compiled-b1-4"
+    },
+    "deep-compiled-b2-2": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 55.00760703301057,
+        "timed_out": false,
+        "trace": "off",
+        "component": "compiled-tiles2",
+        "scope": "single",
+        "monitor_teardown_seconds": 0.4698660819558427
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 55,
+          "mean": 15.418181818181818,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 55,
+          "mean": 1020.3454545454546,
+          "peak": 3033.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 53.950389567995444,
+            "cgroup_cpu_seconds": 72.05770499999998
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.571348281,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 269,
+        "first_monotonic": 510407.350043608,
+        "last_monotonic": 510461.300433176,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7599935488,
+        "observer_cpu_seconds": 0.38,
+        "cgroup_memory_peak_bytes": 3907489792,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 72674011,
+          "user_usec": 63515447,
+          "system_usec": 9158563,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 135168,
+          "wbytes": 573440,
+          "rios": 33,
+          "wios": 7
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "compiled-tiles",
+        "batch_size": 2,
+        "initialization_wall_seconds": 9.901303185033612,
+        "rows": [
+          {
+            "wall_seconds": 34.831417076988146,
+            "model_host_call_seconds": 34.773074361961335,
+            "uint8_and_readback_host_seconds": 0.05517693003639579,
+            "model_stream_interval_seconds": 36.1153515625,
+            "phase": "first"
+          },
+          {
+            "wall_seconds": 0.8247367410222068,
+            "model_host_call_seconds": 0.8117625199956819,
+            "uint8_and_readback_host_seconds": 0.012619612971320748,
+            "model_stream_interval_seconds": 0.8476221313476563,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7619450479978696,
+            "model_host_call_seconds": 0.0019441350013948977,
+            "uint8_and_readback_host_seconds": 0.7597219879971817,
+            "model_stream_interval_seconds": 0.7827599487304687,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7625357879442163,
+            "model_host_call_seconds": 0.0020827740081585944,
+            "uint8_and_readback_host_seconds": 0.760054851998575,
+            "model_stream_interval_seconds": 0.7836713256835938,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7617068109684624,
+            "model_host_call_seconds": 0.0020898410002700984,
+            "uint8_and_readback_host_seconds": 0.7592601249925792,
+            "model_stream_interval_seconds": 0.7828889770507812,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7600244359928183,
+            "model_host_call_seconds": 0.0022738060215488076,
+            "uint8_and_readback_host_seconds": 0.7574090149719268,
+            "model_stream_interval_seconds": 0.7813017578125,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7622926629846916,
+            "model_host_call_seconds": 0.0018819989636540413,
+            "uint8_and_readback_host_seconds": 0.7601068849908188,
+            "model_stream_interval_seconds": 0.7830118408203125,
+            "phase": "warm"
+          }
+        ],
+        "warm_median_wall_seconds": 0.7621188554912806,
+        "peak_allocated_bytes": 1585481728,
+        "peak_reserved_bytes": 2747269120,
+        "reference_core_comparisons": [
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          },
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          }
+        ],
+        "runtime": {
+          "runtime": "current_x4_channels_last_gpu_uint8_cpu_stitch",
+          "model": "RealESRGAN_x4plus",
+          "scale": 4,
+          "tile": -1,
+          "tile_pad": 10,
+          "fp32": false,
+          "channels_last": true,
+          "compile_mode": "reduce-overhead",
+          "output_mode": "gpu_uint8_cpu_stitch",
+          "device": "NVIDIA GeForce RTX 4060",
+          "torch_version": "2.14.0+cu130",
+          "torch_cuda_version": "13.0",
+          "cudnn_version": 92400
+        },
+        "limits": "two fixed interior tiles only; event intervals include stream idle/enqueue gaps, not pure kernel busy; first-call stream time includes compilation and is not GPU compute; no full-page/downstream acceptance"
+      },
+      "evidence_root": "logs/issue447/runs/deep-compiled-b2-2"
+    },
+    "deep-compiled-b2-3": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 27.18026427697623,
+        "timed_out": false,
+        "trace": "off",
+        "component": "compiled-tiles2",
+        "scope": "single",
+        "monitor_teardown_seconds": 1.885661249049008
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 28,
+          "mean": 19.678571428571427,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 28,
+          "mean": 1181.2142857142858,
+          "peak": 3007.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.119205864029936,
+            "cgroup_cpu_seconds": 35.403001
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.021610546,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 131,
+        "first_monotonic": 510463.286836307,
+        "last_monotonic": 510489.406042171,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7004286976,
+        "observer_cpu_seconds": 0.16,
+        "cgroup_memory_peak_bytes": 2832347136,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 35904159,
+          "user_usec": 33189604,
+          "system_usec": 2714554,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 24576,
+          "rios": 0,
+          "wios": 6
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "compiled-tiles",
+        "batch_size": 2,
+        "initialization_wall_seconds": 11.657413521024864,
+        "rows": [
+          {
+            "wall_seconds": 6.118456911004614,
+            "model_host_call_seconds": 6.064095283974893,
+            "uint8_and_readback_host_seconds": 0.050787827000021935,
+            "model_stream_interval_seconds": 6.2948115234375,
+            "phase": "first"
+          },
+          {
+            "wall_seconds": 0.8179228099761531,
+            "model_host_call_seconds": 0.805489705002401,
+            "uint8_and_readback_host_seconds": 0.011976098001468927,
+            "model_stream_interval_seconds": 0.8355327758789063,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7657511759898625,
+            "model_host_call_seconds": 0.0018290519947186112,
+            "uint8_and_readback_host_seconds": 0.7636116059729829,
+            "model_stream_interval_seconds": 0.7817216186523438,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7679477750207298,
+            "model_host_call_seconds": 0.0017914680065587163,
+            "uint8_and_readback_host_seconds": 0.7657690269988962,
+            "model_stream_interval_seconds": 0.7838484497070313,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7680658759782091,
+            "model_host_call_seconds": 0.0019653179915621877,
+            "uint8_and_readback_host_seconds": 0.7657912930008024,
+            "model_stream_interval_seconds": 0.7842867431640625,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7655307610402815,
+            "model_host_call_seconds": 0.001808934030123055,
+            "uint8_and_readback_host_seconds": 0.7633971739560366,
+            "model_stream_interval_seconds": 0.7819806518554687,
+            "phase": "warm"
+          },
+          {
+            "wall_seconds": 0.7657741800067015,
+            "model_host_call_seconds": 0.0019854260026477277,
+            "uint8_and_readback_host_seconds": 0.7634415230131708,
+            "model_stream_interval_seconds": 0.7823052978515626,
+            "phase": "warm"
+          }
+        ],
+        "warm_median_wall_seconds": 0.7668609775137156,
+        "peak_allocated_bytes": 1560315904,
+        "peak_reserved_bytes": 2720006144,
+        "reference_core_comparisons": [
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          },
+          {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          }
+        ],
+        "runtime": {
+          "runtime": "current_x4_channels_last_gpu_uint8_cpu_stitch",
+          "model": "RealESRGAN_x4plus",
+          "scale": 4,
+          "tile": -1,
+          "tile_pad": 10,
+          "fp32": false,
+          "channels_last": true,
+          "compile_mode": "reduce-overhead",
+          "output_mode": "gpu_uint8_cpu_stitch",
+          "device": "NVIDIA GeForce RTX 4060",
+          "torch_version": "2.14.0+cu130",
+          "torch_cuda_version": "13.0",
+          "cudnn_version": 92400
+        },
+        "limits": "two fixed interior tiles only; event intervals include stream idle/enqueue gaps, not pure kernel busy; first-call stream time includes compilation and is not GPU compute; no full-page/downstream acceptance"
+      },
+      "evidence_root": "logs/issue447/runs/deep-compiled-b2-3"
+    },
+    "deep-e2e-w1": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 249.93227753398241,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.8906986570218578
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 250,
+          "mean": 40.604,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 250,
+          "mean": 2236.1,
+          "peak": 3438.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 27.53392406302737,
+            "cgroup_cpu_seconds": 43.11299299999995
+          },
+          "SR": {
+            "sampled_seconds": 124.05201837199274,
+            "cgroup_cpu_seconds": 138.151633
+          },
+          "source": {
+            "sampled_seconds": 97.13487929600524,
+            "cgroup_cpu_seconds": 288.078491
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.723007799,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 1236,
+        "first_monotonic": 509742.789479906,
+        "last_monotonic": 509991.510301637,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7278186496,
+        "observer_cpu_seconds": 1.52,
+        "cgroup_memory_peak_bytes": 5124964352,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 469518428,
+          "user_usec": 438769247,
+          "system_usec": 30749180,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 85393408,
+          "rios": 0,
+          "wios": 158
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 245.372
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 230472,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 867,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 12355,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 829,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 97,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 122.10378848697292,
+        "model_initialization_wall_sec": 9.814884232007898,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-e2e-w1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch/page_012/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 47.454965149983764,
+            "historical_detector_artifact_runtime_input": false
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-e2e-w1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 32.34402691596188,
+            "historical_detector_artifact_runtime_input": false
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-e2e-w1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch/page_014/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 32.48544762097299,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-e2e-w1",
+      "semantic-check.json": {
+        "all_equal": true,
+        "checks": {
+          "page_order": true,
+          "input_order": true,
+          "combined_base": true,
+          "combined_final_and_movement_metadata": true,
+          "filters": true,
+          "per_page": {
+            "page_012": {
+              "source_reference": true,
+              "detector_geometry": true,
+              "mmr_geometry": true,
+              "correction_stats": true,
+              "numbering_base": true,
+              "numbering_final_and_metadata": true,
+              "mmr_targets_skips": true
+            },
+            "page_013": {
+              "source_reference": true,
+              "detector_geometry": true,
+              "mmr_geometry": true,
+              "correction_stats": true,
+              "numbering_base": true,
+              "numbering_final_and_metadata": true,
+              "mmr_targets_skips": true
+            },
+            "page_014": {
+              "source_reference": true,
+              "detector_geometry": true,
+              "mmr_geometry": true,
+              "correction_stats": true,
+              "numbering_base": true,
+              "numbering_final_and_metadata": true,
+              "mmr_targets_skips": true
+            }
+          },
+          "source": {
+            "page_012": {
+              "original": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "x4": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "omr": true
+            },
+            "page_013": {
+              "original": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "x4": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "omr": true
+            },
+            "page_014": {
+              "original": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "x4": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "omr": true
+            }
+          }
+        },
+        "allowed_differences": "run paths and display-only OCR score comments; no geometry/order/number/mapping tolerances"
+      }
+    },
+    "deep-e2e-w2": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 231.54136627702974,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.766849880979862
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 232,
+          "mean": 43.96551724137931,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 232,
+          "mean": 2644.176724137931,
+          "peak": 6581.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.928337741992436,
+            "cgroup_cpu_seconds": 42.71006700000002
+          },
+          "SR": {
+            "sampled_seconds": 124.37455787503859,
+            "cgroup_cpu_seconds": 138.50495599999996
+          },
+          "source": {
+            "sampled_seconds": 79.3120109589654,
+            "cgroup_cpu_seconds": 326.914543
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 15.621848661,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 1144,
+        "first_monotonic": 509994.948464248,
+        "last_monotonic": 510225.563370824,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11687878656,
+        "observer_cpu_seconds": 1.45,
+        "cgroup_memory_peak_bytes": 9432154112,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 508394950,
+          "user_usec": 474236976,
+          "system_usec": 34157973,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 85798912,
+          "rios": 0,
+          "wios": 158
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 227.154
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 212555,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 883,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 12059,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 877,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 97,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 122.37419136503013,
+        "model_initialization_wall_sec": 9.865708844969049,
+        "outputs": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-e2e-w2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch/page_012/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 47.38830759096891,
+            "historical_detector_artifact_runtime_input": false
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-e2e-w2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch/page_013/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 32.34549754002364,
+            "historical_detector_artifact_runtime_input": false
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_scale": 4,
+            "sr_image": "/workspace/logs/issue447/runs/deep-e2e-w2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch/page_014/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ],
+            "page_wall_sec": 32.77001379802823,
+            "historical_detector_artifact_runtime_input": false
+          }
+        ]
+      },
+      "evidence_root": "logs/issue447/runs/deep-e2e-w2",
+      "semantic-check.json": {
+        "all_equal": true,
+        "checks": {
+          "page_order": true,
+          "input_order": true,
+          "combined_base": true,
+          "combined_final_and_movement_metadata": true,
+          "filters": true,
+          "per_page": {
+            "page_012": {
+              "source_reference": true,
+              "detector_geometry": true,
+              "mmr_geometry": true,
+              "correction_stats": true,
+              "numbering_base": true,
+              "numbering_final_and_metadata": true,
+              "mmr_targets_skips": true
+            },
+            "page_013": {
+              "source_reference": true,
+              "detector_geometry": true,
+              "mmr_geometry": true,
+              "correction_stats": true,
+              "numbering_base": true,
+              "numbering_final_and_metadata": true,
+              "mmr_targets_skips": true
+            },
+            "page_014": {
+              "source_reference": true,
+              "detector_geometry": true,
+              "mmr_geometry": true,
+              "correction_stats": true,
+              "numbering_base": true,
+              "numbering_final_and_metadata": true,
+              "mmr_targets_skips": true
+            }
+          },
+          "source": {
+            "page_012": {
+              "original": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "x4": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "omr": true
+            },
+            "page_013": {
+              "original": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "x4": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "omr": true
+            },
+            "page_014": {
+              "original": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "x4": {
+                "ordered_predictions": true,
+                "staff_mask": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_symbols": {
+                  "equal": true,
+                  "different_values": 0
+                },
+                "connector_brace_dot": {
+                  "equal": true,
+                  "different_values": 0
+                }
+              },
+              "omr": true
+            }
+          }
+        },
+        "allowed_differences": "run paths and display-only OCR score comments; no geometry/order/number/mapping tolerances"
+      }
+    },
+    "deep-omr-batch-2": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 13.244190655997954,
+        "timed_out": false,
+        "trace": "off",
+        "component": "omr-batch",
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.0391993679804727
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 14,
+          "mean": 1.3571428571428572,
+          "peak": 19.0
+        },
+        "memory.used [MiB]": {
+          "count": 14,
+          "mean": 395.0,
+          "peak": 665.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 12.249783303996082,
+            "cgroup_cpu_seconds": 13.431783
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.004457926,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 62,
+        "first_monotonic": 510294.44248331,
+        "last_monotonic": 510306.692266614,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 3088793600,
+        "observer_cpu_seconds": 0.09,
+        "cgroup_memory_peak_bytes": 2964054016,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 13702150,
+          "user_usec": 11796306,
+          "system_usec": 1905844,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 4096,
+          "rios": 0,
+          "wios": 1
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "omr-reuse",
+        "batch": true,
+        "component_wall_seconds": 12.455554767977446,
+        "commands": [
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-batch-2/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-batch-2/component/sr-inputs"
+          ]
+        ],
+        "ordered_source_predictions_equal": {
+          "page_012": true,
+          "page_013": true,
+          "page_014": true
+        },
+        "limits": "one worker reusing model/predictor vs fresh worker per page, retained SR; source-only and not integrated E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-omr-batch-2"
+    },
+    "deep-omr-batch-3": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 13.328409938025288,
+        "timed_out": false,
+        "trace": "off",
+        "component": "omr-batch",
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.9673818749724887
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 14,
+          "mean": 2.2857142857142856,
+          "peak": 20.0
+        },
+        "memory.used [MiB]": {
+          "count": 14,
+          "mean": 421.14285714285717,
+          "peak": 665.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 12.249954494996928,
+            "cgroup_cpu_seconds": 13.324183999999999
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.010090167,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 62,
+        "first_monotonic": 510309.192207233,
+        "last_monotonic": 510321.442161728,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 3439849472,
+        "observer_cpu_seconds": 0.1,
+        "cgroup_memory_peak_bytes": 2963288064,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 13624160,
+          "user_usec": 11765889,
+          "system_usec": 1858270,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 4096,
+          "rios": 0,
+          "wios": 1
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "omr-reuse",
+        "batch": true,
+        "component_wall_seconds": 12.51386036601616,
+        "commands": [
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-batch-3/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-batch-3/component/sr-inputs"
+          ]
+        ],
+        "ordered_source_predictions_equal": {
+          "page_012": true,
+          "page_013": true,
+          "page_014": true
+        },
+        "limits": "one worker reusing model/predictor vs fresh worker per page, retained SR; source-only and not integrated E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-omr-batch-3"
+    },
+    "deep-omr-serial-1": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 28.565981950960122,
+        "timed_out": false,
+        "trace": "off",
+        "component": "omr-serial",
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.5982012180029415
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 29,
+          "mean": 1.9310344827586208,
+          "peak": 46.0
+        },
+        "memory.used [MiB]": {
+          "count": 29,
+          "mean": 344.2413793103448,
+          "peak": 665.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 27.513179176021367,
+            "cgroup_cpu_seconds": 30.421191
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.03089832,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 138,
+        "first_monotonic": 510264.965963286,
+        "last_monotonic": 510292.479142462,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 2222030848,
+        "observer_cpu_seconds": 0.14,
+        "cgroup_memory_peak_bytes": 1782382592,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 30662683,
+          "user_usec": 27252030,
+          "system_usec": 3410653,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 131072,
+          "wbytes": 4096,
+          "rios": 32,
+          "wios": 1
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "omr-reuse",
+        "batch": false,
+        "component_wall_seconds": 27.68130764196394,
+        "commands": [
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-serial-1/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-serial-1/component/sr-inputs"
+          ],
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-serial-1/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-serial-1/component/sr-inputs"
+          ],
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-serial-1/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-serial-1/component/sr-inputs"
+          ]
+        ],
+        "ordered_source_predictions_equal": {
+          "page_012": true,
+          "page_013": true,
+          "page_014": true
+        },
+        "limits": "one worker reusing model/predictor vs fresh worker per page, retained SR; source-only and not integrated E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-omr-serial-1"
+    },
+    "deep-omr-serial-4": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 27.76316237897845,
+        "timed_out": false,
+        "trace": "off",
+        "component": "omr-serial",
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.272061301046051
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 28,
+          "mean": 1.7857142857142858,
+          "peak": 20.0
+        },
+        "memory.used [MiB]": {
+          "count": 28,
+          "mean": 327.35714285714283,
+          "peak": 665.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.706375781970564,
+            "cgroup_cpu_seconds": 29.432998
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.011676776,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 134,
+        "first_monotonic": 510323.926531122,
+        "last_monotonic": 510350.632906904,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 2255044608,
+        "observer_cpu_seconds": 0.15,
+        "cgroup_memory_peak_bytes": 1774137344,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 29718459,
+          "user_usec": 26405772,
+          "system_usec": 3312686,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 4096,
+          "rios": 0,
+          "wios": 1
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "omr-reuse",
+        "batch": false,
+        "component_wall_seconds": 26.961153059033677,
+        "commands": [
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-serial-4/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-serial-4/component/sr-inputs"
+          ],
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-serial-4/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-serial-4/component/sr-inputs"
+          ],
+          [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "--output-dir",
+            "logs/issue447/runs/deep-omr-serial-4/component/predictions",
+            "--pre-computed-sr",
+            "logs/issue447/runs/deep-omr-serial-4/component/sr-inputs"
+          ]
+        ],
+        "ordered_source_predictions_equal": {
+          "page_012": true,
+          "page_013": true,
+          "page_014": true
+        },
+        "limits": "one worker reusing model/predictor vs fresh worker per page, retained SR; source-only and not integrated E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-omr-serial-4"
+    },
+    "deep-python-imports": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 33.68575419805711,
+        "timed_out": false,
+        "trace": "off",
+        "component": "python-imports",
+        "scope": "single",
+        "monitor_teardown_seconds": 1.2746498369961046
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 34,
+          "mean": 0.0,
+          "peak": 0.0
+        },
+        "memory.used [MiB]": {
+          "count": 34,
+          "mean": 287.0,
+          "peak": 287.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 32.802500602963846,
+            "cgroup_cpu_seconds": 36.043408
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.012802152,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 164,
+        "first_monotonic": 510229.515003568,
+        "last_monotonic": 510262.317504171,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 788119552,
+        "observer_cpu_seconds": 0.16,
+        "cgroup_memory_peak_bytes": 514129920,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 36319486,
+          "user_usec": 33950103,
+          "system_usec": 2369382,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 11747328,
+          "wbytes": 401408,
+          "rios": 1242,
+          "wios": 7
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "kind": "imports",
+        "rows": [
+          {
+            "import_seconds": 5.879936788987834,
+            "class": "ultralytics.models.yolo.model.YOLO",
+            "torch": "2.14.0+cu130",
+            "pycache_prefix": null,
+            "cuda_initialized": false,
+            "site_cache_writable": false,
+            "phase": "first",
+            "variant": "A",
+            "process_wall_seconds": 6.5602564020082355
+          },
+          {
+            "import_seconds": 6.990685109049082,
+            "class": "ultralytics.models.yolo.model.YOLO",
+            "torch": "2.14.0+cu130",
+            "pycache_prefix": "/workspace/logs/issue447/runs/deep-python-imports/component/bytecode-cache",
+            "cuda_initialized": false,
+            "site_cache_writable": false,
+            "phase": "first",
+            "variant": "B",
+            "process_wall_seconds": 7.796245201956481
+          },
+          {
+            "import_seconds": 6.0617202569846995,
+            "class": "ultralytics.models.yolo.model.YOLO",
+            "torch": "2.14.0+cu130",
+            "pycache_prefix": null,
+            "cuda_initialized": false,
+            "site_cache_writable": false,
+            "phase": "warm",
+            "variant": "A",
+            "process_wall_seconds": 6.747011401981581
+          },
+          {
+            "import_seconds": 2.0770987989963032,
+            "class": "ultralytics.models.yolo.model.YOLO",
+            "torch": "2.14.0+cu130",
+            "pycache_prefix": "/workspace/logs/issue447/runs/deep-python-imports/component/bytecode-cache",
+            "cuda_initialized": false,
+            "site_cache_writable": false,
+            "phase": "warm",
+            "variant": "B",
+            "process_wall_seconds": 2.6693239819724113
+          },
+          {
+            "import_seconds": 2.020831698027905,
+            "class": "ultralytics.models.yolo.model.YOLO",
+            "torch": "2.14.0+cu130",
+            "pycache_prefix": "/workspace/logs/issue447/runs/deep-python-imports/component/bytecode-cache",
+            "cuda_initialized": false,
+            "site_cache_writable": false,
+            "phase": "warm",
+            "variant": "B",
+            "process_wall_seconds": 2.613862689002417
+          },
+          {
+            "import_seconds": 5.82170519902138,
+            "class": "ultralytics.models.yolo.model.YOLO",
+            "torch": "2.14.0+cu130",
+            "pycache_prefix": null,
+            "cuda_initialized": false,
+            "site_cache_writable": false,
+            "phase": "warm",
+            "variant": "A",
+            "process_wall_seconds": 6.491669490991626
+          }
+        ],
+        "class_identity_equal": true,
+        "cuda_never_initialized": true,
+        "limits": "CPU-only import/process microbenchmark; prefix first-call cost separate; not E2E/model correctness acceptance"
+      },
+      "evidence_root": "logs/issue447/runs/deep-python-imports"
+    },
+    "deep-source-w1-r1": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 66.10061871196376,
+        "timed_out": false,
+        "trace": "off",
+        "component": "source-paired",
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.324921710009221
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 66,
+          "mean": 4.515151515151516,
+          "peak": 47.0
+        },
+        "memory.used [MiB]": {
+          "count": 66,
+          "mean": 1957.878787878788,
+          "peak": 3454.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "source": {
+            "sampled_seconds": 64.80260409798939,
+            "cgroup_cpu_seconds": 187.967695
+          },
+          "other": {
+            "sampled_seconds": 0.40312956500565633,
+            "cgroup_cpu_seconds": 0.32117999999998403
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.225766736,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 324,
+        "first_monotonic": 509501.665301908,
+        "last_monotonic": 509566.871035571,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 5585010688,
+        "observer_cpu_seconds": 0.46,
+        "cgroup_memory_peak_bytes": 4619841536,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 188522125,
+          "user_usec": 172944726,
+          "system_usec": 15577399,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 5550080,
+          "rios": 0,
+          "wios": 36
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "workers": 1,
+        "pages": [
+          "page_012",
+          "page_014"
+        ],
+        "component_wall_seconds": 65.30369625805179,
+        "ordered_results": [
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png"
+        ],
+        "scope": "same-harness component comparison; retained SR; not E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-source-w1-r1",
+      "semantic-check.json": {
+        "all_equal": true,
+        "checks": {
+          "page_012": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          },
+          "page_014": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          }
+        }
+      }
+    },
+    "deep-source-w1-r2": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 65.4864328809781,
+        "timed_out": false,
+        "trace": "off",
+        "component": "source-paired",
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.9240837069810368
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 66,
+          "mean": 4.0,
+          "peak": 41.0
+        },
+        "memory.used [MiB]": {
+          "count": 66,
+          "mean": 1939.1515151515152,
+          "peak": 3436.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "source": {
+            "sampled_seconds": 64.24415047100047,
+            "cgroup_cpu_seconds": 188.85205600000003
+          },
+          "other": {
+            "sampled_seconds": 0.4014289469923824,
+            "cgroup_cpu_seconds": 0.3623749999999717
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 0.86085034,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 322,
+        "first_monotonic": 509675.192615657,
+        "last_monotonic": 509739.838195075,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 5645172736,
+        "observer_cpu_seconds": 0.41,
+        "cgroup_memory_peak_bytes": 4701609984,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 189498980,
+          "user_usec": 174180200,
+          "system_usec": 15318779,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 5545984,
+          "rios": 0,
+          "wios": 37
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "workers": 1,
+        "pages": [
+          "page_012",
+          "page_014"
+        ],
+        "component_wall_seconds": 64.76721982500749,
+        "ordered_results": [
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png"
+        ],
+        "scope": "same-harness component comparison; retained SR; not E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-source-w1-r2",
+      "semantic-check.json": {
+        "all_equal": true,
+        "checks": {
+          "page_012": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          },
+          "page_014": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          }
+        }
+      }
+    },
+    "deep-source-w2-r1": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 52.77994426601799,
+        "timed_out": false,
+        "trace": "off",
+        "component": "source-paired",
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.327648528967984
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 52,
+          "mean": 9.461538461538462,
+          "peak": 73.0
+        },
+        "memory.used [MiB]": {
+          "count": 52,
+          "mean": 3769.8653846153848,
+          "peak": 6603.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "source": {
+            "sampled_seconds": 51.688087387010455,
+            "cgroup_cpu_seconds": 239.394389
+          },
+          "other": {
+            "sampled_seconds": 0.20084368402604014,
+            "cgroup_cpu_seconds": 0.13219799999998827
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 15.461476616,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 247,
+        "first_monotonic": 509569.245768181,
+        "last_monotonic": 509621.134699252,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10594828288,
+        "observer_cpu_seconds": 2.24,
+        "cgroup_memory_peak_bytes": 8541786112,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 239836413,
+          "user_usec": 216126429,
+          "system_usec": 23709983,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 5517312,
+          "rios": 0,
+          "wios": 39
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "workers": 2,
+        "pages": [
+          "page_012",
+          "page_014"
+        ],
+        "component_wall_seconds": 51.9714837220381,
+        "ordered_results": [
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png"
+        ],
+        "scope": "same-harness component comparison; retained SR; not E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-source-w2-r1",
+      "semantic-check.json": {
+        "all_equal": true,
+        "checks": {
+          "page_012": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          },
+          "page_014": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          }
+        }
+      }
+    },
+    "deep-source-w2-r2": {
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 48.67892146599479,
+        "timed_out": false,
+        "trace": "off",
+        "component": "source-paired",
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.0725911789922975
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 49,
+          "mean": 7.612244897959184,
+          "peak": 64.0
+        },
+        "memory.used [MiB]": {
+          "count": 49,
+          "mean": 3479.9795918367345,
+          "peak": 6587.0
+        }
+      },
+      "timeline": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "source": {
+            "sampled_seconds": 47.536454388988204,
+            "cgroup_cpu_seconds": 219.909038
+          },
+          "other": {
+            "sampled_seconds": 0.20089823100715876,
+            "cgroup_cpu_seconds": 0.12252300000000105
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 10.984216034,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "resources": {
+        "sample_count": 236,
+        "first_monotonic": 509624.478312501,
+        "last_monotonic": 509672.215665121,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10282897408,
+        "observer_cpu_seconds": 0.48,
+        "cgroup_memory_peak_bytes": 8196743168,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 220422842,
+          "user_usec": 201660054,
+          "system_usec": 18762787,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 5242880,
+          "rios": 0,
+          "wios": 29
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "component": {
+        "status": "completed",
+        "workers": 2,
+        "pages": [
+          "page_012",
+          "page_014"
+        ],
+        "component_wall_seconds": 47.83939466997981,
+        "ordered_results": [
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+          "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png"
+        ],
+        "scope": "same-harness component comparison; retained SR; not E2E"
+      },
+      "evidence_root": "logs/issue447/runs/deep-source-w2-r2",
+      "semantic-check.json": {
+        "all_equal": true,
+        "checks": {
+          "page_012": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          },
+          "page_014": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          }
+        }
+      }
+    }
+  },
+  "cache_statistics": {
+    "cold": {
+      "n": 3,
+      "median": 233.2417029570206,
+      "min": 230.82185538503109,
+      "max": 243.139401249995
+    },
+    "warm": {
+      "n": 3,
+      "median": 111.6515624189633,
+      "min": 108.44872656598454,
+      "max": 112.38227151503088
+    }
+  },
+  "provenance": {
+    "runtime_source": "2ac7d5245fe65dbfa2093b4e0d60119c58192f86",
+    "harness_checkpoint": "c052d09a300a0e44e3fa957382c7d0d9bec88300",
+    "image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+    "uid_gid": "1000:1001",
+    "metric": "trace OFF host perf_counter Docker E2E; observer teardown separate",
+    "cache_journal": "logs/issue447/deepening/cache-matrix.jsonl",
+    "followup_journal": "logs/issue447/deepening/followup-matrix.jsonl",
+    "raw_provenance": "each evidence_root/provenance.json and script-snapshots/",
+    "clock_correction": "GPU/CPU absolute correlation withdrawn; previous summary-v1-driver-clock.json retained as superseded diagnostic only"
+  },
+  "numbering-replay/result.json": {
+    "kind": "real Phase C semantic replay; no detector/MMR inference",
+    "serial_checks": {
+      "manual_anacrusis_zero": true,
+      "second_page_movement_reset_one": true,
+      "third_page_continuity": true,
+      "page_order": true
+    },
+    "parallel_checks": {
+      "manual_anacrusis_zero": true,
+      "second_page_movement_reset_one": true,
+      "third_page_continuity": true,
+      "page_order": true
+    },
+    "replayed_pages_and_metadata_equal": true
+  },
+  "root-import-check.json": [
+    {
+      "user": "0:0",
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--gpus",
+        "all",
+        "--user",
+        "0:0",
+        "-v",
+        "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace:ro",
+        "-w",
+        "/workspace",
+        "-e",
+        "HOME=/tmp",
+        "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+        "/opt/venv_pipeline/bin/python",
+        "-c",
+        "import subprocess,sys,json,time;rows=[]\nfor i in range(2):\n t=time.perf_counter();p=subprocess.run([sys.executable,'-c',\"import time,json,os;from pathlib import Path;t=time.perf_counter();import ultralytics;klass=ultralytics.YOLO;import torch;print(json.dumps({'import_seconds':time.perf_counter()-t,'class':klass.__module__+'.'+klass.__qualname__,'site_cache_writable':os.access(Path(torch.__file__).parent/'__pycache__',os.W_OK),'cuda_initialized':torch.cuda.is_initialized()}))\"],capture_output=True,text=True,check=True);d=json.loads(p.stdout.strip().splitlines()[-1]);d.update({'call':i,'process_wall_seconds':time.perf_counter()-t});rows.append(d)\nprint(json.dumps(rows))"
+      ],
+      "rows": [
+        {
+          "import_seconds": 5.990735700004734,
+          "class": "ultralytics.models.yolo.model.YOLO",
+          "site_cache_writable": true,
+          "cuda_initialized": false,
+          "call": 0,
+          "process_wall_seconds": 6.672689981991425
+        },
+        {
+          "import_seconds": 1.9628500820253976,
+          "class": "ultralytics.models.yolo.model.YOLO",
+          "site_cache_writable": true,
+          "cuda_initialized": false,
+          "call": 1,
+          "process_wall_seconds": 2.566573371004779
+        }
+      ]
+    },
+    {
+      "user": "1000:1001",
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--gpus",
+        "all",
+        "--user",
+        "1000:1001",
+        "-v",
+        "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace:ro",
+        "-w",
+        "/workspace",
+        "-e",
+        "HOME=/tmp",
+        "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+        "/opt/venv_pipeline/bin/python",
+        "-c",
+        "import subprocess,sys,json,time;rows=[]\nfor i in range(2):\n t=time.perf_counter();p=subprocess.run([sys.executable,'-c',\"import time,json,os;from pathlib import Path;t=time.perf_counter();import ultralytics;klass=ultralytics.YOLO;import torch;print(json.dumps({'import_seconds':time.perf_counter()-t,'class':klass.__module__+'.'+klass.__qualname__,'site_cache_writable':os.access(Path(torch.__file__).parent/'__pycache__',os.W_OK),'cuda_initialized':torch.cuda.is_initialized()}))\"],capture_output=True,text=True,check=True);d=json.loads(p.stdout.strip().splitlines()[-1]);d.update({'call':i,'process_wall_seconds':time.perf_counter()-t});rows.append(d)\nprint(json.dumps(rows))"
+      ],
+      "rows": [
+        {
+          "import_seconds": 5.649710828030948,
+          "class": "ultralytics.models.yolo.model.YOLO",
+          "site_cache_writable": false,
+          "cuda_initialized": false,
+          "call": 0,
+          "process_wall_seconds": 6.337032237963285
+        },
+        {
+          "import_seconds": 5.488700023968704,
+          "class": "ultralytics.models.yolo.model.YOLO",
+          "site_cache_writable": false,
+          "cuda_initialized": false,
+          "call": 1,
+          "process_wall_seconds": 6.1754972449853085
+        }
+      ]
+    }
+  ],
+  "cuda-timer-calibration.json": {
+    "command": [
+      "docker",
+      "run",
+      "--rm",
+      "--gpus",
+      "all",
+      "--user",
+      "1000:1001",
+      "-e",
+      "HOME=/tmp",
+      "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+      "/opt/venv_pipeline/bin/python",
+      "-c",
+      "\nimport torch,time,json\nx=torch.ones((1024,1024),device='cuda',dtype=torch.float16)\nfor _ in range(5):y=x@x\ntorch.cuda.synchronize();rows=[]\nfor i in range(3):\n a,b=torch.cuda.Event(enable_timing=True),torch.cuda.Event(enable_timing=True)\n torch.cuda.synchronize();raw=time.clock_gettime(time.CLOCK_MONOTONIC_RAW);wall=time.perf_counter();a.record()\n for _ in range(1000):y=x@x\n b.record();torch.cuda.synchronize();cpu=time.perf_counter()-wall;raw=time.clock_gettime(time.CLOCK_MONOTONIC_RAW)-raw\n rows.append({'host_wall_seconds':cpu,'host_raw_seconds':raw,'event_seconds':a.elapsed_time(b)/1000.0})\nprint(json.dumps({'torch':torch.__version__,'rows':rows,'scope':'direct fp16 matrix-operation clock calibration; no model or E2E claim'}))\n"
+    ],
+    "result": {
+      "torch": "2.14.0+cu130",
+      "rows": [
+        {
+          "host_wall_seconds": 0.08659350703237578,
+          "host_raw_seconds": 0.0899872719310224,
+          "event_seconds": 0.08979558563232422
+        },
+        {
+          "host_wall_seconds": 0.08667122898623347,
+          "host_raw_seconds": 0.09004974295385182,
+          "event_seconds": 0.08984371185302735
+        },
+        {
+          "host_wall_seconds": 0.08269877795828506,
+          "host_raw_seconds": 0.08588724094443023,
+          "event_seconds": 0.08561254119873046
+        }
+      ],
+      "scope": "direct fp16 matrix-operation clock calibration; no model or E2E claim"
+    }
+  },
+  "e2e-cache-seeds.json": {
+    "1": {
+      "files": 538,
+      "bytes": 20648097,
+      "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+    },
+    "2": {
+      "files": 538,
+      "bytes": 20648097,
+      "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+    }
+  },
+  "sr-envelope-analysis.json": [
+    {
+      "run": "deep-cache-p1-cold",
+      "native_body_seconds": 176.79907034605276,
+      "first_observed_to_timed_body_start_seconds": 5.929991245269775,
+      "after_result_write_until_last_observed_seconds": 4.1881020069122314,
+      "endpoint_uncertainty_seconds": 0.2
+    },
+    {
+      "run": "deep-cache-p1-warm",
+      "native_body_seconds": 56.59896574699087,
+      "first_observed_to_timed_body_start_seconds": 2.0876450538635254,
+      "after_result_write_until_last_observed_seconds": 1.6654245853424072,
+      "endpoint_uncertainty_seconds": 0.2
+    },
+    {
+      "run": "deep-cache-p2-cold",
+      "native_body_seconds": 177.70832455699565,
+      "first_observed_to_timed_body_start_seconds": 6.147162675857544,
+      "after_result_write_until_last_observed_seconds": 4.25543737411499,
+      "endpoint_uncertainty_seconds": 0.2
+    },
+    {
+      "run": "deep-cache-p2-warm",
+      "native_body_seconds": 56.537279220006894,
+      "first_observed_to_timed_body_start_seconds": 1.0310146808624268,
+      "after_result_write_until_last_observed_seconds": 2.8065922260284424,
+      "endpoint_uncertainty_seconds": 0.2
+    },
+    {
+      "run": "deep-cache-p3-cold",
+      "native_body_seconds": 185.9654093979625,
+      "first_observed_to_timed_body_start_seconds": 7.28579568862915,
+      "after_result_write_until_last_observed_seconds": 4.338598012924194,
+      "endpoint_uncertainty_seconds": 0.2
+    },
+    {
+      "run": "deep-cache-p3-warm",
+      "native_body_seconds": 57.56325794401346,
+      "first_observed_to_timed_body_start_seconds": 1.057267665863037,
+      "after_result_write_until_last_observed_seconds": 2.8307430744171143,
+      "endpoint_uncertainty_seconds": 0.2
+    }
+  ]
+}

@@ -120,3 +120,24 @@ def test_legacy_process_samples_require_explicit_matching_run(tmp_path):
     )
     with pytest.raises(FileNotFoundError):
         select_process_samples(run, tmp_path / "missing.jsonl")
+
+
+def test_host_timeline_does_not_correlate_unaligned_gpu_or_epoch_clocks(tmp_path):
+    from tools.issue447.deepening_analyze import timeline
+
+    samples = [
+        {
+            "epoch": epoch,
+            "monotonic": second,
+            "cgroup": {"cpu.stat": f"usage_usec {second * 1000000}\n"},
+            "processes": [],
+        }
+        for second, epoch in ((0, 100), (1, 200))
+    ]
+    (tmp_path / "proc-samples.jsonl").write_text("\n".join(json.dumps(s) for s in samples))
+    result = timeline(tmp_path)
+    assert result["host_phase_samples_not_exclusive_stages"]["other"] == {
+        "sampled_seconds": 1.0,
+        "cgroup_cpu_seconds": 1.0,
+    }
+    assert result["gpu_cpu_clock_correlation"].startswith("Blocked:")

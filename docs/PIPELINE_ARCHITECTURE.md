@@ -217,8 +217,9 @@ shared x4 image producer consumed by the page-local source workers.
 - **Consumer:** detector inventory / hybrid consensus; later numbering consumes the
   resolved baseline staff mask.
 
-This pinned profile exists to preserve the accepted Stage-E baseline. It is not rerun on
-x4 in the current production path.
+This pinned profile provides the authoritative original-image baseline in current
+production. It uses the maintained runtime, not the historical Stage-E runtime, and is
+not rerun on x4 in the current production path.
 
 ### 2. Current-runtime HOMR on persisted x4 support
 
@@ -226,7 +227,7 @@ x4 in the current production path.
   for the selected page set by `BatchSRVerifiedProfileHybridDetector`.
 - **x4 HOMR/support owner:** `src/pipeline/detection/current_support_worker.py`.
 - **Input:** the precomputed persisted Real-ESRGAN x4 image from the dedicated SR process.
-- **Producer runtime:** current pipeline HOMR runtime, not the pinned Stage-E profile.
+- **Producer runtime:** current pipeline HOMR runtime, not the historical `stage_e_verified` runtime.
 - **Published bundle:** source-coordinate `current_sr_detection`, current-HOMR staff mask,
   the complete connector semantic pair, x4 image/provenance, and OMR-DLN predictions.
 - **Coordinate contract:** detection and semantic support exposed to downstream consumers
@@ -236,8 +237,11 @@ x4 in the current production path.
   vertical staff support.
 
 The selected maintained commit is immutable and is not rerun on x4 in the current
-production path. The historical `stage_e_verified` profile remains isolated in the image
-for reproduction and is not part of canonical dispatch.
+production path. The isolated runtime assets for the historical `stage_e_verified`
+profile are retained in the separately built Stage-E reproduction extension image
+(`docker/Dockerfile.stage-e`), not the root production image; the historical profile is
+not part of canonical dispatch. The extension does not reconstruct the complete historical
+two-HOMR environment or guarantee its full-68 metrics.
 
 The production path does not initialize Real-ESRGAN inside each page-local support worker.
 The dedicated SR process finishes all pages first and exits. Only then do disposable

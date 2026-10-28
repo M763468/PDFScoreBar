@@ -1,16 +1,12 @@
 # 現行productionパイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"f908fffe9d7195fc245f59d505c5cc020c0bf36a4dea6645fce66745d100c09a"},"state":"draft"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"951ed7649bcb304c509bc1ebd478427f24537212bb1320d0c578c6995278b274"},"state":"draft"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）。
-- 翻訳元: same PR。相互リンク追加後の原文ファイルの SHA-256: `f908fffe9d7195fc245f59d505c5cc020c0bf36a4dea6645fce66745d100c09a`。
+- 翻訳元: same PR。相互リンク追加後の原文ファイルの SHA-256: `951ed7649bcb304c509bc1ebd478427f24537212bb1320d0c578c6995278b274`。
 - 状態: `draft`。全文に対応する日本語版。意味・網羅性と日本語文章のレビュー結果はPRに記録する。
-- 要判断: 原文の「Two-HOMR ownership contract」第2項末尾にある過去のプロファイルの
-  イメージ内保持という記述は、冒頭および現行`Dockerfile` / `docker/Dockerfile.stage-e`の
-  再現用拡張への分離と整合しない。該当文は原文どおり訳し、[Issue #456](https://github.com/M763468/PDFScoreBar/issues/456)の
-  PRで判断事項として扱う。翻訳元bytesの一致は、実装との整合性の保証を意味しない。
 
 > **アーキテクチャの正本。** 本文書は`develop`上の現行productionパイプラインを、
 > 特に`dense_full_pipeline`ルートを中心に説明する。記述と食い違う場合は、ソースコード、
@@ -223,8 +219,8 @@ dense productionルートの各ページには、HOMRニューラル推論の用
   `<hybrid_output>/baseline/batch/<page>/...`。
 - **Consumer:** detector inventory / hybrid合意判定。その後、番号付けは解決済みbaseline譜表マスクを利用する。
 
-この固定プロファイルは、採択済みStage-E baselineを保持するために存在する。
-現行production経路ではx4で再実行しない。
+この固定プロファイルは、現行productionにおける正本の元画像baselineを提供する。
+過去のStage-E実行環境ではなく保守対象の実行環境を使い、現行production経路ではx4で再実行しない。
 
 ### 2. 永続化済みx4サポート上のcurrent-runtime HOMR
 
@@ -232,7 +228,7 @@ dense productionルートの各ページには、HOMRニューラル推論の用
   `BatchSRVerifiedProfileHybridDetector`が選択ページ集合に対して1回起動する。
 - **x4 HOMR/サポートの所有者:** `src/pipeline/detection/current_support_worker.py`。
 - **入力:** 専用SRプロセスが事前計算して永続化したReal-ESRGAN x4画像。
-- **Producerの実行環境:** 固定したStage-Eプロファイルではなく、現行パイプラインのHOMR実行環境。
+- **Producerの実行環境:** 過去の`stage_e_verified`実行環境ではなく、現行パイプラインのHOMR実行環境。
 - **公開するbundle:** ソース座標の`current_sr_detection`、current-HOMR譜表マスク、
   完全なコネクター意味情報のペア、x4画像/provenance、OMR-DLN予測。
 - **座標契約:** downstream consumerへ渡す検出と意味情報のサポートは、必要に応じて
@@ -241,7 +237,10 @@ dense productionルートの各ページには、HOMRニューラル推論の用
   MMRの垂直方向の譜表サポート。
 
 選択した保守対象commitは不変であり、現行production経路ではx4で再実行しない。
-過去の`stage_e_verified`プロファイルは再現用としてイメージ内に隔離して残し、正規のディスパッチには含めない。
+過去の`stage_e_verified`プロファイル用に隔離された実行環境の資産は、ルートのproductionイメージではなく、
+別途ビルドするStage-E再現用拡張イメージ（`docker/Dockerfile.stage-e`）に保持する。
+過去のプロファイルは正規のディスパッチには含めない。この拡張は過去のTwo-HOMR環境全体を再構築するものではなく、
+そのfull-68指標を保証しない。
 
 production経路は、各ページのsupport worker内でReal-ESRGANを初期化しない。
 専用SRプロセスが先に全ページを処理して終了する。その後で初めて、使い捨てのページ単位workerが

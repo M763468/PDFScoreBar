@@ -1,11 +1,11 @@
 # 現行パイプライン — 実装・技術契約リファレンス
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"e811c2f084b4069c4eb90fa0ea7a630e3ff9fcf203e0cba4f2bd8df5968d2a43"},"state":"draft"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"750df08eba75ea156e01f1a4d32b646d87677f165e4e238ee4152641060c879f"},"state":"draft"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE_REFERENCE.md) · [アーキテクチャ概要に戻る](PIPELINE_ARCHITECTURE.ja.md)
 
 - 原文: [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md)（英語正本）。
-- 翻訳元: same PR。原文 SHA-256: `e811c2f084b4069c4eb90fa0ea7a630e3ff9fcf203e0cba4f2bd8df5968d2a43`。
+- 翻訳元: same PR。原文 SHA-256: `750df08eba75ea156e01f1a4d32b646d87677f165e4e238ee4152641060c879f`。
 - 状態: `draft`。概要から分離した技術契約を保持し、最終レビュー待ち。
 
 この文書は[現行パイプラインのアーキテクチャ概要](PIPELINE_ARCHITECTURE.ja.md)を補う、実装者向けの詳細リファレンスである。入出力の厳密な条件、ワーカーとモデルの責任、座標、閾値、例外・互換動作、成果物を扱う。
@@ -94,8 +94,8 @@ PDFまたは永続化済みページ画像
             -> 複数譜表にまたがるboxを分割し、元画像HOMRの断片をSRまたはOMRの合意判定で補充
             -> 元のprobe行のseedとコネクターマスクの根拠を保持
        -> CNNスコアリング + 厳密な譜表ストローク重複抑制
-  -> ページフィルタリング / ユーザーによる小節線補正
-  -> Phase Aの物理グルーピング + numbering_base
+  -> ページフィルタリング / 楽章境界の検証
+  -> Phase A: 任意のユーザー小節線補正、物理グルーピング + numbering_base
        -> 保守対象の元画像の譜表ジオメトリ
        -> current-x4コネクターの意味的根拠
   -> current-x4 MMRサポートsidecar
@@ -126,9 +126,10 @@ source-page worker内で解決したidentityを使える。アダプターは、
 ファイルidentityを解決する。
 重複除去が有効なら、正常に得られた空のCNN結果にも空の抑制監査を出力し、
 重複除去を無効にした再実行では古い抑制sidecarを除去する。
-採択された譜表のうち1つでも単位を推定できないページ（1線の打楽器記譜を含む）は、
-元の候補を保持し、このアダプターとストローク重複除去をスキップする。
-そのsidecarは幾何学的な閾値を作り出さず、`no_staff_unit_size`を記録する。
+抽出された譜表がないページ、または採択された譜表のうち1つでも単位を推定できないページ
+（1線の打楽器記譜を含む）は、元の候補を保持し、このアダプターとストローク重複除去をスキップする。
+そのsidecarは閾値を作り出さず、譜表がない場合は`no_staff_geometry`、単位を推定できない場合は
+`no_staff_unit_size`を記録する。
 これにより、混在ページ上の未知の声部も保持される。
 固定入力での検証は`tools/issue416/IMPLEMENTATION.md`を参照。
 
@@ -138,15 +139,16 @@ detector境界でメモリ内にしかない画像を拒否する。
 
 ## オーケストレーションとprobeのモジュール境界
 
-`PipelineOrchestrator`は、入力の検証/レンダリング、フェーズ順序、共有モデルキャッシュ、
+`src/pipeline/orchestrator.py`の`PipelineOrchestrator`は、入力の検証/レンダリング、フェーズ順序、共有モデルキャッシュ、
 telemetry、manifest/reviewへのディスパッチを所有する。既存のフェーズメソッドは実行を
-`steps/numbering_phases.py`へ委譲する。このモジュールは、基本レイアウト/小節線補正、
+`src/pipeline/steps/numbering_phases.py`へ委譲する。このモジュールは、基本レイアウト/小節線補正、
 バッチMMR準備、最終上書きの適用、ページをまたぐ番号付け、オーバーレイを含む。
 同モジュールの`NumberingPhaseServices`は、ディスパッチ時に現行orchestratorの操作フックを渡す。
 フェーズヘルパーは同じコンテキストとキャッシュを共有し、呼び出し元をimportしない。
-レビューの設定/前提条件とmanifestへの投影は`review/pipeline_review.py`に置く。
+レビューの設定/前提条件とmanifestへの投影は`src/pipeline/review/pipeline_review.py`に置く。
 
-probeのエントリポイントは、既存のオプション/API契約と候補の採択順序を維持する。
+`src/pipeline/probe_detector/`にあるprobeのエントリポイントは、既存のオプション/API契約と
+候補の採択順序を維持する。以下のprobeモジュール名はこのディレクトリからの相対パスである。
 `bands.py`は譜表帯域と対象となるx領域を解決する。`measurements.py`は帯域と延長部のインクを
 投影し、seedを選び、候補ごとの走査帯域、行プロファイル、xピーク、はみ出しを測定する。
 測定処理は候補の採択やrescueを行わない。`existing.py`は既存小節線とのマッチングを所有し、
@@ -155,11 +157,13 @@ probeのエントリポイントは、既存のオプション/API契約と候�
 閾値、丸め規則、結果schema、プロセス寿命は変わらない。
 probeの診断レンダリングと任意の幅広候補分割は、要求された場合にのみimportする。
 最小ユーザー配布は、これらのdevelopツールと単独の番号付けCLI/オーバーレイを含まない。
-最終ユーザーPDFは`review/final_output.py`が生成する。
+最終ユーザーPDFは`src/pipeline/review/final_output.py`が生成する。
 
 ## 検出失敗時の契約
 
-正規のbatch/source-page/support workerは、HOMR実行前にnullでない有効な`precomputed_sr`を要求する。
+正規バッチモードでは、batch/source-page/support workerはHOMR実行前にnullでない有効な
+`precomputed_sr`を要求する。support workerがページ単位のSRを起動するのは、明示的な
+`sr_mode=page_local`互換モードを選んだ場合だけである。
 `sr_mode=page_local`は明示的なdevelop互換モードであり、バッチ失敗からの復旧手段ではない。
 旧形式の非バッチプロファイルは、このモードを明示的に記録する。
 ページ単位のSRは`strict=True`で汎用ヘルパーを呼び、正確なx4形状を確認する。
@@ -183,12 +187,16 @@ final/reviewを公開する前にengine jobをFAILEDにする。
 | モデル予測、Segnetキャッシュ、callable APIの適合 | `predictor.py`, `segnet_cache.py`, `api_compat.py` |
 | ロギングと予測/マスクのシリアライズ | `utils.py`, `reporting.py` |
 
+以下のプロファイルとworkerのモジュールは`src/pipeline/detection/`配下にある。
 `maintained_profile.py`は保守対象baselineの実行を所有する。
 共通のソース生成とbatch-SRのスケジューリングは`profile_sources*.py`に置く。
 `maintained_profile_hybrid.py`は保守対象backendと`maintained_source_page_worker.py`を選択する。
 過去のプロファイル用アダプターは、`homr_profile.py`、`homr_profile_compat.py`、
 `profile_hybrid*.py`、`verified_source_page_worker.py`に残す。
 これらは過去のプロファイルを明示的に選んだ場合にのみロードする。
+保守対象用と過去用のhybridモジュールは同名のクラスを定義し、設定されたプロファイルで選択する。
+現行クラス名やメッセージにも歴史的な`Verified` / `Stage E`という名称が残るが、
+それ自体は過去の実行環境を選択することを意味しない。
 `src/homr_eval_scripts/core/`は旧importアダプターに加え、評価指標、診断CSV生成、比較レポートを保持する。
 productionはこのパッケージをimportしない。
 
@@ -343,6 +351,9 @@ Phase A（`run_base_numbering_and_barline_correction`）は、
 黙って切り替えることなく例外を送出する。current supportを宣言しない汎用の呼び出し元は、
 従来のフォールバック動作を維持する。
 
+current-HOMRの意味情報用譜表マスクが存在し、番号付けジオメトリと譜表数が一致するときは、
+そのマスクでコネクター測定領域を定義し、得られた順序付き譜表ペアの根拠を正本の
+番号付けジオメトリへ適用する。
 採択済みproductionの番号付け動作は、意味情報成果物の欠落とproducerのジオメトリの不一致も区別する。
 current-HOMRの意味情報側の譜表マスクと番号付け用の譜表ジオメトリで譜表数が異なる場合は、
 コネクターの根拠を測定するために番号付け用の譜表ジオメトリを使う。コネクターマスクは引き続き使う。

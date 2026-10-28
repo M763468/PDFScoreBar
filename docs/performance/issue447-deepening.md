@@ -6,6 +6,8 @@ No production code, model, threshold, configuration, dependency or release behav
 The open Issue acceptance criteria were re-read for this continuation. No full68 or merge
 was performed. The existing implementation follow-up is #454; no additional Issue was created.
 
+Further investigation: [repeated E2E and integrated OMR reuse](issue447-e2e-candidates.md).
+
 ## Review correction and reproducibility
 
 Codex's unresolved P2 review identified incorrect association of historical process samples

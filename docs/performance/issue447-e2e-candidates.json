@@ -1,0 +1,3613 @@
+{
+  "schema": "issue447.e2e-candidates.results.v1",
+  "harness_contract": "tools/issue447/e2e_candidates_contract.json",
+  "runtime_source": "2ac7d5245fe65dbfa2093b4e0d60119c58192f86",
+  "image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "uid_gid": "1000:1001",
+  "primary": "trace OFF host perf_counter Docker E2E",
+  "statistics": {
+    "warm": {
+      "B": {
+        "n": 2,
+        "seconds": [
+          247.06373940501362,
+          242.44574571901467
+        ],
+        "median_seconds": 244.75474256201414,
+        "range_seconds": [
+          242.44574571901467,
+          247.06373940501362
+        ],
+        "reduction_vs_baseline_median_percent": 0.0,
+        "pages_per_minute_from_median": 0.7354300803972896,
+        "max_cgroup_memory_gib": 6.674556732177734,
+        "peak_device_vram_mib": 3464.0,
+        "cgroup_cpu_seconds": [
+          470.165915,
+          466.959666
+        ]
+      },
+      "P": {
+        "n": 2,
+        "seconds": [
+          224.2433360349387,
+          223.22815798898228
+        ],
+        "median_seconds": 223.73574701196048,
+        "range_seconds": [
+          223.22815798898228,
+          224.2433360349387
+        ],
+        "reduction_vs_baseline_median_percent": 8.587778659581247,
+        "pages_per_minute_from_median": 0.8045205221067224,
+        "max_cgroup_memory_gib": 8.105545043945312,
+        "peak_device_vram_mib": 6597.0,
+        "cgroup_cpu_seconds": [
+          494.815712,
+          505.066956
+        ]
+      },
+      "O": {
+        "n": 2,
+        "seconds": [
+          227.50028666993603,
+          228.1984522760613
+        ],
+        "median_seconds": 227.84936947299866,
+        "range_seconds": [
+          227.50028666993603,
+          228.1984522760613
+        ],
+        "reduction_vs_baseline_median_percent": 6.907066605556023,
+        "pages_per_minute_from_median": 0.7899956028683719,
+        "max_cgroup_memory_gib": 4.793891906738281,
+        "peak_device_vram_mib": 3451.0,
+        "cgroup_cpu_seconds": [
+          449.586612,
+          451.483814
+        ]
+      },
+      "C": {
+        "n": 2,
+        "seconds": [
+          217.8184303859016,
+          216.2665571239777
+        ],
+        "median_seconds": 217.04249375493964,
+        "range_seconds": [
+          216.2665571239777,
+          217.8184303859016
+        ],
+        "reduction_vs_baseline_median_percent": 11.322456315653607,
+        "pages_per_minute_from_median": 0.8293306849083483,
+        "max_cgroup_memory_gib": 8.372810363769531,
+        "peak_device_vram_mib": 6541.0,
+        "cgroup_cpu_seconds": [
+          491.000292,
+          489.314624
+        ]
+      }
+    },
+    "cold": {
+      "B": {
+        "n": 1,
+        "seconds": [
+          359.96994489000645
+        ],
+        "median_seconds": 359.96994489000645,
+        "range_seconds": [
+          359.96994489000645,
+          359.96994489000645
+        ],
+        "reduction_vs_baseline_median_percent": 0.0,
+        "pages_per_minute_from_median": 0.5000417466936062,
+        "max_cgroup_memory_gib": 4.883598327636719,
+        "peak_device_vram_mib": 3450.0,
+        "cgroup_cpu_seconds": [
+          600.82764
+        ]
+      },
+      "P": {
+        "n": 1,
+        "seconds": [
+          349.40663647302426
+        ],
+        "median_seconds": 349.40663647302426,
+        "range_seconds": [
+          349.40663647302426,
+          349.40663647302426
+        ],
+        "reduction_vs_baseline_median_percent": 2.934497328717245,
+        "pages_per_minute_from_median": 0.5151590760179988,
+        "max_cgroup_memory_gib": 8.95914077758789,
+        "peak_device_vram_mib": 6605.0,
+        "cgroup_cpu_seconds": [
+          657.804557
+        ]
+      },
+      "O": {
+        "n": 1,
+        "seconds": [
+          362.3613909430569
+        ],
+        "median_seconds": 362.3613909430569,
+        "range_seconds": [
+          362.3613909430569,
+          362.3613909430569
+        ],
+        "reduction_vs_baseline_median_percent": -0.6643460341616114,
+        "pages_per_minute_from_median": 0.49674166315441154,
+        "max_cgroup_memory_gib": 4.753376007080078,
+        "peak_device_vram_mib": 3391.0,
+        "cgroup_cpu_seconds": [
+          608.62863
+        ]
+      },
+      "C": {
+        "n": 1,
+        "seconds": [
+          336.8465348309837
+        ],
+        "median_seconds": 336.8465348309837,
+        "range_seconds": [
+          336.8465348309837,
+          336.8465348309837
+        ],
+        "reduction_vs_baseline_median_percent": 6.423705753014564,
+        "pages_per_minute_from_median": 0.5343679729118095,
+        "max_cgroup_memory_gib": 8.931037902832031,
+        "peak_device_vram_mib": 6593.0,
+        "cgroup_cpu_seconds": [
+          622.024061
+        ]
+      }
+    }
+  },
+  "runs": [
+    {
+      "label": "e2ec-warm-b-1",
+      "mode": "B",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 247.06373940501362,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.553754294058308
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1224,
+        "first_monotonic": 584656.062161662,
+        "last_monotonic": 584902.296530616,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7261868032,
+        "observer_cpu_seconds": 1.5,
+        "cgroup_memory_peak_bytes": 7166750720,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 470165915,
+          "user_usec": 433385414,
+          "system_usec": 36780500,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 2175033344,
+          "wbytes": 86511616,
+          "rios": 5922,
+          "wios": 156
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 247,
+          "mean": 39.73684210526316,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 247,
+          "mean": 2247.5425101214573,
+          "peak": 3464.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 169,
+          "start_ticks": 58480276,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch"
+        },
+        {
+          "pid": 256,
+          "start_ticks": 58483714,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch"
+        },
+        {
+          "pid": 343,
+          "start_ticks": 58486913,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 118.99885534390341,
+        "initialization_wall_seconds": 10.46634351904504,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.509295635856688,
+            "cgroup_cpu_seconds": 42.333758
+          },
+          "SR": {
+            "sampled_seconds": 120.98950311599765,
+            "cgroup_cpu_seconds": 136.593532
+          },
+          "source": {
+            "sampled_seconds": 98.73557020211592,
+            "cgroup_cpu_seconds": 291.00158
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.535996365,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 243.029
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 1,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 228562,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 822,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 12013,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 803,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 89,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-b-1/provenance.json",
+        "source_commit": "488193d233c5365dd236faa8331af3ddea850a11",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-b-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-b-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=488193d233c5365dd236faa8331af3ddea850a11",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "src/pipeline/main.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-b-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-b-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "1fc46348ac3076fc9b004d9e95c5e2deac85f35545d783733ac3216a8ff14530",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-warm-p-1",
+      "mode": "P",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 224.2433360349387,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.0591006149770692
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1102,
+        "first_monotonic": 584905.521635986,
+        "last_monotonic": 585127.570754126,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10955128832,
+        "observer_cpu_seconds": 1.47,
+        "cgroup_memory_peak_bytes": 8703262720,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 494815712,
+          "user_usec": 459194602,
+          "system_usec": 35621109,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 20480,
+          "wbytes": 85315584,
+          "rios": 3,
+          "wios": 168
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 224,
+          "mean": 43.89732142857143,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 224,
+          "mean": 2592.964285714286,
+          "peak": 6549.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 245,
+          "start_ticks": 58505847,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch"
+        },
+        {
+          "pid": 250,
+          "start_ticks": 58505994,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch"
+        },
+        {
+          "pid": 345,
+          "start_ticks": 58509224,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 117.78537064197008,
+        "initialization_wall_seconds": 9.143240834004246,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.7095323408721,
+            "cgroup_cpu_seconds": 43.531591000000034
+          },
+          "SR": {
+            "sampled_seconds": 119.6054126600502,
+            "cgroup_cpu_seconds": 136.452739
+          },
+          "source": {
+            "sampled_seconds": 75.73417313897517,
+            "cgroup_cpu_seconds": 314.60376699999995
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 12.375969988,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 218.816
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 204627,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 843,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11844,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 765,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 84,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-p-1/provenance.json",
+        "source_commit": "488193d233c5365dd236faa8331af3ddea850a11",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-p-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-p-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=2",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-warm-p-1/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=488193d233c5365dd236faa8331af3ddea850a11",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-p-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-p-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "1fc46348ac3076fc9b004d9e95c5e2deac85f35545d783733ac3216a8ff14530",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-warm-o-1",
+      "mode": "O",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 227.50028666993603,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.8022091441089287
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1126,
+        "first_monotonic": 585132.453478039,
+        "last_monotonic": 585358.929065295,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7307694080,
+        "observer_cpu_seconds": 1.29,
+        "cgroup_memory_peak_bytes": 5147402240,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 449586612,
+          "user_usec": 419778893,
+          "system_usec": 29807718,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 4096,
+          "wbytes": 81027072,
+          "rios": 1,
+          "wios": 154
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 228,
+          "mean": 42.84649122807018,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 228,
+          "mean": 2126.745614035088,
+          "peak": 3393.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true,
+        "three_fresh_rows": true,
+        "paths_belong_to_current_run": true,
+        "page_012": true,
+        "page_013": true,
+        "page_014": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 94,
+          "start_ticks": 58525590,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir logs/issue447/runs/e2ec-warm-o-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/predictions --pre-computed-sr logs/issue447/runs/e2ec-warm-o-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/sr"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 118.66658374504186,
+        "initialization_wall_seconds": 9.640039163990878,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 105.75150338094682,
+            "cgroup_cpu_seconds": 311.473274
+          },
+          "SR": {
+            "sampled_seconds": 120.72408387507312,
+            "cgroup_cpu_seconds": 137.86537699999997
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.556157307,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 223.069
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 208891,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 797,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11754,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 838,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 85,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-o-1/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-o-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-o-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_OMR_REUSE=1",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=1",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-warm-o-1/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-o-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-o-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-warm-o-2",
+      "mode": "O",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 228.1984522760613,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.8461739699123427
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1130,
+        "first_monotonic": 585362.978533883,
+        "last_monotonic": 585590.256904422,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7277903872,
+        "observer_cpu_seconds": 1.35,
+        "cgroup_memory_peak_bytes": 5098418176,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 451483814,
+          "user_usec": 422806815,
+          "system_usec": 28676998,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 84844544,
+          "rios": 0,
+          "wios": 165
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 228,
+          "mean": 43.25,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 228,
+          "mean": 2183.0219298245615,
+          "peak": 3451.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true,
+        "three_fresh_rows": true,
+        "paths_belong_to_current_run": true,
+        "page_012": true,
+        "page_013": true,
+        "page_014": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 94,
+          "start_ticks": 58548613,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir logs/issue447/runs/e2ec-warm-o-2/pipeline/hybrid_output/pipeline/issue447_omr_reuse/predictions --pre-computed-sr logs/issue447/runs/e2ec-warm-o-2/pipeline/hybrid_output/pipeline/issue447_omr_reuse/sr"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 118.53028582700063,
+        "initialization_wall_seconds": 9.640865833964199,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 106.88634320197161,
+            "cgroup_cpu_seconds": 313.876087
+          },
+          "SR": {
+            "sampled_seconds": 120.39202733698767,
+            "cgroup_cpu_seconds": 137.358117
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.353380426,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 223.884
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 209027,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 818,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 12298,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 925,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 93,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-o-2/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-o-2",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-o-2:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_OMR_REUSE=1",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=1",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-warm-o-2/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-o-2/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-o-2/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-warm-p-2",
+      "mode": "P",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 223.22815798898228,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.0543400649912655
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1103,
+        "first_monotonic": 585593.660517302,
+        "last_monotonic": 585815.907981739,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10877337600,
+        "observer_cpu_seconds": 1.41,
+        "cgroup_memory_peak_bytes": 8618147840,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 505066956,
+          "user_usec": 469572796,
+          "system_usec": 35494160,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 83775488,
+          "rios": 0,
+          "wios": 157
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 223,
+          "mean": 45.07174887892376,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 223,
+          "mean": 2619.5112107623318,
+          "peak": 6597.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 245,
+          "start_ticks": 58574860,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-p-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-p-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch"
+        },
+        {
+          "pid": 250,
+          "start_ticks": 58575183,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-p-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-p-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch"
+        },
+        {
+          "pid": 345,
+          "start_ticks": 58578332,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-p-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-p-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 119.14170715794899,
+        "initialization_wall_seconds": 9.934646114008501,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.70843838516157,
+            "cgroup_cpu_seconds": 42.64740299999998
+          },
+          "SR": {
+            "sampled_seconds": 121.11068378994241,
+            "cgroup_cpu_seconds": 138.719958
+          },
+          "source": {
+            "sampled_seconds": 74.42834226193372,
+            "cgroup_cpu_seconds": 323.432009
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 10.690705219,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 218.588
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 204286,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 818,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11874,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 771,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 90,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-p-2/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-p-2",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-p-2:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=2",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-warm-p-2/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-p-2/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-p-2/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-warm-b-2",
+      "mode": "B",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 242.44574571901467,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.211052646045573
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1201,
+        "first_monotonic": 585819.394346726,
+        "last_monotonic": 586060.98526757,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7318429696,
+        "observer_cpu_seconds": 1.45,
+        "cgroup_memory_peak_bytes": 5188907008,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 466959666,
+          "user_usec": 437506119,
+          "system_usec": 29453546,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 110592,
+          "wbytes": 84271104,
+          "rios": 27,
+          "wios": 163
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 243,
+          "mean": 40.041152263374485,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 243,
+          "mean": 2178.8683127572017,
+          "peak": 3391.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 169,
+          "start_ticks": 58596487,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-b-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-b-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch"
+        },
+        {
+          "pid": 256,
+          "start_ticks": 58599733,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-b-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-b-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch"
+        },
+        {
+          "pid": 343,
+          "start_ticks": 58602817,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir /workspace/logs/issue447/runs/e2ec-warm-b-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-warm-b-2/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 118.89859953301493,
+        "initialization_wall_seconds": 9.513870286056772,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.709034182946198,
+            "cgroup_cpu_seconds": 42.84103200000004
+          },
+          "SR": {
+            "sampled_seconds": 120.80831627908628,
+            "cgroup_cpu_seconds": 137.91606000000002
+          },
+          "source": {
+            "sampled_seconds": 94.07357038196642,
+            "cgroup_cpu_seconds": 285.963946
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.348185872,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 238.211
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 223934,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 780,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11978,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 789,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 84,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-b-2/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-b-2",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-b-2:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "src/pipeline/main.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-b-2/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-b-2/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-cold-b-1",
+      "mode": "B",
+      "temperature": "cold",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 359.96994489000645,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.6952539789490402
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1783,
+        "first_monotonic": 586064.31904261,
+        "last_monotonic": 586423.302628558,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 8561430528,
+        "observer_cpu_seconds": 2.4,
+        "cgroup_memory_peak_bytes": 5243723776,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 600827640,
+          "user_usec": 553331586,
+          "system_usec": 47496053,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 39968768,
+          "wbytes": 111960064,
+          "rios": 413,
+          "wios": 710
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 360,
+          "mean": 28.163888888888888,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 360,
+          "mean": 2116.3444444444444,
+          "peak": 3450.0
+        }
+      },
+      "cache_before": {
+        "files": 0,
+        "bytes": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20644167,
+        "digest": "871e7f590629011b9074f94f3b44a2d4bb28b9d77971fc85b651f4ebf68f8daa"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 249,
+          "start_ticks": 58632886,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png --output-dir /workspace/logs/issue447/runs/e2ec-cold-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-cold-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch"
+        },
+        {
+          "pid": 336,
+          "start_ticks": 58636063,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png --output-dir /workspace/logs/issue447/runs/e2ec-cold-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-cold-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch"
+        },
+        {
+          "pid": 423,
+          "start_ticks": 58639131,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir /workspace/logs/issue447/runs/e2ec-cold-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-cold-b-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 236.35809560492635,
+        "initialization_wall_seconds": 9.281589820049703,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 25.311570318066515,
+            "cgroup_cpu_seconds": 40.99821399999993
+          },
+          "SR": {
+            "sampled_seconds": 240.97385846998077,
+            "cgroup_cpu_seconds": 276.246576
+          },
+          "source": {
+            "sampled_seconds": 92.69815715996083,
+            "cgroup_cpu_seconds": 283.34834700000005
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 1.473394738,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 355.706
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 341775,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 845,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11414,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 858,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 90,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-cold-b-1/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-cold-b-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-cold-b-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "src/pipeline/main.py",
+          "--config",
+          "logs/issue447/runs/e2ec-cold-b-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-cold-b-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-cold-p-1",
+      "mode": "P",
+      "temperature": "cold",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 349.40663647302426,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.624201491009444
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1727,
+        "first_monotonic": 586426.303006048,
+        "last_monotonic": 586774.715517124,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11818803200,
+        "observer_cpu_seconds": 2.58,
+        "cgroup_memory_peak_bytes": 9619804160,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 657804557,
+          "user_usec": 602260061,
+          "system_usec": 55544496,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 262144,
+          "wbytes": 114094080,
+          "rios": 64,
+          "wios": 972
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 349,
+          "mean": 29.991404011461317,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 349,
+          "mean": 2398.573065902579,
+          "peak": 6605.0
+        }
+      },
+      "cache_before": {
+        "files": 0,
+        "bytes": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648098,
+        "digest": "ebb00e3e62895aad50ce41e3aa73c0e27f7c27cebe9ac4a46a079fb6446bf3eb"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 325,
+          "start_ticks": 58670544,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png --output-dir /workspace/logs/issue447/runs/e2ec-cold-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-cold-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/sr/batch"
+        },
+        {
+          "pid": 326,
+          "start_ticks": 58670547,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png --output-dir /workspace/logs/issue447/runs/e2ec-cold-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-cold-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_012/artifacts/sr/batch"
+        },
+        {
+          "pid": 425,
+          "start_ticks": 58674098,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images /workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir /workspace/logs/issue447/runs/e2ec-cold-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/omr_sr --pre-computed-sr /workspace/logs/issue447/runs/e2ec-cold-p-1/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_014/artifacts/sr/batch"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 236.35668013000395,
+        "initialization_wall_seconds": 9.60006818198599,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 26.928355387062766,
+            "cgroup_cpu_seconds": 43.27018500000004
+          },
+          "SR": {
+            "sampled_seconds": 240.7498419219628,
+            "cgroup_cpu_seconds": 276.764965
+          },
+          "source": {
+            "sampled_seconds": 80.73431376705412,
+            "cgroup_cpu_seconds": 337.523783
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 16.621492484,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 345.013
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 330444,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 826,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 12105,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 845,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 97,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-cold-p-1/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-cold-p-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-cold-p-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=2",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-cold-p-1/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-cold-p-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-cold-p-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-cold-o-1",
+      "mode": "O",
+      "temperature": "cold",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 362.3613909430569,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.30076321901287884
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1793,
+        "first_monotonic": 586778.743395987,
+        "last_monotonic": 587139.830273431,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 8564330496,
+        "observer_cpu_seconds": 2.56,
+        "cgroup_memory_peak_bytes": 5103898624,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 608628630,
+          "user_usec": 558379349,
+          "system_usec": 50249280,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 131072,
+          "wbytes": 111026176,
+          "rios": 32,
+          "wios": 841
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 362,
+          "mean": 27.585635359116022,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 362,
+          "mean": 2015.646408839779,
+          "peak": 3391.0
+        }
+      },
+      "cache_before": {
+        "files": 0,
+        "bytes": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648099,
+        "digest": "2153556e8b5d46ddc82cc6caacb69347a28bfe36ad05caef39041d3a035ef10f"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true,
+        "three_fresh_rows": true,
+        "paths_belong_to_current_run": true,
+        "page_012": true,
+        "page_013": true,
+        "page_014": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 174,
+          "start_ticks": 58703204,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir logs/issue447/runs/e2ec-cold-o-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/predictions --pre-computed-sr logs/issue447/runs/e2ec-cold-o-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/sr"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 245.75437506393064,
+        "initialization_wall_seconds": 10.049190822988749,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 110.83478258608375,
+            "cgroup_cpu_seconds": 321.106357
+          },
+          "SR": {
+            "sampled_seconds": 250.25209485797677,
+            "cgroup_cpu_seconds": 287.146801
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 3.081603196,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 357.546
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 343355,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 865,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11751,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 812,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 93,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-cold-o-1/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-cold-o-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-cold-o-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_OMR_REUSE=1",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=1",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-cold-o-1/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-cold-o-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-cold-o-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-warm-c-1",
+      "mode": "C",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 217.8184303859016,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.3377325220499188
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1074,
+        "first_monotonic": 587154.259810483,
+        "last_monotonic": 587370.822279204,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10950348800,
+        "observer_cpu_seconds": 1.51,
+        "cgroup_memory_peak_bytes": 8677777408,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 491000292,
+          "user_usec": 457842008,
+          "system_usec": 33158283,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 84336640,
+          "rios": 0,
+          "wios": 159
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 218,
+          "mean": 45.940366972477065,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 218,
+          "mean": 2467.2477064220184,
+          "peak": 6541.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true,
+        "three_fresh_rows": true,
+        "paths_belong_to_current_run": true,
+        "page_012": true,
+        "page_013": true,
+        "page_014": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 94,
+          "start_ticks": 58727792,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir logs/issue447/runs/e2ec-warm-c-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/predictions --pre-computed-sr logs/issue447/runs/e2ec-warm-c-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/sr"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 118.90949689305853,
+        "initialization_wall_seconds": 9.682027264032513,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 95.57615823904052,
+            "cgroup_cpu_seconds": 352.170294
+          },
+          "SR": {
+            "sampled_seconds": 120.98631048202515,
+            "cgroup_cpu_seconds": 138.58567799999997
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 11.176601157,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 213.496
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 199122,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 821,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 12015,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 809,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 86,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-c-1/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-c-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-c-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_OMR_REUSE=1",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=2",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-warm-c-1/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-c-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-c-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-warm-c-2",
+      "mode": "C",
+      "temperature": "warm",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 216.2665571239777,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.0060693470295519
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1068,
+        "first_monotonic": 587374.938613842,
+        "last_monotonic": 587590.198969382,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11170549760,
+        "observer_cpu_seconds": 1.4,
+        "cgroup_memory_peak_bytes": 8990236672,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 489314624,
+          "user_usec": 455176989,
+          "system_usec": 34137634,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 83480576,
+          "rios": 0,
+          "wios": 169
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 216,
+          "mean": 45.199074074074076,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 216,
+          "mean": 2463.759259259259,
+          "peak": 6537.0
+        }
+      },
+      "cache_before": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648097,
+        "digest": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true,
+        "three_fresh_rows": true,
+        "paths_belong_to_current_run": true,
+        "page_012": true,
+        "page_013": true,
+        "page_014": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 94,
+          "start_ticks": 58749852,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir logs/issue447/runs/e2ec-warm-c-2/pipeline/hybrid_output/pipeline/issue447_omr_reuse/predictions --pre-computed-sr logs/issue447/runs/e2ec-warm-c-2/pipeline/hybrid_output/pipeline/issue447_omr_reuse/sr"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 118.8501725330716,
+        "initialization_wall_seconds": 9.491752005065791,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 94.37040298001375,
+            "cgroup_cpu_seconds": 350.80596599999996
+          },
+          "SR": {
+            "sampled_seconds": 120.88995255995542,
+            "cgroup_cpu_seconds": 138.24435599999998
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 11.188394943,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 211.861
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 197673,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 819,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11779,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 805,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 88,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-warm-c-2/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-warm-c-2",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-warm-c-2:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_OMR_REUSE=1",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=2",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-warm-c-2/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-warm-c-2/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-warm-c-2/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    },
+    {
+      "label": "e2ec-cold-c-1",
+      "mode": "C",
+      "temperature": "cold",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 336.8465348309837,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.3414447570685297
+      },
+      "all_equal": true,
+      "resource_screen_passed": true,
+      "resources": {
+        "sample_count": 1665,
+        "first_monotonic": 587593.604740111,
+        "last_monotonic": 587929.443883134,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11633143808,
+        "observer_cpu_seconds": 2.51,
+        "cgroup_memory_peak_bytes": 9589628928,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 622024061,
+          "user_usec": 572696637,
+          "system_usec": 49327423,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 180224,
+          "wbytes": 111845376,
+          "rios": 44,
+          "wios": 708
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 337,
+          "mean": 30.062314540059347,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 337,
+          "mean": 2278.86646884273,
+          "peak": 6593.0
+        }
+      },
+      "cache_before": {
+        "files": 0,
+        "bytes": 0,
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "cache_after": {
+        "files": 538,
+        "bytes": 20648096,
+        "digest": "1f6937ebf6054ad1659d6cb41e6300e5b04e1649af7c8db00d6b28a09b0e4604"
+      },
+      "checks": {
+        "strict_pipeline": true,
+        "resource_screen": true,
+        "sr_identities_equal": true,
+        "sampled_omr_process_count_expected": true,
+        "three_fresh_rows": true,
+        "paths_belong_to_current_run": true,
+        "page_012": true,
+        "page_013": true,
+        "page_014": true
+      },
+      "omr_processes_sampled": [
+        {
+          "pid": 174,
+          "start_ticks": 58783805,
+          "command": "/opt/venv_pipeline/bin/python -m src.pipeline.detection.omr_dln_worker --images data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png --output-dir logs/issue447/runs/e2ec-cold-c-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/predictions --pre-computed-sr logs/issue447/runs/e2ec-cold-c-1/pipeline/hybrid_output/pipeline/issue447_omr_reuse/sr"
+        }
+      ],
+      "sr_native_not_additive": {
+        "batch_wall_seconds": 236.962168762926,
+        "initialization_wall_seconds": 9.745373222976923,
+        "identities": [
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+            "sr_sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+            "sr_sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          },
+          {
+            "image": "/workspace/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+            "sr_sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113",
+            "shape": [
+              16840,
+              11840,
+              3
+            ]
+          }
+        ]
+      },
+      "host_observations": {
+        "status": "Passed",
+        "host_phase_samples_not_exclusive_stages": {
+          "other": {
+            "sampled_seconds": 94.26277116208803,
+            "cgroup_cpu_seconds": 343.21448999999996
+          },
+          "SR": {
+            "sampled_seconds": 241.57637186092325,
+            "cgroup_cpu_seconds": 278.52238800000003
+          }
+        },
+        "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
+        "sum_sampled_main_thread_runqueue_wait_seconds": 15.259768644,
+        "limits": "Host monotonic samples only. Phase identity follows observed worker commands and includes polling uncertainty. Scheduler counters cover sampled main threads, not all threads. Neither low GPU utilization nor main-thread wait identifies causal CPU/I/O wait."
+      },
+      "telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 332.357
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 318392,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 814,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 11653,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 778,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 89,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "provenance": {
+        "path": "logs/issue447/runs/e2ec-cold-c-1/provenance.json",
+        "source_commit": "99098a97e85ff184ddb04e21a8d0f4204bd87354",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--name",
+          "pdfscore-issue447-e2ec-cold-c-1",
+          "--gpus",
+          "all",
+          "--user",
+          "1000:1001",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447:/workspace",
+          "-w",
+          "/workspace",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images:/workspace/data/evaluation2/images:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth:/workspace/models/mmr/mmr_classifier_best.pth:ro",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models:/model-cache:ro",
+          "-v",
+          "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/logs/issue447/e2e-candidates/caches/e2ec-cold-c-1:/compile-cache",
+          "-v",
+          "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt:ro",
+          "-e",
+          "PDFSCOREBAR_MODEL_CACHE=/model-cache",
+          "-e",
+          "HOME=/tmp",
+          "-e",
+          "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
+          "-e",
+          "TRITON_CACHE_DIR=/compile-cache/triton",
+          "-e",
+          "PYTHONPATH=/workspace",
+          "-e",
+          "OMR_DLN_MODEL_PATH=/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+          "--memory",
+          "16g",
+          "-e",
+          "ISSUE447_OMR_REUSE=1",
+          "-e",
+          "ISSUE447_SOURCE_WORKERS=2",
+          "-e",
+          "ISSUE447_SOURCE_EVENTS=/workspace/logs/issue447/runs/e2ec-cold-c-1/source-schedule.jsonl",
+          "-e",
+          "PDFSCORE_HOST_SOURCE_COMMIT=99098a97e85ff184ddb04e21a8d0f4204bd87354",
+          "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+          "/opt/venv_pipeline/bin/python",
+          "tools/issue447/pipeline_poc.py",
+          "--config",
+          "logs/issue447/runs/e2ec-cold-c-1/config.yaml",
+          "--telemetry-summary",
+          "logs/issue447/runs/e2ec-cold-c-1/telemetry.json"
+        ],
+        "script_sha256": {
+          "tools/issue447/analyze.py": "99e62f19f0e362df6a2c98d69d2fc40fdbbeee78eded6750e2512ff696018a53",
+          "tools/issue447/component_poc.py": "228f8a608b4cf4af27e625f1b8886cb2a4437d95be4b63d4681f7c27f6d67402",
+          "tools/issue447/deepening_analyze.py": "5f3b6680e1a6dad001a009713b45d95a2d99895c7dc155bf2baf162557ceb81d",
+          "tools/issue447/deepening_components.py": "51eec02dff16d14d9b361556c033cc34d9f3b2011acfe3dc2a4964a07c549b3c",
+          "tools/issue447/e2e_candidate_matrix.py": "099889177bead52b5bc83fa1b0df47099ea9cf3c5e67a7506c73ac0f183c1ac9",
+          "tools/issue447/e2e_semantic_replay.py": "175ddf45c210a1aa2445b840f69740b87a7231d8bd96ccc78f49fe2c4e22601e",
+          "tools/issue447/observe_processes.py": "986a2188943990e2c0f4dc07d743ca8adb71a2e85f740c4d553aa3dd5bd3974c",
+          "tools/issue447/omr_reuse_poc.py": "b75a58006e8b58f771ea4645bd4ed0becc605982ddc7e6b66987e0ac7c7be793",
+          "tools/issue447/pipeline_poc.py": "252fb4ccc3a24c3e96eace63e6ff15b0ef5920a33fd7a5dec40bc4efc7becaa0",
+          "tools/issue447/replay_numbering.py": "4f71ccbf06ec84b5292ab3d9b651f2fd6f8df09150a2cbc8e47bd344736670b3",
+          "tools/issue447/run_experiment.py": "575221a3eb52a919b18f1f631658ba6557bb98cb050018dad1f01615ce60e071"
+        }
+      }
+    }
+  ],
+  "supplemental_validation": {
+    "replay-single/result.json": [
+      {
+        "label": "e2ec-warm-b-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-p-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-o-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-o-2",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-p-2",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-b-2",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-b-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-p-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-o-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      }
+    ],
+    "replay-combined/result.json": [
+      {
+        "label": "e2ec-warm-b-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-c-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-c-2",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-c-1",
+        "checks": {
+          "manual_anacrusis_zero": true,
+          "second_page_movement_reset_one": true,
+          "third_page_continuity": true,
+          "page_order": true,
+          "pages_and_metadata_equal": true
+        }
+      }
+    ],
+    "faults/result.json": [
+      {
+        "case": "omr-exit",
+        "exit_code": 1,
+        "checks": {
+          "reached_retained_SR_boundary": true,
+          "expected_fault_observed": true,
+          "source_children_exited": true,
+          "nonzero_exit": true,
+          "no_final_numbering": true,
+          "no_completed_omr_handoff": true,
+          "detection_not_completed": true
+        },
+        "telemetry": {
+          "job_id": "pipeline",
+          "resources": {
+            "progress_sink_error_count": 0,
+            "wall_time_seconds": 0.218
+          },
+          "schema": "pdfscorebar.engine.telemetry_summary.v1",
+          "stage_spans": [
+            {
+              "elapsed_ms": 0,
+              "stage_id": "input_validation",
+              "state": "completed"
+            },
+            {
+              "detail_code": "detection.source_generation_and_scoring",
+              "elapsed_ms": 218,
+              "stage_id": "score_detection",
+              "state": "aborted"
+            }
+          ]
+        },
+        "log": "/workspace/logs/issue447/e2e-candidates/faults/omr-exit.log"
+      },
+      {
+        "case": "omr-missing-output",
+        "exit_code": 1,
+        "checks": {
+          "reached_retained_SR_boundary": true,
+          "expected_fault_observed": true,
+          "source_children_exited": true,
+          "nonzero_exit": true,
+          "no_final_numbering": true,
+          "no_completed_omr_handoff": true,
+          "detection_not_completed": true
+        },
+        "telemetry": {
+          "job_id": "pipeline",
+          "resources": {
+            "progress_sink_error_count": 0,
+            "wall_time_seconds": 0.074
+          },
+          "schema": "pdfscorebar.engine.telemetry_summary.v1",
+          "stage_spans": [
+            {
+              "elapsed_ms": 0,
+              "stage_id": "input_validation",
+              "state": "completed"
+            },
+            {
+              "detail_code": "detection.source_generation_and_scoring",
+              "elapsed_ms": 73,
+              "stage_id": "score_detection",
+              "state": "aborted"
+            }
+          ]
+        },
+        "log": "/workspace/logs/issue447/e2e-candidates/faults/omr-missing-output.log"
+      },
+      {
+        "case": "source-exit",
+        "exit_code": 1,
+        "checks": {
+          "reached_retained_SR_boundary": true,
+          "expected_fault_observed": true,
+          "source_children_exited": true,
+          "nonzero_exit": true,
+          "no_final_numbering": true,
+          "no_completed_omr_handoff": true,
+          "detection_not_completed": true
+        },
+        "telemetry": {
+          "job_id": "pipeline",
+          "resources": {
+            "progress_sink_error_count": 0,
+            "wall_time_seconds": 0.059
+          },
+          "schema": "pdfscorebar.engine.telemetry_summary.v1",
+          "stage_spans": [
+            {
+              "elapsed_ms": 0,
+              "stage_id": "input_validation",
+              "state": "completed"
+            },
+            {
+              "detail_code": "detection.source_generation_and_scoring",
+              "elapsed_ms": 58,
+              "stage_id": "score_detection",
+              "state": "aborted"
+            }
+          ]
+        },
+        "log": "/workspace/logs/issue447/e2e-candidates/faults/source-exit.log"
+      }
+    ],
+    "correction-replay/result.json": [
+      {
+        "label": "e2ec-warm-b-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-p-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-o-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-o-2",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-p-2",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-b-2",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-b-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-p-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-o-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-c-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-warm-c-2",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      },
+      {
+        "label": "e2ec-cold-c-1",
+        "checks": {
+          "remove_matched": true,
+          "one_add": true,
+          "geometry_changed": true,
+          "manual_zero": true,
+          "movement_one": true,
+          "continuity": true,
+          "order": true,
+          "all_corrected_pages_stats_and_metadata_equal": true
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "warm n=2 and cold n=1 per mode, fixed order",
+    "compiler cold, OS/driver cache not flushed",
+    "UID1000 fixed; default-root production caching differs; no root E2E",
+    "no full68 or production adoption",
+    "GPU/CPU clock domains not subtracted; no exact causal wait attribution",
+    "WSL device PID attribution unavailable; check continuous events for external competition"
+  ],
+  "identity_checks": {
+    "input-identity.json": [
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
+        "sha256": "d86497ccc3c4be15ce8bcd6711738847ca9936892b3171928497d4ee8ac6ac0e",
+        "matches_original": true
+      },
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
+        "sha256": "071b237bbcb8f41c42b510c99663016f3232a89f12940bc871b4f6ec0720699e",
+        "matches_original": true
+      },
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
+        "sha256": "c609c79205f6f2f060ba9037e795a5296c681ce052d2c45ab512155a98ffb129",
+        "matches_original": true
+      },
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/models/mmr/mmr_classifier_best.pth",
+        "sha256": "f163fa2a7679d12c0f4fe6fc2fadc7ed1f144035779a18b83a303bfa6d35903a",
+        "matches_original": true
+      },
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/configs/dense_full_pipeline.yaml",
+        "sha256": "0edfdfda89ed50be6d0dafbf28fccc80840ef6330f193d19823a94f934cb2209",
+        "matches_original": true
+      },
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/configs/detector_profiles/maintained_original_homr.json",
+        "sha256": "267147cf57ea0b76ec074db613db932f76311b903fcfda5651aaf2881c134c78",
+        "matches_original": true
+      },
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/models/barline_cnn/manifest.json",
+        "sha256": "13637131e885a61241b94bfdaf79c588cd9d1a5f8461fdbc6008dfdbb7e7552a",
+        "matches_original": true
+      },
+      {
+        "path": "/home/masaki_muramatsu/ws_PDFScoreBar/.worktrees/issue447/models/omr_dln/manifest.json",
+        "sha256": "f41e01e177beb5246f85c6fda3499020c577e3a47ce759b32a78724ee6d3ea62",
+        "matches_original": true
+      }
+    ],
+    "selected-model-identity.json": [
+      {
+        "model": "omr_dln",
+        "path": "/home/masaki_muramatsu/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+        "sha256": "00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212",
+        "expected": "00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212",
+        "equal": true
+      },
+      {
+        "model": "barline_cnn",
+        "path": "/home/masaki_muramatsu/.cache/pdfscorebar/models/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth",
+        "sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+        "expected": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+        "equal": true
+      }
+    ]
+  },
+  "gpu_competition_evidence": {
+    "known_external_gpu_jobs": false,
+    "events": "run-local container-events.jsonl and before/after inventories retained",
+    "exception": "warm P1 also contains a GPU-free concrete-hook pytest exec (10 tests,0.07 s); no zero-background-CPU claim",
+    "limits": "WSL PID/process names unavailable; independent GPU samples, not OS-level proof of exclusivity"
+  }
+}

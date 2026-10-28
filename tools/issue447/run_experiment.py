@@ -142,7 +142,11 @@ def main() -> int:
         "-e",
         f"OMR_DLN_MODEL_PATH={omr}",
     ]
-    if args.component is None or args.component == "source-parallel" or args.source_workers is not None:
+    if (
+        args.component is None
+        or args.component == "source-parallel"
+        or args.source_workers is not None
+    ):
         command += ["--memory", "16g"]
     if args.python_cache is not None:
         args.python_cache = args.python_cache.resolve()

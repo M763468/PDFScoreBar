@@ -22,6 +22,11 @@ def main() -> int:
     parser.add_argument("--compile-mode", choices=("production", "off"), default="production")
     parser.add_argument("--trace", action="store_true")
     parser.add_argument(
+        "--omr-reuse",
+        action="store_true",
+        help="Experimental fresh same-run OMR phase; requires source-workers",
+    )
+    parser.add_argument(
         "--source-workers",
         type=int,
         choices=(1, 2),
@@ -54,6 +59,8 @@ def main() -> int:
     )
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
+    if args.omr_reuse and (args.source_workers is None or args.component):
+        parser.error("OMR reuse requires E2E with explicit source-workers")
     if args.component == "source-paired" and args.source_workers is None:
         parser.error("source-paired requires explicit --source-workers")
     if args.component not in (None, "source-paired") and args.source_workers is not None:
@@ -135,7 +142,7 @@ def main() -> int:
         "-e",
         f"OMR_DLN_MODEL_PATH={omr}",
     ]
-    if args.component in {"source-parallel", "source-serial"} or args.source_workers is not None:
+    if args.component is None or args.component == "source-parallel" or args.source_workers is not None:
         command += ["--memory", "16g"]
     if args.python_cache is not None:
         args.python_cache = args.python_cache.resolve()
@@ -146,6 +153,8 @@ def main() -> int:
             "-e",
             "PYTHONPYCACHEPREFIX=/python-cache",
         ]
+    if args.omr_reuse:
+        command += ["-e", "ISSUE447_OMR_REUSE=1"]
     if args.source_workers is not None:
         command += [
             "-e",

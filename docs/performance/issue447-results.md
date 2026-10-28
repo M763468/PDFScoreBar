@@ -1,247 +1,147 @@
-# Current production performance investigation — Issue #447
+# Issue #447 調査結果と最終判定
 
-This records the initial measurement and bounded-PoC investigation for
-[Issue #447](https://github.com/M763468/PDFScoreBar/issues/447). Investigation continues
-at the user's request; this initial record is not final acceptance. No optimization is adopted.
-The highest-priority follow-up is explicit compiler-cache lifecycle for short-lived
-Docker jobs, filed as [Issue #454](https://github.com/M763468/PDFScoreBar/issues/454).
-Bounded page-source concurrency is promising but needs integration/regression
-work. Disabling compilation and eager tile batching did not pass their experiment gates.
+[Issue #447](https://github.com/M763468/PDFScoreBar/issues/447)の性能調査を、元のAcceptance Criteriaに対して充足と判定する。
+これは調査完了の判定であり、最適化のproduction採用・全入力の精度保証ではない。
+PR #455のレビュー後に人が最終確認する。マージ・Issueクローズはこの作業では行わない。
+production本体・閾値・モデル・依存関係は変更していない。
 
-Continued results: [repeated cache, matched concurrency, initialization and compiled batching](issue447-deepening.md). PR remains Draft.
+## 結論と優先順位
 
-## Evidence identity and limits
+主な遅延はdetectionにあり、最新の対照3ページではwarm E2E中央値244.755秒のうち、
+同じ実行のdetection telemetry中央値が226.248秒だった。その内部ではSRが約119秒、
+source workerが観測上94–99秒の規模を占める。これらの包含・観測区間を足して新しいE2Eを作らない。
+coldではSRのcompile/cache初期化が増大し、sourceの並列化だけではその負担は消えない。
 
-Source is `2ac7d5245fe65dbfa2093b4e0d60119c58192f86`, still current `origin/develop` after
-fetching on 2026-10-27 UTC. The worktree is `.worktrees/issue447`, branch
-`perf/issue447-current-e2e`. Runtime-sensitive production source/config/models are unchanged.
-The identified uncommitted diff adds investigation tools, tests and records only.
+1. **compiler-cache寿命管理：[既存 #454](https://github.com/M763468/PDFScoreBar/issues/454)を維持。**
+   single-pageのcold/warm反復でpaired差の中央値122.373秒。短命jobに特に価値がある。
+   invalidation・権限・同時jobの契約は実装Issueで検証する。compile無効化への置換は不採用。
+2. **SR終了後のresource制限付きページ並列：[新規 #458](https://github.com/M763468/PDFScoreBar/issues/458)。**
+   warm E2Eを8.59%、coldの観測値を2.93%短縮。RAM/VRAMとCPU workが増えるため、admission・順序・異常終了の設計が必要。
+3. **job内OMR再利用：[新規 #459](https://github.com/M763468/PDFScoreBar/issues/459)。**
+   warm E2Eを6.91%短縮し、並列方式より低メモリ。coldは0.66%遅く、改善を確認できなかった。
+   deployment UID/cacheで利益が変わるため、その再確認と失敗境界を採用前の条件にする。
+4. **組合せは候補として保持し、専用Issueを作らない。**
+   warm 11.32%短縮で今回最速だが、並列単独からの追加は2.99%。#458/#459の単独gate後に価値を判断する。
+   decode共有・native化も専用Issueを作らない。現時点で実装効果を確定する証拠が不足している。
 
-The verified immutable image is
-`sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a`,
-runtime compatibility fingerprint
-`d73cfaa3096e662faca36d85f425553ebeb258f912a7bd424827425caaac2f97`.
-Hardware is RTX 4060 8188 MiB, driver `610.88`, 8 host logical CPUs. Runtime is torch
-`2.14.0+cu130`, CUDA `13.0`, cuDNN `92400`, ONNX Runtime GPU `1.24.4`.
-The configuration is [`dense_full_pipeline.yaml`](../../configs/dense_full_pipeline.yaml),
-maintained-original HOMR pin `457e7c6518a10ba755db2e60883419e56c4d7369`.
-Full input/config/model hashes and actual mounts are retained in
-`logs/issue447/preflight/initial/`; a new post-run digest check still matched the frozen inputs.
+## 元のAcceptance Criteriaとの照合
 
-The launch mode explicitly uses UID/GID `1000:1001`, verified read-only model-cache/input/MMR
-mounts and `HOME=/tmp`. This is the measured operator mode, not a claim that the image's
-default root UID has identical import/cache behavior. The shared pytest image is incompatible
-with current production; it was used only for GPU-free utility tests, never performance data.
-
-Representative inputs are existing rendered Shostakovich-Sym5-Va page 013 and pages 012–014.
-These dense-pipeline times exclude PDF rendering and service PDF export. Single-page
-observations from 2026-10-26 UTC are **reused evidence**, not reruns on 2026-10-27 UTC.
-Trace OFF Docker wall time includes startup/imports/teardown. Trace ON, profiled and standalone
-component wall times are diagnostic, not interchangeable exclusive E2E stages.
-
-Every GPU experiment ran sequentially with no observed competing GPU workload; the two
-workers inside the concurrency PoC are the intentional treatment. Docker/GPU before/after
-records and device samples are retained. WSL process-level GPU memory accounting was
-unusable; device totals are reported instead. The brief GPU-free utility test during the
-eager run is an additional CPU-noise limitation; no marginal speed claim is made from it.
-
-## E2E and stage observations
-
-Each E2E condition has one observation, without a confidence interval. Cold means empty
-Issue-local Inductor/Triton disk caches, not flushed OS/driver caches. Warm uses a fresh
-process with that disk cache retained, not a persistent loaded model. The 3-page run had
-prior cache files but also new image/tile shapes and dynamic-graph recordings; it is not
-a fully warmed fixed-shape throughput benchmark.
-
-| Observation | Trace | Docker E2E | Detection | MMR | Sampled device VRAM peak |
-| --- | --- | ---: | ---: | ---: | ---: |
-| Reused single-page, empty compile cache | OFF | 219.45 s | 209.39 s | 4.80 s | 3428 MiB |
-| Reused single-page, retained compile cache | OFF | 103.25 s | 93.40 s | 4.95 s | 3430 MiB |
-| Reused single-page diagnostic | ON | 104.22 s | 93.68 s | 4.81 s | 3434 MiB |
-| New pages 012–014, prior cache/new shapes | OFF | 266.46 s | 243.79 s | 13.05 s | 3458 MiB |
-| New single-page eager candidate | OFF | 104.74 s | 93.92 s | 5.56 s | 3453 MiB |
-
-The multi-page telemetry is 259.34 s inside the pipeline, versus 266.46 s Docker wall.
-Its other reported stages are measure construction 0.873 s, final numbering 0.831 s and
-artifact materialization 0.096 s. The remaining intervals include collection/filter/handoff
-and startup/teardown; they are not assigned wholesale to I/O, Python or subprocess launch.
-Observed throughput is 0.676 pages/minute for this slice versus 0.581 for the retained
-single-page warm case. Different page sets/cache histories prevent a controlled speedup claim.
-
-The actual 3-page SR worker reports 125.34 s, nested within detection. Its page processing
-times are 48.00/32.70/32.88 s, including enhancement and image I/O, with one model lifetime.
-The observed source-worker residencies for the same E2E run are 34.20/35.85/34.65 s.
-Within those parents, x4 HOMR child residencies are 13.29/14.72/14.14 s and OMR-DLN
-9.84/9.64/9.84 s. Original-HOMR worker-native totals are 10.04/10.46/9.26 s.
-Residency endpoints have approximately 0.2 s sampling uncertainty; **parent and child
-durations overlap and must not be added**. Independent replay component times below
-are not substituted into this E2E accounting.
-
-## Resources, I/O and internal attribution
-
-The multi-page container's cgroup peak memory was 8,522,805,248 bytes (7.94 GiB).
-Cumulative CPU at the last sample was 484.55 CPU-seconds, including 1.05 CPU-seconds
-for the observer. Device GPU utilization averaged 38.1% across one-second samples and
-reached 100%; an average does not identify an individual kernel or CPU stall.
-The final sampled cgroup I/O counters were 3,553,554,432 physical read bytes and
-82,624,512 write bytes. These include libraries/weights/filesystem activity; page-cache hits,
-logical reads and delayed writeback differ. They are not exclusive image-I/O cost.
-Sampling began after SR startup; its earlier process residency is left-censored, while
-cgroup lifetime counters/peak include that earlier activity. Summed Python RSS is not
-physical RAM because shared mappings can be counted repeatedly; cgroup memory is preferred.
-
-The reused synchronized trace records SR enhancement 43.76 s, model initialization 7.18 s,
-image read 0.09 s, image write 1.22 s and image SHA-256 0.014 s. The enclosing subprocess
-is 56.60 s; these nested values are not additive. Removing that hash has no useful
-measured E2E case and would weaken provenance.
-
-Retained-input **standalone monotonic** diagnostics, with equal semantic outputs, found:
-
-- Current x4 HOMR: 12.63 s including 2.19 s explicit runtime imports; predictor call
-  9.95 s, nested image reads 1.57 s and session construction 0.61 s. ONNX run/I/O-binding
-  spans overlap and asynchronous work can finish in later calls, so no exclusive GPU
-  percentage is inferred from their sum.
-- OMR-DLN: 7.98 s including 2.11 s runtime imports and 3.39 s lazy YOLO class resolution;
-  worker body 2.48 s includes 1.51 s image reads, 0.075 s model construction and 0.90 s
-  first prediction including setup. Both model and predictor selected `cuda:0`.
-  The approximately 10 s E2E worker residency is not 10 s of neural inference.
-- MMR is 13.05 s for three pages (4.9% of E2E), with one persistent classifier/OCR
-  instance. Its existing CUDA-provider-preference log is retained. Retry/threshold
-  changes were not tested or silently substituted.
-
-cProfile diagnostics completed with equal outputs, but their call-graph time accounting
-failed validity checks: root calls were missing and, for example, an OMR cumulative entry
-was 69.83 s inside an 8.99 s measured region. Those quantitative profiles are retained as
-failed diagnostic attempts and excluded from rankings. The independent monotonic spans
-above supplement them; no causal profiler defect or pure-Python percentage is claimed.
-
-## Predeclared PoCs and decisions
-
-The additional contract was fixed before the trials in
-[`tools/issue447/contract.json`](../../tools/issue447/contract.json), preserving the earlier
-contracts under the ignored Issue evidence root. No threshold, weight, input subset or
-pass/fail tolerance was changed after seeing a result.
-
-| PoC | Speed / memory observation | Correctness and decision |
+| 元Issueの条件 | 調査としての判定 | 証拠と範囲 |
 | --- | --- | --- |
-| Disable SR compilation, one page | E2E 104.74 s versus reused cached baseline 103.25 s; not a demonstrated warm-job improvement. Different attempts and limited sampling prevent causal precision. | Final detector geometry, base/final numbering and MMR override targets/skips match, but x4 HOMR predictions and staff/connector masks differ. Strict source-semantic gate **Failed**. Eager SR differs from compiled SR in 2,401,752 channel values, maximum absolute difference 5. Not adoption-ready. |
-| Tile batch 1 versus 2, eager mode fixed for both | First variant calls 39.58/40.79 s; warm ABBA medians 41.93/42.89 s. A/B ratio 0.978, below the predeclared 1.05 advancement gate. Peak reserved VRAM 2.465/3.793 GiB; allocated 0.881/1.661 GiB. | Eager A/B pixels identical, memory gate passed, speed gate **Failed**. This is a current CPU-stitch screening result, not the historical rejection and not a compiled-production result. Compiled batch 2 was **Not run**: a new shape/compile experiment is not justified by this negative bounded screen. |
-| Two concurrent disposable source workers, pages 012 and 014 | Component wall 47.54 s versus retained sequential observed residencies totaling 68.85 s; exploratory ratio 1.45. Docker wall 48.41 s. Peak device VRAM 6604 MiB, cgroup memory 8.44 GiB within a 16 GiB ceiling. | Ordered original/x4 predictions, decoded staff/connector masks and ordered OMR source predictions all match for both pages. Source-component gates **Passed**. Historical sequential sampling versus a fresh component is not repeated causal E2E evidence. Final merge/order/movement/numbering/MMR/correction guards **Not run**. Promising follow-up, not adoptable implementation. |
+| production経路・固定入力・モデル/環境・コマンド・成果物のprovenance | 充足 | source/image/runtime/input/model hashes、各runのconfig・argv・script snapshot、下記証拠索引。最終整理時もdevelopとの差はdocs/translation検証のみ |
+| trace OFF E2E、主要段階、cold/warm、CPU/GPU/VRAM/RAM、Blocked理由 | 充足 | single-page cache反復3組、3ページE2E 12回、native/telemetry/resource観測。完全なGPU-PID・厳密な待ち帰属はBlockedと明記 |
+| 無駄処理/I/O・ページ並列・batch・native候補を現在の実測で判定 | 充足 | 次のボトルネック表、I/O/import/reuse/compiled-batch PoC。不成立・未確定を保持し、根拠のない移植を推奨しない |
+| PoCの同条件比較と下流影響、未検証の採用可判定をしない | 充足 | 同じsource/config/models/input/cache条件、strict source/番号/MMR比較、実際の補正再生と故障注入。3ページ以外の品質は未保証 |
+| 優先順位付きbacklog、実装価値があるものだけ後続Issue | 充足 | #454維持、#458/#459作成。組合せ・decode・nativeは非Issue化の理由を記録 |
 
-The concurrency experiment used retained production SR and preserved each worker's
-disposable lifetime; no SR model ran concurrently with HOMR/OMR. The observed GPU headroom
-does not authorize unrestricted page concurrency, persistent GPU model pools or shared-model
-mutation. The first batch variant calls are not independent cold-process measurements;
-the model was loaded once, allocator cache was cleared outside each timed enhancement,
-and initial/steady behavior is kept separate. Each ABBA median has two warm observations.
+Issueの調査条件にある「可能な範囲の測定・Blocked理由の明示」を適用した判定である。
+未確定の精度・OOM・hang・cancel復旧をPassedへ読み替えていない。後続Issueの採用gateは未達成のまま引き継ぐ。
 
-## Prioritized backlog
+## 計測の層と時間の読み方
 
-1. **Compiler-cache lifecycle for short-lived jobs.** Reused OFF measurements show
-   219.45→103.25 s cold/cache-retained E2E, with matching SR digest and checked downstream
-   semantics. The 114.21 s nested SR-phase difference explains most of the 116.19 s observed
-   E2E difference. This is enough implementation value for [one focused follow-up, #454](https://github.com/M763468/PDFScoreBar/issues/454), but not a
-   general 2.1× production promise. Verify root/non-root launcher modes, job/container
-   lifetimes, image/runtime/weight/device identity keys, safe cache permissions and repeated
-   comparisons before adoption. Persistent services may already reuse container-local caches.
-2. **Resource-bounded page-source concurrency.** A current two-page screen improved source
-   completion with equal source semantics. Preserve output order and page/movement identity,
-   measure actual E2E and CPU contention, cap memory/workers and implement cancellation/error
-   isolation before proposing a production pool. Retain this in #447 backlog; an additional
-   implementation Issue is premature until the integrated benefit/regression contract is fixed.
-3. **Import/initialization reuse, especially OMR.** The independent OMR diagnostic spends
-   5.50 s in imports/class resolution versus 0.90 s in initial prediction. Inspect bytecode
-   cache/UID behavior before a persistent model architecture. Keep intentional VRAM-release
-   boundaries and manifests. No claim is made about the default root UID's import cost.
-4. **SR backend efficiency and batching.** SR still dominates a substantial measured region,
-   but eager batch 2 did not improve it on this GPU/current stitch path. Revisit compiled
-   batching or another backend only with a distinct predeclared experiment and numerical/
-   downstream gates. Do not silently switch the production compile mode after its failed gate.
-5. **Image decode/representation handoff.** x4 HOMR and OMR each read the large SR image;
-   about 1.5 s per consumer is visible in separate diagnostics. Shared-memory/representation
-   changes might save a few seconds per page, but memory lifetime, input digest and coordinate
-   semantics must survive. Do not remove persistence, hashing or process boundaries merely
-   because they are repeated. Physical I/O counters alone cannot establish avoidable decode cost.
-6. **MMR/OCR and native geometry code.** MMR is about 4.9% of this E2E; no shortcut or retry/
-   threshold change is justified. Tracked construction and numbering together are below 1%
-   of E2E. No reliable profile establishes a dominant pure-Python loop worth a C++/Rust/Zig
-   port; NumPy/OpenCV/native model work and framework imports remain distinct hypotheses.
-   No language rewrite or extra implementation Issue is proposed.
-
-## Reproduction and retention
-
-[`issue447-results.json`](issue447-results.json) retains a compact machine-readable snapshot;
-the full raw evidence is ignored under `logs/issue447/` (about 315 MiB before final records).
-Important paths are `runs/<label>/{provenance,result,container-inspect}.json`, GPU/process
-samples, `pipeline/manifest.json`, worker outputs, and `followup/{contract-v2,contract-v3,
-frozen-input-recheck,summary}.json`. Later launches retain exact helper snapshots and digests
-in each run's `script-snapshots/`; initial launch commands/helpers remain under the Issue root.
-All large inputs, models, generated images, caches and raw logs remain outside Git.
-
-The launchers require the existing manager input/MMR assets, registered shared model cache,
-verified immutable production image and frozen source. Component replay additionally needs
-the retained `single-off-warm` and `multi-off-warm` reference artifacts; no fixture substitutes
-for those inputs. Run in an unused checkout/evidence namespace; launchers refuse existing
-run labels and do not delete retained data.
-
-```bash
-# First resolve/verify the image using the maintained preflight for the active checkout.
-python3 scripts/docker_image_resolver.py resolve --repo-root . --image-ref <immutable-id> --explicit
-# Cold reproduction: choose a NEW empty cache directory, without deleting an existing one.
-python3 tools/issue447/run_experiment.py --label single-off-cold --image <immutable-id> \
-  --compile-cache logs/issue447/reproduction-cache
-python3 tools/issue447/run_experiment.py --label single-off-warm --image <immutable-id> \
-  --compile-cache logs/issue447/reproduction-cache
-python3 tools/issue447/run_experiment.py --label multi-off-warm --image <immutable-id> --scope multi \
-  --compile-cache logs/issue447/reproduction-cache
-# Bounded component examples, reusing the required retained references.
-python3 tools/issue447/run_experiment.py --label sr-tile-batch-screen --image <immutable-id> \
-  --compile-mode off --component sr-screen
-python3 tools/issue447/run_experiment.py --label source-parallel-two --image <immutable-id> \
-  --scope multi --component source-parallel
-# Rescore existing evidence; this launches no inference.
-python3 tools/issue447/analyze.py
-```
-
-Run-local `proc-samples.jsonl` always takes precedence. To rescore the frozen original
-`multi-off-warm` attempt, whose observer was started externally, explicitly add
-`--legacy-multi-proc logs/issue447/followup/multi-off-proc.jsonl`. The selected association
-and exact file path are recorded in the summary. Without that argument the analyzer does
-not attach historical observations to a new run.
-
-Exact actual image IDs/commands/config digests/cache states are in run provenance. The
-measurement contract is fixed to this source/config/input identity; another runtime/dataset
-requires a newly labeled experiment. Do not treat disk-cache warmth as in-process model warmth.
-
-## Validation status
-
-Tested runtime: the frozen source/image above. Final tooling/docs validation is against that
-base plus the identified research-only diff; final patch/script digests and logs are retained
-under `logs/issue447/followup/validation/`. A successful experiment execution is not a passed
-optimization gate.
-
-| Check | Status for this continuation | Evidence / limit |
+| 層 | 何を計ったか | 包含・限界 |
 | --- | --- | --- |
-| Production GPU smoke | Not run | Production runtime source is unchanged; the prior result is historical evidence below, not a current rerun. |
-| Multi-page OFF, eager OFF, component executions | Passed | Exact commands/exit 0 in each run's provenance/result. Eager/batch acceptance failures below remain failures. |
-| Single-page cold/warm/source repeatability | Passed by rescoring retained outputs | Detector/base/final/MMR and source predictions/masks checked; no new baseline inference. |
-| Eager source-semantic gate | Failed | Predictions/masks differ despite matching final one-page detector/numbering/MMR fields. |
-| Eager tile batch 2 speed gate | Failed | 0.978 ratio < 1.05; pixel/memory gates Passed. No compiled batch result claimed. |
-| Source-parallel source gates | Passed | Both pages' ordered source predictions and decoded masks equal; no final pipeline-order claim. |
-| cProfile quantitative accounting | Failed | Inconsistent/missing call-graph timing; excluded, supplemented by monotonic spans. Outputs matched. |
-| Process-attributed GPU memory / power | Blocked | WSL PID GPU accounting returned unusable zero; power `[N/A]`. Total-device memory and cgroup RAM recorded instead. |
-| Focused utility tests, syntax, CLI help, targeted Ruff, diff/link review | Passed | 6 focused tests passed; commands and final results retained in `followup/validation/`; no GPU/model loading in focused tests. |
-| Full68, repeated multi-page cold/warm, integrated parallel regression | Not run | Full68 is not warranted solely for profiling unchanged production. Repeated multi E2E was avoided after one representative run; parallel final integration is follow-up work, not a current pass. |
+| trace OFF Docker E2E | fresh container起動から終了までのhost perf_counter | 主指標。imports/model/teardown込み、observer teardownは別。既存render画像から開始し、PDF renderとservice PDF exportは含まない |
+| 同じE2Eのtelemetry stage | detection、MMR、番号等のcoarse区間 | E2E内部の区間。SR/sourceはdetectionに内包される。stage外の残差を全てI/Oやsubprocessへ割り当てない |
+| native worker timer | SR batch本体・初期化等 | subprocessの起動/終了全体とは違い、親区間に内包される。別runのcomponent値でE2Eの排他的段階を埋めない |
+| process samples | workerが観測されたresidency、cgroup CPU/メモリ/I/O | 約0.2秒周期。親子・並列workerは重複。RSS合計は共有mappingを重複計上し得る。CPU-sはwall秒ではない |
+| trace ON / standalone PoC | 同期付き詳細trace、独立component/import/tile比較 | 診断と仮説の切分け用。trace OFFとの役割を分離。nested spanや独立wallを足し算しない |
 
-**Historical evidence:** the 2026-10-26 UTC attempt on source `2ac7d524` and the immutable
-production image above ran `bash scripts/docker_runtime_validation.sh --config
-logs/issue447/configs/smoke.yaml`, exit 0. Its verified source PDF/render produced 85/85
-matches, hard FP/FN/soft all zero. Evidence is
-`logs/issue447/preflight/initial/production-smoke.log` and
-`logs/issue447/validation/production-smoke/detector_accuracy_smoke_summary.json`.
-It was not rerun for this research-only diff. The initial single-page cold/warm/trace
-runs likewise retain their original commands, environment and outputs under the same Issue root.
+例えば同じrunのdetection 228.562秒に、その内部のSR 118.999秒を加算してはならない。
+source観測94–99秒にもnested HOMR/OMR childが含まれる。source値に各child時間を加算するのも誤りである。
+CUDA eventとhost clockは校正差があり、引き算で「CPU待ち秒」を作らない。primary E2Eの時計や合格基準は変更していない。
 
-No shared tag/container was replaced, no production model/threshold/routing was changed,
-and no merge or destructive cleanup was performed. The evidence supports a ranked follow-up
-backlog while preserving failed gates and unresolved acceptance boundaries.
+## ボトルネックの場所・原因・改善可能性
+
+数値は記載したcohort/層に限る。原因の「確認済み」と「未確定」を分ける。
+
+| 場所 | 実測時間・層 | 遅さの根拠/原因 | 改善判断・未確定 |
+| --- | --- | --- | --- |
+| detection全体 | 最新production 3ページwarm telemetry 223.934/228.562秒、cold 341.775秒 | E2Eの主要部分。SRと2系統HOMR/OMR sourceを含む | 以下の子区間と重複。Dense/Probe/CNN・groupingそれぞれのexclusive時間は確定していない |
+| SR compile/cache | single-page 3組のcold中央値233.242秒、warm111.652秒（いずれもE2E） | 空compiler cacheと再利用cacheでpaired中央値122.373秒差、cold時CPU work増。processは毎回fresh | #454。OS/driver cacheはflushしておらず、差の全てを特定のcompiler関数に帰属しない |
+| SRのwarm処理 | 最新production 3ページnative batch 118.899/118.999秒、cold236.358秒 | x4 RRDB/tile処理・画像read/write・初期化を含む。single-page trace ONではenhance43.76秒、init7.18秒がenclosing subprocess56.60秒に内包 | compiled batch=2は固定2tileのwarm差1%未満で5%改善gate Failed、reserved VRAM約1.41→2.55 GiB。full-page batch2の品質/速度は未検証で、永久不採用とも断定しない |
+| page-source処理 | 最新production 3ページのhost観測94.074/98.736秒。初回source parentは各34.20/35.85/34.65秒 | source内の元画像HOMR・x4 HOMR・OMRのprocess/import/model作業を逐次反復。並列PoCが同条件E2Eで改善 | #458。観測時間はexclusive stageではない。2-workerでRAM/VRAM・CPU増、他shape/device・OOM/hang/cancel復旧は未検証 |
+| 元画像/x4 HOMR | 初回E2Eの元画像worker-native約9.26–10.46秒/page、x4 child residency13.29–14.72秒/page。独立x4診断12.63秒 | 独立診断ではimports2.19秒、predictor9.95秒、nested read1.57秒・session構築0.61秒。NN/nativeと準備の双方がある | 独立診断をE2Eへ代入しない。ONNX非同期spanは重複し、exclusive GPU割合・特定Python loop支配は確定せず |
+| OMR-DLN | 初回E2E child residency約9.64–9.84秒/page。独立診断7.98秒 | 独立診断のruntime import2.11秒、lazy YOLO class解決3.39秒、body2.48秒（read1.51秒・model構築0.075秒・first predict0.90秒を含む）。worker時間全体がNN推論ではない | #459。3-page component中央値27.321→12.485秒、実E2E warm244.755→227.849秒。rootのbytecode cache、predictor state/長文書・失敗回復は未検証。component短縮をE2Eから引かない |
+| 画像I/O・変換・hash | single-page SR trace read0.09/write1.22/hash0.014秒。独立x4 HOMR/OMR read約1.5秒ずつ | large SRを複数consumerでdecode。bytecode権限でも起動負担が変化。physical I/O counterはcache hit/logical read/decode時間を示さない | decode共有は候補だが、IPC/所有権/メモリ/下流gate付きE2E PoCは未実施。0.014秒のhash除去よりprovenance維持を優先 |
+| MMR/RapidOCR | 最新production warm telemetry11.978/12.013秒/3pages、cold11.414秒。初回13.05秒/266.46秒E2E | classifier/OCRは既にjob内で再利用。ページ013に3件、014に6件の実skip指定 | 閾値/retry省略は未評価。モデル内部のexclusive費用・大きな高速化余地は未確定。専用Issue化しない |
+| base/final numbering・artifact | 最新production base0.780–0.845秒、final0.789–0.858秒、artifact0.084–0.090秒 | 3ページcohortでは小さいcoarse stage。geometry処理全体のCPU hotspotを意味しない | invalid cProfile結果を除くと、native移植を正当化する支配的な純Python loopの証拠がない。native化Issueは作らない |
+
+## 最新の同条件E2E比較
+
+全て同じ3ページ・モデル・閾値、trace OFF、fresh container、UID1000。warm各2回、cold各1回。
+warm B/P/O/O/P/Bは同じcompiler-cache seedの私有copy。coldはそれぞれ別の空Inductor/Triton cacheで、OS/driver cacheはflushしない。
+単独候補の事前warm速度/品質/resource/実Phase C gate後に、組合せwarm2回・cold1回を実施した。
+
+| 条件 | warm実測2回（秒） | warm中央値（短縮率） | cold実測1回（短縮率） | RAM最大GiB / device VRAM最大MiB |
+| --- | --- | --- | --- | --- |
+| production | 247.064 / 242.446 | 244.755（基準） | 359.970（基準） | 6.675 / 3464 |
+| source 2-worker | 224.243 / 223.228 | 223.736（8.59%） | 349.407（2.93%） | 8.959 / 6605 |
+| OMR再利用 | 227.500 / 228.198 | 227.849（6.91%） | 362.361（−0.66%、改善せず） | 4.794 / 3451 |
+| 組合せ | 217.818 / 216.267 | 217.042（11.32%） | 336.847（6.42%） | 8.931 / 6593 |
+
+組合せの追加短縮はsource並列単独比2.99%。独立した改善率やcomponent時間を加算していない。
+OMR coldの遅い観測も除外せず保持する。cohort後半の組合せと前半の対照には時間帯差の限界もある。
+2回/1回から信頼区間・全入力での改善・production採用を保証しない。
+
+single-page cache反復3組は別cohortで、cold230.822–243.139秒（中央値233.242）、warm108.449–112.382秒（中央値111.652）。
+初回single cold219.45/warm103.25/trace ON104.22秒と初回multi266.46秒も履歴として保持するが、今回値とpoolingしない。
+単一/複数ページはページ集合・cache形状履歴が違い、両者の比をページ並列の因果改善率にしない。
+
+## 正確性・失敗・未確定事項
+
+12回のE2Eはordered original/x4 predictions、decoded staff/connector masks、OMR予測、detector geometry、
+manifest順序、base/final番号・movement metadata、MMR mapping/targets/skips、filters/補正関連が一致した。
+実際のPhase Cで手動0・2ページ目reset1・3ページ目継続を再生し、Phase A/Cの小節線remove/add編集も全12回一致。
+これらのreplayには既存の有効なdetector/MMR出力を再利用し、timed E2Eの推論省略には用いていない。
+
+OMR exit7、exit0だが予測欠損、2-worker source exit7は故障点到達・上位への失敗伝播・最終番号非公開・source child終了を確認した。
+OOM・hang・forced kill・user cancelの復旧/latency、root E2E、他shape/ページ数、長文書のstate/メモリ増大はNot run。
+shared modelやthresholdを変えて品質を補償しておらず、全入力accuracyは未保証。実装Issueのgateとして残す。
+
+完全なGPU process attribution/powerと厳密なCPU/GPU待ち帰属はWSL/clock制約でBlocked。
+全benchmarkは直列で外部GPU競合を観測していないが、OS全体の排他性を証明したわけではない。
+P1に短いGPU-free pytest execがあり、host CPU無競合も主張しない。cgroup RAMはfile cacheを含み、CPU-sはwallと混同しない。
+
+## 失敗・無効化した証拠の扱い
+
+| 証拠 | 判定・理由 | 最終結論での用途 |
+| --- | --- | --- |
+| SR compile無効化 | final番号等は一致したが、x4 source予測/decoded maskが変化しstrict semantic gate Failed | 採用不可。別の閾値/指標で救済しない |
+| eager batch2 / compiled batch2 | eager speed gate Failed。compiled固定tileでも5%改善gate Failed | 今回の条件で後続Issueを作らない。full-page効果未検証 |
+| 初回parallel47.54秒 vs retained sequential68.85秒 | 異なるharness/観測層の探索値 | 同条件component ABBAと今回E2Eで置き換え。初回比率を因果証拠にしない |
+| cProfile call accounting | root欠落・wallを超すcumulative等で定量値のvalidity Failed | hotspot順位の根拠から除外。無効ログ自体は保持 |
+| GPU/host絶対時刻をhour offsetで合わせた診断 | 校正差があり撤回 | summary-v1-driver-clock.jsonを履歴保持し、最終CPU/GPU待ち値には使わない |
+| historical process samplesの暗黙選択 | Codex P2で修正済み、run-local優先・legacyは明示flagのみ | 今回runに別試行の観測を付けない。元run再scoreと回帰testを保持 |
+
+## 証拠・再現性の索引
+
+固定runtime sourceは`2ac7d5245fe65dbfa2093b4e0d60119c58192f86`、最終整理時のdevelopは`658e2e6e`。
+その差分はdocs/translation検証のみ。configは[dense_full_pipeline](../../configs/dense_full_pipeline.yaml)、
+入力はShostakovich-Sym5-Va page013 / pages012–014、GPUはRTX4060 8188MiB、driver610.88、8 logical CPUs、UID:GID1000:1001。
+Imageは`sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a`、
+runtime fingerprintは`d73cfaa3096e662faca36d85f425553ebeb258f912a7bd424827425caaac2f97`。
+torch2.14.0+cu130 / CUDA13.0 / cuDNN92400 / ORT GPU1.24.4。image build labelとmounted production sourceのidentityは区別する。
+
+| 仮説・記録 | script/commit → 結果 → 判定 |
+| --- | --- |
+| 初回E2E・モデル内部診断 | [初回profile](issue447-initial-profile.md)、[初回詳細](issue447-initial-results.md)、[初回JSON](issue447-results.json)。f29f1864/b5e03b2c、analyze.py/component_poc.py → trace OFF/ONと単体内訳 → 上記の層別診断 |
+| cache反復・同条件source・compiled tile | [継続詳細](issue447-deepening.md)、[JSON](issue447-deepening.json)。c052d09a/812486d6、deepening_components.py/deepening_analyze.py → cache3組・source ABBA・tile gate → #454と候補選定 |
+| 実E2E・補正/故障 | [E2E詳細](issue447-e2e-candidates.md)、[JSON](issue447-e2e-candidates.json)。harness488193d2、OMR実行前hook修正99098a97、record991282f6 → e2e_candidate_matrix.py、omr_reuse_poc.py、e2e_*replay/fault/summarize.py → 12run/補正/故障 → #458/#459 |
+
+[元contract](../../tools/issue447/contract.json)、[継続contract](../../tools/issue447/deepening_contract.json)、
+[E2E contract](../../tools/issue447/e2e_candidates_contract.json)、[補足validation](../../tools/issue447/e2e_supplemental_contract.json)を保持する。
+各runのargv/config/cache inventory/script snapshot/hash、source/input/model identity、resource samplesは`logs/issue447/`内。
+`runs/<label>/provenance.json`と`e2e-candidates/matrix.jsonl`、`validation/commands.json`から実行を辿れる。
+大きなmodel/data/raw出力はgitへ追加しない。入力/selected OMR/CNN重み・image内SR/HOMR重みのpost-checkも一致した。
+元の出力を上書きせず、新しいlabel/保存先で再現する。
+
+## 最終検証と人による確認
+
+最終整理のtested commit/commandsとCodexレビュー結果はPR #455の最新validation報告、および
+`logs/issue447/finalization/`のreview/validation記録に保持する。production差分がないため大規模再計測やfull68は行わない。
+前段の56 tests/12 E2E/補正・故障の結果は各記録の元commitに属する履歴であり、今回の再実行Passedとは呼ばない。
+今回実行する必要最小限のCPU/static検証はPassed/Failed/Blocked/Not runを分けて報告する。
+
+人が確認する点は、元ACと上記判定の妥当性、後続#454/#458/#459のscope/数値gate、限定入力/UIDの制約を了承して調査を閉じられるかである。
+PRをレビュー可能にすることはmerge/Issue closeの承認やproduction採用を意味しない。

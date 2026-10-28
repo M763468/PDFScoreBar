@@ -1,7 +1,7 @@
 # Issue 447: repeated E2E and integrated OMR reuse PoCs
 
-This extends [the previous continuation](issue447-deepening.md). PR #455 remains Draft and
-unmerged. No production files, models, thresholds, dependencies or runtime configuration were
+This extends [the previous continuation](issue447-deepening.md). This is the retained measurement-stage record; final disposition is in
+[the consolidated results](issue447-results.md). No production files, models, thresholds, dependencies or runtime configuration were
 changed. Full68 and formal implementation were explicitly excluded. No new Issue/PR was created;
 #454 remains the existing compile-cache follow-up.
 

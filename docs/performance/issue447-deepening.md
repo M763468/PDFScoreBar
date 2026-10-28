@@ -1,6 +1,8 @@
-# Issue 447: continued investigation, PR 455 remains Draft
+# Issue 447: continued investigation, historical continuation
 
-This record extends [the initial investigation](issue447-results.md), following the request
+Final disposition: [consolidated Issue 447 results](issue447-results.md).
+
+This record extends [the initial investigation](issue447-initial-results.md), following the request
 to deepen the evidence rather than close the PR. It does not authorize production adoption.
 No production code, model, threshold, configuration, dependency or release behavior changed.
 The open Issue acceptance criteria were re-read for this continuation. No full68 or merge

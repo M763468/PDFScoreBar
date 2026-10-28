@@ -100,3 +100,19 @@ def test_source_failure_cancels_queued_work_and_joins_running_children():
     pool.close()
     assert 2 not in seen
     assert all(f.done() for f in pool.futures.values())
+
+
+def test_install_targets_concrete_worker_module_override(monkeypatch):
+    from src.pipeline.detection.maintained_profile_hybrid import (
+        BatchSRVerifiedProfileHybridDetector,
+    )
+    from tools.issue447.omr_reuse_poc import MODULE, install
+
+    cls = BatchSRVerifiedProfileHybridDetector
+    # Register both for restoration: install must override the concrete class attribute,
+    # which shadows the generic base class's source_worker_module.
+    monkeypatch.setattr(cls, "source_worker_module", cls.source_worker_module)
+    monkeypatch.setattr(cls, "_batch_sr_worker", cls._batch_sr_worker)
+    install()
+    assert cls.source_worker_module == MODULE
+    assert cls._batch_sr_worker.__name__ == "batch"

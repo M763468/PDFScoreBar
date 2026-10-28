@@ -107,9 +107,11 @@ def consume(manifest, image, sr_image, output):
 
 def install(detector_class=None):
     if detector_class is None:
-        from src.pipeline.detection.profile_sources_batch_sr import BatchSRProfileHybridDetector
+        from src.pipeline.detection.maintained_profile_hybrid import (
+            BatchSRVerifiedProfileHybridDetector,
+        )
 
-        detector_class = BatchSRProfileHybridDetector
+        detector_class = BatchSRVerifiedProfileHybridDetector
     original = detector_class._batch_sr_worker
 
     def batch(self, *, support_output):

@@ -143,6 +143,8 @@ torch2.14.0+cu130 / CUDA13.0 / cuDNN92400 / ORT GPU1.24.4。image build labelと
 `logs/issue447/finalization/`のreview/validation記録に保持する。production差分がないため大規模再計測やfull68は行わない。
 前段の56 tests/12 E2E/補正・故障の結果は各記録の元commitに属する履歴であり、今回の再実行Passedとは呼ばない。
 今回実行する必要最小限のCPU/static検証はPassed/Failed/Blocked/Not runを分けて報告する。
+CIで検出した研究用4テストの未分類は、配布manifestのdeveloper_toolへ登録して修正した。
+runtime bundleへの追加はなく、配布境界とrelease候補の関連検証を行う。
 
 人が確認する点は、元ACと上記判定の妥当性、後続#454/#458/#459のscope/数値gate、限定入力/UIDの制約を了承して調査を閉じられるかである。
 PRをレビュー可能にすることはmerge/Issue closeの承認やproduction採用を意味しない。

@@ -12,6 +12,123 @@
 > [`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md). That roadmap document is
 > not a source of truth for current runtime behavior.
 
+## Reading this document
+
+This guide is for developers and reviewers who need to understand how the current
+production pipeline turns a score into numbered measures, including readers who have not
+followed the project Issues. Start with the overview and component table below; the later
+sections retain the exact configuration, artifacts, coordinate ownership, failure rules,
+thresholds and historical evidence. A **staff** is a set of score lines for a part; a
+**system** groups the staves played together on one horizontal row. A **measure** is the
+musical interval bounded by barlines, including implicit boundaries at system edges.
+
+## From score to numbered output
+
+The input is a PDF or persisted page images. If PDF rendering is enabled, the pipeline
+first renders pages; the dense detector, which reconstructs barline candidates, requires
+the page images to be saved as files.
+For each selected page, it finds possible barlines, scores the candidates, builds a
+staff/system/measure layout, recognizes multi-measure rests (MMRs), and computes final
+measure numbers. A convolutional neural network (CNN) scores barline candidates.
+Depending on configuration, it also produces overlays, a manifest, and a review package; the user distribution can produce a final numbered PDF through its review flow.
+
+```text
+PDF or saved page images
+  -> render PDF pages if enabled; save page images
+  -> prepare x4 super-resolution (SR) images for selected pages (Real-ESRGAN)
+  -> detect on original and x4 images (HOMR twice; OMR-DLN on x4)
+  -> combine supporting detections; generate and score barline candidates (CNN)
+  -> filter pages and apply optional user barline corrections
+  -> Phase A: group staves into systems, construct measures and base numbering
+  -> Phase B: recognize multi-measure rests and their counts when enabled
+  -> merge recognized and user measure overrides
+  -> Phase C: apply overrides and movement boundaries; finalize numbering
+  -> configured outputs: numbering, overlays, manifest / review package / final PDF
+```
+
+HOMR and OMR-DLN are optical music recognition systems used here to detect score
+features, including barlines. **Two HOMR inferences per page have different jobs.**
+Maintained original-image HOMR
+provides the authoritative baseline barline boxes and staff geometry. A second HOMR
+inference reads the persisted x4 image and supplies support for detection, connector
+semantics and MMR crops; OMR-DLN also reads that x4 image. Detection results passed
+downstream are restored to original-page coordinates where needed. These are two
+input/ownership roles, not two historical and current HOMR runtimes in production. The
+maintained original profile and current-x4 support use the maintained production
+image/runtime; the historical `stage_e_verified` baseline runtime assets are isolated in the
+separately built Stage-E reproduction extension, outside the configured canonical
+production route.
+
+| Component | Input | Output and role |
+| --- | --- | --- |
+| Real-ESRGAN x4 | Selected original page images | Persisted x4 images and provenance (metadata identifying their origin) for the two x4 support detectors; one SR process serves the batch and exits before HOMR/OMR inference. |
+| Maintained original-image HOMR | Original page image | Baseline barline detections and staff mask in source-page coordinates; authoritative geometry for detection and Phase A. |
+| Current-x4 HOMR | Persisted x4 page image | Supporting detections, staff mask and connector semantic masks; detection/support coordinates are restored where needed. |
+| OMR-DLN | Same persisted x4 page image | Supporting barline predictions used with x4 HOMR to check the original-image baseline detections. |
+| Barline CNN | Dense candidates on the page image, after any staff-local normalization by the staff-stroke adapter | Candidate scores used by the detector, followed by staff-stroke duplicate suppression. |
+| MMR CNN + RapidOCR | Phase-A measures, original page image and optional x4 staff-y support | Multi-measure-rest recognition and number reading; produces measure overrides for final numbering. |
+
+**Phase A — staff and measure structure and base numbering:** accepted barline geometry,
+optional user barline corrections, original-image staff geometry and current-x4 connector
+evidence construct the physical systems and measures. The result is
+`intermediate/<page>/numbering_base.json`. This is the common topology for the next phase;
+without it MMR would have no agreed measure locations and indices to address.
+
+**Phase B — multi-measure-rest recognition:** a multi-measure rest (MMR) represents
+several silent measures with one notated symbol and a count. When enabled, the MMR CNN
+and RapidOCR examine the original image using Phase-A measures and optional x4-derived
+vertical staff support, producing `intermediate/<page>/overrides_mmr.json`. Phase B reuses
+Phase-A topology instead of building a second, potentially different layout. A missing
+Phase-A result causes MMR preparation for that page to be skipped.
+
+**Phase C — final numbering with corrections:** the pipeline combines MMR and user measure
+overrides, applies them and any movement boundaries during normal final numbering, and
+writes `outputs/<page>/numbering_final.json`. This step is needed because one displayed
+MMR may represent several measures and user corrections can change the numbering. Optional
+overlays and configured review/final outputs use the finalized result.
+
+## How the detection and grouping terms fit together
+
+The **dense route** is the configured detector path that reconstructs a broad set of
+barline candidates for the current run before CNN scoring. **Dispatch** means choosing the
+implementation for the configured detector route; `src/pipeline/detection/__init__.py`
+selects `dense_orchestrator_batch_sr.py` for this route.
+
+The **hybrid consensus** checks original-image HOMR baseline boxes against support from x4
+HOMR or OMR-DLN and keeps supported baseline boxes in baseline coordinates. Next, the
+**probe** scans eligible staff bands and image ink to generate additional candidates;
+**rescue** procedures recover candidates using existing cross-band, rightmost and gap
+rules. These are candidate-generation steps, not a guarantee that every candidate is a
+barline. In `src/pipeline/steps/staff_strokes.py`, the **staff-stroke adapter** adjusts
+candidates spanning multiple staves into single-staff pieces (staff strokes) when its
+conditions are met,
+before CNN scoring. It also supplies eligible original-HOMR pieces through the existing
+consensus check. After CNN scoring, duplicate suppression removes overlapping staff-stroke candidates;
+the detailed conditions and exceptions appear below.
+
+**Grouping** in Phase A assigns staves to systems and constructs aligned measures from
+staff and barline geometry. A **connector** here is evidence of a connection between
+adjacent staves near the left/start of a system, used alongside geometry when deciding
+which staves belong together. Current-x4 HOMR supplies two semantic masks:
+`connector_symbols` (symbol layer) and `connector_brace_dot` (brace/dot layer).
+`SystemConnectorEvidenceExtractor` measures the relevant mask regions for adjacent
+staff pairs; `ConnectorAwareSystemBuilder` uses the resulting presence or absence as
+one grouping signal. These connector masks are distinct from the original-image staff
+mask that owns Phase-A staff geometry. A **sidecar** is a separate artifact written next
+to the main result to carry support or audit data, such as `mmr_support.json`. A
+**producer** creates an artifact; a **consumer** reads it for a later operation.
+
+In the present design, support artifacts are reused
+for grouping and MMR instead of running extra HOMR inferences or rebuilding a separate
+MMR layout. SR previously ran page by page; it now runs for the selected page batch and
+its process exits before page-local HOMR/OMR work. The historical original-image Stage-E
+baseline was replaced by the maintained original-image baseline; the old runtime assets
+remain in the separate reproduction extension. [Issue #274](https://github.com/M763468/PDFScoreBar/issues/274),
+[Issue #284](https://github.com/M763468/PDFScoreBar/issues/284), and
+[Issue #294](https://github.com/M763468/PDFScoreBar/issues/294) provide the corresponding
+investigation and decision history. Their measurements and old configurations are historical
+evidence, not new validation results or a substitute for current source and profiles.
+
 ## Scope and canonical entry points
 
 The user distribution adds `docker/distribution.py` as a Linux Docker launcher and
@@ -20,7 +137,7 @@ It ships the package-bound `tools/review_correction` application alongside the e
 The local review application owns immutable `history/` checkpoints, package-scoped
 resume sessions and process-locked application state. An uploaded annotated PDF is
 validated against the checkpoint's original source and displayed separately from clean
-recognition inputs. Resumed applies reuse retained recognition and use
+recognition inputs. Resumed apply operations reuse retained recognition and use
 `review/number_layer.py` to add a verified 9 pt numbering layer while preserving native
 annotations and CropBoxes. Annotation-only re-exports may remap xrefs: the resume adapter
 proves ordered content/stream hashes, markers and full-page rendering against attested
@@ -82,9 +199,9 @@ PDF or persisted page images
             -> tile-wise CUDA uint8 conversion + CPU stitch
             -> persisted x4 images + per-page provenance
        -> SR process exits and releases its CUDA/model state
-       -> page-local verified source worker
+       -> page-local maintained source worker (maintained_source_page_worker)
             -> maintained HOMR pinned at immutable commit on original image
-            -> current x4 support consumer
+            -> current-x4 support worker (consumes the precomputed x4 image)
                  -> current-runtime HOMR on precomputed persisted x4 image
                  -> OMR-DLN on the same persisted x4 image
             -> hybrid consensus
@@ -107,15 +224,16 @@ PDF or persisted page images
 ```
 
 The staff-stroke adapter runs after dense generation, filtering and rescue. It splits
-only boxes intersecting at least two extracted staves by two staff units each; single-staff
-connector tails remain unchanged. Added original-HOMR pieces pass the existing SR-or-OMR
+only boxes intersecting at least two extracted staves by at least two staff units each;
+single-staff connector tails remain unchanged. Added original-HOMR pieces pass the existing SR-or-OMR
 IoU > 0.5 consensus before actual CNN inference. Post-CNN duplicate suppression uses
 X-center distance <= 0.1 median extracted staff unit and vertical overlap >= 0.8,
 retaining the numbering-compatible canonical geometry and its own CNN score. This is
 separate from logical time-boundary merging. Per-page normalization and suppression
 sidecars preserve the source hashes and representatives. No GT or evaluation data enters
 this runtime step. CNN lookup resolves relative, absolute and symlink image paths to
-the same unit-map identity. Probe directories use the image parent/stem identity
+the same staff-unit map identity (the map associates an image with its staff unit size).
+Probe directories use the image parent/stem identity
 consistently through rescue, the adapter and CNN, including composite score/page stems;
 logical inventory score/page labels do not select the adapter directory.
 The inventory makes image paths absolute without resolving symlinks, preserving the
@@ -236,9 +354,9 @@ not rerun on x4 in the current production path.
 - **Consumers:** detector hybrid consensus, connector-aware grouping support, and MMR
   vertical staff support.
 
-The selected maintained commit is immutable and is not rerun on x4 in the current
-production path. The isolated runtime assets for the historical `stage_e_verified`
-profile are retained in the separately built Stage-E reproduction extension image
+The pinned original-image `maintained_original` profile is immutable and is not rerun on
+x4 in the current production path. The isolated runtime assets for the historical
+`stage_e_verified` profile are retained in the separately built Stage-E reproduction extension image
 (`docker/Dockerfile.stage-e`), not the root production image; the historical profile is
 not part of canonical dispatch. The extension does not reconstruct the complete historical
 two-HOMR environment or guarantee its full-68 metrics.
@@ -256,7 +374,7 @@ Issue #284 makes the Real-ESRGAN phase an explicit reusable runtime boundary.
 - Model: `RealESRGAN_x4plus`.
 - Precision/layout: FP16, `channels_last`.
 - Tiling: `tile=400`, `tile_pad=10`.
-- Output path: each tile is converted to CUDA `uint8`, copied/stiched on CPU, and written as
+- Output path: each tile is converted to CUDA `uint8`, copied/stitched on CPU, and written as
   the persisted x4 page image.
 - Model lifetime: one SR process/model is reused across the selected page batch.
 - Compile mode: `torch.compile(..., mode="reduce-overhead")` in the production config.
@@ -332,7 +450,7 @@ it writes the current-run inventory and calls `reconstruct_dense_full_pipeline_r
 Candidate/probe reconstruction and CNN scoring operate on the current run;
 `historical_detector_artifact_runtime_input` is false for the verified production route.
 
-## Grouping, connector semantics, and coordinate ownership
+## Phase A: staff and measure structure, connector semantics, and coordinate ownership
 
 Phase A (`run_base_numbering_and_barline_correction`) constructs the physical numbering
 layout with `MeasureNumberingPipeline`.
@@ -351,11 +469,12 @@ meaning of connector evidence. Generic callers that do not declare current suppo
 their legacy fallback behavior.
 
 The accepted production numbering behavior also distinguishes missing semantic artifacts
-from producer-geometry disagreement. A semantic staff-count mismatch may fall back to
-numbering geometry; that compatibility behavior is intentional and was retained by Issue
-#274.
+from producer-geometry disagreement. If the current-HOMR semantic staff mask and the
+numbering staff geometry have different staff counts, the connector evidence is measured using the numbering staff geometry
+instead. The connector masks are still used. This compatibility behavior is intentional
+and was retained by Issue #274.
 
-## MMR support reuse contract
+## Phase B: multi-measure-rest recognition and support reuse
 
 Dense MMR does **not** run HOMR again on the original page and does **not** rebuild Phase-A
 numbering in an MMR-specific subtree.
@@ -378,15 +497,15 @@ The contract is asymmetric by design:
 support views. The persistent `MMRClassifier` and `MMROCREngine` (RapidOCR) are reused
 across pages in the orchestrator process.
 
-## Final numbering is not the removed MMR rebuild
+## Phase C: final numbering with corrections, not the removed MMR rebuild
 
 Phase C still materializes `numbering_final.json`: it reloads the accepted barlines and
 staff mask, reconstructs the page object with the normal `MeasureNumberingPipeline`, and
 applies the merged MMR/user measure overrides before optional overlay rendering.
 
 MMR/manual overrides and movement boundaries use zero-based indices in the compact
-`numbering_base.json` / `numbering_final.json` `systems` array. Internal `Page.systems`
-also retains empty systems; Phase C resolves visibility from uncorrected measure geometry
+(non-empty systems only) `numbering_base.json` / `numbering_final.json` `systems` array.
+Internal `Page.systems` also retains empty systems; Phase C resolves visibility from uncorrected measure geometry
 before applying corrections, so empty systems never consume a public system index. Page
 indices remain batch-global at merge time and are rebased to zero for per-page numbering.
 Final metadata records `system_index_contract: compact_nonempty_systems.v1`; cached final

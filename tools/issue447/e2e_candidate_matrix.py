@@ -41,6 +41,7 @@ def inventory(path):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / "validation").mkdir(parents=True, exist_ok=True)
     seed = OUT / "warm-seed"
     shutil.copytree(ISSUE / "cache", seed)
     seed_inventory = inventory(seed)

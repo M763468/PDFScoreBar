@@ -112,6 +112,7 @@ P1に短いGPU-free pytest execがあり、host CPU無競合も主張しない�
 | 初回parallel47.54秒 vs retained sequential68.85秒 | 異なるharness/観測層の探索値 | 同条件component ABBAと今回E2Eで置き換え。初回比率を因果証拠にしない |
 | cProfile call accounting | root欠落・wallを超すcumulative等で定量値のvalidity Failed | hotspot順位の根拠から除外。無効ログ自体は保持 |
 | GPU/host絶対時刻をhour offsetで合わせた診断 | 校正差があり撤回 | summary-v1-driver-clock.jsonを履歴保持し、最終CPU/GPU待ち値には使わない |
+| fresh matrixのvalidation保存先 | Codex P2で検出し、推論前のmkdirとGPU-free matrix全体testで修正 | 既存runは保存先作成済みであり、測定値に影響なし。再測定せず再現性を修復 |
 | historical process samplesの暗黙選択 | Codex P2で修正済み、run-local優先・legacyは明示flagのみ | 今回runに別試行の観測を付けない。元run再scoreと回帰testを保持 |
 
 ## 証拠・再現性の索引

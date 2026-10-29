@@ -1,0 +1,9 @@
+{
+  "scope": "additive CPU-only validation, no primary E2E inputs/metric/gates change",
+  "faults": ["real short-lived OMR child exit 7", "OMR child exit 0 with no prediction files", "real disposable source child exit 7 with 2-worker scheduling"],
+  "fault_boundary": "actual production pipeline after substituted retained SR handoff; not another inference/performance experiment",
+  "fault_gates": ["nonzero child/pipeline exit", "no final numbering", "no completed OMR handoff", "detection telemetry not completed"],
+  "barline_replay": "actual Phase A/C on retained detector outputs; first existing first-page barline remove + same box add shifted two source pixels; actual manual first-measure0, second-page movement reset1 and third-page continuity; real retained MMR outputs; no detector/MMR inference",
+  "correction_gates": ["remove request matched", "one box added", "corrected geometry differs from input", "same corrected boxes and stats for all conditions", "all base/final pages and metadata equal across conditions", "manual0/reset1/continuity/page order pass"],
+  "limits": "not full pipeline fault E2E timing; no OOM or hang recovery guarantee; fixed two-pixel perturbation is a supplemental validation input, not a production threshold/config retune"
+}

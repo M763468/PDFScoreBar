@@ -1,0 +1,63 @@
+{
+  "schema": "issue447.e2e-candidates.v1",
+  "runtime_source": "2ac7d5245fe65dbfa2093b4e0d60119c58192f86",
+  "develop_checked": "658e2e6e454436765c53e275aaf0412aede39755",
+  "develop_delta": "docs/translation verification only; production unchanged",
+  "image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "inputs": "Shostakovich-Sym5-Va/page_012,page_013,page_014",
+  "config": "configs/dense_full_pipeline.yaml",
+  "uid_gid": "1000:1001",
+  "primary": "trace OFF fresh-container Docker E2E host perf_counter; startup/model/teardown included; observer teardown excluded",
+  "definitions": {
+    "B": "unmodified production entrypoint, per-page OMR, sequential sources",
+    "P": "experimental 2-source prefetch after SR exits, per-page OMR",
+    "O": "1 source worker, all-pages production OMR subprocess once after SR exits and before sources; fresh same-run hash-bound handoff",
+    "C": "same OMR reuse then 2-source prefetch; only if both single candidates pass advance gate"
+  },
+  "warm": {
+    "order": [
+      "B",
+      "P",
+      "O",
+      "O",
+      "P",
+      "B"
+    ],
+    "n_per_condition": 2,
+    "cache": "private identical copies of retained compiled seed; fresh process/model; OS/driver caches not flushed"
+  },
+  "cold": {
+    "order": [
+      "B",
+      "P",
+      "O"
+    ],
+    "n_per_condition": 1,
+    "cache": "new empty private Inductor/Triton cache each; OS/driver not flushed; first-call compile/setup separate from warm"
+  },
+  "advance_to_combination": {
+    "gate": "both P and O warm medians at least 3% faster than B, both paired observations improve and all source/downstream/resource gates pass",
+    "conditional_runs": "C warm twice from same seed; C cold once from empty private cache; compare to the recorded B; no change to original single-candidate outcomes"
+  },
+  "quality": [
+    "ordered source original/x4 predictions, decoded staff/connector masks, OMR predictions",
+    "ordered detector geometries",
+    "combined/per-page base and final numbering and movement metadata",
+    "MMR support geometry, overrides targets/skips",
+    "filters/correction stats",
+    "actual Phase C replay with manual first-measure 0, second-page movement reset1, third-page continuity; retain MMR outputs"
+  ],
+  "resource_gates": {
+    "cgroup_memory_cap_bytes": 17179869184,
+    "sampled_device_vram_max_bytes": 7516192768,
+    "competition": "no known external GPU job; serialized suite, event inventories retained; WSL PID attribution unavailable, never assert complete OS ownership"
+  },
+  "fault_gates": [
+    "OMR child nonzero cannot publish completed handoff; no serial fallback",
+    "missing/changed input, SR, prediction, incomplete manifest or wrong image must fail closed",
+    "source child failure/cancellation propagates; queued jobs canceled and active jobs joined; no final numbering publication",
+    "fault integration may replay retained SR to avoid inference solely for fault injection; never score these as E2E performance"
+  ],
+  "unchanged_contract": "strict equality without geometry/number tolerances; display-only OCR comments and run paths excluded as before; no threshold/model/seed/filter changes; initial failures retained",
+  "limits": "small input and 2 warm repeats, 1 cold per condition; no significance/production-adoption or full-dataset accuracy claim; no full68 or production implementation; independent components not added as E2E stages"
+}

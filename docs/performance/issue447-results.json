@@ -1,0 +1,1350 @@
+{
+  "schema": "pdfscorebar.issue447.results.v1",
+  "source_commit": "2ac7d5245fe65dbfa2093b4e0d60119c58192f86",
+  "image_id": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "raw_evidence_root": "logs/issue447",
+  "scope": "fixed production dense route; operator UID/GID 1000:1001, not the image default root UID; no PDF render/export in representative slice",
+  "reused_previous_attempt": [
+    "single-off-cold",
+    "single-off-warm",
+    "single-on-warm"
+  ],
+  "runs": {
+    "current-homr-cpu-profile": {
+      "status": "completed",
+      "kind": "homr-profile",
+      "trace": "off",
+      "docker_wall_seconds": 18.270562154008076,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 19,
+          "mean": 4.631578947368421,
+          "peak": 40.0
+        },
+        "memory.used [MiB]": {
+          "count": 19,
+          "mean": 1116.7368421052631,
+          "peak": 1877.0
+        }
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 3070160896,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 51967155,
+          "user_usec": 47922299,
+          "system_usec": 4044855,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 8192,
+          "wbytes": 0,
+          "rios": 1,
+          "wios": 0
+        },
+        "observer_cpu_seconds": 0.13
+      },
+      "sampled_nested_worker_residencies": [],
+      "component": {
+        "status": "completed",
+        "scope": "current x4 HOMR retained-input CPU profile; not E2E stage time",
+        "profiled_wall_seconds": 16.290725325990934,
+        "cpu_seconds": 50.466117000000004,
+        "reference_request": "logs/issue447/runs/single-off-warm/pipeline/hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va/page_013/artifacts/current_homr_request.json",
+        "result": "logs/issue447/runs/current-homr-cpu-profile/component/homr-result.json"
+      },
+      "quantitative_cprofile_attribution": "Failed validity check; excluded from performance ranking; independent wall spans used instead"
+    },
+    "current-homr-wall": {
+      "status": "completed",
+      "kind": "homr-wall",
+      "trace": "off",
+      "docker_wall_seconds": 14.203748347994406,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 15,
+          "mean": 9.133333333333333,
+          "peak": 40.0
+        },
+        "memory.used [MiB]": {
+          "count": 15,
+          "mean": 1059.8,
+          "peak": 1879.0
+        }
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 3061268480,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 45248286,
+          "user_usec": 41938645,
+          "system_usec": 3309640,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 0,
+          "rios": 0,
+          "wios": 0
+        },
+        "observer_cpu_seconds": 0.08
+      },
+      "sampled_nested_worker_residencies": [],
+      "component": {
+        "status": "completed",
+        "scope": "diagnostic monotonic host call spans; nested and not additive; ONNX I/O binding work may complete in later calls",
+        "wall_seconds_including_imports": 12.630198661005124,
+        "nested_call_spans": {
+          "runtime_imports": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 2.1916894299793057
+          },
+          "cv2.imread": {
+            "calls": 4,
+            "host_wall_seconds_sum_not_exclusive": 1.5739137819618918
+          },
+          "cv2.imwrite": {
+            "calls": 7,
+            "host_wall_seconds_sum_not_exclusive": 0.14368499600095674
+          },
+          "onnx_session.__init__": {
+            "calls": 6,
+            "host_wall_seconds_sum_not_exclusive": 0.6119789548683912
+          },
+          "onnx_session.run": {
+            "calls": 12,
+            "host_wall_seconds_sum_not_exclusive": 5.0508226788952015
+          },
+          "onnx_session.run_with_iobinding": {
+            "calls": 252,
+            "host_wall_seconds_sum_not_exclusive": 2.482734198332764
+          },
+          "homr.predict": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 9.952244953019544
+          },
+          "worker.run": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 10.203945551009383
+          }
+        }
+      }
+    },
+    "multi-off-warm": {
+      "status": "completed",
+      "kind": "dense_e2e",
+      "trace": "off",
+      "docker_wall_seconds": 266.4634873230243,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 266,
+          "mean": 38.1390977443609,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 266,
+          "mean": 2204.845864661654,
+          "peak": 3458.0
+        }
+      },
+      "pipeline_telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 259.335
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 243786,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 873,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 13050,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 831,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 96,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 125.3443748059799,
+        "model_initialization_wall_sec": 11.75082218204625,
+        "peak_cuda_allocated_bytes": 832639488,
+        "peak_cuda_reserved_bytes": 2933915648,
+        "pages": [
+          {
+            "image": "page_012.png",
+            "wall_seconds": 48.003746553033125,
+            "sha256": "ee3cb235d25756abc77edb38c23dacd43117b6f7965b35a2ffc15c737dfaddf3"
+          },
+          {
+            "image": "page_013.png",
+            "wall_seconds": 32.703133879986126,
+            "sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2"
+          },
+          {
+            "image": "page_014.png",
+            "wall_seconds": 32.88167300802888,
+            "sha256": "0035126aa4154f5f5df740c8cf8e418cc34b75100435d2ead0816e6060630113"
+          }
+        ]
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 8522805248,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 484553218,
+          "user_usec": 446957691,
+          "system_usec": 37595526,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 3553554432,
+          "wbytes": 82624512,
+          "rios": 10427,
+          "wios": 151
+        },
+        "observer_cpu_seconds": 1.05
+      },
+      "sampled_nested_worker_residencies": [
+        {
+          "module": "src.pipeline.detection.current_sr_batch_worker",
+          "observed_seconds": 75.00252831896069,
+          "left_censored": true,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.maintained_source_page_worker",
+          "observed_seconds": 34.19907381699886,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_support_worker",
+          "observed_seconds": 23.33829230198171,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_homr_worker",
+          "observed_seconds": 13.293901166995056,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.omr_dln_worker",
+          "observed_seconds": 9.843554135004524,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.maintained_source_page_worker",
+          "observed_seconds": 35.84521133900853,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_support_worker",
+          "observed_seconds": 24.56739312701393,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_homr_worker",
+          "observed_seconds": 14.722761567041744,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.omr_dln_worker",
+          "observed_seconds": 9.643849278974812,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.maintained_source_page_worker",
+          "observed_seconds": 34.651196308026556,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_support_worker",
+          "observed_seconds": 24.790162794990465,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_homr_worker",
+          "observed_seconds": 14.139498956967145,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.omr_dln_worker",
+          "observed_seconds": 9.84358914499171,
+          "left_censored": false,
+          "right_censored": false
+        }
+      ]
+    },
+    "omr-dln-cpu-profile": {
+      "status": "completed",
+      "kind": "omr-profile",
+      "trace": "off",
+      "docker_wall_seconds": 11.506029337004293,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 12,
+          "mean": 0.08333333333333333,
+          "peak": 1.0
+        },
+        "memory.used [MiB]": {
+          "count": 12,
+          "mean": 367.9166666666667,
+          "peak": 683.0
+        }
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 1792286720,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 11599145,
+          "user_usec": 10508136,
+          "system_usec": 1091008,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 4096,
+          "wbytes": 4096,
+          "rios": 1,
+          "wios": 1
+        },
+        "observer_cpu_seconds": 0.07
+      },
+      "sampled_nested_worker_residencies": [],
+      "component": {
+        "status": "completed",
+        "scope": "retained-input OMR component CPU profile; not an E2E stage duration",
+        "profiled_wall_seconds": 8.987807672005147,
+        "ordered_predictions_equal": true
+      },
+      "quantitative_cprofile_attribution": "Failed validity check; excluded from performance ranking; independent wall spans used instead"
+    },
+    "omr-dln-wall": {
+      "status": "completed",
+      "kind": "omr-wall",
+      "trace": "off",
+      "docker_wall_seconds": 10.26544065104099,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 11,
+          "mean": 3.5454545454545454,
+          "peak": 39.0
+        },
+        "memory.used [MiB]": {
+          "count": 11,
+          "mean": 338.09090909090907,
+          "peak": 679.0
+        }
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 1781608448,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 10407037,
+          "user_usec": 9203054,
+          "system_usec": 1203983,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 4096,
+          "rios": 0,
+          "wios": 1
+        },
+        "observer_cpu_seconds": 0.07
+      },
+      "sampled_nested_worker_residencies": [],
+      "component": {
+        "status": "completed",
+        "scope": "diagnostic monotonic host call spans; nested and not additive; ONNX I/O binding work may complete in later calls",
+        "wall_seconds_including_imports": 8.505159240972716,
+        "nested_call_spans": {
+          "runtime_imports": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 2.451855255989358
+          },
+          "yolo.model_load": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 0.0836578180314973
+          },
+          "cv2.imread": {
+            "calls": 2,
+            "host_wall_seconds_sum_not_exclusive": 1.6026879589771852
+          },
+          "yolo.first_predict_including_setup": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 0.8353771280380897
+          },
+          "worker.run": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 2.5267711529741064
+          }
+        }
+      }
+    },
+    "omr-dln-wall-device": {
+      "status": "completed",
+      "kind": "omr-wall",
+      "trace": "off",
+      "docker_wall_seconds": 9.751492397044785,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 10,
+          "mean": 0.2,
+          "peak": 2.0
+        },
+        "memory.used [MiB]": {
+          "count": 10,
+          "mean": 342.8,
+          "peak": 683.0
+        }
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 1772376064,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 9902953,
+          "user_usec": 8817247,
+          "system_usec": 1085705,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 4096,
+          "rios": 0,
+          "wios": 1
+        },
+        "observer_cpu_seconds": 0.07
+      },
+      "sampled_nested_worker_residencies": [],
+      "component": {
+        "status": "completed",
+        "scope": "diagnostic monotonic host call spans; nested and not additive; ONNX I/O binding work may complete in later calls",
+        "wall_seconds_including_imports": 7.981240634981077,
+        "model_devices": [
+          {
+            "model_device": "cuda:0",
+            "predictor_device": "cuda:0"
+          }
+        ],
+        "nested_call_spans": {
+          "runtime_imports": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 2.1072228929842822
+          },
+          "yolo.class_resolution": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 3.391195775999222
+          },
+          "yolo.model_load": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 0.07530523400055245
+          },
+          "cv2.imread": {
+            "calls": 2,
+            "host_wall_seconds_sum_not_exclusive": 1.5063853790052235
+          },
+          "yolo.first_predict_including_setup": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 0.8970480479765683
+          },
+          "worker.run": {
+            "calls": 1,
+            "host_wall_seconds_sum_not_exclusive": 2.4823594340123236
+          }
+        }
+      }
+    },
+    "single-off-cold": {
+      "status": "completed",
+      "kind": "dense_e2e",
+      "trace": "off",
+      "docker_wall_seconds": 219.44775898900116,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 219,
+          "mean": 16.931506849315067,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 219,
+          "mean": 1908.3652968036529,
+          "peak": 3428.0
+        }
+      },
+      "pipeline_telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 214.932
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 209393,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 248,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 4803,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 246,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 26,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 167.84305575001054,
+        "model_initialization_wall_sec": 8.887483077996876,
+        "peak_cuda_allocated_bytes": 840576512,
+        "peak_cuda_reserved_bytes": 2822766592,
+        "pages": [
+          {
+            "image": "page_013.png",
+            "wall_seconds": 158.9535995660117,
+            "sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2"
+          }
+        ]
+      }
+    },
+    "single-off-eager": {
+      "status": "completed",
+      "kind": "dense_e2e",
+      "trace": "off",
+      "docker_wall_seconds": 104.74466117698466,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 105,
+          "mean": 42.180952380952384,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 105,
+          "mean": 2032.095238095238,
+          "peak": 3453.0
+        }
+      },
+      "pipeline_telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 100.302
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 93923,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 283,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 5561,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 273,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 31,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 49.0037391759688,
+        "model_initialization_wall_sec": 7.908813833957538,
+        "peak_cuda_allocated_bytes": 945535488,
+        "peak_cuda_reserved_bytes": 2652897280,
+        "pages": [
+          {
+            "image": "page_013.png",
+            "wall_seconds": 41.09278942097444,
+            "sha256": "ebaf457ed2694cf3a6d149252d7edb80cb670391e1e7fee19b0baf8c5ec3f2c4"
+          }
+        ]
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 5042642944,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 186442485,
+          "user_usec": 169128038,
+          "system_usec": 17314446,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 25124864,
+          "rios": 0,
+          "wios": 31
+        },
+        "observer_cpu_seconds": 0.47
+      },
+      "sampled_nested_worker_residencies": [
+        {
+          "module": "src.pipeline.detection.current_sr_batch_worker",
+          "observed_seconds": 49.587170406011865,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.maintained_source_page_worker",
+          "observed_seconds": 37.298571237013675,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_support_worker",
+          "observed_seconds": 25.82055315398611,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_homr_worker",
+          "observed_seconds": 15.577062225958798,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.omr_dln_worker",
+          "observed_seconds": 10.042596824991051,
+          "left_censored": false,
+          "right_censored": false
+        }
+      ]
+    },
+    "single-off-warm": {
+      "status": "completed",
+      "kind": "dense_e2e",
+      "trace": "off",
+      "docker_wall_seconds": 103.25348415697226,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 103,
+          "mean": 32.262135922330096,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 103,
+          "mean": 1963.7378640776699,
+          "peak": 3430.0
+        }
+      },
+      "pipeline_telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "progress_sink_error_count": 0,
+          "wall_time_seconds": 99.138
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 93400,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 277,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 4949,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 250,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 26,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 53.63498362299288,
+        "model_initialization_wall_sec": 8.683898931951262,
+        "peak_cuda_allocated_bytes": 832639488,
+        "peak_cuda_reserved_bytes": 2810183680,
+        "pages": [
+          {
+            "image": "page_013.png",
+            "wall_seconds": 44.949195561988745,
+            "sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2"
+          }
+        ]
+      }
+    },
+    "single-on-warm": {
+      "status": "completed",
+      "kind": "dense_e2e",
+      "trace": "on",
+      "docker_wall_seconds": 104.22229679697193,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 104,
+          "mean": 30.96153846153846,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 104,
+          "mean": 1927.2403846153845,
+          "peak": 3434.0
+        }
+      },
+      "pipeline_telemetry": {
+        "job_id": "pipeline",
+        "resources": {
+          "peak_device_gpu_utilization_percent": 100.0,
+          "peak_gpu_memory_bytes": 0,
+          "peak_process_count": 11,
+          "peak_process_tree_cpu_percent": 820.7107982024784,
+          "peak_process_tree_rss_bytes": 7283650560,
+          "progress_sink_error_count": 0,
+          "resource_sample_count": 93,
+          "resource_sample_interval_seconds": 1.0,
+          "wall_time_seconds": 99.25
+        },
+        "schema": "pdfscorebar.engine.telemetry_summary.v1",
+        "stage_spans": [
+          {
+            "elapsed_ms": 0,
+            "stage_id": "input_validation",
+            "state": "completed"
+          },
+          {
+            "detail_code": "detection.source_generation_and_scoring",
+            "elapsed_ms": 93683,
+            "stage_id": "score_detection",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 248,
+            "stage_id": "measure_construction",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 4809,
+            "stage_id": "measure_number_recognition",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 258,
+            "stage_id": "numbering",
+            "state": "completed"
+          },
+          {
+            "elapsed_ms": 32,
+            "stage_id": "artifact_materialization",
+            "state": "completed"
+          }
+        ]
+      },
+      "sr": {
+        "batch_wall_sec": 54.51888966700062,
+        "model_initialization_wall_sec": 9.439882586011663,
+        "peak_cuda_allocated_bytes": 832639488,
+        "peak_cuda_reserved_bytes": 2810183680,
+        "pages": [
+          {
+            "image": "page_013.png",
+            "wall_seconds": 45.07745701802196,
+            "sha256": "84489ff077a136d7d177fe1ea4e4eb8a1901973fe173c02762e5f3fd8c3418d2"
+          }
+        ]
+      }
+    },
+    "source-parallel-two": {
+      "status": "completed",
+      "kind": "source-parallel",
+      "trace": "off",
+      "docker_wall_seconds": 48.407654243987054,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 49,
+          "mean": 8.489795918367347,
+          "peak": 68.0
+        },
+        "memory.used [MiB]": {
+          "count": 49,
+          "mean": 3711.938775510204,
+          "peak": 6604.0
+        }
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 9066221568,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 220445998,
+          "user_usec": 199864983,
+          "system_usec": 20581015,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 5308416,
+          "rios": 0,
+          "wios": 33
+        },
+        "observer_cpu_seconds": 0.35
+      },
+      "sampled_nested_worker_residencies": [
+        {
+          "module": "src.pipeline.detection.maintained_source_page_worker",
+          "observed_seconds": 47.26648945099441,
+          "left_censored": true,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.maintained_source_page_worker",
+          "observed_seconds": 47.06570151197957,
+          "left_censored": true,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_support_worker",
+          "observed_seconds": 32.445945037005,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_homr_worker",
+          "observed_seconds": 19.11643723200541,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_support_worker",
+          "observed_seconds": 31.211357547028456,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.current_homr_worker",
+          "observed_seconds": 18.49319186003413,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.omr_dln_worker",
+          "observed_seconds": 12.5171781849931,
+          "left_censored": false,
+          "right_censored": false
+        },
+        {
+          "module": "src.pipeline.detection.omr_dln_worker",
+          "observed_seconds": 12.315281054994557,
+          "left_censored": false,
+          "right_censored": false
+        }
+      ],
+      "component": {
+        "status": "completed",
+        "scope": "two-page source-generation component; not E2E or final numbering/correction acceptance",
+        "pages": [
+          {
+            "page": "page_012",
+            "exit_code": 0
+          },
+          {
+            "page": "page_014",
+            "exit_code": 0
+          }
+        ],
+        "component_wall_seconds": 47.535591560998,
+        "baseline": "retained sequential page_012 and page_014 from multi-off-warm; sampled residency has 0.2 second endpoint uncertainty",
+        "limit": "dedicated Docker memory ceiling 16 GiB; source/SR weights/thresholds unchanged"
+      }
+    },
+    "sr-tile-batch-screen": {
+      "status": "completed",
+      "kind": "sr-screen",
+      "trace": "off",
+      "docker_wall_seconds": 308.33713354804786,
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 308,
+          "mean": 93.87012987012987,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 308,
+          "mean": 3306.003246753247,
+          "peak": 4297.0
+        }
+      },
+      "resources": {
+        "cgroup_memory_peak_bytes": 3273125888,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 317414716,
+          "user_usec": 278071501,
+          "system_usec": 39343214,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 23015424,
+          "wbytes": 47878144,
+          "rios": 12,
+          "wios": 69
+        },
+        "observer_cpu_seconds": 0.99
+      },
+      "sampled_nested_worker_residencies": [],
+      "component": {
+        "status": "completed",
+        "scope": "eager component screen only; not production E2E",
+        "initialization_wall_seconds": 8.145714860002045,
+        "samples": [
+          {
+            "phase": "first",
+            "variant": "A",
+            "wall_seconds": 39.57676053600153,
+            "peak_allocated_bytes": 945535488,
+            "peak_reserved_bytes": 2646605824
+          },
+          {
+            "phase": "first",
+            "variant": "B",
+            "wall_seconds": 40.788694051036146,
+            "peak_allocated_bytes": 1783990272,
+            "peak_reserved_bytes": 4072669184
+          },
+          {
+            "phase": "warm",
+            "variant": "A",
+            "wall_seconds": 41.27614364499459,
+            "peak_allocated_bytes": 945535488,
+            "peak_reserved_bytes": 2646605824
+          },
+          {
+            "phase": "warm",
+            "variant": "B",
+            "wall_seconds": 42.73624223400839,
+            "peak_allocated_bytes": 1783990272,
+            "peak_reserved_bytes": 4072669184
+          },
+          {
+            "phase": "warm",
+            "variant": "B",
+            "wall_seconds": 43.05235834699124,
+            "peak_allocated_bytes": 1783990272,
+            "peak_reserved_bytes": 4072669184
+          },
+          {
+            "phase": "warm",
+            "variant": "A",
+            "wall_seconds": 42.59366427297937,
+            "peak_allocated_bytes": 945535488,
+            "peak_reserved_bytes": 2646605824
+          }
+        ],
+        "median_speedup_A_over_B": 0.9776334775246277,
+        "pixel_comparisons": {
+          "batch2_vs_batch1": {
+            "shape_equal": true,
+            "changed_channel_values": 0,
+            "max_abs_difference": 0
+          },
+          "eager_vs_retained_compiled": {
+            "shape_equal": true,
+            "changed_channel_values": 2401752,
+            "max_abs_difference": 5
+          }
+        },
+        "runtime": {
+          "runtime": "current_x4_channels_last_gpu_uint8_cpu_stitch",
+          "model": "RealESRGAN_x4plus",
+          "scale": 4,
+          "tile": -1,
+          "tile_pad": 10,
+          "fp32": false,
+          "channels_last": true,
+          "compile_mode": null,
+          "output_mode": "gpu_uint8_cpu_stitch",
+          "device": "NVIDIA GeForce RTX 4060",
+          "torch_version": "2.14.0+cu130",
+          "torch_cuda_version": "13.0",
+          "cudnn_version": 92400
+        },
+        "advance_gates": {
+          "speedup_at_least_1_05": false,
+          "reserved_at_most_6GiB": true,
+          "identical_pixels_A_B": true
+        }
+      },
+      "quantitative_cprofile_attribution": "Partial/missing root call; excluded. ABBA monotonic wall measurements are independent and retained."
+    }
+  },
+  "semantic_comparisons": {
+    "single_page_semantics_vs_compiled_warm": {
+      "single-off-cold": {
+        "numbering_base.json": true,
+        "numbering_final.json": true,
+        "ordered_detector_geometry": true,
+        "mmr_targets_and_skips": true,
+        "x4_homr_ordered_predictions": true,
+        "x4_staff_mask": {
+          "equal": true,
+          "different_values": 0,
+          "shape_a": [
+            4210,
+            2960
+          ],
+          "shape_b": [
+            4210,
+            2960
+          ]
+        },
+        "x4_connector_symbols": {
+          "equal": true,
+          "different_values": 0,
+          "shape_a": [
+            2732,
+            1920
+          ],
+          "shape_b": [
+            2732,
+            1920
+          ]
+        },
+        "x4_connector_brace_dot": {
+          "equal": true,
+          "different_values": 0,
+          "shape_a": [
+            2732,
+            1920
+          ],
+          "shape_b": [
+            2732,
+            1920
+          ]
+        },
+        "page_identity_and_mmr_geometry_mappings": true
+      },
+      "single-on-warm": {
+        "numbering_base.json": true,
+        "numbering_final.json": true,
+        "ordered_detector_geometry": true,
+        "mmr_targets_and_skips": true,
+        "x4_homr_ordered_predictions": true,
+        "x4_staff_mask": {
+          "equal": true,
+          "different_values": 0,
+          "shape_a": [
+            4210,
+            2960
+          ],
+          "shape_b": [
+            4210,
+            2960
+          ]
+        },
+        "x4_connector_symbols": {
+          "equal": true,
+          "different_values": 0,
+          "shape_a": [
+            2732,
+            1920
+          ],
+          "shape_b": [
+            2732,
+            1920
+          ]
+        },
+        "x4_connector_brace_dot": {
+          "equal": true,
+          "different_values": 0,
+          "shape_a": [
+            2732,
+            1920
+          ],
+          "shape_b": [
+            2732,
+            1920
+          ]
+        },
+        "page_identity_and_mmr_geometry_mappings": true
+      },
+      "single-off-eager": {
+        "numbering_base.json": true,
+        "numbering_final.json": true,
+        "ordered_detector_geometry": true,
+        "mmr_targets_and_skips": true,
+        "x4_homr_ordered_predictions": false,
+        "x4_staff_mask": {
+          "equal": false,
+          "different_values": 185,
+          "shape_a": [
+            4210,
+            2960
+          ],
+          "shape_b": [
+            4210,
+            2960
+          ]
+        },
+        "x4_connector_symbols": {
+          "equal": false,
+          "different_values": 7,
+          "shape_a": [
+            2732,
+            1920
+          ],
+          "shape_b": [
+            2732,
+            1920
+          ]
+        },
+        "x4_connector_brace_dot": {
+          "equal": false,
+          "different_values": 1,
+          "shape_a": [
+            2732,
+            1920
+          ],
+          "shape_b": [
+            2732,
+            1920
+          ]
+        },
+        "page_identity_and_mmr_geometry_mappings": true
+      }
+    },
+    "parallel_source_semantics": {
+      "page_012": {
+        "original_homr": {
+          "ordered_predictions": true,
+          "staff_mask": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_symbols": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_brace_dot": {
+            "equal": true,
+            "different_values": 0
+          }
+        },
+        "x4_homr": {
+          "ordered_predictions": true,
+          "staff_mask": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_symbols": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_brace_dot": {
+            "equal": true,
+            "different_values": 0
+          }
+        },
+        "omr_ordered_predictions": true
+      },
+      "page_014": {
+        "original_homr": {
+          "ordered_predictions": true,
+          "staff_mask": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_symbols": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_brace_dot": {
+            "equal": true,
+            "different_values": 0
+          }
+        },
+        "x4_homr": {
+          "ordered_predictions": true,
+          "staff_mask": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_symbols": {
+            "equal": true,
+            "different_values": 0
+          },
+          "connector_brace_dot": {
+            "equal": true,
+            "different_values": 0
+          }
+        },
+        "omr_ordered_predictions": true
+      }
+    },
+    "retained_input_homr_semantics": {
+      "current-homr-cpu-profile": {
+        "ordered_predictions": true,
+        "staff_mask": {
+          "equal": true,
+          "different_values": 0
+        },
+        "connector_symbols": {
+          "equal": true,
+          "different_values": 0
+        },
+        "connector_brace_dot": {
+          "equal": true,
+          "different_values": 0
+        }
+      },
+      "current-homr-wall": {
+        "ordered_predictions": true,
+        "staff_mask": {
+          "equal": true,
+          "different_values": 0
+        },
+        "connector_symbols": {
+          "equal": true,
+          "different_values": 0
+        },
+        "connector_brace_dot": {
+          "equal": true,
+          "different_values": 0
+        }
+      }
+    },
+    "retained_input_omr_semantics": {
+      "omr-dln-cpu-profile": true,
+      "omr-dln-wall": true,
+      "omr-dln-wall-device": true
+    }
+  },
+  "validation_limits": [
+    "No production changes or adopted optimization",
+    "Source-parallel source equivalence only; final merge/numbering/movement/correction regression not run",
+    "Eager strict source-semantic gate failed despite final one-page output equality",
+    "Batch2 speed gate failed in eager screening; compiled batch2 not run",
+    "No controlled multi-page cold/warm repetitions; new image shapes introduce compile/cache setup",
+    "GPU per-process PID memory accounting unavailable in WSL; use device total/cgroup memory; no observed competing GPU workload",
+    "Full68 not run per investigation scope"
+  ],
+  "followup_issues": [
+    {
+      "number": 454,
+      "url": "https://github.com/M763468/PDFScoreBar/issues/454",
+      "scope": "explicit SR compiler-cache lifetime for short-lived production jobs"
+    }
+  ]
+}

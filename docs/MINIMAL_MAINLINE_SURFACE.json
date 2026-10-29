@@ -732,6 +732,10 @@
       "tests/test_verify_detector_full68.py"
     ],
     "developer_tool": [
+      "tests/test_issue447_e2e_matrix.py",
+      "tests/test_issue447_omr_reuse.py",
+      "tests/test_issue447_profiling_tools.py",
+      "tests/test_issue447_source_scheduling.py",
       "tests/test_manual_gui_server.py",
       "tests/test_movement_boundary_candidates.py",
       "tests/test_movement_boundary_cli_provenance.py",

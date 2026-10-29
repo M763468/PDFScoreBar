@@ -34,6 +34,10 @@ A newer comment on an unrelated Issue does not supersede the current task's acce
 
 ## Historical lineages
 
+### Current production performance (#447)
+
+- [Issue #447 consolidated results](performance/issue447-results.md) — AC disposition, non-additive timing interpretation, evidence lineage and implementation follow-ups #454/#458/#459.
+
 ### Stage-E / detector reconstruction
 
 Primary lineage:

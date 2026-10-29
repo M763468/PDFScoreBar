@@ -1,12 +1,12 @@
 # 現行パイプライン — 実装・技術契約リファレンス
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"750df08eba75ea156e01f1a4d32b646d87677f165e4e238ee4152641060c879f"},"state":"draft"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"750df08eba75ea156e01f1a4d32b646d87677f165e4e238ee4152641060c879f"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE_REFERENCE.md) · [アーキテクチャ概要に戻る](PIPELINE_ARCHITECTURE.ja.md)
 
 - 原文: [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md)（英語正本）。
 - 翻訳元: same PR。原文 SHA-256: `750df08eba75ea156e01f1a4d32b646d87677f165e4e238ee4152641060c879f`。
-- 状態: `draft`。概要から分離した技術契約を保持し、最終レビュー待ち。
+- 状態: `reviewed`。2026-10-29、主担当による現行source・原文との照合とArgon独立レビューを踏まえて確認済み。
 
 この文書は[現行パイプラインのアーキテクチャ概要](PIPELINE_ARCHITECTURE.ja.md)を補う、実装者向けの詳細リファレンスである。入出力の厳密な条件、ワーカーとモデルの責任、座標、閾値、例外・互換動作、成果物を扱う。
 

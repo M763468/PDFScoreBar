@@ -1,5 +1,7 @@
 # Engine One-Job Lifecycle Contract
 
+[日本語](ENGINE_JOB_LIFECYCLE.ja.md)
+
 > **Status: Issue #337 lifecycle contract layered on Engine Job Contract v1.**
 >
 > The serialized external boundary is already defined by
@@ -73,11 +75,22 @@ Issue #336 is complete and its v1 types are normative. In particular:
 
 Issue #337 therefore does not introduce a second terminal-status enum or another error envelope.
 
-## 3. Current behavior audit
+## 3. Historical behavior audit at #337 and current adapter status
 
-The current config-first runtime is not yet wired to the v1 `JobExecutor` protocol.
+The table below records the config-first runtime audit at #337, before the #340
+reference adapter. Its adapter gaps are historical, not a statement that no v1
+executor exists today.
 
-| Concern | Current behavior | Gap relative to lifecycle contract |
+The current `PipelineJobExecutor` wraps `run_pipeline()`, returns v1 results,
+maps supported failures, and stages/publishes final/review artifacts with
+best-effort cleanup on failure. It currently returns `succeeded` or `failed`;
+it does not infer `review_required`, execute v1 `CorrectionSet` requests, or
+integrate `ExecutionControl` checkpoints/process-group termination. Cancellation,
+deadline, and corrected-job requirements below remain normative contracts for
+integration, not claims of current reference-adapter support. See
+[`ENGINE_SERVICE_READINESS.md`](ENGINE_SERVICE_READINESS.md) for the supported boundary.
+
+| Concern | Behavior at #337 | Gap identified at #337 |
 | --- | --- | --- |
 | Invocation | `run_pipeline(...)` is synchronous and returns an internal run directory | No v1 adapter produces `JobResult` yet |
 | Top-level failure | Exceptions propagate; top-level logging handler is restored in `finally` | No current exception-to-`EngineError` adapter |
@@ -93,7 +106,7 @@ The current config-first runtime is not yet wired to the v1 `JobExecutor` protoc
 | Re-execution | `--skip-existing` can reuse internal artifacts | Operator mechanism, not public idempotency |
 | Correction rerun | Retained-artifact selective rerun already preserves source provenance | Corrected attempt publication/cleanup is not yet a v1 executor transaction |
 
-Two current-runtime consequences are important:
+Two consequences of the raw config-first runtime remain important:
 
 1. internal file existence is not proof of a successful one-job result;
 2. a hard-killed current process may leave partial files without any terminal engine result.
@@ -381,9 +394,9 @@ understanding detector/MMR internals. TTL and long-term retention remain service
 
 ### Invalid/corrupt PDF
 
-Current PyMuPDF open/render errors propagate. The future executor should map deterministic PDF
-rejection to `ErrorCategory.INPUT` and a public-safe input code/message. Concrete preflight limits
-and hostile-input checks are #338.
+Raw config-first PyMuPDF open/render errors propagate. The current reference executor uses #338
+preflight to map deterministic PDF rejection to `ErrorCategory.INPUT` and a public-safe input
+code/message. Concrete preflight limits and hostile-input checks are defined by #338.
 
 ### GPU OOM
 
@@ -496,8 +509,8 @@ Accepted structured telemetry semantics are recorded in
 
 ## 15. Implementation status after #337
 
-Issue #337 intentionally does not yet wire `run_pipeline()` or every dense-route subprocess into a
-new executor. The accepted incremental implementation is:
+Issue #337 intentionally did not wire `run_pipeline()` or every dense-route subprocess into a
+new executor. Its accepted incremental implementation was:
 
 - retain the current production pipeline behavior unchanged;
 - add reusable cancellation/deadline primitives;
@@ -505,6 +518,7 @@ new executor. The accepted incremental implementation is:
 - document current gaps and the required publication/cleanup semantics;
 - cover the helper behavior with cheap focused tests.
 
-A later pipeline adapter can consume these primitives without changing the #336 wire schema. Wiring
-them through heavy GPU stages should preserve the current process/memory architecture and receive the
-validation appropriate to that runtime change.
+The #340 reference adapter now wraps `run_pipeline()` as described in section 3, but does not
+consume these lifecycle control primitives. Integrating them requires no #336 wire-schema change.
+Wiring them through heavy GPU stages should preserve the current process/memory architecture and
+receive the validation appropriate to that runtime change.

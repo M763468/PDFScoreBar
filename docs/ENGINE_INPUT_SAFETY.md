@@ -1,5 +1,7 @@
 # Engine Untrusted-PDF Safety Contract
 
+[日本語](ENGINE_INPUT_SAFETY.ja.md)
+
 This document is the normative Issue #338 safety contract for processing one
 untrusted PDF through the versioned engine boundary.
 

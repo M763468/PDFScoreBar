@@ -11,7 +11,7 @@ executable package.
 | Where are exact detection/numbering implementation contracts? | [Implementation reference (English)](PIPELINE_ARCHITECTURE_REFERENCE.md) / [日本語（reviewed）](PIPELINE_ARCHITECTURE_REFERENCE.ja.md) |
 | How do I run the current repository? | [Environments](ENVIRONMENTS.md), then [manual correction workflow](manual_correction_review_package.md) if needed |
 | How are user corrections separated from GT/developer tools? | [User correction boundary](USER_CORRECTION_BOUNDARY.md) |
-| What does an engine caller send and receive? | [Engine job contract](ENGINE_JOB_CONTRACT.md) |
+| What does an engine caller send and receive? | [Engine job contract (English)](ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](ENGINE_JOB_CONTRACT.ja.md) |
 | How do I change and verify this repository? | [Branch policy](BRANCH_POLICY.md) and [validation policy](dev/VALIDATION_POLICY.md) |
 | Why was older code or evidence retained? | [Repository surface inventory](REPOSITORY_SURFACE_INVENTORY.md), [documentation inventory](DOCUMENTATION_INVENTORY.md), then [history index](HISTORY_INDEX.md) |
 
@@ -31,8 +31,11 @@ do not indicate full translation.
 
 ## More specific contracts
 
-- [Engine lifecycle](ENGINE_JOB_LIFECYCLE.md), [input safety](ENGINE_INPUT_SAFETY.md),
-  and [telemetry](ENGINE_TELEMETRY.md) refine the one-job contract.
+- [Engine lifecycle](ENGINE_JOB_LIFECYCLE.md) ([日本語](ENGINE_JOB_LIFECYCLE.ja.md)),
+  [input safety](ENGINE_INPUT_SAFETY.md) ([日本語](ENGINE_INPUT_SAFETY.ja.md)),
+  and [telemetry](ENGINE_TELEMETRY.md) ([日本語](ENGINE_TELEMETRY.ja.md)) refine the one-job contract.
+  [Service-readiness gates](ENGINE_SERVICE_READINESS.md) ([日本語](ENGINE_SERVICE_READINESS.ja.md))
+  describe supported executor behavior and compatibility checks; future worker isolation remains separate.
 - [Final output](corrected_final_output.md), [numbering geometry](NUMBERING_GEOMETRY_CONTRACT.md),
   [GT preparation](GT_PREPARATION_POLICY.md), and [barline matching](BARLINE_MATCHER.md)
   describe narrower output or validation behavior.

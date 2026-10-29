@@ -1,5 +1,7 @@
 # Production Model Artifacts
 
+[日本語](MODEL_ARTIFACTS.ja.md)
+
 Production-consumed learned checkpoints must not use `logs/` as their durable source of truth.
 `logs/` remains experiment/generated output. Production model identity is instead defined by a
 small tracked manifest plus a versioned GitHub Release asset.
@@ -24,7 +26,7 @@ hosting service itself would technically allow an asset to be replaced.
 
 ## Current production barline CNN
 
-The verified dense Stage-E route uses the Issue #296 D27 checkpoint recorded in:
+The current dense production route uses the Issue #296 D27 checkpoint recorded in:
 
 ```text
 models/barline_cnn/manifest.json
@@ -52,7 +54,7 @@ Immutable identity/provenance for this version:
 
 Issue #315 publication verification proved that the local accepted checkpoint, the freshly
 downloaded Release asset, and the empty-cache materialized artifact have the same SHA-256 and
-size. The verified Stage-E resolver then loaded the materialized checkpoint successfully. This is
+size. The historical verified Stage-E resolver then loaded the materialized checkpoint successfully. This is
 artifact relocation only; it does not change the accepted #296 checkpoint bytes, architecture,
 threshold, crop/scoring path, or model-quality decision.
 

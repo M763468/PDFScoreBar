@@ -94,8 +94,8 @@ when translating. Historical and scoped records follow the exclusions below.
 | [ENGINE_INPUT_SAFETY.md](ENGINE_INPUT_SAFETY.md) | current/reference | EN | JA needed | P1 |
 | [ENGINE_TELEMETRY.md](ENGINE_TELEMETRY.md) | current/reference | EN | JA needed | P1 |
 | [ENGINE_SERVICE_READINESS.md](ENGINE_SERVICE_READINESS.md) | current/reference | EN | JA needed | P1 |
-| [MODEL_ARTIFACT_CONTRACT.md](MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN | JA needed | P1 |
-| [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN | JA needed | P1 |
+| [MODEL_ARTIFACT_CONTRACT.md](MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
+| [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
 | [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN | JA needed | P1 |
 | [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | JA needed | P1 |
 | [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | JA needed | P1 |

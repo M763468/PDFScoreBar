@@ -1,5 +1,7 @@
 # Canonical model artifact contract
 
+[日本語](MODEL_ARTIFACT_CONTRACT.ja.md)
+
 This document records the model/weight identities consumed by the maintained Docker and
 production runtime. It complements `docs/ENVIRONMENTS.md`; it does not move ownership away
 from the Issues that selected or validated a model.
@@ -120,17 +122,17 @@ silent replacement.
 - logical model IDs: maintained HOMR segmentation plus transformer encoder/decoder (and HOMR
   init-managed OCR assets)
 - selected runtime version: HOMR source commit
-  `b377620a3a55bd7ff657481cec5b688dfbc9cee9`
+  `457e7c6518a10ba755db2e60883419e56c4d7369`
 - selected GPU model identities at that commit:
   - segmentation: `segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16`
-  - transformer encoder: `encoder_pytorch_model_331-e10346542968cc71fbcce0c0696f3ac963f11ae1_fp16`
-  - transformer decoder: `decoder_pytorch_model_331-e10346542968cc71fbcce0c0696f3ac963f11ae1_fp16`
+  - transformer encoder: `encoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
+  - transformer decoder: `decoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
 - provenance: upstream HOMR `onnx_checkpoints` GitHub release, selected by the pinned HOMR
   source code and materialized with `python -m homr.main --init --gpu force`
 - upstream release-package SHA-256 identities:
   - segmentation package: `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82`
-  - transformer encoder package: `13c67af5f192426726057f62e54f46bff4efb471e4a8a2f4631eda11079f2bfc`
-  - transformer decoder package: `dd702a8d4e9e04b523f6e9d6bda34e012d265fe8550d6b36f5a1684a1f757cca`
+  - transformer encoder package: `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c`
+  - transformer decoder package: `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8`
 - ownership: Docker image / pinned upstream HOMR runtime
 - host materialization: Docker build cache only
 - container runtime: HOMR package directories inside `/opt/venv_pipeline`; no `/workspace`

@@ -129,9 +129,8 @@ runtime mismatchはbase/image provenanceを比較して適合imageを選び、�
 #329 / PR #331はversion別SHAとoperator import、#352 / PR #353は共有cacheとruntime/source fingerprintの分離、
 #398 / PR #401はproductionと歴史的Stage-E componentの分離を定めた。今回もこれらのproduction契約を維持する。
 過去のGPU/精度結果は今回の検証結果とは分ける。
-`MODEL_ARTIFACT_CONTRACT.md`のmaintained HOMR inventoryは古いcommitを記載しているが、
-現行Dockerfile/profileは `457e7c6518a10ba755db2e60883419e56c4d7369`。
-古いarchive hashを現行weightの保証として使用しない。
+現行Dockerfile/profileはHOMR commit `457e7c6518a10ba755db2e60883419e56c4d7369` を固定する。
+選択資産とarchive hashは[モデル契約](../MODEL_ARTIFACT_CONTRACT.ja.md)を参照する。
 
 [#446](https://github.com/M763468/PDFScoreBar/issues/446) の開発ガイドは本書を現行操作への参照先とし、
 日英同期・配置方針は同Epicに従う。本書の追加だけで英語版翻訳が完了したとは扱わない。

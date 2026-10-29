@@ -36,7 +36,8 @@ do not indicate full translation.
 - [Final output](corrected_final_output.md), [numbering geometry](NUMBERING_GEOMETRY_CONTRACT.md),
   [GT preparation](GT_PREPARATION_POLICY.md), and [barline matching](BARLINE_MATCHER.md)
   describe narrower output or validation behavior.
-- [Model artifact contract](MODEL_ARTIFACT_CONTRACT.md) defines current model identities;
+- [Model artifact contract](MODEL_ARTIFACT_CONTRACT.md) ([日本語](MODEL_ARTIFACT_CONTRACT.ja.md)) defines current model identities;
+  [production model artifacts](MODEL_ARTIFACTS.md) ([日本語](MODEL_ARTIFACTS.ja.md)) covers publication and cache workflows;
   [exploration and comparison model selection](dev/EXPERIMENT_MODEL_SELECTION.md) is the
   Japanese developer guide to explicit candidate paths, fixed comparisons, and production
   validation (#448 / PR #451).

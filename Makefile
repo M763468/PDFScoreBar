@@ -153,8 +153,7 @@ run-pipeline: ## [maintained runtime] Run the pipeline with a custom config (usa
 	@mkdir -p artifacts
 	@LOG_FILE="$${LOG_FILE:-artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log}"; \
 	echo "Running pipeline with $(CONFIG). Logging to $$LOG_FILE..."; \
-	docker run --rm --gpus all $(DOCKER_EXTRA_ARGS) -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
-		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "$(CONFIG)" --skip-existing > "$$LOG_FILE" 2>&1 || \
+	DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh --config "$(CONFIG)" --pipeline-only > "$$LOG_FILE" 2>&1 || \
 		(EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Pipeline execution finished successfully. See $$LOG_FILE"
 

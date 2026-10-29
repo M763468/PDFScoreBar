@@ -1,0 +1,30 @@
+{
+  "schema": "issue454.contract.v2",
+  "base": "candidate commit recorded before GPU execution",
+  "image": "sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a",
+  "config": "configs/dense_full_pipeline.yaml",
+  "inputs": [
+    "Shostakovich-Sym5-Va/page_013",
+    "Shostakovich-Sym5-Va/pages_012-014"
+  ],
+  "cohorts": [
+    "fresh-container UID 0:GID 0",
+    "fresh-container UID 1000:GID 1001"
+  ],
+  "repetitions": "3 cold/warm pairs per input and UID; new private empty namespace per pair, warm reuses only its partner; OS/driver cache not flushed",
+  "primary": "trace-OFF Docker launch-through-exit wall including identity/lock/integrity work; median warm <= 0.80 * median cold in each cohort",
+  "resources": "retain all observations/range, paired saving, CPU-s/RAM/I/O/GPU/VRAM; 16 GiB RAM limit, sampled device VRAM <=7 GiB; reject known GPU competition",
+  "semantics": "exact SR output digest and decoded pixels; strict source_checks and pipeline_checks in tools/issue447/deepening_analyze.py; ordered detector geometry/staff/connector masks, pages/systems/measures, base/final numbering/movements, MMR targets/skips/geometry/filters; actual correction replay as tools/issue447/e2e_correction_replay.py",
+  "negative": [
+    "identity mismatch",
+    "mixed UID",
+    "permissions",
+    "corrupt inventory",
+    "dirty interrupted writer",
+    "concurrent same identity",
+    "unavailable root"
+  ],
+  "adoption": "opt-in maintained local launcher integration; deployment selection is not an acceptance gate; every applicable technical gate required",
+  "reuse": "#447 retained outputs for harness/correction baseline, never claim as current implementation results; no full68 for timing alone",
+  "supersedes": "issue454-contract.json"
+}

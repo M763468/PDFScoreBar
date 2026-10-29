@@ -19,7 +19,7 @@
 - リポジトリ管理のダウンロード可能な資産には `src.common.model_artifacts` を使う。既定は `$XDG_CACHE_HOME/pdfscorebar/models/<model-id>/<version>/<asset>`、`XDG_CACHE_HOME` 未設定時は `~/.cache/pdfscorebar/models/<model-id>/<version>/<asset>`。`PDFSCOREBAR_MODEL_CACHE` でキャッシュルートを明示的に上書きできる。
 - イメージが所有する資産は `/workspace` の外、通常は `/opt/pdfscore-assets` 以下に置く。これにより、作業中のチェックアウトのbind mountで隠れない。
 - 外部・運用者提供の資産は可能な限り同じホスト側のバージョン名前空間に登録し、`/opt/pdfscore-external/<model-id>/<version>/...` 以下に読み取り専用でマウントする。
-- パスを明示する環境変数は互換性維持・上書き用である。manifestが選択バージョンの完全性を管理する場合、その識別情報を迂回してはならない。
+- パスを明示する環境変数は互換性維持・上書き用である。manifestが選択バージョンの完全性の識別情報を管理する場合、環境変数で指定したパスでもその検証を迂回してはならない。
 
 ## 資産一覧
 

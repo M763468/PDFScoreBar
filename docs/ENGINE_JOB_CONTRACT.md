@@ -1,5 +1,7 @@
 # Engine Job Contract v1
 
+[日本語](ENGINE_JOB_CONTRACT.ja.md)
+
 This document is the normative serialized boundary for Issue #336. It defines
 one synchronous PDFScoreBar engine job independently of the current
 configuration-first CLI and internal run-directory layout.

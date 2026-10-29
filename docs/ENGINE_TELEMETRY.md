@@ -1,5 +1,7 @@
 # Engine Structured Telemetry Contract
 
+[日本語](ENGINE_TELEMETRY.ja.md)
+
 > **Status: Issue #339 structured telemetry contract layered on Engine Job Contract v1.**
 >
 > The serialized job/result/error boundary is defined by
@@ -8,8 +10,8 @@
 > coarse timing, and optional resource-observation vocabulary used by engine callers.
 
 The reusable implementation is src/pipeline/engine_telemetry.py. The current config-first
-run_pipeline() can emit the same structured events when explicitly requested, but it is still not
-the full v1 JobExecutor adapter.
+run_pipeline() can emit the same structured events when explicitly requested. It remains the
+config-first runner; src.pipeline.engine_executor.PipelineJobExecutor is the separate v1 adapter.
 
 ## 1. Design boundary
 
@@ -135,11 +137,12 @@ TelemetryRecorder.terminal() maps exactly:
 Deadline and explicit-cancellation interpretation remains owned by
 ENGINE_JOB_LIFECYCLE.md; telemetry must not redefine it.
 
-The current config-first run_pipeline() has no v1 JobResult adapter yet. Its optional telemetry
-integration therefore reports a normal return as job_succeeded and an unhandled ordinary exception
-as job_failed, without inventing an EngineError category/code or inferring review_required.
-A future v1 executor adapter must emit the terminal event from the same terminal disposition used to
-construct its JobResult.
+When called directly and owning its recorder, the config-first run_pipeline() reports a normal
+return as job_succeeded and an unhandled ordinary exception as job_failed, without constructing
+an EngineError or inferring review_required. The current PipelineJobExecutor instead supplies
+its own telemetry_recorder and owns terminal emission after artifact publication/cleanup, using
+the same succeeded/failed disposition as its JobResult. It does not currently produce
+review_required or cancelled results; those remain supported v1 recorder/contract values.
 
 ## 4. Progress units
 
@@ -230,8 +233,8 @@ TelemetryRecorder.summary() produces:
 - a numeric resources object.
 
 The summary does not contain internal run-directory paths, model paths, subprocess command lines, or
-raw logs. A future executor may copy the numeric resource projection into JobResult.resources and
-retain the fuller summary as a debug artifact when its output profile permits it.
+raw logs. The current PipelineJobExecutor copies the numeric resource projection into
+JobResult.resources and retains the fuller summary as a debug artifact for the debug profile.
 
 Progress sink failures are isolated from score processing and counted in
 progress_sink_error_count. A failed observer must not silently turn otherwise valid score
@@ -244,10 +247,13 @@ src.pipeline.main.run_pipeline() now accepts optional:
 - on_progress;
 - telemetry_summary_path;
 - sample_resources;
-- resource_sample_interval_seconds.
+- resource_sample_interval_seconds;
+- telemetry_recorder (an executor-owned recorder).
 
 When none are requested, no TelemetryRecorder is constructed and the existing pipeline execution
-path remains the default.
+path remains the default. An executor-owned telemetry_recorder is mutually exclusive with
+on_progress, telemetry_summary_path, and sample_resources; in that mode the executor owns
+terminal emission, recorder closure, and summary retention.
 
 The repository-local CLI exposes corresponding opt-in flags:
 

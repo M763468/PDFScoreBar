@@ -1,5 +1,7 @@
 # Engine service-readiness gates
 
+[日本語](ENGINE_SERVICE_READINESS.ja.md)
+
 Issue #340 closes the service-readiness validation slice around the v1 engine
 contract. The gates validate the engine boundary; they do not implement or
 deploy a web service.
@@ -14,7 +16,11 @@ result = executor(request, on_progress=handle_event)
 ```
 
 It accepts the v1 `JobRequest`, forwards v1 `ProgressEvent` records, and
-returns a v1 `JobResult` with a structured `EngineError` on failure.
+returns a v1 `JobResult` with a structured `EngineError` on failure. The current
+reference adapter emits `succeeded` or `failed`; `review_required` and `cancelled`
+remain v1 contract values, not outcomes currently produced by this adapter.
+The reusable #337 cancellation/deadline primitives are not yet integrated into
+its execution path.
 
 This local adapter applies input preflight bounds, but does not enforce a
 per-job runtime disk quota or stop opaque child processes on storage growth.

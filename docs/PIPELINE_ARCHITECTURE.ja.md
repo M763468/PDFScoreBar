@@ -1,12 +1,12 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"46954c89504f6676a832bd43f39c61b45c65fd51286ccb655d3530461512fd65"},"state":"draft"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"46954c89504f6676a832bd43f39c61b45c65fd51286ccb655d3530461512fd65"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）
 - 翻訳元: same PR。原文SHA-256: `46954c89504f6676a832bd43f39c61b45c65fd51286ccb655d3530461512fd65`
-- 状態: `draft`。構造を見直した概要版として人手レビュー待ち
+- 状態: `reviewed`。2026-10-29、利用者による読みやすさの確認と、実装照合・Argon独立レビューの結果を踏まえた概要版。
 
 > 本文書は、`develop`の`dense_full_pipeline`を対象とした**アーキテクチャ概要**である。主要な処理、処理間で受け渡す情報、実行順序を説明する。閾値・ファイル形式・ワーカー間の境界・例外処理・互換性の詳細は[実装リファレンス](PIPELINE_ARCHITECTURE_REFERENCE.ja.md)に分けた。動作の最終的な根拠はソースコード・テスト・設定である。
 

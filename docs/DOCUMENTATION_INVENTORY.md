@@ -21,7 +21,8 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/REPOSITORY_SURFACE_INVENTORY.md` | #230 development-repository audit and #100 input | historical/reference | retain for lineage; its old present-tense paths do not define the current extraction set |
 | `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 minimum executable selection and machine-readable drift definition | canonical/current for extraction | use as the single explanation and exact file list for the proposed runtime subset |
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
-| `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source, including detector-input provenance |
+| `docs/PIPELINE_ARCHITECTURE.md` / `.ja.md` | reader-oriented current production architecture | canonical/current (English original); Japanese reviewed | pipeline components, data flow, execution order and module responsibilities; precise contracts moved to reference |
+| `docs/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | production implementation reference | current/reference (English original); Japanese reviewed | detailed detector/numbering contracts and historical compatibility rationale; read from the architecture overview |
 | `docs/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
 | `docs/ENGINE_JOB_CONTRACT.md` | versioned one-job engine caller contract | current/reference | normative v1 serialized boundary and compatibility/correction semantics; `PipelineJobExecutor` is the reference adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
 | `docs/ENGINE_JOB_LIFECYCLE.md` | #337 one-job lifecycle contract | current/reference | preserve v1 status/error values while defining deadline/cancellation, retryability, publication, cleanup, and correction-attempt lifecycle semantics |
@@ -67,10 +68,11 @@ of replacing its history or creating a competing runtime/distribution manifest.
 Language labels describe explanatory prose: **EN** = English, **JA** = Japanese,
 **mixed** = substantial prose in both languages. Code, identifiers, Japanese UI examples,
 and translated status labels alone do not establish a complete counterpart.
-At the initial #452 audit, none of the documents in the table below has a separate,
-reviewed full counterpart. Thus **JA needed** and **EN needed** mean untranslated;
-**split/review** means the mixed original must first be reviewed as a whole.
-No entry is currently certified as synchronized.
+At the initial #452 audit, none of the documents in the table below had a separate,
+reviewed full counterpart; that is the historical audit result, not current coverage.
+Current counterpart states are recorded per row below. **JA needed** and **EN needed**
+mean untranslated; **split/review** means the mixed original must first be reviewed as
+a whole. A draft counterpart is not certified as reviewed or technically synchronized.
 
 Priority expresses reading dependencies, not a requirement to finish all rows in one PR:
 **P1** = entry points and core architecture/engine/model/operation/validation;
@@ -85,7 +87,8 @@ when translating. Historical and scoped records follow the exclusions below.
 | [../AGENTS.md](../AGENTS.md) | canonical/current; agent instructions | EN | not required (agent-only) | N/A |
 | [README.md](README.md) | canonical/current | EN | JA needed | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | JA needed | P1 |
-| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current | EN | JA needed | P1 |
+| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
+| [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
 | [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN | JA needed | P1 |
 | [ENGINE_JOB_LIFECYCLE.md](ENGINE_JOB_LIFECYCLE.md) | current/reference | EN | JA needed | P1 |
 | [ENGINE_INPUT_SAFETY.md](ENGINE_INPUT_SAFETY.md) | current/reference | EN | JA needed | P1 |

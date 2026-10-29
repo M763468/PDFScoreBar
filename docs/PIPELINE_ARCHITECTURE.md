@@ -1,463 +1,131 @@
 # Current Production Pipeline Architecture
 
-> **Canonical architecture source.** This document describes the current production
-> pipeline on `develop`, with emphasis on the `dense_full_pipeline` route. Source code,
-> tests, and machine-readable profiles remain authoritative when they disagree with prose.
-> Historical Issue documents describe how this architecture was reached; they are not
-> required reading for understanding the current route.
->
-> The intended future engine/service responsibility boundary is documented separately in
-> [`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md). That roadmap document is
-> not a source of truth for current runtime behavior.
+[日本語](PIPELINE_ARCHITECTURE.ja.md)
 
-## Scope and canonical entry points
+> This is the architecture **overview** for the `dense_full_pipeline` route currently selected on `develop`. It explains the components, the data passed between them, and the order of execution. For thresholds, file formats, worker boundaries, exceptions and compatibility behavior, use the [implementation reference](PIPELINE_ARCHITECTURE_REFERENCE.md). Source, tests and configuration determine executable behavior.
 
-The user distribution adds `docker/distribution.py` as a Linux Docker launcher and
-`docker/distribution_job.py` as a thin adapter to the existing v1 `PipelineJobExecutor`.
-It ships the package-bound `tools/review_correction` application alongside the engine.
-The local review application owns immutable `history/` checkpoints, package-scoped
-resume sessions and process-locked application state. An uploaded annotated PDF is
-validated against the checkpoint's original source and displayed separately from clean
-recognition inputs. Resumed applies reuse retained recognition and use
-`review/number_layer.py` to add a verified 9 pt numbering layer while preserving native
-annotations and CropBoxes. Annotation-only re-exports may remap xrefs: the resume adapter
-proves ordered content/stream hashes, markers and full-page rendering against attested
-package-local results before removing the old owned streams. Unknown rewrites are rejected.
-Legacy input snapshots are imported only after source/correction identity validation;
-old PDF presence does not establish success. Repeated resumes use a flat session registry
-under the original review, with checkpoint state and numbering ownership resolved separately.
-Checkpoint IDs and session IDs are local artifact identities;
-they do not add a public service/job API. See
-[`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).
-The exact selection and develop-only boundary are in
-[`MINIMAL_MAINLINE_SURFACE.md`](MINIMAL_MAINLINE_SURFACE.md); user operation is in
-[`USER_GUIDE.md`](USER_GUIDE.md). Shared barline geometry lives in
-`src/common/barline_geometry.py`; GT matching stays outside the distribution.
+## 1. What the pipeline does
 
+PDFScoreBar reads a score PDF (or previously saved page images), finds the barlines and the staves to which they belong, reconstructs the musical measures, and assigns measure numbers. It also recognizes multi-measure rests: a single printed symbol that represents several consecutive silent measures. A user can correct detected barlines or measure counts before the numbered result is finalized.
 
-The maintained full-pipeline runtime is the `pdfscore_pipeline_gpu` image and the
-config-driven entry point in `src/pipeline/main.py`. The root `Dockerfile` builds only
-the maintained production runtime. Historical Stage-E source, venv, model assets and
-provenance live in the explicit `docker/Dockerfile.stage-e` reproduction extension;
-canonical preflight requires only maintained-profile provenance. See
-[`ENVIRONMENTS.md`](ENVIRONMENTS.md) for the two build paths.
+Three cooperating parts perform this work:
 
-```bash
-make docker-build
-make run-pipeline CONFIG=configs/dense_full_pipeline.yaml
-```
-
-The dense production config selects:
-
-```yaml
-detection:
-  detector_route: dense_full_pipeline
-  homr_profile: maintained_original
-  enable_sr: true
-  sr_scale: 4
-  sr_compile_mode: reduce-overhead
-```
-
-`src/pipeline/detection/__init__.py` dispatches that route to
-`src/pipeline/detection/dense_orchestrator_batch_sr.py`. This is the accepted dense
-orchestrator with one Issue #284 specialization: Real-ESRGAN x4 generation is lifted into a
-dedicated all-pages phase before page-local HOMR/OMR source generation. The generic
-`src/pipeline/detection/orchestrator.py` / `HybridDetector` path is a separate standard
-route and must not be used to infer the dense production architecture.
-
-## End-to-end order
-
-The current caller chain is:
-
-```text
-PDF or persisted page images
-  -> optional in-process PDF rendering / page collection
-  -> dense detector route dispatch
-       -> dedicated all-pages current-x4 SR process
-            -> one Real-ESRGAN x4 model/runtime reused across all selected pages
-            -> FP16 + channels_last + tile=400/tile_pad=10
-            -> torch.compile(reduce-overhead)
-            -> tile-wise CUDA uint8 conversion + CPU stitch
-            -> persisted x4 images + per-page provenance
-       -> SR process exits and releases its CUDA/model state
-       -> page-local verified source worker
-            -> maintained HOMR pinned at immutable commit on original image
-            -> current x4 support consumer
-                 -> current-runtime HOMR on precomputed persisted x4 image
-                 -> OMR-DLN on the same persisted x4 image
-            -> hybrid consensus
-       -> dense candidate/probe reconstruction
-       -> staff-local CNN candidate normalization (maintained_original only)
-            -> split multi-staff boxes; supplement original HOMR pieces with SR-or-OMR consensus
-            -> preserve original probe row seeds and connector-mask evidence
-       -> CNN scoring + strict staff-stroke duplicate suppression
-  -> page filtering / user barline corrections
-  -> Phase A physical grouping + numbering_base
-       -> maintained original-image staff geometry
-       -> current-x4 connector semantic evidence
-  -> current-x4 MMR support sidecar
-       -> reuse Phase-A topology/x geometry
-       -> map current-x4 HOMR staff y geometry
-  -> MMR CNN + RapidOCR
-  -> merge MMR and user measure overrides
-  -> Phase C final numbering / optional overlay
-  -> manifest / review-package materialization when configured
-```
-
-The staff-stroke adapter runs after dense generation, filtering and rescue. It splits
-only boxes intersecting at least two extracted staves by two staff units each; single-staff
-connector tails remain unchanged. Added original-HOMR pieces pass the existing SR-or-OMR
-IoU > 0.5 consensus before actual CNN inference. Post-CNN duplicate suppression uses
-X-center distance <= 0.1 median extracted staff unit and vertical overlap >= 0.8,
-retaining the numbering-compatible canonical geometry and its own CNN score. This is
-separate from logical time-boundary merging. Per-page normalization and suppression
-sidecars preserve the source hashes and representatives. No GT or evaluation data enters
-this runtime step. CNN lookup resolves relative, absolute and symlink image paths to
-the same unit-map identity. Probe directories use the image parent/stem identity
-consistently through rescue, the adapter and CNN, including composite score/page stems;
-logical inventory score/page labels do not select the adapter directory.
-The inventory makes image paths absolute without resolving symlinks, preserving the
-caller's parent/stem for rescue and CNN output locations. Support metadata can use that
-identity or the resolved identity used inside disposable source-page workers; the adapter
-requires exactly one physical result at these known locations and checks its image and
-completion status. The unit-map lookup still resolves the file identity.
-Successful empty CNN results also write an empty
-suppression audit when deduplication is enabled, and
-reruns with deduplication disabled remove stale suppression sidecars.
-A page containing any accepted staff without an estimated
-unit (including one-line percussion notation) keeps its original candidates and skips
-this adapter and stroke deduplication; its sidecar records `no_staff_unit_size` rather
-than inventing a geometric threshold. This also preserves unknown voices on mixed pages.
-See `tools/issue416/IMPLEMENTATION.md` for the fixed-input validation.
-
-`pdf_to_images` is currently in-process inside `PipelineOrchestrator` when enabled. The
-verified dense route itself requires persisted page image files; it rejects in-memory-only
-images at the detector boundary.
-
-## Orchestration and probe module boundaries
-
-`PipelineOrchestrator` owns input validation/rendering, phase order, shared model caches,
-telemetry and manifest/review dispatch. Its existing phase methods delegate execution to
-`steps/numbering_phases.py`, which contains base layout/barline corrections, batch MMR preparation,
-and final override application, cross-page numbering and overlays.
-`NumberingPhaseServices` in that module supplies the current orchestrator operation hooks at dispatch time;
-phase helpers share the same context and caches and do not import their caller. Review
-configuration/prerequisites and manifest projection live in `review/pipeline_review.py`.
-
-The probe entry point keeps the existing option/API contract and candidate acceptance order.
-`bands.py` resolves staff bands and eligible x domains. `measurements.py` projects band and
-extension ink, selects seeds, and measures candidate-local scan bands, row profiles, x peaks
-and overhang. Measurement does not accept or rescue a
-candidate. `existing.py` owns existing-barline matching, `rescue.py` performs the existing
-cross-band/rightmost/gap rescues, `debug.py` serializes debug evidence, and `types.py` carries
-configuration records. No thresholds, rounding rules, result schemas or process lifetimes
-change with these module boundaries.
-Probe diagnostic rendering and optional wide-candidate splitting are imported only when
-requested. The minimal user distribution excludes those develop tools and standalone
-numbering CLI/overlays; final user PDFs are generated by `review/final_output.py`.
-
-## Detection failure contracts
-
-Canonical batch/source-page/support workers require non-null valid `precomputed_sr` before
-HOMR execution. `sr_mode=page_local` is an explicit develop compatibility mode, rather than
-recovery from a failed batch. Legacy non-batch profiles write that mode explicitly. Page-local
-SR calls the generic helper with `strict=True` and checks exact x4 shape; generic development
-callers retain `strict=False` compatibility. Batch SR propagates runtime errors and shape failures.
-Canonical HOMR/OMR consensus uses strict detection JSON parsing, including finite numeric
-coordinates and valid bounds; valid empty predictions remain normal. Canonical dense rescue
-requires seed files, while generic no-seed probe operation remains optional. Errors propagate
-through workers to a FAILED engine job before final/review publication.
-
-## HOMR module ownership
-
-The maintained/current workers import production-owned `src/homr_runtime/`:
-
-| Responsibility | Module |
-| --- | --- |
-| Prediction/coordinate records and established runtime defaults | `types.py` |
-| Image/segmentation coordinate mapping | `transforms.py` |
-| Image-feature and segmentation barline candidates | `barline_candidates.py` |
-| Staff/symbol assembly and compatibility patch points | `heuristics.py` |
-| Notehead/staff filtering and end-barline recovery | `filtering.py`, `end_barlines.py` |
-| Model prediction, Segnet cache and callable API adaptation | `predictor.py`, `segnet_cache.py`, `api_compat.py` |
-| Logging and prediction/mask serialization | `utils.py`, `reporting.py` |
-
-`maintained_profile.py` owns maintained baseline execution. Shared source-generation and
-batch-SR scheduling live in `profile_sources*.py`; `maintained_profile_hybrid.py` selects
-the maintained backend and `maintained_source_page_worker.py`. Historical profile adapters
-remain under `homr_profile.py`, `homr_profile_compat.py`, `profile_hybrid*.py`, and
-`verified_source_page_worker.py`. They are loaded only for an explicitly selected historical
-profile. `src/homr_eval_scripts/core/` retains old import adapters plus evaluation metrics,
-diagnostic CSV generation and comparison reporting. Production does not import that package.
-
-Callable compatibility and connector capture still patch the actual predictor/heuristics
-bindings held by the consumer. The heuristics, predictor and Segnet cache adapters alias the canonical
-module object, preserving callable patch points and class/cache identity for old import paths. These ownership changes
-do not change the two-HOMR input/coordinate or process-lifetime contracts below.
-
-## Two-HOMR ownership contract
-
-For each page on the dense production route there are exactly two HOMR neural inference
-purposes. The all-pages Real-ESRGAN phase is not an additional HOMR inference; it is the
-shared x4 image producer consumed by the page-local source workers.
-
-### 1. Original-image maintained HOMR
-
-- **Producer:** `run_homr_profile("maintained_original", ...)` through
-  `BatchSRVerifiedProfileHybridDetector` / `VerifiedProfileHybridDetector`.
-- **Input:** original/source page image, scale 1.
-- **Provenance:** `configs/detector_profiles/maintained_original_homr.json`.
-- **Role:** authoritative detector baseline and authoritative staff geometry for Phase-A
-  system/measure construction.
-- **Coordinate space:** source-page coordinates.
-- **Primary durable runtime artifact subtree:**
-  `<hybrid_output>/baseline/batch/<page>/...`.
-- **Consumer:** detector inventory / hybrid consensus; later numbering consumes the
-  resolved baseline staff mask.
-
-This pinned profile exists to preserve the accepted Stage-E baseline. It is not rerun on
-x4 in the current production path.
-
-### 2. Current-runtime HOMR on persisted x4 support
-
-- **x4 image producer:** `src/pipeline/detection/current_sr_batch_worker.py`, launched once
-  for the selected page set by `BatchSRVerifiedProfileHybridDetector`.
-- **x4 HOMR/support owner:** `src/pipeline/detection/current_support_worker.py`.
-- **Input:** the precomputed persisted Real-ESRGAN x4 image from the dedicated SR process.
-- **Producer runtime:** current pipeline HOMR runtime, not the pinned Stage-E profile.
-- **Published bundle:** source-coordinate `current_sr_detection`, current-HOMR staff mask,
-  the complete connector semantic pair, x4 image/provenance, and OMR-DLN predictions.
-- **Coordinate contract:** detection and semantic support exposed to downstream consumers
-  are restored to source-page coordinates where required; the persisted x4 image remains
-  the physical x4 source artifact.
-- **Consumers:** detector hybrid consensus, connector-aware grouping support, and MMR
-  vertical staff support.
-
-The selected maintained commit is immutable and is not rerun on x4 in the current
-production path. The historical `stage_e_verified` profile remains isolated in the image
-for reproduction and is not part of canonical dispatch.
-
-The production path does not initialize Real-ESRGAN inside each page-local support worker.
-The dedicated SR process finishes all pages first and exits. Only then do disposable
-page-local workers run maintained baseline HOMR plus current-x4 HOMR and OMR-DLN. This prevents
-Real-ESRGAN model/activation state from overlapping the later HOMR/OMR GPU phases while
-still reusing the SR model across pages.
-
-## Current-x4 SR runtime contract
-
-Issue #284 makes the Real-ESRGAN phase an explicit reusable runtime boundary.
-
-- Model: `RealESRGAN_x4plus`.
-- Precision/layout: FP16, `channels_last`.
-- Tiling: `tile=400`, `tile_pad=10`.
-- Output path: each tile is converted to CUDA `uint8`, copied/stiched on CPU, and written as
-  the persisted x4 page image.
-- Model lifetime: one SR process/model is reused across the selected page batch.
-- Compile mode: `torch.compile(..., mode="reduce-overhead")` in the production config.
-- Memory boundary: the SR process exits before any page-local HOMR or OMR-DLN inference.
-
-The compiled and eager SR paths intentionally need not be byte-identical. Acceptance is at
-the detector/topology/numbering/MMR semantic contracts. The final Issue #284 full-68 gate
-preserved those contracts on all 68 canonical pages while reducing both SR-batch and E2E
-wall time.
-
-## Detector input provenance and scoring defaults
-
-Detector input provenance is a machine-readable contract, not something inferred from a
-run-directory name or from the fact that HOMR/SR/OMR executed. `src/pipeline/detection/input_contract.py`
-classifies each detector configuration as one of:
-
-```text
-fresh_upstream
-precomputed_candidate_route
-```
-
-A run is `fresh_upstream` only when both candidate-source overrides are unset:
-
-```text
-precomputed_probe_candidates_root
-cnn_bands_from
-```
-
-If either override is configured, the run is a `precomputed_candidate_route`, even if the
-current HOMR/SR/OMR stages also execute and even if the run writes new candidate JSON into a
-new output directory. New output bytes do not prove fresh authoritative inputs.
-
-The detector orchestrator records this contract in:
-
-```text
-<run_dir>/intermediate/detector_input_contract.json
-```
-
-A result may be described as a fresh detector validation only when the manifest reports:
-
-```text
-mode = fresh_upstream
-fresh_upstream_authoritative = true
-override_keys = []
-```
-
-Checkpoint/precomputed routes remain useful for historical regression, CNN comparison, and
-downstream isolation, but their metrics must remain labelled with that input mode. The
-forensic investigation that established this distinction is retained in Issue #245 and PR
-#251; current source/tests and the machine-readable manifest are authoritative now.
-
-CNN scoring NMS is default-off in `src/pipeline/detection/config.py`
-(`DEFAULT_CNN_APPLY_NMS = False`) and remains an explicit opt-in through
-`detection.cnn_apply_nms: true`. Issue #142 records the historical causal evidence and PR
-#154 that established this default. Any future default change requires explicit canonical
-accuracy/downstream evidence rather than a silent scoring-policy change.
-
-## Detector consensus and dense candidate route
-
-`BatchSRVerifiedProfileHybridDetector` retains the same consensus semantics as
-`VerifiedProfileHybridDetector` and combines:
-
-- maintained original-image baseline detections;
-- `current_x4_support.current_sr_detection`;
-- OMR-DLN predictions produced from the persisted x4 support image.
-
-The hybrid step filters baseline HOMR boxes by x4 HOMR or OMR-DLN support; it does not merge
-x4 coordinates into the returned baseline boxes. The old pinned HOMR-on-x4 inference is not
-part of this consensus. The current x4 HOMR output is the single x4 HOMR owner and is reused.
-
-`dense_orchestrator_batch_sr.py` then follows the accepted dense-orchestrator route:
-it writes the current-run inventory and calls `reconstruct_dense_full_pipeline_route()`.
-Candidate/probe reconstruction and CNN scoring operate on the current run;
-`historical_detector_artifact_runtime_input` is false for the verified production route.
-
-## Grouping, connector semantics, and coordinate ownership
-
-Phase A (`run_base_numbering_and_barline_correction`) constructs the physical numbering
-layout with `MeasureNumberingPipeline`.
-
-- **Barline x geometry:** accepted dense detector output, after optional user barline
-  corrections.
-- **Staff/system geometry:** maintained original-image staff mask.
-- **Connector semantics:** current-x4 HOMR connector semantic artifacts discovered from
-  the declared current-support subtree.
-- **Image used by numbering:** source/original page image.
-- **Output:** `intermediate/<page>/numbering_base.json`.
-
-A declared `current_support` subtree is a contract. If that subtree exists but its required
-connector semantic pair is missing, production raises instead of silently switching the
-meaning of connector evidence. Generic callers that do not declare current support retain
-their legacy fallback behavior.
-
-The accepted production numbering behavior also distinguishes missing semantic artifacts
-from producer-geometry disagreement. A semantic staff-count mismatch may fall back to
-numbering geometry; that compatibility behavior is intentional and was retained by Issue
-#274.
-
-## MMR support reuse contract
-
-Dense MMR does **not** run HOMR again on the original page and does **not** rebuild Phase-A
-numbering in an MMR-specific subtree.
-
-`src/pipeline/mmr_geometry_handoff.py` builds `intermediate/<page>/mmr_support.json` via
-`src/pipeline/mmr_support_reuse.py`.
-
-The contract is asymmetric by design:
-
-- Phase-A `numbering_base` remains authoritative for topology, measure numbers, system
-  membership, and normal horizontal/x geometry.
-- current-x4 HOMR staff geometry contributes vertical/y crop support for MMR.
-- staff-slot mapping is scale-free. If a current-x4 staff cannot be mapped for a slot, the
-  support view falls back to that slot's Phase-A geometry rather than creating a new
-  topology.
-- `original_image_homr` is false and `second_numbering_rebuild` is false in MMR support
-  provenance.
-
-`run_mmr_batch()` consumes the Phase-A page payload, original page image, and optional MMR
-support views. The persistent `MMRClassifier` and `MMROCREngine` (RapidOCR) are reused
-across pages in the orchestrator process.
-
-## Final numbering is not the removed MMR rebuild
-
-Phase C still materializes `numbering_final.json`: it reloads the accepted barlines and
-staff mask, reconstructs the page object with the normal `MeasureNumberingPipeline`, and
-applies the merged MMR/user measure overrides before optional overlay rendering.
-
-MMR/manual overrides and movement boundaries use zero-based indices in the compact
-`numbering_base.json` / `numbering_final.json` `systems` array. Internal `Page.systems`
-also retains empty systems; Phase C resolves visibility from uncorrected measure geometry
-before applying corrections, so empty systems never consume a public system index. Page
-indices remain batch-global at merge time and are rebased to zero for per-page numbering.
-Final metadata records `system_index_contract: compact_nonempty_systems.v1`; cached final
-artifacts without that marker are rebuilt because their corrections may target a different
-physical system. This contract is shared by the combined JSON and final PDF row labels.
-
-This normal finalization is distinct from the **removed legacy MMR-specific second
-numbering rebuild**. The removed path existed only to prepare separate Phase-B/MMR geometry
-and could diverge from Phase A. Current MMR support instead reuses the Phase-A topology.
-
-## Process and memory boundaries
-
-| Boundary | Process model | Memory/ownership purpose |
+| Part | Question it answers | Main result |
 | --- | --- | --- |
-| `src/pipeline/main.py` / `PipelineOrchestrator` | main pipeline process | owns orchestration, numbering, persistent MMR classifier/OCR |
-| `current_sr_batch_worker` | one disposable process for all selected pages | owns Real-ESRGAN model/import/CUDA lifetime and persisted x4 generation |
-| SR batch process exit | hard phase boundary | releases Real-ESRGAN/compile/CUDA state before HOMR/OMR |
-| `maintained_source_page_worker` | disposable top-level Python worker per page, started after SR batch | bounds lifetime of page-local verified source generation |
-| maintained original HOMR | inside page worker | immutable maintained baseline only |
-| `current_support_worker` | child worker using precomputed x4 | current x4 HOMR + OMR-DLN support contract; does not own production SR model lifetime |
-| dense route + CNN | imported/run after source workers exit | avoids retaining heavy source-generation state |
-| MMR batch | main pipeline process | reuses persistent classifier/OCR; no HOMR execution |
+| Image preparation and detection | Where might the barlines and staves be? | Barline candidates, supporting recognition results and staff positions |
+| Measure construction and recognition | Which staves form a system, where are its measures, and how many measures does each rest represent? | Initial measure structure and multi-measure-rest corrections |
+| Final numbering and review | How do recognition and user corrections change the measure sequence? | Final measure numbers and, when requested, review/export artifacts |
 
-The exact child interpreter is selected by `src/pipeline/core/python_env.py`. The maintained
-runtime is `pdfscore_pipeline_gpu` with `/opt/venv_pipeline/bin/python`. Issue #379 removed the
-former SR-container compatibility selector, so heavy subprocess selection no longer falls back to a
-second legacy container/interpreter environment.
+Here a **staff** is a set of horizontal music lines, a **system** is the group of staves aligned on one row of the page, and a **measure** is a musical interval between consecutive barlines (including the boundaries at a system's edges).
 
-## Principal artifacts
+## 2. Component and data flow
 
-Typical per-run artifacts relevant to architecture are:
+HOMR and OMR-DLN are music-recognition systems used here to detect score features.
+A convolutional neural network (CNN) scores barline candidates; a separate CNN and
+RapidOCR recognize multi-measure rests and their counts.
 
-```text
-<run_dir>/
-  intermediate/detector_input_contract.json
-  intermediate/dense_full_pipeline_inputs/inventory.json
-  intermediate/dense_full_pipeline_route/**
-  intermediate/<page>/barlines_corrected.json        # when materialized
-  intermediate/<page>/numbering_base.json
-  intermediate/<page>/mmr_support.json
-  intermediate/<page>/overrides_mmr.json
-  intermediate/<page>/overrides_combined.json        # debug
-  outputs/<page>/numbering_final.json
-  outputs/<page>/numbering_overlay.png                # when enabled
-  filters.json
-  manifest.json
+The diagram shows data dependencies in the selected production route with solid arrows.
+Dotted arrows show execution order, not data flow: the all-page SR process finishes
+before page-local recognition; within each page the original-image HOMR runs before
+x4 HOMR, followed by OMR-DLN. Their recognition results meet in the barline decision;
+Phases A–C use that decision to build the layout and finalize numbering.
+
+```mermaid
+flowchart TD
+  I["PDF / stored page images"] --> P["Page images stored as files"]
+  P --> SR["Real-ESRGAN: make x4 images for the selected page batch"]
+  P --> H1["HOMR on original image: baseline barlines and staves"]
+  SR -. "batch completes before page work" .-> H1
+  SR --> H2["HOMR on x4 image: supporting detections and connector evidence"]
+  SR --> OMR["OMR-DLN on x4 image: supporting barline detections"]
+  H1 -. "then on the same page" .-> H2
+  H2 -. "then on the same page" .-> OMR
+  H1 --> HC["Compare detections; keep supported baseline barlines"]
+  H2 --> HC
+  OMR --> HC
+  HC --> PR["Search page image for further candidates; adjust multi-staff strokes"]
+  P --> PR
+  H1 --> PR
+  H2 --> PR
+  OMR --> PR
+  PR --> CNN["CNN: score barline candidates and remove close duplicates"]
+  CNN --> F["Filter / exclude pages"]
+  F --> A["Phase A: apply optional barline edits; build layout and base numbering"]
+  UB["Optional user barline edits"] --> A
+  H1 --> A
+  H2 --> A
+  A --> B["Phase B: recognize multi-measure rests and counts (when enabled)"]
+  H2 --> B
+  P --> B
+  B --> C["Phase C: apply MMR and user measure edits; finalize numbering"]
+  A --> C
+  U["Optional user measure corrections and movement boundaries"] --> C
+  C --> O["Final numbering and configured review / export outputs"]
 ```
 
-The detector hybrid root also contains `baseline/`, `current_support/`, and
-`hybrid_results/`. The current-support page subtree includes the persisted precomputed x4
-image/provenance originating from the all-pages SR phase. Generated run outputs belong under
-ignored `logs/` paths unless a narrow retention policy explicitly says otherwise.
+**Why two HOMR calls?** Both calls use the maintained production HOMR runtime, but process different images for different purposes. HOMR on the **original page** supplies the baseline barline coordinates and the staff positions used to build measures. HOMR on the **four-times-enlarged image** provides independent supporting detections and information about how staves are visually connected. OMR-DLN supplies another check using the same enlarged image. The comparison keeps supported baseline coordinates, rather than replacing them with enlarged-image coordinates. Detections and semantic support from the enlarged image are mapped to original-page coordinates where needed for comparison and downstream use.
 
-## Invariants for future changes
+## 3. Execution order and decisions
 
-Do not introduce any of the following as a hidden downstream operation:
+### 3.1 Prepare images
 
-- a page-local Real-ESRGAN model initialization on every dense production page;
-- overlap between the production Real-ESRGAN lifetime and later HOMR/OMR heavy phases;
-- pinned Stage-E HOMR on x4 solely for detector consensus;
-- current-runtime HOMR on the original page solely for MMR staff geometry;
-- an MMR-specific second numbering rebuild whose topology can diverge from Phase A.
+The pipeline renders the PDF into page-image files if needed. Real-ESRGAN then produces enlarged images for all selected pages in **one batch process**, reusing its model. The process ends before the page-by-page HOMR and OMR-DLN work begins. This ordering both reuses the expensive enlargement model and releases its GPU memory before subsequent recognition.
 
-If a future stage genuinely requires a different HOMR producer/input/profile, make that
-producer a named upstream artifact with machine-readable provenance and an explicit owner.
-If SR scheduling changes, preserve explicit ownership/provenance and revalidate the full-68
-downstream semantic contract rather than relying only on SR pixel equality.
+### 3.2 Locate and score barline candidates
 
-Any change to these ownership boundaries, route order, authoritative geometry, or major
-process/memory boundaries must update this document and then refresh the committed Graphify
-artifacts according to `docs/ai-workflow/GRAPHIFY.md`.
+Recognition starts from three sources: original-image HOMR, enlarged-image HOMR and enlarged-image OMR-DLN. The **combined decision** checks the original-image candidates against either supporting detector. It retains the original-image candidate's position when that support is present.
 
-When a current-runtime change also alters assumptions visible at the future engine boundary
-(one-job invocation/result semantics, externally meaningful final/review artifacts, correction
-semantics, lifecycle/error/resource ownership, or caller-visible isolation assumptions), also review
-[`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md). Update that document only when
-the long-term boundary materially changes; do not copy detailed pipeline internals into it.
+The detector then looks for more plausible vertical lines in the page image. This search is called **probe**; its **rescue** rules recover candidates that the first scan could miss, including candidates near the right edge or between detected bands. Using the original-image staff mask, a **staff-stroke adjustment** splits a vertical candidate that spans several staves into staff-local pieces when appropriate. It also adds pieces split from original-image HOMR baseline boxes when they have x4 HOMR or OMR-DLN support. The CNN scores the resulting candidates, after which nearly identical detections of the same staff-local stroke are suppressed.
 
-See `docs/TWO_HOMR_MILESTONE.md` for the accepted Issue #274 accuracy/performance milestone
-that precedes the Issue #284 SR scheduling/runtime optimization.
+At this point the output is a set of accepted barline positions, still **not** a complete model of which staves and measures belong together.
+
+### 3.3 Build the musical layout — Phase A
+
+After page filtering and validation of configured movement boundaries, Phase A applies optional user barline additions or removals before constructing the layout. It combines the resulting barline positions with the **original-image staff geometry** to determine which staves belong to a system and how their barlines define aligned measures.
+
+For grouping, it also uses **connector evidence** from enlarged-image HOMR. A connector is visual evidence near the left edge of adjacent staves—such as the joining symbols or braces—that helps decide whether the staves form one system. The x4 HOMR supplies two masks, `connector_symbols` and `connector_brace_dot`, as evidence. A mask is an image marking detected regions. Connector evidence supports the grouping decision; the original-image staff positions remain the layout reference.
+
+Phase A writes `intermediate/<page>/numbering_base.json`. Subsequent stages use its system and measure identities, so they refer to the same physical measures.
+
+### 3.4 Read multi-measure rests — Phase B
+
+When multi-measure-rest recognition is enabled, the MMR CNN and RapidOCR look for rest symbols and their printed counts. They examine the original page image using the positions of measures already defined by Phase A and, when available, vertical staff-position support mapped from enlarged-image HOMR. Phase B records proposed measure-count corrections in `intermediate/<page>/overrides_mmr.json`.
+
+This stage can change **how many musical measures a printed interval represents**. It relies on Phase A's layout rather than constructing a competing set of systems and measures.
+
+### 3.5 Apply corrections and number measures — Phase C
+
+Phase C rebuilds the page structure from the accepted or corrected barlines, staff mask and available connector evidence, then combines the recognized multi-measure-rest counts, any user corrections to measures, and movement boundaries. A movement boundary identifies where numbering resets for a new movement. It produces `outputs/<page>/numbering_final.json` with the final numbering. The review/export path can use this result to generate a numbered PDF and other configured outputs.
+
+There are two correction entry points: **barline corrections** are applied at the start of Phase A before building the physical layout, while **measure/count corrections** affect final numbering in Phase C.
+
+## 4. Where the major responsibilities live
+
+These are the modules worth knowing first. This is a responsibility map, not an exhaustive file inventory.
+
+| Responsibility | Main implementation | Why it matters in the flow |
+| --- | --- | --- |
+| Coordinate the pipeline | `src/pipeline/main.py`, `src/pipeline/orchestrator.py` and `src/pipeline/steps/numbering_phases.py` | The entry point calls the orchestrator, which schedules detection and delegates Phase A/B/C |
+| Choose and run the production detector | `src/pipeline/detection/__init__.py` and `src/pipeline/detection/dense_orchestrator_batch_sr.py` | Select the configured detection route; schedule image enlargement, sources, candidate construction and CNN |
+| Produce the per-page recognition sources | `src/pipeline/detection/maintained_source_page_worker.py` and `src/pipeline/detection/current_support_worker.py` | Obtain original-image baseline results and enlarged-image support results |
+| Prepare the x4 page batch | `src/pipeline/detection/current_sr_batch_worker.py` | Reuse the enlargement model and finish SR before page recognition |
+| Recognize multi-measure rests | `src/pipeline/mmr_geometry_handoff.py` and `src/measure_numbering/mmr.py` | Reuse Phase-A layout, map vertical staff support and recognize rests |
+| Adjust barline candidates for CNN | `src/pipeline/steps/staff_strokes.py` | Reconcile multi-staff vertical candidates before scoring |
+| Construct systems and measures | `src/measure_numbering/pipeline.py` | Turn positions and connector evidence into the page's measure structure |
+| Review and produce final user outputs | `tools/review_correction/`, `src/pipeline/review/apply_corrections.py` and `src/pipeline/review/final_output.py` | The review app accepts corrections; the pipeline applies them and materializes the final PDF. Annotated-PDF resumes use `src/pipeline/review/number_layer.py` |
+
+The canonical route is selected by `detection.detector_route: dense_full_pipeline` and `detection.homr_profile: maintained_original` in [`configs/dense_full_pipeline.yaml`](../configs/dense_full_pipeline.yaml). Optional page filters, user corrections, MMR and output features are controlled by their corresponding configuration or review workflow.
+
+## 5. Inspecting a specific behavior
+
+Start from the stage in the diagram, then follow the corresponding reference section:
+
+| To inspect | Read |
+| --- | --- |
+| Exact workers, model/process lifetime, failure behavior or coordinate conversion | [Implementation reference — execution and ownership](PIPELINE_ARCHITECTURE_REFERENCE.md#end-to-end-order) |
+| Barline candidate normalization, CNN rules, thresholds or detection provenance | [candidate normalization](PIPELINE_ARCHITECTURE_REFERENCE.md#end-to-end-order) and [detector provenance and scoring](PIPELINE_ARCHITECTURE_REFERENCE.md#detector-input-provenance-and-scoring-defaults) |
+| Connector evidence, MMR geometry handoff or final numbering indices | [Phase A](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-a-staff-and-measure-structure-connector-semantics-and-coordinate-ownership), [Phase B](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-b-multi-measure-rest-recognition-and-support-reuse) and [Phase C](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-c-final-numbering-with-corrections-not-the-removed-mmr-rebuild) |
+| How to run the pipeline and its Docker environment | [Environment guide](ENVIRONMENTS.md) |
+| The supported user correction workflow | [User guide](USER_GUIDE.md) and [review boundary](USER_CORRECTION_BOUNDARY.md) |
+
+The implementation reference retains the precise acceptance constraints and links to historical investigations. The overview concentrates on the present path and the reason each stage exists.

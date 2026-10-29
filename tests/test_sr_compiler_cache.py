@@ -152,3 +152,41 @@ def test_explicit_compiler_environment_rejected_before_torch_import(monkeypatch)
     monkeypatch.setenv("TORCHINDUCTOR_CACHE_DIR", "/unattributed")
     with pytest.raises(ValueError, match="conflicts"):
         runtime_identity({"sr_compile_mode": "reduce-overhead"})
+
+
+@pytest.mark.parametrize(
+    "counters",
+    [
+        {},
+        {"stats": {"unique_graphs": 1}},
+        {
+            "stats": {"unique_graphs": 1},
+            "inductor": {"fxgraph_cache_hit": 1},
+            "aot_autograd": {"ok": 1, "total": 2},
+        },
+        {
+            "stats": {"unique_graphs": 1},
+            "inductor": {"fxgraph_cache_hit": 1},
+            "aot_autograd": {"ok": 1, "total": 1},
+            "graph_break": {"unsupported": 1},
+        },
+    ],
+)
+def test_unknown_or_partial_compilation_rejected(counters):
+    from src.pipeline.detection.sr_compiler_cache import validate_compiler_counters
+
+    with pytest.raises(ValueError, match="without fallback"):
+        validate_compiler_counters(counters)
+
+
+@pytest.mark.parametrize("event", ["fxgraph_cache_hit", "fxgraph_cache_miss"])
+def test_compiled_cache_event_accepted(event):
+    from src.pipeline.detection.sr_compiler_cache import validate_compiler_counters
+
+    validate_compiler_counters(
+        {
+            "stats": {"unique_graphs": 3},
+            "inductor": {event: 3},
+            "aot_autograd": {"total": 3, "ok": 3},
+        }
+    )

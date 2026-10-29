@@ -48,6 +48,13 @@ The normal maintained entry is currently `make run-pipeline CONFIG=...` /
 `src/pipeline/main.py --config ...`. The previously designed `pdfscorebar run ...` product-facing
 CLI direction is not yet a current console-script contract.
 
+The maintained launcher can opt into a private SR compiler cache using
+`PDFSCORE_SR_COMPILER_CACHE`; see [cache lifetime and ownership](performance/issue454-implementation.md).
+This is available for local Docker jobs independently of a future deployment selection.
+A future service must choose its executing UID, trusted local mount, retention limits and
+retry/scheduling policy. Long-lived containers may already reuse their writable-layer cache;
+measure that separately from cross-container persistence. No deployment discovery is automatic.
+
 ### 2.2 Current output and correction workflow
 
 The repository already has a real correction path; service-readiness must build on it instead of

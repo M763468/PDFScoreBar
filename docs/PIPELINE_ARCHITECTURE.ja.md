@@ -75,6 +75,11 @@ flowchart TD
 
 必要ならPDFをページ画像ファイルに変換する。Real-ESRGANは対象ページを**1つの処理でまとめて4倍拡大**し、モデルをページ間で再利用する。この処理を終了してGPUメモリを解放した後、ページごとのHOMRとOMR-DLNを実行する。拡大モデルの使い回しと、後続の認識処理とのメモリ競合防止を両立するための順序である。
 
+maintained Docker launcherでは、`PDFSCORE_SR_COMPILER_CACHE`で私有のSR compiler cacheを
+明示指定できる。SRモデルを常駐させず、compile方式も変えずに短命job間でcompiled artifactを保持する。
+runtime・weight・device・source・UIDのidentity、inventory整合性、単一writerの排他で再利用を管理し、
+不正または使用中のcacheは明示的に失敗する。[cache契約](performance/issue454-implementation.md)を参照。
+
 ### 3.2 小節線候補を探し、判定する
 
 まず元画像HOMR、4倍画像HOMR、4倍画像OMR-DLNという3つの認識結果を得る。**結果の照合**では、元画像HOMRが見つけた小節線候補を、4倍画像のHOMRまたはOMR-DLNで確認する。裏付けのある候補は元画像上の位置を保持する。

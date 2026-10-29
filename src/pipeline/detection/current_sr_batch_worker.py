@@ -172,12 +172,18 @@ def run(request_path: Path, result_path: Path) -> Path:
         return _run(request_path, result_path)
     if not cache_root:
         raise ValueError("PDFSCORE_SR_COMPILER_CACHE must be an absolute private directory")
-    from src.pipeline.detection.sr_compiler_cache import lease, runtime_identity
+    from src.pipeline.detection.sr_compiler_cache import (
+        lease,
+        runtime_identity,
+        validate_compiler_counters,
+    )
 
     request = _load_request(request_path)
     identity = runtime_identity(request["detection"])
     with lease(Path(cache_root), identity) as provenance:
         result = _run(request_path, result_path)
+        validate_compiler_counters(json.loads(result.read_text())["compiler_counters"])
+        provenance["compiled_graph_gate"] = "passed"
     payload = json.loads(result.read_text())
     payload["compiler_cache"] = provenance
     result.write_text(json.dumps(payload, indent=2) + "\n")

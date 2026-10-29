@@ -85,7 +85,7 @@ def main() -> int:
             ),
         )
     )
-    issue = root / "logs/issue454/implementation"
+    issue = root / "logs/issue454/final"
     dest = issue / "runs" / args.label
     dest.mkdir(parents=True, exist_ok=False)
     rel = dest.relative_to(root)

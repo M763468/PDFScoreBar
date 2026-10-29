@@ -169,3 +169,18 @@ def runtime_identity(detection):
             and k not in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR")
         },
     }
+
+
+def validate_compiler_counters(counters: dict) -> None:
+    """Reject disabled compilation, graph breaks and unknown backend provenance."""
+    stats = counters.get("stats", {})
+    inductor = counters.get("inductor", {})
+    aot = counters.get("aot_autograd", {})
+    if (
+        counters.get("graph_break")
+        or stats.get("unique_graphs", 0) <= 0
+        or inductor.get("fxgraph_cache_hit", 0) + inductor.get("fxgraph_cache_miss", 0) <= 0
+        or aot.get("total", 0) <= 0
+        or aot.get("ok", 0) != aot.get("total")
+    ):
+        raise ValueError("Managed SR cache requires successful compiled graphs without fallback")

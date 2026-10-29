@@ -1,6 +1,9 @@
 # Issue #454: SR compiler-cache lifetime investigation
 
-## 採用判断 (2026-10-29)
+> この文書は初回調査の履歴。deployment未確定を理由とする延期判断は、
+> [maintained launcher実装](issue454-implementation.md)で撤回した。
+
+## 初回の採用判断 (2026-10-29、撤回済み)
 
 **production統合は見送る。Issueはopenのまま、deployment設計が具体化した時点で再評価する。**
 ユーザー確認により、実deploymentはまだ存在せず構想段階である。

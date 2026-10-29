@@ -120,6 +120,8 @@ def lease(root: Path, identity: dict):
 
 def runtime_identity(detection):
     """Resolve actual runtime, source, weight and visible device before compilation."""
+    if any(os.environ.get(key) for key in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR")):
+        raise ValueError("Managed cache conflicts with explicit compiler-cache environment")
     import importlib.metadata
     import subprocess
 
@@ -132,8 +134,6 @@ def runtime_identity(detection):
     image = os.environ.get("PDFSCORE_DOCKER_IMAGE_ID", "")
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", image):
         raise ValueError("Managed cache requires immutable launcher image provenance")
-    if any(os.environ.get(key) for key in ("TORCHINDUCTOR_CACHE_DIR", "TRITON_CACHE_DIR")):
-        raise ValueError("Managed cache conflicts with explicit compiler-cache environment")
     from src.pipeline.detection.current_sr_runtime import normalize_compile_mode
 
     if normalize_compile_mode(detection.get("sr_compile_mode")) is None:

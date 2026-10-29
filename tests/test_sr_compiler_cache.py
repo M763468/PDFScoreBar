@@ -144,3 +144,11 @@ def test_process_crash_leaves_dirty_and_releases_lock(root):
     with pytest.raises(ValueError, match="Interrupted"):
         with lease(root, {}):
             pass
+
+
+def test_explicit_compiler_environment_rejected_before_torch_import(monkeypatch):
+    from src.pipeline.detection.sr_compiler_cache import runtime_identity
+
+    monkeypatch.setenv("TORCHINDUCTOR_CACHE_DIR", "/unattributed")
+    with pytest.raises(ValueError, match="conflicts"):
+        runtime_identity({"sr_compile_mode": "reduce-overhead"})

@@ -99,6 +99,10 @@ OMR exit7、exit0だが予測欠損、2-worker source exit7は故障点到達・
 OOM・hang・forced kill・user cancelの復旧/latency、root E2E、他shape/ページ数、長文書のstate/メモリ増大はNot run。
 shared modelやthresholdを変えて品質を補償しておらず、全入力accuracyは未保証。実装Issueのgateとして残す。
 
+OMR再利用時のsource分類はpost-Readyレビュー後に保持samplesから修正した。warm source観測はOが67.804/67.934秒、Cが57.627/56.216秒。
+専用OMR phaseは親sourceの前に走るためotherに残る。cgroup全体のCPUを観測labelへ配分した値で、exclusive stage/per-process費用ではない。
+[E2E詳細の補正表](issue447-e2e-candidates.md#source-phase-classification-correction)とJSONを整合させ、primary E2Eや採用順位は変更していない。
+
 完全なGPU process attribution/powerと厳密なCPU/GPU待ち帰属はWSL/clock制約でBlocked。
 全benchmarkは直列で外部GPU競合を観測していないが、OS全体の排他性を証明したわけではない。
 P1に短いGPU-free pytest execがあり、host CPU無競合も主張しない。cgroup RAMはfile cacheを含み、CPU-sはwallと混同しない。
@@ -112,6 +116,7 @@ P1に短いGPU-free pytest execがあり、host CPU無競合も主張しない�
 | 初回parallel47.54秒 vs retained sequential68.85秒 | 異なるharness/観測層の探索値 | 同条件component ABBAと今回E2Eで置き換え。初回比率を因果証拠にしない |
 | cProfile call accounting | root欠落・wallを超すcumulative等で定量値のvalidity Failed | hotspot順位の根拠から除外。無効ログ自体は保持 |
 | GPU/host絶対時刻をhour offsetで合わせた診断 | 校正差があり撤回 | summary-v1-driver-clock.jsonを履歴保持し、最終CPU/GPU待ち値には使わない |
+| OMR再利用source workerのphase誤分類 | post-Ready Codex P2で検出。replacement moduleの親sourceを認識し、nested --supportを区別 | 保持samplesを再集計しO/C 6runのsource/other配分を修正。E2E・品質・resource総量不変。詳細/JSONの補正記録を参照 |
 | fresh matrixのvalidation保存先 | Codex P2で検出し、推論前のmkdirとGPU-free matrix全体testで修正 | 既存runは保存先作成済みであり、測定値に影響なし。再測定せず再現性を修復 |
 | historical process samplesの暗黙選択 | Codex P2で修正済み、run-local優先・legacyは明示flagのみ | 今回runに別試行の観測を付けない。元run再scoreと回帰testを保持 |
 

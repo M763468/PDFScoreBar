@@ -784,12 +784,16 @@
         "status": "Passed",
         "host_phase_samples_not_exclusive_stages": {
           "other": {
-            "sampled_seconds": 105.75150338094682,
-            "cgroup_cpu_seconds": 311.473274
+            "sampled_seconds": 37.947136114002205,
+            "cgroup_cpu_seconds": 54.86146899999995
           },
           "SR": {
             "sampled_seconds": 120.72408387507312,
             "cgroup_cpu_seconds": 137.86537699999997
+          },
+          "source": {
+            "sampled_seconds": 67.80436726694461,
+            "cgroup_cpu_seconds": 256.61180500000006
           }
         },
         "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
@@ -1029,12 +1033,16 @@
         "status": "Passed",
         "host_phase_samples_not_exclusive_stages": {
           "other": {
-            "sampled_seconds": 106.88634320197161,
-            "cgroup_cpu_seconds": 313.876087
+            "sampled_seconds": 38.952486432972364,
+            "cgroup_cpu_seconds": 55.85667300000003
           },
           "SR": {
             "sampled_seconds": 120.39202733698767,
             "cgroup_cpu_seconds": 137.358117
+          },
+          "source": {
+            "sampled_seconds": 67.93385676899925,
+            "cgroup_cpu_seconds": 258.019414
           }
         },
         "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
@@ -2274,12 +2282,16 @@
         "status": "Passed",
         "host_phase_samples_not_exclusive_stages": {
           "other": {
-            "sampled_seconds": 110.83478258608375,
-            "cgroup_cpu_seconds": 321.106357
+            "sampled_seconds": 39.3570068400586,
+            "cgroup_cpu_seconds": 56.45453999999997
           },
           "SR": {
             "sampled_seconds": 250.25209485797677,
             "cgroup_cpu_seconds": 287.146801
+          },
+          "source": {
+            "sampled_seconds": 71.47777574602515,
+            "cgroup_cpu_seconds": 264.65181700000005
           }
         },
         "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
@@ -2519,12 +2531,16 @@
         "status": "Passed",
         "host_phase_samples_not_exclusive_stages": {
           "other": {
-            "sampled_seconds": 95.57615823904052,
-            "cgroup_cpu_seconds": 352.170294
+            "sampled_seconds": 37.94906896702014,
+            "cgroup_cpu_seconds": 55.89211500000002
           },
           "SR": {
             "sampled_seconds": 120.98631048202515,
             "cgroup_cpu_seconds": 138.58567799999997
+          },
+          "source": {
+            "sampled_seconds": 57.627089272020385,
+            "cgroup_cpu_seconds": 296.278179
           }
         },
         "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
@@ -2764,12 +2780,16 @@
         "status": "Passed",
         "host_phase_samples_not_exclusive_stages": {
           "other": {
-            "sampled_seconds": 94.37040298001375,
-            "cgroup_cpu_seconds": 350.80596599999996
+            "sampled_seconds": 38.15426027600188,
+            "cgroup_cpu_seconds": 55.93159399999998
           },
           "SR": {
             "sampled_seconds": 120.88995255995542,
             "cgroup_cpu_seconds": 138.24435599999998
+          },
+          "source": {
+            "sampled_seconds": 56.21614270401187,
+            "cgroup_cpu_seconds": 294.874372
           }
         },
         "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
@@ -3009,12 +3029,16 @@
         "status": "Passed",
         "host_phase_samples_not_exclusive_stages": {
           "other": {
-            "sampled_seconds": 94.26277116208803,
-            "cgroup_cpu_seconds": 343.21448999999996
+            "sampled_seconds": 37.78102379408665,
+            "cgroup_cpu_seconds": 54.75499199999996
           },
           "SR": {
             "sampled_seconds": 241.57637186092325,
             "cgroup_cpu_seconds": 278.52238800000003
+          },
+          "source": {
+            "sampled_seconds": 56.48174736800138,
+            "cgroup_cpu_seconds": 288.459498
           }
         },
         "gpu_cpu_clock_correlation": "Blocked: calibrated device/host clock domains differ; raw GPU summary remains independent",
@@ -3609,5 +3633,46 @@
     "events": "run-local container-events.jsonl and before/after inventories retained",
     "exception": "warm P1 also contains a GPU-free concrete-hook pytest exec (10 tests,0.07 s); no zero-background-CPU claim",
     "limits": "WSL PID/process names unavailable; independent GPU samples, not OS-level proof of exclusivity"
+  },
+  "phase_classification_rescore": {
+    "previous_summary_commit": "cdec04954ff6970543136453dbf05f78a2d589ab",
+    "analyzer_sha256": "fdd47b65f1fd55074a18c1069e3a139b149871b09c2c9e150bf67597c4d05958",
+    "raw_proc_samples_sha256": {
+      "e2ec-warm-b-1": "a377fd565ce19e59f58a82f63c61ccd3f90b2d4e20835e762bf90ac76ca2354a",
+      "e2ec-warm-p-1": "ebdc0cd345d050ad70372e92cc6cda75c51d8f4bc2d561946ea37169c8e5aa03",
+      "e2ec-warm-o-1": "dfa3dda3e925eed271f34335508540ad5dbecb43f7917ab8e6a9033985c15a54",
+      "e2ec-warm-o-2": "b36aa825783a437e37a022358b773c40c6c7277897e1d209123b41318d3c536e",
+      "e2ec-warm-p-2": "117e80ba2839b2a37c8949c23c22a8911378151f4a1d6620052bcaf9c2683951",
+      "e2ec-warm-b-2": "0ac75aa6894a6a3fd6c05dae039d69e8f64aa891e2aad868ca49ce7df4d663ef",
+      "e2ec-cold-b-1": "534b2a51b808dc0887cefde03d321bd6f68aefa23ac900fba2fe1e600addd109",
+      "e2ec-cold-p-1": "aeb7692b9f74ea86a350dcb198cd1a95ebc8437d180aab74fa1de9228c36fa43",
+      "e2ec-cold-o-1": "b8e11bcb3e90d516980b903e1c70d377b26a6965c585d61f88e3f72059ed5776",
+      "e2ec-warm-c-1": "5d17bab06401ebc5972223fcfe6dc3306c05cc32c35f95b6b3ebcbfca12feb5c",
+      "e2ec-warm-c-2": "dda8465af1e91cca5bd489469717953f5215d26a0a06a02c5a48628fb65a6c24",
+      "e2ec-cold-c-1": "29c938bda357fc28608317f1f4bc2b980d84e9d9f3da4649df0586da0357316d"
+    },
+    "source_rule": "exact -m maintained source module, or -m tools.issue447.omr_reuse_poc without --support; SR precedence retained",
+    "changed_runs": [
+      "e2ec-warm-o-1",
+      "e2ec-warm-o-2",
+      "e2ec-cold-o-1",
+      "e2ec-warm-c-1",
+      "e2ec-warm-c-2",
+      "e2ec-cold-c-1"
+    ],
+    "unchanged": "all E2E/statistics/resources/quality/provenance and total sampled wall/CPU; previous deep-* timelines unchanged",
+    "commands": [
+      [
+        "/home/masaki_muramatsu/ws_PDFScoreBar/.venv_cnn_classifier/bin/python3",
+        "tools/issue447/e2e_summarize.py"
+      ],
+      [
+        "/home/masaki_muramatsu/ws_PDFScoreBar/.venv_cnn_classifier/bin/python3",
+        "tools/issue447/deepening_analyze.py",
+        "--output",
+        "logs/issue447/phase-rescore/deepening-rescored.json"
+      ]
+    ],
+    "limits": "host process observations only; dedicated OMR phase remains other; nested support alone is not a top-level source interval"
   }
 }

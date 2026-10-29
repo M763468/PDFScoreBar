@@ -105,6 +105,36 @@ no claim of zero background CPU work is made. WSL device-PID attribution remains
 Known external GPU competition would invalidate a benchmark; independent utilization samples
 and Docker events are not an OS-level proof of complete exclusivity.
 
+### Source phase classification correction
+
+The post-Ready Codex P2 identified that O/C source entrypoints use
+`-m tools.issue447.omr_reuse_poc`, so the earlier maintained-only recognizer put their
+source intervals and associated cgroup CPU into `other`. The recognizer now matches exact
+module/flag tokens, includes the replacement parent, and excludes its nested `--support`
+invocation. SR precedence is unchanged. All 12 retained proc-samples were rescored; only
+the six O/C phase allocations changed. Earlier deep-* timelines and B/P remain unchanged.
+
+| Mode | Warm source observation seconds (2 runs) | Warm assigned cgroup CPU-s | Cold source observation seconds / CPU-s |
+| --- | --- | --- | --- |
+| B | 98.736 / 94.074 | 291.002 / 285.964 | 92.698 / 283.348 |
+| P | 75.734 / 74.428 | 314.604 / 323.432 | 80.734 / 337.524 |
+| O | 67.804 / 67.934 | 256.612 / 258.019 | 71.478 / 264.652 |
+| C | 57.627 / 56.216 | 296.278 / 294.874 | 56.482 / 288.459 |
+
+These are host process-presence labels, not exclusive E2E stages or per-process CPU cost.
+CPU buckets contain cgroup-wide activity in the sampled intervals, even with parallel parents;
+nested support does not multiply the interval. O/C's dedicated OMR phase runs before the source
+parents and stays in `other`, alongside startup/finalization and other work. Do not read this
+comparison as equal neural-inference scope in every mode, or add it to child/component times.
+
+E2E/statistics, resource totals, source/numbering/MMR/correction gates and run provenance are
+byte-equivalent as JSON values before/after rescoring. Total sampled seconds and CPU are
+conserved (floating-point tolerance1e-8), and raw sample hashes match. The JSON
+`phase_classification_rescore` records the prior summary commit, analyzer hash, all 12 sample
+hashes, commands, changed runs and limits. Pre-correction JSON and the per-run comparison are
+retained under `logs/issue447/phase-rescore/`; the prior O/C allocation is superseded diagnostic
+evidence, not a revised E2E metric or rerun. No E2E or full68 was executed for this correction.
+
 ## Recognition, numbering, MMR and corrections
 
 All 12 timed outputs pass strict comparisons against the fresh production control, whose

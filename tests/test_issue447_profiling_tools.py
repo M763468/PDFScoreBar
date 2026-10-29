@@ -141,3 +141,64 @@ def test_host_timeline_does_not_correlate_unaligned_gpu_or_epoch_clocks(tmp_path
         "cgroup_cpu_seconds": 1.0,
     }
     assert result["gpu_cpu_clock_correlation"].startswith("Blocked:")
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("python -m src.pipeline.detection.maintained_source_page_worker --request a", True),
+        ("python -m tools.issue447.omr_reuse_poc --request a --result b", True),
+        ("python -m tools.issue447.omr_reuse_poc --request /tmp/--support.json", True),
+        ("python -m tools.issue447.omr_reuse_poc --support --request a", False),
+        ("python -m src.pipeline.detection.current_support_worker --request a", False),
+        ("python -m tools.issue447.omr_reuse_poc_other --request a", False),
+        ("python -m other --request /tmp/maintained_source_page_worker.json", False),
+        ("python /tmp/tools.issue447.omr_reuse_poc --request a", False),
+        ("python -m", False),
+    ],
+)
+def test_source_worker_entrypoint_distinguishes_reuse_parent_and_support(command, expected):
+    from tools.issue447.deepening_analyze import is_source_worker
+
+    assert is_source_worker(command) is expected
+
+
+@pytest.mark.parametrize("reuse", [False, True])
+@pytest.mark.parametrize("workers", [1, 2])
+def test_host_timeline_assigns_same_source_intervals_for_both_entrypoints(tmp_path, reuse, workers):
+    from tools.issue447.deepening_analyze import timeline
+
+    module = (
+        "tools.issue447.omr_reuse_poc"
+        if reuse
+        else "src.pipeline.detection.maintained_source_page_worker"
+    )
+    parents = [
+        {"pid": pid, "start_ticks": pid, "command": f"python -m {module} --request page_{pid}"}
+        for pid in range(1, workers + 1)
+    ]
+    support = {
+        "pid": 10,
+        "start_ticks": 10,
+        "command": "python -m tools.issue447.omr_reuse_poc --support --request a",
+    }
+    sr = {"pid": 11, "start_ticks": 11, "command": "python -m current_sr_batch_worker"}
+    # A support-only sample must not invent a top-level source worker. Parallel
+    # parents and nested support must not multiply an observed interval or CPU.
+    samples = [
+        {"monotonic": second, "cgroup": {"cpu.stat": f"usage_usec {cpu}\n"}, "processes": procs}
+        for second, cpu, procs in [
+            (0, 0, []),
+            (1, 1000000, parents + [support]),
+            (2, 3000000, parents + [support]),
+            (3, 4000000, [support]),
+            (4, 5000000, parents + [sr]),
+        ]
+    ]
+    (tmp_path / "proc-samples.jsonl").write_text("\n".join(json.dumps(s) for s in samples))
+    result = timeline(tmp_path)["host_phase_samples_not_exclusive_stages"]
+    assert result == {
+        "source": {"sampled_seconds": 2.0, "cgroup_cpu_seconds": 3.0},
+        "other": {"sampled_seconds": 1.0, "cgroup_cpu_seconds": 1.0},
+        "SR": {"sampled_seconds": 1.0, "cgroup_cpu_seconds": 1.0},
+    }

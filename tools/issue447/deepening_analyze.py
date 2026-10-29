@@ -98,6 +98,23 @@ def pipeline_checks(root: Path, a: Path, b: Path) -> dict:
     }
 
 
+def is_source_worker(command: str) -> bool:
+    """Recognize sampled top-level source entrypoints, excluding nested support.
+
+    The sampler joins /proc argv with spaces. Match module/flag tokens rather
+    than substrings in request paths or lookalike module names.
+    """
+    args = command.split()
+    try:
+        index = args.index("-m")
+        module = args[index + 1]
+    except (ValueError, IndexError):
+        return False
+    if module == "src.pipeline.detection.maintained_source_page_worker":
+        return True
+    return module == "tools.issue447.omr_reuse_poc" and "--support" not in args[index + 2 :]
+
+
 def timeline(run: Path) -> dict:
     """Correlate coarse utilization with CPU activity, without calling it causal wait."""
     proc = run / "proc-samples.jsonl"
@@ -122,7 +139,7 @@ def timeline(run: Path) -> dict:
         now = sample["monotonic"]
         if any("current_sr_batch_worker" in p["command"] for p in sample["processes"]):
             phase = "SR"
-        elif any("maintained_source_page_worker" in p["command"] for p in sample["processes"]):
+        elif any(is_source_worker(p["command"]) for p in sample["processes"]):
             phase = "source"
         else:
             phase = "other"

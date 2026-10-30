@@ -108,7 +108,7 @@ validation policyに従い、smokeと影響範囲の精度回帰を追加する�
 | GPU smoke初回 | Blocked | `PDFSCORE_SR_COMPILER_CACHE="$PWD/logs/issue454/cache/root-smoke" make verify-gpu-smoke`。評価PDFがworktreeにないためpreflight exit 2。`logs/issue454/validation/gpu-smoke-blocked/` |
 | GPU smoke再試行 | Passed (smokeのみ) | 前項に `DOCKER_EXTRA_ARGS='-v /home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2:/workspace/data/evaluation2:ro'` を追加。exit 0。互換image `5c5979a2…`、root、直接worktree mount。85 GT / 85 matched、hard FP=0、FN=0。`logs/issue454/validation/gpu-smoke-retry/` と `logs/issue454/validation/smoke_test_detection_20261029T141123Z/` |
 | 候補の総合品質・cache hit/performance採用判定 | Not run / 未達成 | smoke実行中に候補のprovenance/counterコードを編集し、その後統合を取り下げたため、smoke成功を固定candidate全体の品質証明に使わない。root/non-root反復、multi-page semantic/correction回帰、精度維持の採用gateは未達成 |
-| E2E性能matrix | Not run | 固定36 jobを待機させたがdeployment不在確認後に待機shellを中止。benchmark jobの推論は開始していない |
+| E2E性能matrix | Not run | 固定24 job（4 cohort × 3 cold/warm組。初回記録の36は集計誤記）を待機させたがdeployment不在確認後に待機shellを中止。benchmark jobの推論は開始していない |
 | full68 | Not run | 最終docs-only、計測目的の再推論はIssue scope外 |
 
 smokeのdefault出力は実行後に上記Issue rootへ移動した。captured command/log中の旧

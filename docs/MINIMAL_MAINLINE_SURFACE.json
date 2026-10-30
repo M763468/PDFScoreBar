@@ -189,6 +189,10 @@
       "role": "x4 SR runtime"
     },
     {
+      "pattern": "src/pipeline/detection/sr_compiler_cache.py",
+      "role": "Opt-in SR compiler-cache identity, integrity, ownership and exclusive lifetime leases"
+    },
+    {
       "pattern": "src/pipeline/detection/current_support_worker.py",
       "role": "current x4 HOMR/OMR support worker"
     },
@@ -729,7 +733,8 @@
       "tests/test_issue355_trusted_accuracy_smoke.py",
       "tests/test_issue415_numbering_audit.py",
       "tests/test_model_artifacts.py",
-      "tests/test_verify_detector_full68.py"
+      "tests/test_verify_detector_full68.py",
+      "tests/test_issue454_analysis.py"
     ],
     "developer_tool": [
       "tests/test_issue447_e2e_matrix.py",
@@ -826,7 +831,8 @@
       "tests/test_staff_strokes.py",
       "tests/test_issue441_annotated_layer.py",
       "tests/test_issue441_mobilesheets_roundtrip.py",
-      "tests/test_review_correction_history.py"
+      "tests/test_review_correction_history.py",
+      "tests/test_sr_compiler_cache.py"
     ]
   },
   "test_support_patterns": [

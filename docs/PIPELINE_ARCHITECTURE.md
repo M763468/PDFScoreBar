@@ -75,7 +75,8 @@ The maintained Docker launcher supports an explicit private SR compiler cache th
 `PDFSCORE_SR_COMPILER_CACHE`. It retains compiled artifacts across disposable jobs without
 retaining the SR model or changing compile mode. Runtime/weight/device/source/UID identity,
 inventory integrity and a single-writer lease govern reuse; invalid or busy caches fail
-explicitly. See [the cache contract](performance/issue454-implementation.md).
+explicitly. The cache module is included in the minimal runtime distribution. When the
+variable is unset, the existing SR execution path is unchanged. See [the cache contract](performance/issue454-implementation.md).
 
 ### 3.2 Locate and score barline candidates
 

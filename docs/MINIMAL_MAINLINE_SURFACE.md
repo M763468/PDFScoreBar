@@ -1,7 +1,7 @@
 # Minimal distributable surface (#100 / #409)
 
-The candidate has **114 tracked files** in
-[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 87 files under `src/`,
+The candidate has **115 tracked files** in
+[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 88 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
 application, minimum user documentation, and checkout-local ignore rules. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and
@@ -15,7 +15,9 @@ This is an isolated-validated candidate for #410, not authorization to promote `
 
 The former #392 list was a dependency closure. This audit applies product responsibility:
 PDF input, numbered final PDF, user review, recorded corrections, corrected final PDF,
-and inspectable runtime/model/input identity.
+and inspectable runtime/model/input identity. The selected SR cache module implements the
+opt-in compiler-cache contract; it is part of the runtime bundle even though the worker imports
+it only when a cache is selected. The cache-unset SR execution path remains unchanged.
 
 | Selected category | Concrete release reason |
 | --- | --- |

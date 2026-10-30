@@ -1,5 +1,7 @@
 # Branch Policy
 
+[日本語](BRANCH_POLICY.ja.md)
+
 This document defines the repository-wide branch policy. It is a standing rule for new work and release promotion; issue-specific decisions should be recorded in the relevant issue or PR by applying this policy, not by changing the general rule.
 
 ## Branch roles

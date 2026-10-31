@@ -1,12 +1,14 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"46954c89504f6676a832bd43f39c61b45c65fd51286ccb655d3530461512fd65"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"2cb1db19929e6815e0aa09c26312c898309ac301c8521f32a62f0be51af30f8c"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）
-- 翻訳元: same PR。原文SHA-256: `46954c89504f6676a832bd43f39c61b45c65fd51286ccb655d3530461512fd65`
+- 翻訳元: same PR。原文SHA-256: `2cb1db19929e6815e0aa09c26312c898309ac301c8521f32a62f0be51af30f8c`
 - 状態: `reviewed`。2026-10-29、利用者による読みやすさの確認と、実装照合・Argon独立レビューの結果を踏まえた概要版。
+
+2026-10-31、SR cacheと最小配布に関する追記をCodexが英語正本と対照し、意味・制約・日本語の読みやすさを確認した。
 
 > 本文書は、`develop`の`dense_full_pipeline`を対象とした**アーキテクチャ概要**である。主要な処理、処理間で受け渡す情報、実行順序を説明する。閾値・ファイル形式・ワーカー間の境界・例外処理・互換性の詳細は[実装リファレンス](PIPELINE_ARCHITECTURE_REFERENCE.ja.md)に分けた。動作の最終的な根拠はソースコード・テスト・設定である。
 
@@ -74,6 +76,12 @@ flowchart TD
 ### 3.1 画像を準備する
 
 必要ならPDFをページ画像ファイルに変換する。Real-ESRGANは対象ページを**1つの処理でまとめて4倍拡大**し、モデルをページ間で再利用する。この処理を終了してGPUメモリを解放した後、ページごとのHOMRとOMR-DLNを実行する。拡大モデルの使い回しと、後続の認識処理とのメモリ競合防止を両立するための順序である。
+
+maintained Docker launcherでは、`PDFSCORE_SR_COMPILER_CACHE`で私有のSR compiler cacheを
+明示指定できる。SRモデルを常駐させず、compile方式も変えずに短命job間でcompiled artifactを保持する。
+runtime・weight・device・source・UIDのidentity、inventory整合性、単一writerの排他で再利用を管理し、
+不正または使用中のcacheは明示的に失敗する。このcacheモジュールは最小配布にも含まれる。
+環境変数を指定しない場合は、従来のSR実行経路を維持する。[cache契約](performance/issue454-implementation.md)を参照。
 
 ### 3.2 小節線候補を探し、判定する
 

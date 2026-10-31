@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke]
+Usage: scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke] [--pipeline-only]
 
 Validates the canonical Docker runtime contract, then runs the configured pipeline smoke.
 OMR-DLN is an external/operator-supplied artifact. Canonical validation resolves the
@@ -17,6 +17,7 @@ Exploration/comparison use detection.model_validation and explicit model paths i
 Environment:
   DOCKER_IMAGE              Canonical Docker image reference. Default: pdfscore_pipeline_gpu
   DOCKER_EXTRA_ARGS         Extra arguments passed to docker run.
+  PDFSCORE_SR_COMPILER_CACHE Optional pre-provisioned private host compiler-cache root (opt-in).
   PDFSCOREBAR_MODEL_CACHE   Optional shared host model-cache root. Default: XDG/user cache
   OMR_DLN_MODEL_PATH        Optional explicit OMR-DLN compatibility override.
 USAGE
@@ -26,6 +27,7 @@ config="configs/smoke_test.yaml"
 config_explicit=0
 preflight_only=0
 service_readiness_smoke=0
+pipeline_only=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -33,6 +35,10 @@ while [[ $# -gt 0 ]]; do
       config="${2:?missing config path}"
       config_explicit=1
       shift 2
+      ;;
+    --pipeline-only)
+      pipeline_only=1
+      shift
       ;;
     --preflight-only)
       preflight_only=1
@@ -145,10 +151,28 @@ if [[ "$service_readiness_smoke" -eq 1 ]]; then
   network_args=(--network none)
 fi
 
+compiler_cache_args=()
+if [[ -n "${PDFSCORE_SR_COMPILER_CACHE:-}" ]]; then
+  compiler_cache_root="$(realpath -e "$PDFSCORE_SR_COMPILER_CACHE")"
+  if [[ "$compiler_cache_root" != "$PDFSCORE_SR_COMPILER_CACHE" ]]; then
+    echo "Compiler cache must be an absolute canonical path without symlinks" >&2
+    exit 2
+  fi
+  if [[ ! -d "$compiler_cache_root" ]]; then
+    echo "Compiler cache must be a pre-provisioned private directory" >&2
+    exit 2
+  fi
+  compiler_cache_args=(
+    --mount "type=bind,source=$compiler_cache_root,target=/compiler-cache"
+    -e PDFSCORE_SR_COMPILER_CACHE=/compiler-cache
+  )
+fi
+
 common_args=(
   run --rm --gpus all
   "${extra_args[@]}"
   "${network_args[@]}"
+  "${compiler_cache_args[@]}"
   -v "$repo_root:/workspace"
   -v "$omr_host:$omr_container:ro"
   "${candidate_mounts[@]}"
@@ -219,8 +243,16 @@ if [[ "$config_relative" == "configs/smoke_test.yaml" ]]; then
   accuracy_args+=(--run-dir "/workspace/logs/full_pipeline_runs/$smoke_run_id")
 fi
 
+if [[ "$pipeline_only" -eq 1 ]]; then
+  pipeline_args+=(--skip-existing)
+fi
+
 echo "Running canonical pipeline smoke..."
 docker "${common_args[@]}" "${pipeline_args[@]}"
+
+if [[ "$pipeline_only" -eq 1 ]]; then
+  exit 0
+fi
 
 if [[ "$model_mode" != production ]]; then
   echo "Candidate pipeline completed; run the declared evaluation contract separately."

@@ -71,6 +71,13 @@ flowchart TD
 
 The pipeline renders the PDF into page-image files if needed. Real-ESRGAN then produces enlarged images for all selected pages in **one batch process**, reusing its model. The process ends before the page-by-page HOMR and OMR-DLN work begins. This ordering both reuses the expensive enlargement model and releases its GPU memory before subsequent recognition.
 
+The maintained Docker launcher supports an explicit private SR compiler cache through
+`PDFSCORE_SR_COMPILER_CACHE`. It retains compiled artifacts across disposable jobs without
+retaining the SR model or changing compile mode. Runtime/weight/device/source/UID identity,
+inventory integrity and a single-writer lease govern reuse; invalid or busy caches fail
+explicitly. The cache module is included in the minimal runtime distribution. When the
+variable is unset, the existing SR execution path is unchanged. See [the cache contract](performance/issue454-implementation.md).
+
 ### 3.2 Locate and score barline candidates
 
 Recognition starts from three sources: original-image HOMR, enlarged-image HOMR and enlarged-image OMR-DLN. The **combined decision** checks the original-image candidates against either supporting detector. It retains the original-image candidate's position when that support is present.

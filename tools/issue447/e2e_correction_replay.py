@@ -13,9 +13,9 @@ from src.pipeline.utils.images import clear_image_cache
 from tools.issue447.analyze import local_path
 
 
-def run(label, output, overrides):
+def run(label, output, overrides, *, source_runs=None):
     root = Path.cwd()
-    source = root / "logs/issue447/runs" / label
+    source = (source_runs or root / "logs/issue447/runs") / label
     pipeline = source / "pipeline"
     config = load_yaml(source / "config.yaml")
     config["steps"]["apply_barline_overrides"] = True

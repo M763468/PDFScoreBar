@@ -538,3 +538,47 @@ assert not any(name in sys.modules for name in (
         text=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_candidate_contains_sr_cache_and_keeps_unset_worker_path(candidate):
+    """Exercise the isolated release, not imports from the develop checkout."""
+    module_path = "src/pipeline/detection/sr_compiler_cache.py"
+    provenance = json.loads((candidate / PROVENANCE).read_text())
+    assert module_path in provenance["files"]
+    assert (candidate / module_path).is_file()
+    code = """
+import builtins
+import os
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from src.pipeline.detection.sr_compiler_cache import validate_compiler_counters
+assert 'torch' not in sys.modules
+validate_compiler_counters({'stats': {'unique_graphs': 1},
+                           'inductor': {'fxgraph_cache_hit': 1},
+                           'aot_autograd': {'total': 1, 'ok': 1}})
+from src.pipeline.detection import current_sr_batch_worker as worker
+os.environ.pop('PDFSCORE_SR_COMPILER_CACHE', None)
+original_import = builtins.__import__
+def reject_managed_cache(name, *args, **kwargs):
+    if name == 'src.pipeline.detection.sr_compiler_cache':
+        raise AssertionError('cache-unset worker imported managed cache')
+    return original_import(name, *args, **kwargs)
+builtins.__import__ = reject_managed_cache
+calls = []
+def existing_run(request, result):
+    calls.append((request, result))
+    return result
+worker._run = existing_run
+request, result = Path('request.json'), Path('result.json')
+assert worker.run(request, result) == result
+assert calls == [(request, result)]
+assert 'torch' not in sys.modules
+"""
+    result = subprocess.run(
+        ["python3", "-I", "-c", code, str(candidate)],
+        cwd=candidate,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr

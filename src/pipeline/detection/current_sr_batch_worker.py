@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import time
 from collections.abc import Mapping
 from pathlib import Path
@@ -55,7 +56,7 @@ def _items(request: Mapping[str, Any]) -> list[dict[str, Any]]:
     return items
 
 
-def run(request_path: Path, result_path: Path) -> Path:
+def _run(request_path: Path, result_path: Path) -> Path:
     request = _load_request(request_path)
     det_cfg = request.get("detection")
     if not isinstance(det_cfg, Mapping):
@@ -153,12 +154,40 @@ def run(request_path: Path, result_path: Path) -> Path:
         "historical_detector_artifact_runtime_input": False,
         "memory_boundary": "dedicated_sr_batch_process",
     }
+    if os.environ.get("PDFSCORE_SR_COMPILER_CACHE") is not None:
+        payload["compiler_counters"] = {
+            group: dict(values) for group, values in torch._dynamo.utils.counters.items()
+        }
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     return result_path
+
+
+def run(request_path: Path, result_path: Path) -> Path:
+    cache_root = os.environ.get("PDFSCORE_SR_COMPILER_CACHE")
+    if cache_root is None:
+        return _run(request_path, result_path)
+    if not cache_root:
+        raise ValueError("PDFSCORE_SR_COMPILER_CACHE must be an absolute private directory")
+    from src.pipeline.detection.sr_compiler_cache import (
+        lease,
+        runtime_identity,
+        validate_compiler_counters,
+    )
+
+    request = _load_request(request_path)
+    identity = runtime_identity(request["detection"])
+    with lease(Path(cache_root), identity) as provenance:
+        result = _run(request_path, result_path)
+        validate_compiler_counters(json.loads(result.read_text())["compiler_counters"])
+        provenance["compiled_graph_gate"] = "passed"
+    payload = json.loads(result.read_text())
+    payload["compiler_cache"] = provenance
+    result.write_text(json.dumps(payload, indent=2) + "\n")
+    return result
 
 
 def main() -> int:

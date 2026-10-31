@@ -48,6 +48,14 @@ def source_checks(root: Path, a: Path, b: Path, pages: list[str]) -> dict:
     return checks
 
 
+def numbering_payload(run: Path, pages: list[str], section: str, name: str):
+    """Single-page runs retain per-page numbering; multi-page runs require combined JSON."""
+    combined = run / section / name
+    if len(pages) == 1 and not combined.exists():
+        return load(run / section / pages[0] / name)
+    return load(combined)
+
+
 def pipeline_checks(root: Path, a: Path, b: Path) -> dict:
     ma, mb = load(a / "manifest.json"), load(b / "manifest.json")
     pages = [p["page_id"] for p in ma["pages"]]
@@ -55,10 +63,12 @@ def pipeline_checks(root: Path, a: Path, b: Path) -> dict:
         "page_order": pages == [p["page_id"] for p in mb["pages"]],
         "input_order": [p["image_path"] for p in ma["pages"]]
         == [p["image_path"] for p in mb["pages"]],
-        "combined_base": load(a / "intermediate/numbering_base.json")
-        == load(b / "intermediate/numbering_base.json"),
-        "combined_final_and_movement_metadata": load(a / "outputs/numbering_final.json")
-        == load(b / "outputs/numbering_final.json"),
+        "combined_base": numbering_payload(a, pages, "intermediate", "numbering_base.json")
+        == numbering_payload(b, pages, "intermediate", "numbering_base.json"),
+        "combined_final_and_movement_metadata": numbering_payload(
+            a, pages, "outputs", "numbering_final.json"
+        )
+        == numbering_payload(b, pages, "outputs", "numbering_final.json"),
         "filters": load(a / "filters.json") == load(b / "filters.json"),
     }
     per_page = {}

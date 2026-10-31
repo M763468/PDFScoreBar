@@ -30,6 +30,10 @@ before page-local recognition; within each page the original-image HOMR runs bef
 x4 HOMR, followed by OMR-DLN. Their recognition results meet in the barline decision;
 Phases A–C use that decision to build the layout and finalize numbering.
 
+Page-source jobs can run concurrently after SR exits, with explicit resource
+admission and input-order consumption. The default is one worker. See
+[source concurrency](performance/issue458-source-concurrency.md) for policy and limits.
+
 ```mermaid
 flowchart TD
   I["PDF / stored page images"] --> P["Page images stored as files"]

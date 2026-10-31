@@ -80,3 +80,34 @@ def test_failure_cancels_running_and_queued(tmp_path):
         list(jobs.ordered(keys, execute, 2, tmp_path / "events"))
     assert time.monotonic() - start < 2
     assert set(calls) == set(keys[:2])
+
+
+def test_sigterm_cleans_worker(tmp_path):
+    marker = tmp_path / "leader"
+    script = """
+import sys
+from pathlib import Path
+from src.pipeline.detection.source_concurrency import SourceJobs
+root = Path(sys.argv[1])
+jobs = SourceJobs(60)
+def execute(key):
+    return jobs.run([sys.executable, '-c', "import os,time;open(" + repr(str(root/'leader')) + ",'w').write(str(os.getpid()));time.sleep(60)"])
+list(jobs.ordered([root/'a', root/'b'], execute, 1, root/'events'))
+"""
+    import signal
+    import subprocess
+
+    process = subprocess.Popen([sys.executable, "-c", script, str(tmp_path)])
+    try:
+        deadline = time.monotonic() + 5
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        assert marker.exists()
+        child = int(marker.read_text())
+        process.send_signal(signal.SIGTERM)
+        assert process.wait(timeout=3) == 143
+        assert not Path(f"/proc/{child}").exists()
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()

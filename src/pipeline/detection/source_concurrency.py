@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import signal
 import subprocess
@@ -17,6 +18,13 @@ def select_workers(policy, images, *, available_ram_gib, available_vram_gib, dev
     requested = policy.get("workers", 1)
     if type(requested) is not int or requested < 1:
         raise ValueError("source_concurrency.workers must be a positive integer")
+    if policy.get("on_unavailable", "error") not in ("error", "serial"):
+        raise ValueError("on_unavailable must be error or serial")
+    if (
+        type(policy.get("validated_workers", 2)) is not int
+        or policy.get("validated_workers", 2) < 1
+    ):
+        raise ValueError("validated_workers must be a positive integer")
     result = dict(
         requested_workers=requested,
         selected_workers=1,
@@ -39,7 +47,7 @@ def select_workers(policy, images, *, available_ram_gib, available_vram_gib, dev
     required = ("ram_gib", "vram_gib", "max_input_pixels", "device")
     reason = "missing explicit resource envelope"
     if all(k in policy for k in required):
-        if any(float(policy[k]) <= 0 for k in required[:3]):
+        if any(not math.isfinite(float(policy[k])) or float(policy[k]) <= 0 for k in required[:3]):
             raise ValueError("source resource envelope must be positive")
         if requested > policy.get("validated_workers", 2):
             reason = "requested workers exceed validated envelope"
@@ -129,6 +137,8 @@ class SourceJobs:
 
         def job(key):
             try:
+                if self.cancelled.is_set():
+                    raise RuntimeError("Source jobs cancelled before start")
                 return execute(key)
             except BaseException:
                 self.cancelled.set()

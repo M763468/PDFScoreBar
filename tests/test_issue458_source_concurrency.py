@@ -111,3 +111,46 @@ list(jobs.ordered([root/'a', root/'b'], execute, 1, root/'events'))
         if process.poll() is None:
             process.kill()
             process.wait()
+
+
+@pytest.mark.parametrize("case", ["duplicate", "missing", "unexpected"])
+def test_sr_result_identity_rejected(tmp_path, monkeypatch, case):
+    import json
+    import subprocess
+
+    from src.pipeline.detection import profile_sources_batch_sr as batch
+
+    image = tmp_path / "page.png"
+    image.write_bytes(b"image")
+    other = tmp_path / "other.png"
+    other.write_bytes(b"image")
+    sr = tmp_path / "sr.png"
+    sr.write_bytes(b"sr")
+    row = {"image": str(other if case == "unexpected" else image), "sr_image": str(sr)}
+    rows = [row, row] if case == "duplicate" else [] if case == "missing" else [row]
+
+    def run(command, **kwargs):
+        Path(command[-1]).write_text(
+            json.dumps(
+                {
+                    "status": "completed",
+                    "memory_boundary": "dedicated_sr_batch_process",
+                    "historical_detector_artifact_runtime_input": False,
+                    "outputs": rows,
+                }
+            )
+        )
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(batch.subprocess, "run", run)
+    detector = batch.BatchSRProfileHybridDetector(
+        det_cfg={"enable_sr": True, "sr_scale": 4},
+        images=[image],
+        run_id="fault",
+        project_root=tmp_path,
+        dry_run=False,
+        skip_existing=False,
+        profile_name="maintained_original",
+    )
+    with pytest.raises(ValueError):
+        detector._batch_sr_worker(support_output=tmp_path / "support")

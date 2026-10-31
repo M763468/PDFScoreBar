@@ -16,13 +16,12 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from tqdm import tqdm
-
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.perf_trace import span
 
 from .current_support_worker import _require_precomputed_sr
 from .profile_sources import ProfileHybridDetector
+from .source_concurrency import SourceJobs, available_resources, select_workers
 
 _MAX_RETAINED_WORKER_LOG_BYTES = 64 * 1024
 _MAX_RETAINED_WORKER_LOG_LINES = 80
@@ -209,9 +208,15 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         env["PYTHONPATH"] = os.pathsep.join(
             [str(self.project_root), env.get("PYTHONPATH", "")]
         ).strip(os.pathsep)
+        threads = self.det_cfg.get("source_concurrency", {}).get("threads_per_worker")
+        if threads is not None:
+            if type(threads) is not int or threads < 1:
+                raise ValueError("threads_per_worker must be a positive integer")
+            env["OMP_NUM_THREADS"] = str(threads)
+            env["MKL_NUM_THREADS"] = str(threads)
         log_path = page_root / "worker.log"
         with log_path.open("w", encoding="utf-8") as log_file:
-            process = subprocess.run(
+            process = getattr(self, "_source_jobs", SourceJobs(900)).run(
                 command,
                 cwd=self.project_root,
                 env=env,
@@ -331,6 +336,10 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             sr_image = Path(str(raw.get("sr_image", ""))).resolve()
             if not image.is_file() or not sr_image.is_file():
                 raise FileNotFoundError(sr_image if image.is_file() else image)
+            if image in by_image:
+                raise ValueError(f"Duplicate SR output: {image}")
+            if image not in {p.resolve() for p in self.images}:
+                raise ValueError(f"Unexpected SR output: {image}")
             by_image[image] = dict(raw)
         missing = [str(image) for image in self.images if image.resolve() not in by_image]
         if missing:
@@ -375,14 +384,86 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         commands.append(batch_command)
 
         worker_output = baseline_output.parent / "source_page_workers"
-        for image in tqdm(self.images, desc="Two-HOMR source generation", unit="page"):
-            payload, worker_command = self._source_page_worker(
+        policy = dict(self.det_cfg.get("source_concurrency", {}))
+        ram, vram, device = available_resources()
+        worker_output.mkdir(parents=True, exist_ok=True)
+        try:
+            self._source_admission = select_workers(
+                policy,
+                self.images,
+                available_ram_gib=ram,
+                available_vram_gib=vram,
+                device=device,
+            )
+        except Exception as error:
+            (worker_output / "admission.json").write_text(
+                json.dumps(
+                    {
+                        "status": "rejected",
+                        "reason": str(error),
+                        "policy": policy,
+                        "available_ram_gib": ram,
+                        "available_vram_gib": vram,
+                        "device": device,
+                        "uid": os.getuid(),
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
+            raise
+        (worker_output / "admission.json").write_text(
+            json.dumps(
+                {
+                    **self._source_admission,
+                    "policy": policy,
+                    "sr_status": batch_payload.get("status"),
+                    "uid": os.getuid(),
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        self._source_jobs = SourceJobs(policy.get("timeout_sec", 900))
+
+        def execute(image):
+            return self._source_page_worker(
                 image=image,
                 worker_output=worker_output,
                 baseline_output=baseline_output,
                 support_output=support_output,
                 precomputed_sr=precomputed_by_image[image.resolve()],
             )
+
+        jobs = self._source_jobs.ordered(
+            self.images,
+            execute,
+            self._source_admission["selected_workers"],
+            worker_output / "schedule.jsonl",
+        )
+        try:
+            return self._consume_source_jobs(jobs, current_sr_detections, omr_predictions, commands)
+        except BaseException as error:
+            (worker_output / "failure.json").write_text(
+                json.dumps(
+                    {
+                        "status": "failed",
+                        "error_type": type(error).__name__,
+                        "reason": str(error),
+                        "policy": policy,
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
+            raise
+        finally:
+            jobs.close()
+
+    def _consume_source_jobs(self, jobs, current_sr_detections, omr_predictions, commands):
+        for image, (payload, worker_command) in jobs:
+            if Path(str(payload.get("image", ""))).resolve() != image.resolve():
+                raise ValueError(f"Wrong source result identity: {image}")
             current_sr_detection = self._current_detection_path(payload)
             omr = Path(str(payload["current_omr"])).resolve()
             if not omr.is_file():
@@ -415,6 +496,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                 ],
             }
         )
+        result["source_concurrency"] = getattr(self, "_source_admission", None)
         if self._last_sr_batch_result is not None:
             result["current_sr_batch"] = {
                 key: self._last_sr_batch_result.get(key)

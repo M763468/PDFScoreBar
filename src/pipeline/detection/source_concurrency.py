@@ -97,27 +97,39 @@ def available_resources():
         return ram / 2**30, 0, "unknown"
 
 
+class SourceCancelled(RuntimeError):
+    """A sibling failed or the caller cancelled; never replace the original error."""
+
+
 class SourceJobs:
     def __init__(self, timeout):
         if not 0 < float(timeout) < float("inf"):
             raise ValueError("source timeout must be finite and positive")
         self.timeout = float(timeout)
         self.cancelled = threading.Event()
+        self._failure_lock = threading.Lock()
+        self.first_error = None
+
+    def _fail(self, error):
+        with self._failure_lock:
+            if self.first_error is None and not isinstance(error, SourceCancelled):
+                self.first_error = error
+            self.cancelled.set()
 
     def run(self, command, **kwargs):
         if self.cancelled.is_set():
-            raise RuntimeError("Source jobs cancelled")
+            raise SourceCancelled("Source jobs cancelled")
         process = subprocess.Popen(command, start_new_session=True, **kwargs)
         started = time.monotonic()
         try:
             while process.poll() is None:
                 if self.cancelled.wait(0.05):
-                    raise RuntimeError("Source jobs cancelled")
+                    raise SourceCancelled("Source jobs cancelled")
                 if time.monotonic() - started > self.timeout:
                     raise TimeoutError(f"Source job timeout: {command}")
             return subprocess.CompletedProcess(command, process.returncode)
-        except BaseException:
-            self.cancelled.set()
+        except BaseException as error:
+            self._fail(error)
             raise
         finally:
             # Kill the entire session group, including descendants after leader exit.
@@ -138,10 +150,10 @@ class SourceJobs:
         def job(key):
             try:
                 if self.cancelled.is_set():
-                    raise RuntimeError("Source jobs cancelled before start")
+                    raise SourceCancelled("Source jobs cancelled before start")
                 return execute(key)
-            except BaseException:
-                self.cancelled.set()
+            except BaseException as error:
+                self._fail(error)
                 raise
 
         previous_handler = None
@@ -167,7 +179,12 @@ class SourceJobs:
                     pending.append((key, executor.submit(job, key)))
                 while pending:
                     key, future = pending.popleft()
-                    result = future.result()
+                    try:
+                        result = future.result()
+                    except SourceCancelled:
+                        if self.first_error is not None:
+                            raise self.first_error
+                        raise
                     with events.open("a") as stream:
                         stream.write(json.dumps({"consumed": str(key), "time": time.time()}) + "\n")
                     yield key, result

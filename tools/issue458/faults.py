@@ -62,18 +62,31 @@ if case=='wrong-image':Path(a.result).write_text(json.dumps({'status':'completed
 
 
 def main():
+    global OUT
     parser = argparse.ArgumentParser()
     parser.add_argument("--case")
+    parser.add_argument("--output", type=Path, default=OUT)
     args = parser.parse_args()
+    OUT = args.output.resolve()
     if args.case:
         child(args.case)
         return
     OUT.mkdir(parents=True, exist_ok=False)
     rows = []
+
+    def oom_kills():
+        return int(
+            dict(
+                line.split()
+                for line in Path("/sys/fs/cgroup/memory.events").read_text().splitlines()
+            )["oom_kill"]
+        )
+
     for case in ("nonzero", "missing", "wrong-image", "kill", "timeout", "oom"):
+        before_oom = oom_kills()
         with (OUT / (case + ".log")).open("w") as stream:
             process = subprocess.run(
-                [sys.executable, __file__, "--case", case],
+                [sys.executable, __file__, "--case", case, "--output", str(OUT)],
                 stdout=stream,
                 stderr=subprocess.STDOUT,
                 timeout=45,
@@ -81,7 +94,18 @@ def main():
         directory = OUT / case
         pids = [int(p) for p in (directory / "pids").read_text().splitlines()]
         telemetry = json.loads((directory / "telemetry.json").read_text())
+        text = (OUT / (case + ".log")).read_text()
+        expected = {
+            "nonzero": "worker failed (7)",
+            "missing": "FileNotFoundError",
+            "wrong-image": "Wrong source result identity",
+            "kill": "worker failed (-9)",
+            "timeout": "TimeoutError",
+            "oom": "worker failed (-9)",
+        }[case]
         checks = {
+            "expected_fault": expected in text,
+            "actual_oom_kill_if_requested": case != "oom" or oom_kills() > before_oom,
             "failed": process.returncode != 0,
             "children_reaped": bool(pids) and all(not Path(f"/proc/{p}").exists() for p in pids),
             "no_final_numbering": not list(directory.rglob("numbering_final.json")),
@@ -91,7 +115,15 @@ def main():
                 for s in telemetry["stage_spans"]
             ),
         }
-        rows.append({"case": case, "checks": checks, "exit_code": process.returncode})
+        rows.append(
+            {
+                "case": case,
+                "checks": checks,
+                "exit_code": process.returncode,
+                "oom_kills_before": before_oom,
+                "oom_kills_after": oom_kills(),
+            }
+        )
     (OUT / "result.json").write_text(json.dumps(rows, indent=2) + "\n")
     print(json.dumps(rows))
     assert all(all(r["checks"].values()) for r in rows)

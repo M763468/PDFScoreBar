@@ -23,49 +23,12 @@ def main() -> int:
     parser.add_argument("--compile-mode", choices=("production", "off"), default="production")
     parser.add_argument("--trace", action="store_true")
     parser.add_argument(
-        "--omr-reuse",
-        action="store_true",
-        help="Experimental fresh same-run OMR phase; requires source-workers",
-    )
-    parser.add_argument(
-        "--source-workers",
-        type=int,
-        choices=(1, 2),
-        help="Experimental ordered source prefetch only; production source remains unchanged",
-    )
-    parser.add_argument(
-        "--python-cache", type=Path, help="Optional private writable interpreter bytecode cache"
-    )
-    parser.add_argument(
         "--compile-cache",
         type=Path,
         help="Explicit cache directory; use a new empty directory for a cold reproduction",
     )
-    parser.add_argument(
-        "--component",
-        choices=(
-            "sr-screen",
-            "homr-profile",
-            "omr-profile",
-            "source-parallel",
-            "homr-wall",
-            "omr-wall",
-            "source-paired",
-            "python-imports",
-            "omr-serial",
-            "omr-batch",
-            "compiled-tiles1",
-            "compiled-tiles2",
-        ),
-    )
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
-    if args.omr_reuse and (args.source_workers is None or args.component):
-        parser.error("OMR reuse requires E2E with explicit source-workers")
-    if args.component == "source-paired" and args.source_workers is None:
-        parser.error("source-paired requires explicit --source-workers")
-    if args.component not in (None, "source-paired") and args.source_workers is not None:
-        parser.error("--source-workers applies only to E2E or source-paired")
     if not args.image.startswith("sha256:") or len(args.image) != 71:
         parser.error("--image must be an immutable full sha256 ID")
     if not args.label.replace("-", "").replace("_", "").isalnum():
@@ -152,30 +115,7 @@ def main() -> int:
         "-e",
         f"OMR_DLN_MODEL_PATH={omr}",
     ]
-    if (
-        args.component is None
-        or args.component == "source-parallel"
-        or args.source_workers is not None
-    ):
-        command += ["--memory", "16g"]
-    if args.python_cache is not None:
-        args.python_cache = args.python_cache.resolve()
-        args.python_cache.mkdir(parents=True, exist_ok=True)
-        command += [
-            "-v",
-            f"{args.python_cache}:/python-cache",
-            "-e",
-            "PYTHONPYCACHEPREFIX=/python-cache",
-        ]
-    if args.omr_reuse:
-        command += ["-e", "ISSUE447_OMR_REUSE=1"]
-    if args.source_workers is not None:
-        command += [
-            "-e",
-            f"ISSUE447_SOURCE_WORKERS={args.source_workers}",
-            "-e",
-            f"ISSUE447_SOURCE_EVENTS=/workspace/{rel}/source-schedule.jsonl",
-        ]
+    command += ["--memory", "16g"]
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     command += ["-e", f"PDFSCORE_HOST_SOURCE_COMMIT={commit}"]
     if args.trace:
@@ -186,51 +126,15 @@ def main() -> int:
             f"PDFSCORE_PERF_TRACE_RUN={args.label}",
         ]
     command += [args.image, "/opt/venv_pipeline/bin/python"]
-    if args.component == "source-paired":
-        command += [
-            "tools/issue447/pipeline_poc.py",
-            "--source-component",
-            "--workers",
-            str(args.source_workers),
-            "--output",
-            str(rel / "component"),
-        ]
-    elif args.component in {
-        "python-imports",
-        "omr-serial",
-        "omr-batch",
-        "compiled-tiles1",
-        "compiled-tiles2",
-    }:
-        command += [
-            "tools/issue447/deepening_components.py",
-            "--kind",
-            args.component,
-            "--output",
-            str(rel / "component"),
-        ]
-    elif args.component:
-        command += [
-            "tools/issue447/component_poc.py",
-            "--kind",
-            args.component,
-            "--output",
-            str(rel / "component"),
-            "--config",
-            str(rel / "config.yaml"),
-        ]
-    else:
-        command += [
-            "tools/issue447/pipeline_poc.py"
-            if args.source_workers is not None
-            else "src/pipeline/main.py",
-            "--config",
-            str(rel / "config.yaml"),
-            "--telemetry-summary",
-            str(rel / "telemetry.json"),
-        ]
-        if args.trace:
-            command += ["--sample-resources"]
+    command += [
+        "src/pipeline/main.py",
+        "--config",
+        str(rel / "config.yaml"),
+        "--telemetry-summary",
+        str(rel / "telemetry.json"),
+    ]
+    if args.trace:
+        command += ["--sample-resources"]
     gpu = subprocess.check_output(
         ["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "--format=csv"],
         text=True,
@@ -352,7 +256,6 @@ def main() -> int:
         "docker_e2e_wall_seconds": elapsed,
         "timed_out": timed_out,
         "trace": "on" if args.trace else "off",
-        "component": args.component,
         "scope": args.scope,
         "monitor_teardown_seconds": time.perf_counter() - started - elapsed,
     }

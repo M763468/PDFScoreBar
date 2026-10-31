@@ -175,3 +175,17 @@ def test_failure_diagnostics_survive_engine_scratch_cleanup(tmp_path):
     tail = (tmp_path / "failed-source-page-page.log").read_bytes()
     assert len(tail) <= 65536
     assert tail.endswith(b"timeout details\n")
+
+
+def test_later_failure_is_not_hidden_by_earlier_cancel(tmp_path):
+    jobs = SourceJobs(5)
+    keys = [tmp_path / "first", tmp_path / "second"]
+
+    def execute(key):
+        if key == keys[1]:
+            time.sleep(0.05)
+            raise ValueError("original worker failure")
+        return jobs.run([sys.executable, "-c", "import time;time.sleep(60)"])
+
+    with pytest.raises(ValueError, match="original worker failure"):
+        list(jobs.ordered(keys, execute, 2, tmp_path / "events"))

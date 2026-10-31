@@ -42,6 +42,21 @@ def _bounded_worker_log_tail(log_path: Path) -> bytes:
     return b"".join(lines[-_MAX_RETAINED_WORKER_LOG_LINES:])
 
 
+def _retain_source_diagnostics(worker_output: Path) -> None:
+    """Keep bounded failure evidence outside disposable engine scratch."""
+    work_root = next((p for p in worker_output.parents if p.name == ".engine-work"), None)
+    if work_root is None:
+        return
+    for name in ("admission.json", "failure.json"):
+        path = worker_output / name
+        if path.is_file():
+            (work_root.parent / f"failed-source-{name}").write_bytes(path.read_bytes())
+    for log in worker_output.glob("*/*/worker.log"):
+        (work_root.parent / f"failed-source-page-{log.parent.name}.log").write_bytes(
+            _bounded_worker_log_tail(log)
+        )
+
+
 class BatchSRProfileHybridDetector(ProfileHybridDetector):
     """Verified profile detector with a dedicated reusable current-SR phase."""
 
@@ -411,6 +426,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                 )
                 + "\n"
             )
+            _retain_source_diagnostics(worker_output)
             raise
         (worker_output / "admission.json").write_text(
             json.dumps(
@@ -444,6 +460,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         try:
             return self._consume_source_jobs(jobs, current_sr_detections, omr_predictions, commands)
         except BaseException as error:
+            jobs.close()
             (worker_output / "failure.json").write_text(
                 json.dumps(
                     {
@@ -456,6 +473,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                 )
                 + "\n"
             )
+            _retain_source_diagnostics(worker_output)
             raise
         finally:
             jobs.close()

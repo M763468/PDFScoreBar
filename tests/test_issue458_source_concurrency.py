@@ -154,3 +154,24 @@ def test_sr_result_identity_rejected(tmp_path, monkeypatch, case):
     )
     with pytest.raises(ValueError):
         detector._batch_sr_worker(support_output=tmp_path / "support")
+
+
+def test_failure_diagnostics_survive_engine_scratch_cleanup(tmp_path):
+    import shutil
+
+    from src.pipeline.detection.profile_sources_batch_sr import _retain_source_diagnostics
+
+    scratch = tmp_path / ".engine-work"
+    output = scratch / "hybrid/source_page_workers"
+    log = output / "score/page/worker.log"
+    log.parent.mkdir(parents=True)
+    log.write_bytes(b"large line\n" * 20000 + b"timeout details\n")
+    (output / "admission.json").write_text('{"selected_workers":2}')
+    (output / "failure.json").write_text('{"error_type":"TimeoutError"}')
+    _retain_source_diagnostics(output)
+    shutil.rmtree(scratch)
+    assert (tmp_path / "failed-source-admission.json").exists()
+    assert "TimeoutError" in (tmp_path / "failed-source-failure.json").read_text()
+    tail = (tmp_path / "failed-source-page-page.log").read_bytes()
+    assert len(tail) <= 65536
+    assert tail.endswith(b"timeout details\n")

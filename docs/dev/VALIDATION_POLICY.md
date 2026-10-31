@@ -1,5 +1,7 @@
 # Validation Policy
 
+[日本語](VALIDATION_POLICY.ja.md)
+
 This document defines how to choose validation for local automation and manual PR work. It is intentionally stricter than a simple optional helper script: automation should make skipped validation visible and should detect scope drift early.
 
 ## Principles

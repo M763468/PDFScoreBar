@@ -1,5 +1,7 @@
 # Maintained Makefile Surface
 
+[日本語](MAKEFILE_SURFACE.ja.md)
+
 The root `Makefile` is the supported repository entrypoint for everyday development,
 validation, canonical runtime operations, and a small set of retained historical reproductions.
 `make help` labels each entry by role. This inventory classifies every root target; Issue-specific

@@ -1,5 +1,7 @@
 # Branch Policy
 
+[日本語](BRANCH_POLICY.ja.md)
+
 This document defines the repository-wide branch policy. It is a standing rule for new work and release promotion; issue-specific decisions should be recorded in the relevant issue or PR by applying this policy, not by changing the general rule.
 
 ## Branch roles
@@ -22,7 +24,7 @@ When starting older work, restate the effective branch decision in the working s
 
 ## Release, hotfix, and promotion exceptions
 
-Use `main` directly only when the issue explicitly requires release-branch work, hotfix work, or promotion management.
+Use `main` as the base branch or PR target only when the issue explicitly requires release-branch work, hotfix work, or promotion management. Continue to use a topic or candidate branch and the applicable PR flow.
 
 For a `develop -> main` promotion PR, include at minimum:
 
@@ -43,8 +45,8 @@ candidate from frozen source and main commit identities with
 tree contains the manifest-selected distribution plus generated provenance.
 The tool creates an independent local repository and never updates shared branches.
 Its static validation is preparation evidence, not release acceptance or permission
-to merge. Record runtime, correction and semantic acceptance against that exact
-candidate commit before opening a promotion PR to main. Changed candidates require
+to merge. Record runtime, manual-correction and semantic acceptance against that exact
+candidate commit before opening a promotion PR from the candidate branch to main. Changed candidates require
 a new identity and validation of the affected gates.
 
 ## Documentation precedence

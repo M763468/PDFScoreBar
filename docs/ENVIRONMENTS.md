@@ -1,5 +1,7 @@
 # Environment & Tooling Guide
 
+[日本語](ENVIRONMENTS.ja.md)
+
 This document records maintained development and evaluation environments. Historical
 one-off containers and branch-specific worktrees are not current operating instructions
 unless an active Issue explicitly revives them.

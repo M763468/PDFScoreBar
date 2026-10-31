@@ -1,5 +1,7 @@
 # Local validation environments
 
+[日本語](LOCAL_VALIDATION.ja.md)
+
 Choose an environment that can run the required check against the active issue worktree.
 Use this guide with the validation levels in [Validation Policy](VALIDATION_POLICY.md). A tool
 or container observed previously is a lead to verify, not a guarantee that it still exists or

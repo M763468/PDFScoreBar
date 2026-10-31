@@ -1,10 +1,10 @@
 # 保守対象のMakefile入口
 
-<!-- translation: {"original":"MAKEFILE_SURFACE.md","source":{"sha256":"2b6cb7906b879c61d739e5569f821da7f706a70294e702b8d3cdab1ea17a4a25"},"state":"draft"} -->
+<!-- translation: {"original":"MAKEFILE_SURFACE.md","source":{"sha256":"2b6cb7906b879c61d739e5569f821da7f706a70294e702b8d3cdab1ea17a4a25"},"state":"reviewed"} -->
 
 [English / 原文](MAKEFILE_SURFACE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `2b6cb7906b879c61d739e5569f821da7f706a70294e702b8d3cdab1ea17a4a25`。状態: `draft`。
+翻訳元: same PR / SHA-256 `2b6cb7906b879c61d739e5569f821da7f706a70294e702b8d3cdab1ea17a4a25`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 ルートの `Makefile` は、日常の開発、検証、正規のランタイム操作、および少数の保持された過去の再現手順について、サポートされるリポジトリの入口である。`make help` は各項目に役割を表示する。この一覧はルートの全ターゲットを分類する。Issue固有のターゲットは来歴のために保持されており、一般的なワークフローとして推奨するものではない。
 

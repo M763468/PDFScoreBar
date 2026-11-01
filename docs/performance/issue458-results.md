@@ -1,5 +1,9 @@
 # Issue 458 production concurrency validation
 
+This historical attempt is unchanged. The separately authorized
+[practical reassessment](issue458-reassessment.md) records new evidence and an
+opt-in proposal; it does not reclassify the Failed result below.
+
 Status: **not approved for production activation**. The original warm E2E target
 was >=5% median reduction. This attempt measured **4.900958%**, so that gate failed;
 it is not rounded into a pass. The production default remains one worker.

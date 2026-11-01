@@ -6,8 +6,10 @@ start; source results are consumed in input order. At most `workers` unconsumed
 jobs exist, including running and completed jobs. Models remain disposable per
 page, with no OMR reuse or persistent inference pool.
 
-An example opt-in envelope for the measured RTX 4060 deployment is below. Treat
-it as a validation candidate until the [results](issue458-results.md) gates pass:
+The following opt-in proposal is supported by the separate
+[practical reassessment](issue458-reassessment.md), pending the owner's activation
+decision. The [original >=5% result](issue458-results.md) remains Failed. It
+applies only to the measured non-root, single RTX 4060 deployment:
 
 ```yaml
 detection:
@@ -19,7 +21,8 @@ detection:
     device: NVIDIA GeForce RTX 4060
     ram_gib: 12
     vram_gib: 7
-    max_input_pixels: 16000000
+    max_input_pixels: 16848000
+    allowed_input_shapes: [[2960, 4210], [3600, 4680]]
     on_unavailable: error
 ```
 
@@ -30,7 +33,10 @@ Admission checks free host RAM capped by remaining cgroup-v2 memory allowance,
 free device VRAM, exact device name and original-image pixel area. SR x4 pixels
 are sixteen times original area. These checks are conservative screens, not
 memory reservations or protection against another workload allocating later.
-Only a single GPU is supported by automatic resource discovery. Unknown devices
+`allowed_input_shapes`, when provided, must list positive integer [width,height]
+pairs; an unlisted shape rejects even if its area fits. The validated proposal
+uses this exact-shape restriction. Only a single GPU is supported by automatic
+resource discovery. Unknown devices
 and resources fail closed. Use dedicated GPU scheduling and a container memory
 limit; do not treat sampled VRAM on a few pages as a universal bound.
 

@@ -39,6 +39,10 @@ r=json.loads(Path(a.request).read_text())
 with open(os.environ['FAULT_PIDS'],'a') as f:f.write(str(os.getpid())+'\\n')
 case=os.environ['FAULT_CASE']
 if case=='timeout':time.sleep(60)
+if case=='cuda-oom':
+    import torch
+    print(json.dumps({'cuda_available':torch.cuda.is_available(),'vram_total':torch.cuda.get_device_properties(0).total_memory,'requested_bytes':16*2**30}),flush=True)
+    data=torch.empty(16*2**30,dtype=torch.uint8,device='cuda')
 if case=='oom':
     Path('/proc/self/oom_score_adj').write_text('1000')
     data=bytearray(3*2**30)
@@ -54,7 +58,7 @@ if case=='wrong-image':Path(a.result).write_text(json.dumps({'status':'completed
     config["run"] = {"run_id": "pipeline", "output_root": str(out)}
     config["detection"]["hybrid_output_root"] = str(out / "hybrid_output")
     config["detection"]["source_concurrency"].update(
-        workers=2, timeout_sec=30 if case == "oom" else 1
+        workers=2, timeout_sec=30 if case in ("oom", "cuda-oom") else 1
     )
     path = out / "config.yaml"
     path.write_text(yaml.safe_dump(config))
@@ -66,6 +70,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--case")
     parser.add_argument("--output", type=Path, default=OUT)
+    parser.add_argument(
+        "--cases",
+        nargs="+",
+        choices=["nonzero", "missing", "wrong-image", "kill", "timeout", "oom", "cuda-oom"],
+        default=["nonzero", "missing", "wrong-image", "kill", "timeout", "oom"],
+    )
     args = parser.parse_args()
     OUT = args.output.resolve()
     if args.case:
@@ -82,7 +92,7 @@ def main():
             )["oom_kill"]
         )
 
-    for case in ("nonzero", "missing", "wrong-image", "kill", "timeout", "oom"):
+    for case in args.cases:
         before_oom = oom_kills()
         with (OUT / (case + ".log")).open("w") as stream:
             process = subprocess.run(
@@ -102,6 +112,7 @@ def main():
             "kill": "worker failed (-9)",
             "timeout": "TimeoutError",
             "oom": "worker failed (-9)",
+            "cuda-oom": "CUDA out of memory",
         }[case]
         checks = {
             "expected_fault": expected in text,

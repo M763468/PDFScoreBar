@@ -189,3 +189,42 @@ def test_later_failure_is_not_hidden_by_earlier_cancel(tmp_path):
 
     with pytest.raises(ValueError, match="original worker failure"):
         list(jobs.ordered(keys, execute, 2, tmp_path / "events"))
+
+
+def test_exact_shapes_reject_unknown_shape_with_same_area(tmp_path):
+    from PIL import Image
+
+    first, second = tmp_path / "a.png", tmp_path / "b.png"
+    Image.new("RGB", (10, 20)).save(first)
+    Image.new("RGB", (20, 10)).save(second)
+    policy = dict(
+        workers=2,
+        ram_gib=12,
+        vram_gib=7,
+        max_input_pixels=1000,
+        device="gpu",
+        allowed_input_shapes=[[10, 20]],
+    )
+    args = dict(available_ram_gib=16, available_vram_gib=8, device="gpu")
+    with pytest.raises(RuntimeError, match="no validated admission profile"):
+        select_workers(policy, [first, second], **args)
+    policy["on_unavailable"] = "serial"
+    assert select_workers(policy, [first, second], **args)["selected_workers"] == 1
+    policy["allowed_input_shapes"].append([20, 10])
+    assert select_workers(policy, [first, second], **args)["selected_workers"] == 2
+
+
+@pytest.mark.parametrize("shapes", [[], [[0, 2]], [[1]], ["10x20"], [[1, True]]])
+def test_invalid_exact_shapes(tmp_path, shapes):
+    from PIL import Image
+
+    image = tmp_path / "a.png"
+    Image.new("RGB", (2, 2)).save(image)
+    with pytest.raises(ValueError, match="allowed_input_shapes"):
+        select_workers(
+            dict(workers=2, allowed_input_shapes=shapes),
+            [image, image],
+            available_ram_gib=16,
+            available_vram_gib=8,
+            device="gpu",
+        )

@@ -17,6 +17,13 @@ import yaml
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--phase", default="", help="Isolated subdirectory below logs/issue458")
+    parser.add_argument("--score", default="Shostakovich-Sym5-Va")
+    parser.add_argument("--page-glob")
+    parser.add_argument(
+        "--exact-shapes", action="store_true", help="Reassessment-only exact shape envelope"
+    )
+    parser.add_argument("--readonly-source", action="store_true")
     parser.add_argument("--label", required=True)
     parser.add_argument("--image", required=True, help="Verified immutable sha256 image ID")
     parser.add_argument("--scope", choices=("single", "multi"), default="single")
@@ -49,6 +56,10 @@ def main() -> int:
         )
     )
     issue = root / "logs/issue458"
+    if args.phase:
+        if not args.phase.replace("-", "").isalnum():
+            parser.error("phase must contain letters, digits or hyphens")
+        issue = issue / args.phase
     dest = issue / "runs" / args.label
     dest.mkdir(parents=True, exist_ok=False)
     rel = dest.relative_to(root)
@@ -58,8 +69,9 @@ def main() -> int:
     config = yaml.safe_load((root / "configs/dense_full_pipeline.yaml").read_text())
     config["run"] = {"run_id": "pipeline", "output_root": str(rel)}
     config["inputs"]["pdf_to_images"] = {
-        "output_dir": "data/evaluation2/images/Shostakovich-Sym5-Va",
-        "image_glob": "page_013.png" if args.scope == "single" else "page_01[234].png",
+        "output_dir": "data/evaluation2/images/" + args.score,
+        "image_glob": args.page_glob
+        or ("page_013.png" if args.scope == "single" else "page_01[234].png"),
     }
     config["detection"]["hybrid_output_root"] = str(rel / "pipeline/hybrid_output")
     config["detection"]["source_concurrency"] = {
@@ -71,6 +83,12 @@ def main() -> int:
         "device": "NVIDIA GeForce RTX 4060",
         "timeout_sec": 300,
     }
+    if args.exact_shapes:
+        config["detection"]["source_concurrency"].update(
+            allowed_input_shapes=[[2960, 4210], [3600, 4680]],
+            max_input_pixels=16848000,
+            validated_workers=2,
+        )
     if args.compile_mode == "off":
         config["detection"]["sr_compile_mode"] = None
     config_path = dest / "config.yaml"
@@ -89,7 +107,7 @@ def main() -> int:
         "--user",
         f"{os.getuid()}:{os.getgid()}",
         "-v",
-        f"{root}:/workspace",
+        f"{root}:/workspace" + (":ro" if args.readonly_source else ""),
         "-w",
         "/workspace",
         "-v",
@@ -115,6 +133,8 @@ def main() -> int:
         "-e",
         f"OMR_DLN_MODEL_PATH={omr}",
     ]
+    if args.readonly_source:
+        command += ["-v", f"{root}/logs/issue458:/workspace/logs/issue458"]
     command += ["--memory", "16g"]
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     command += ["-e", f"PDFSCORE_HOST_SOURCE_COMMIT={commit}"]

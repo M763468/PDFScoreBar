@@ -40,10 +40,27 @@ def select_workers(policy, images, *, available_ram_gib, available_vram_gib, dev
     from PIL import Image
 
     pixels = []
+    shapes = []
     for path in images:
         with Image.open(path) as image:
             pixels.append(image.width * image.height)
+            shapes.append([image.width, image.height])
     result["input_pixels"] = pixels
+    result["input_shapes"] = shapes
+    allowed_shapes = policy.get("allowed_input_shapes")
+    if allowed_shapes is not None and (
+        not isinstance(allowed_shapes, list)
+        or not allowed_shapes
+        or any(
+            not isinstance(shape, list)
+            or len(shape) != 2
+            or any(type(v) is not int or v < 1 for v in shape)
+            for shape in allowed_shapes
+        )
+    ):
+        raise ValueError(
+            "allowed_input_shapes must be a nonempty list of positive [width, height] pairs"
+        )
     required = ("ram_gib", "vram_gib", "max_input_pixels", "device")
     reason = "missing explicit resource envelope"
     if all(k in policy for k in required):
@@ -53,6 +70,8 @@ def select_workers(policy, images, *, available_ram_gib, available_vram_gib, dev
             reason = "requested workers exceed validated envelope"
         elif device != policy["device"]:
             reason = "unsupported device"
+        elif allowed_shapes is not None and any(shape not in allowed_shapes for shape in shapes):
+            reason = "input shape has no validated admission profile"
         elif max(pixels) > policy["max_input_pixels"]:
             reason = "input exceeds validated shape envelope"
         elif available_ram_gib < policy["ram_gib"]:

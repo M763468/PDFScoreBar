@@ -1,10 +1,44 @@
 # PDFScoreBar ユーザーガイド
 
-<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"b6f8cea87e80c04983ccbcf421223de532df20b9419336c16efd6d8cd5061dec"},"state":"reviewed"} -->
+<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"fe88f3c4c12e88160873dd0a79166682dc906d9b39b6a9e3fc0ecb8d86ed473e"},"state":"reviewed"} -->
 
 [English / 原文](USER_GUIDE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `b6f8cea87e80c04983ccbcf421223de532df20b9419336c16efd6d8cd5061dec`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `fe88f3c4c12e88160873dd0a79166682dc906d9b39b6a9e3fc0ecb8d86ed473e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+
+## 配布物を入手する
+
+`main` は安定版の最小配布ブランチ、`develop` は開発統合ブランチです。`develop` にマージされた変更は、別途リリース昇格されるまで `main` に現れません。このガイドの更新も昇格後に `main` に反映されます。検証済みの展開済み配布物が手元にある場合は、clone の代わりにそのルートディレクトリを使用してください。
+
+Linux ホストで、ディストリビューションのパッケージマネージャーか [Git のインストール手順](https://git-scm.com/install/linux)を使って Git を導入します。次に端末を開いて実行します。
+
+```bash
+git clone --branch main --single-branch https://github.com/M763468/PDFScoreBar.git
+cd PDFScoreBar
+```
+
+以降のコマンドはすべてホスト上のこの配布ルートで実行します。Git checkout は Git で確認できます。一方、展開済み配布物には来歴メタデータが含まれます。現在の `develop` の文書を使う場合は意図的に開発 checkout を使用してください。これは安定版配布物ではありません。
+
+## ホストを準備する
+
+NVIDIA GPU と互換性のある NVIDIA ドライバーを備えた Linux を使用します。[NVIDIA のドライバー導入手順](https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/choose-an-installation-method.html)とディストリビューションの案内に従ってドライバーを導入してください。[Linux 用 Docker Engine](https://docs.docker.com/engine/install/) を導入してデーモンを起動し、[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) を Docker 用に導入・設定します。Linux ディストリビューションと権限に合った手順に従ってください。これらのリンクは、すべての OS や GPU の組み合わせが PDFScoreBar でサポートされることを意味しません。
+
+ホストの Python 3.12 以降をディストリビューションのパッケージまたは [Python のダウンロード](https://www.python.org/downloads/)から導入します。`python3` が古いバージョンを指す場合は、以下のすべてのコマンドで 3.12 以降の実行ファイルを代わりに使用してください。
+
+ホストと Docker へのアクセスを確認します。最後のコマンドは必要に応じてテスト用イメージをダウンロードします。
+
+```bash
+python3 --version
+nvidia-smi
+docker info
+docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
+```
+
+最後のコマンドは NVIDIA の[サンプルワークロード](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/sample-workload.html)に従っています。ホストの `nvidia-smi` が失敗する場合は、まずドライバーと GPU を確認します。ホストでは動作してコンテナーでは失敗する場合は、toolkit の導入、Docker ランタイム設定、デーモンの再起動を確認します。`docker info` が接続できない場合は、デーモンを起動するか、[Docker の Linux インストール後の手順](https://docs.docker.com/engine/install/linux-postinstall/)でソケットの権限を確認します。`docker` グループへの所属は root 相当の権限を与えるため、選択の意味を理解したうえで有効にしてください。
+
+ランチャーは現在のユーザーとして Docker を呼び出します。コンテナーが書き込むファイルの所有者はコンテナーユーザー（多くの場合 root）になることがあるため、出力先のファイルシステムに空き容量があり、結果を読み取り・保持できることを確認してください。所有権については、無関係なファイルを再帰的に変更せず管理者に相談してください。
+
+これらの確認はホストとコンテナーのアクセスを確認するものであり、PDFScoreBar との互換性を保証しません。ビルドにはネットワーク接続と、イメージレイヤーおよびモデルを保存する十分なディスク容量が必要です。処理にもレンダリング済みページと保持する成果物のための空き容量が必要です。最低 VRAM 容量は規定していません。
 
 ## 要件とインストール
 
@@ -16,16 +50,16 @@
 python3 docker/distribution.py build
 ```
 
-別のイメージを選択するには、コマンドの前に `--image YOUR_TAG` を指定します。ランチャーは本番アセットラベル、不変のイメージ ID、ランタイム互換性フィンガープリントを確認します。ビルドに成功すると、ソースコミットとフィンガープリントのラベルがイメージに保持されます。
+別のイメージを選択するには、コマンドの前に `--image YOUR_TAG` を指定します。ランチャーは本番アセットラベル、不変のイメージ ID、ランタイム互換性フィンガープリントを確認します。ビルドに成功すると、ソースコミットとフィンガープリントのラベルがイメージに保持されます。イメージはビルドされたランタイムのひな形であり、各コマンドで作成される一時コンテナーとは異なります。既定のイメージタグは `pdfscore_pipeline_gpu` です。別のタグを選ぶ場合は、各 `build`、`preflight`、`run`、`review` サブコマンドの前に同じ `--image YOUR_TAG` を指定します。
 
-OMR-DLN は運用者が用意するモデルです。`models/omr_dln/manifest.json` に記載された公式モデルフォルダーから、選択済みの `YOLOv8m_Measures.pt` を取得してください。一度インポートします。
+OMR-DLN は運用者が用意するモデルで、配布物には含まれず自動ダウンロードもされません。`models/omr_dln/manifest.json` に記載された[公式モデルフォルダー](https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing)を開き、`YOLOv8m_Measures.pt` を手動でダウンロードしてください。選択されたバージョンは `phase1-validated-v1`、manifest の SHA-256 は `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212` です。上流リポジトリは自動再配布を明示的に許可するライセンスを公開していません。フォルダーにアクセスできない場合は上流の提供者にアクセスを確認し、未検証の重みを代用しないでください。以下のパスをダウンロードしたファイルの絶対パスに置き換え、一度インポートします。
 
 ```bash
 python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /absolute/path/YOLOv8m_Measures.pt
 python3 docker/distribution.py preflight
 ```
 
-インポート時にはホストのモデルキャッシュに配置する前に manifest の SHA-256 を検証します。preflight は CUDA、ONNX CUDA プロバイダー、必須モデル、固定された HOMR ランタイムの来歴を確認します。外部の重みはランタイムに読み取り専用でマウントされます。キャッシュを共有するにはホストで `PDFSCOREBAR_MODEL_CACHE` を設定します。モデルのバイト列を変更する場合は新しい manifest／バージョンが必要です。
+インポート時にはホストのモデルキャッシュに配置する前に manifest の SHA-256 を検証します。preflight は CUDA、ONNX CUDA プロバイダー、必須モデル、固定された HOMR ランタイムの来歴を確認します。外部の重みはランタイムに読み取り専用でマウントされます。キャッシュを共有するにはホストで `PDFSCOREBAR_MODEL_CACHE` を設定します。既定のキャッシュルートは `~/.cache/pdfscorebar/models` です。`XDG_CACHE_HOME` が設定されている場合は `$XDG_CACHE_HOME/pdfscorebar/models` が使われ、`PDFSCOREBAR_MODEL_CACHE` を設定した場合はそちらが優先されます。同じファイル名でもバイト列が異なればハッシュ検証は失敗します。検証を回避せず、上流から選択されたバイト列を入手して再試行してください。モデルのバイト列を変更する場合は新しい manifest／バージョンが必要です。ビルドの成功だけでは外部モデルや GPU は確認されません。preflight はそれらを確認しますが、楽譜の正確性は保証しません。
 
 ## PDF を処理する
 
@@ -33,7 +67,7 @@ python3 docker/distribution.py preflight
 python3 docker/distribution.py run /absolute/path/score.pdf --output /absolute/path/results
 ```
 
-必要に応じて `--pages 1 2` を追加すると、1 から数える PDF ページを指定して処理できます。各ジョブには出力ルートの下に新しいディレクトリが作られます。その `final/` ディレクトリに番号付き PDF があり、`review/manual_correction_input.json` から補正アプリケーションを開きます。`result.json` にはステータス、警告、成果物のハッシュ、ソースの来歴が記録されます。レビューが必要なステータスは、生成結果に利用者の確認が必要であることを意味します。
+PDF と出力先の例をホスト上の絶対パスに置き換えてください。出力ディレクトリは書き込み可能で、配布ルートの外側にある必要があります。必要に応じて `--pages 1 2` を追加すると、1 から数える PDF ページを指定して処理できます。各ジョブには出力ルートの下に新しいディレクトリが作られます。その `final/` ディレクトリに番号付き PDF があり、`review/manual_correction_input.json` から補正アプリケーションを開きます。`result.json` にはステータス、警告、成果物のハッシュ、ソースの来歴が記録されます。レビューが必要なステータスは、生成結果に利用者の確認が必要であることを意味します。コマンドは `job_id` を含む JSON を表示します。以下の `JOB_ID` にはその値を使用してください。必要なら `ls -lt /absolute/path/results` で出力ルートを一覧表示し、`cat /absolute/path/results/JOB_ID/result.json` でジョブを確認できます。ジョブ作成前の失敗では `result.json` がない場合があります。端末のエラーを確認してください。結果を確認せずに最新ディレクトリが目的のジョブだと決めつけないでください。
 
 出力ディレクトリには `/absolute/path/results` のように、配布物の checkout または展開先の外側を選んでください。ランチャーは、配布物のインベントリを後のレビューでも検証できるよう、配布物内の出力先をファイル作成や Docker 起動の前に拒否します。ページを選択したレビューでは元の PDF ページ番号が表示されます。PDF 入力チェックに失敗した場合も、そのジョブの `result.json` にエラーの詳細が保存されます。
 
@@ -52,7 +86,7 @@ python3 docker/distribution.py review --output /absolute/path/results \
   --handoff /absolute/path/results/JOB_ID/review/manual_correction_input.json
 ```
 
-同じ Linux ホストのブラウザーで `http://127.0.0.1:8010` を開きます。そのポートが使用中なら `--port 8011` を追加します。アプリケーションは localhost のみにバインドし、Linux Docker のホストネットワークを使用します。ローカル利用を想定しています。言語切り替えで英語または日本語を選択できます。
+`JOB_ID` を表示された ID に置き換え、`run` と同じ出力ルートを使用します。同じ Linux ホストのブラウザーで `http://127.0.0.1:8010` を開きます。そのポートが使用中なら `--port 8011` を追加し、`http://127.0.0.1:8011` を開きます。アプリケーションは localhost のみにバインドし、Linux Docker のホストネットワークを使用します。ローカル利用を想定しています。言語切り替えで英語または日本語を選択できます。
 
 ページ画像と番号を確認します。小節線、小節、MMR の変更を保存で記録し、提示された楽章境界の根拠を確認してから適用前に確定します。アプリケーションは記録済みの編集と未保存の編集を別々に表示します。アプリケーションから修正済み PDF を生成し、完了を待って結果のリンクから開くかダウンロードします。適用前に未保存の編集とエラーを解消する必要があります。
 
@@ -84,7 +118,11 @@ python3 docker/distribution.py review --output /absolute/path/results \
 
 ## トラブルシューティングと来歴
 
+- Git の失敗: Git の導入、リポジトリ URL、ネットワーク、アクセス権を確認して clone を再試行します。
 - ビルド失敗: ビルド出力を保持し、ネットワーク接続とディスク空き容量を確認します。
+- Docker の権限エラー: デーモン／ソケットへのアクセスと出力ファイルの所有権を確認します。
+- 出力先が拒否された: 配布ルートの外にある絶対パスを選びます。
+- ポートが使用中: 空いている `--port` を選び、localhost のそのポートを開きます。
 - GPU／プロバイダーが見つからない: Docker から GPU にアクセスできることを確認し、preflight を再実行します。ホストで GPU が検出されただけではコンテナー内の CUDA を利用できるとは限りません。
 - モデルの欠落または破損: 選択された manifest を使って検証付きインポートをやり直します。ハッシュが一致しない場合は別のモデルを選択せず失敗します。
 - ランタイムの不一致: この配布物を別のイメージタグでビルドし、そのタグを使用します。

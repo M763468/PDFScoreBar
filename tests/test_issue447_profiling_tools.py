@@ -202,3 +202,28 @@ def test_host_timeline_assigns_same_source_intervals_for_both_entrypoints(tmp_pa
         "other": {"sampled_seconds": 1.0, "cgroup_cpu_seconds": 1.0},
         "SR": {"sampled_seconds": 1.0, "cgroup_cpu_seconds": 1.0},
     }
+
+
+def test_source_checks_accepts_alternate_score_folder(tmp_path, monkeypatch):
+    import json
+
+    from tools.issue447 import deepening_analyze as analyzer
+
+    for label in ("baseline", "candidate"):
+        root = tmp_path / label
+        original = root / "baseline/batch/page_001/worker_result.json"
+        original.parent.mkdir(parents=True)
+        original.write_text(json.dumps({"artifacts": {}}))
+        current = root / "current_support/alternate-score/page_001/artifacts"
+        (current / "omr_sr/page_001").mkdir(parents=True)
+        (current / "current_homr_result.json").write_text("{}")
+        (current / "omr_sr/page_001/predictions.json").write_text("{}")
+    monkeypatch.setattr(analyzer, "compare_bundle", lambda *a, **kw: {"equal": True})
+    checks = analyzer.source_checks(
+        tmp_path,
+        tmp_path / "baseline",
+        tmp_path / "candidate",
+        ["page_001"],
+        score_name="alternate-score",
+    )
+    assert analyzer.all_equal(checks)

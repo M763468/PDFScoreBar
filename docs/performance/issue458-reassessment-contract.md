@@ -93,3 +93,25 @@ GPU-enabled4GiB container: request16GiB on the8GiB device inside disposable
 source children. Require the real CUDA out-of-memory diagnostic, child cleanup,
 no final publication and retained original cause. Host OOM remains a separate
 2GiB CPU-only test. These are fault injections, not performance observations.
+
+## Fault harness addendum before the capped-allocator trial
+
+The initial16GiB torch.empty request returned successfully on this runtime,
+so the intended physical CUDA OOM was NOT injected. The worker then omitted its
+result and the pipeline correctly aborted for missing output. Preserve this
+Failed injection at cuda-oom/; do not call it a Passed CUDA OOM test.
+
+A separately defined cuda-allocator-oom scenario sets only the disposable fault
+child's PYTORCH_ALLOC_CONF to backend:native,per_process_memory_fraction:0.05,
+throw_on_cudamalloc_oom:True before importing torch2.14.0. It requests1GiB, above
+the approximately0.4GiB allocator cap on this8GiB device. Require the actual
+PyTorch CUDA allocator OutOfMemoryError diagnostic, cleanup, no publication and
+retained root cause. This is allocator-budget OOM, not physical VRAM exhaustion.
+No production worker, model, threshold or performance-run allocator is retuned.
+Official source: https://github.com/pytorch/pytorch/blob/v2.14.0/docs/source/notes/cuda.md
+The docs lookup is retained under validation/allocator-api-docs.log.
+
+The semantic helper's initial hardcoded Shostakovich lookup blocked larger-score
+comparison. Infer the score folder from the reference input; retain the failed
+analysis log and rescore the same valid inference outputs with identical gates.
+No E2E or model inference is repeated for this path correction.

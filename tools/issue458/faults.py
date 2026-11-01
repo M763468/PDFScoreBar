@@ -39,6 +39,13 @@ r=json.loads(Path(a.request).read_text())
 with open(os.environ['FAULT_PIDS'],'a') as f:f.write(str(os.getpid())+'\\n')
 case=os.environ['FAULT_CASE']
 if case=='timeout':time.sleep(60)
+if case=='cuda-allocator-oom':
+    os.environ.pop('PYTORCH_CUDA_ALLOC_CONF',None)
+    os.environ['PYTORCH_ALLOC_CONF']='backend:native,per_process_memory_fraction:0.05,throw_on_cudamalloc_oom:True'
+    import torch
+    total=torch.cuda.get_device_properties(0).total_memory
+    print(json.dumps({'cuda_available':torch.cuda.is_available(),'vram_total':total,'allocator_fraction':0.05,'allowed_bytes':int(total*0.05),'requested_bytes':2**30}),flush=True)
+    data=torch.empty(2**30,dtype=torch.uint8,device='cuda')
 if case=='cuda-oom':
     import torch
     print(json.dumps({'cuda_available':torch.cuda.is_available(),'vram_total':torch.cuda.get_device_properties(0).total_memory,'requested_bytes':16*2**30}),flush=True)
@@ -58,7 +65,7 @@ if case=='wrong-image':Path(a.result).write_text(json.dumps({'status':'completed
     config["run"] = {"run_id": "pipeline", "output_root": str(out)}
     config["detection"]["hybrid_output_root"] = str(out / "hybrid_output")
     config["detection"]["source_concurrency"].update(
-        workers=2, timeout_sec=30 if case in ("oom", "cuda-oom") else 1
+        workers=2, timeout_sec=30 if case in ("oom", "cuda-oom", "cuda-allocator-oom") else 1
     )
     path = out / "config.yaml"
     path.write_text(yaml.safe_dump(config))
@@ -73,7 +80,16 @@ def main():
     parser.add_argument(
         "--cases",
         nargs="+",
-        choices=["nonzero", "missing", "wrong-image", "kill", "timeout", "oom", "cuda-oom"],
+        choices=[
+            "nonzero",
+            "missing",
+            "wrong-image",
+            "kill",
+            "timeout",
+            "oom",
+            "cuda-oom",
+            "cuda-allocator-oom",
+        ],
         default=["nonzero", "missing", "wrong-image", "kill", "timeout", "oom"],
     )
     args = parser.parse_args()
@@ -113,6 +129,7 @@ def main():
             "timeout": "TimeoutError",
             "oom": "worker failed (-9)",
             "cuda-oom": "CUDA out of memory",
+            "cuda-allocator-oom": "CUDA out of memory",
         }[case]
         checks = {
             "expected_fault": expected in text,

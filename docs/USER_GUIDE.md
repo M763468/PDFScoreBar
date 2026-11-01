@@ -63,7 +63,8 @@ also needs space for rendered pages and retained artifacts. No minimum VRAM is c
 The primary installation route is Docker on Linux with an NVIDIA GPU, a working NVIDIA
 Container Toolkit, host Python 3.12 or later, and sufficient disk space for CUDA/model
 images and rendered PDF pages. Build needs network access; normal runs are offline.
-The runtime image owns Python dependencies, maintained HOMR models, Real-ESRGAN models,
+The runtime image owns Python dependencies, maintained [HOMR](https://github.com/liebharc/homr)
+models, [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) models,
 and the hash-verified barline CNN. The distribution contains the MMR checkpoint.
 
 From the distribution root:
@@ -79,7 +80,8 @@ is the built runtime template, not the temporary container created for a command
 default image tag is `pdfscore_pipeline_gpu`; when choosing another tag, pass the same
 `--image YOUR_TAG` before each `build`, `preflight`, `run` and `review` subcommand.
 
-OMR-DLN is an operator-supplied model, not included or automatically downloaded. Open
+[OMR-DLN](https://github.com/dmgonzalez8/OMR) is an operator-supplied model, not
+included or automatically downloaded. Open
 the [official model folder](https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing)
 listed in `models/omr_dln/manifest.json` and manually download `YOLOv8m_Measures.pt`.
 The selected version is `phase1-validated-v1`; its manifest SHA-256 is

@@ -1,10 +1,10 @@
 # PDFScoreBar ユーザーガイド
 
-<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"fe88f3c4c12e88160873dd0a79166682dc906d9b39b6a9e3fc0ecb8d86ed473e"},"state":"reviewed"} -->
+<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"87cb42a7d49b13d9583ba8c68271a6d7a4acba02ce5225b1480309c3581498f1"},"state":"reviewed"} -->
 
 [English / 原文](USER_GUIDE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `fe88f3c4c12e88160873dd0a79166682dc906d9b39b6a9e3fc0ecb8d86ed473e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `87cb42a7d49b13d9583ba8c68271a6d7a4acba02ce5225b1480309c3581498f1`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 ## 配布物を入手する
 
@@ -42,7 +42,7 @@ docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
 
 ## 要件とインストール
 
-主なインストール方法は、NVIDIA GPU、動作する NVIDIA Container Toolkit、ホストの Python 3.12 以降、および CUDA／モデルイメージとレンダリングされた PDF ページに十分なディスク容量を備えた Linux 上で Docker を使用する方法です。ビルドにはネットワーク接続が必要ですが、通常の実行はオフラインです。ランタイムイメージには Python 依存関係、保守対象の HOMR モデル、Real-ESRGAN モデル、ハッシュ検証済みの小節線 CNN が含まれます。配布物には MMR チェックポイントが含まれます。
+主なインストール方法は、NVIDIA GPU、動作する NVIDIA Container Toolkit、ホストの Python 3.12 以降、および CUDA／モデルイメージとレンダリングされた PDF ページに十分なディスク容量を備えた Linux 上で Docker を使用する方法です。ビルドにはネットワーク接続が必要ですが、通常の実行はオフラインです。ランタイムイメージには Python 依存関係、保守対象の [HOMR](https://github.com/liebharc/homr) モデル、[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) モデル、ハッシュ検証済みの小節線 CNN が含まれます。配布物には MMR チェックポイントが含まれます。
 
 配布物のルートで実行します。
 
@@ -52,7 +52,7 @@ python3 docker/distribution.py build
 
 別のイメージを選択するには、コマンドの前に `--image YOUR_TAG` を指定します。ランチャーは本番アセットラベル、不変のイメージ ID、ランタイム互換性フィンガープリントを確認します。ビルドに成功すると、ソースコミットとフィンガープリントのラベルがイメージに保持されます。イメージはビルドされたランタイムのひな形であり、各コマンドで作成される一時コンテナーとは異なります。既定のイメージタグは `pdfscore_pipeline_gpu` です。別のタグを選ぶ場合は、各 `build`、`preflight`、`run`、`review` サブコマンドの前に同じ `--image YOUR_TAG` を指定します。
 
-OMR-DLN は運用者が用意するモデルで、配布物には含まれず自動ダウンロードもされません。`models/omr_dln/manifest.json` に記載された[公式モデルフォルダー](https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing)を開き、`YOLOv8m_Measures.pt` を手動でダウンロードしてください。選択されたバージョンは `phase1-validated-v1`、manifest の SHA-256 は `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212` です。上流リポジトリは自動再配布を明示的に許可するライセンスを公開していません。フォルダーにアクセスできない場合は上流の提供者にアクセスを確認し、未検証の重みを代用しないでください。以下のパスをダウンロードしたファイルの絶対パスに置き換え、一度インポートします。
+[OMR-DLN](https://github.com/dmgonzalez8/OMR) は運用者が用意するモデルで、配布物には含まれず自動ダウンロードもされません。`models/omr_dln/manifest.json` に記載された[公式モデルフォルダー](https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing)を開き、`YOLOv8m_Measures.pt` を手動でダウンロードしてください。選択されたバージョンは `phase1-validated-v1`、manifest の SHA-256 は `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212` です。上流リポジトリは自動再配布を明示的に許可するライセンスを公開していません。フォルダーにアクセスできない場合は上流の提供者にアクセスを確認し、未検証の重みを代用しないでください。以下のパスをダウンロードしたファイルの絶対パスに置き換え、一度インポートします。
 
 ```bash
 python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /absolute/path/YOLOv8m_Measures.pt

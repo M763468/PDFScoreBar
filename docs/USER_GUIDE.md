@@ -1,5 +1,7 @@
 # PDFScoreBar user guide
 
+[日本語](USER_GUIDE.ja.md)
+
 ## Requirements and installation
 
 The primary installation route is Docker on Linux with an NVIDIA GPU, a working NVIDIA
@@ -103,8 +105,8 @@ rest can also be mistaken for its count.
    the selection shows the page, system, measure and original/current counts.
    Visible system/measure indices start at 1 and are locations, not musical numbers.
 3. Choose **Set rest measure count** (**複数小節休符の小節数を設定**), enter the
-   printed count, choose **Add change** (**修正を追加**), then **Save changes**
-   (**変更を保存**). Use the same operation for a missed rest shown as 1 and a
+   printed count, choose **Add change** (**修正を追加**), then **Save this page**
+   (**このページを保存**). Use the same operation for a missed rest shown as 1 and a
    misread rest. If a normal measure was falsely treated as a multi-measure rest,
    choose **Do not treat as multi-measure rest** instead. Do not reset a movement
    or insert barlines merely to compensate for a rest-count error.

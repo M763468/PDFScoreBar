@@ -1,5 +1,7 @@
 # PDFScoreBar
 
+[日本語](README.ja.md)
+
 PDFScoreBar adds measure numbers to PDF scores and provides a browser application to
 review detections, record corrections, and generate a corrected final PDF.
 

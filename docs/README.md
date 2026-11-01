@@ -1,8 +1,9 @@
 # Documentation guide
 
+[日本語](README.ja.md)
+
 Start with the document that answers your question. The development repository retains
-historical evidence and validation guidance; those documents are not part of the proposed
-executable package.
+historical evidence and validation guidance; most of those documents are not part of the minimal distribution. The [user guide](USER_GUIDE.md) is the supported installation and operation entry.
 
 | Question | Read first |
 | --- | --- |
@@ -17,8 +18,7 @@ executable package.
 
 The minimum selection has one prose explanation and one machine-readable list. The repository
 and documentation inventories are broader historical audits. They must not be used as a second
-runtime file list. `docs/**` and `tests/**` remain available to developers but are absent from
-the current proposed executable subset.
+runtime file list. Most `docs/**` and all `tests/**` remain develop-only; the manifest explicitly selects the user guide and distribution metadata.
 
 ## Documentation languages
 
@@ -26,7 +26,7 @@ The [coverage inventory](DOCUMENTATION_INVENTORY.md#bilingual-coverage-and-trans
 records original languages, missing counterparts and translation priorities. Follow the
 [language and maintenance policy](DOCUMENTATION_LANGUAGE_POLICY.md)
 ([日本語](DOCUMENTATION_LANGUAGE_POLICY.ja.md)) when adding or updating a translation.
-Most existing guides currently have no complete Japanese counterpart; Japanese UI examples
+The inventory identifies guides without complete Japanese counterparts; Japanese UI examples
 do not indicate full translation.
 
 ## More specific contracts

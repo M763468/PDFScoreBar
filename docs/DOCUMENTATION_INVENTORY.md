@@ -84,9 +84,9 @@ when translating. Historical and scoped records follow the exclusions below.
 
 | Document | Intended role / authority | Language | Counterpart action | Priority |
 | --- | --- | --- | --- | --- |
-| [../README.md](../README.md) | canonical/current | EN | JA needed | P1 |
+| [../README.md](../README.md) | canonical/current | EN | [JA reviewed](../README.ja.md) | P1 |
 | [../AGENTS.md](../AGENTS.md) | canonical/current; agent instructions | EN | not required (agent-only) | N/A |
-| [README.md](README.md) | canonical/current | EN | JA needed | P1 |
+| [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | JA needed | P1 |
 | [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
 | [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
@@ -98,7 +98,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [MODEL_ARTIFACT_CONTRACT.md](MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
 | [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
 | [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN / [JA](ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
-| [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | JA needed | P1 |
+| [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | [JA reviewed](USER_GUIDE.ja.md) | P1 |
 | [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | JA needed | P1 |
 | [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN / [JA](BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN / [JA](dev/VALIDATION_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |

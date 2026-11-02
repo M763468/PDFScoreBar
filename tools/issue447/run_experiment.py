@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -16,6 +17,9 @@ import yaml
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--issue-id", type=int, default=447)
+    parser.add_argument("--uid", type=int, default=os.getuid())
+    parser.add_argument("--gid", type=int, default=os.getgid())
     parser.add_argument("--label", required=True)
     parser.add_argument("--image", required=True, help="Verified immutable sha256 image ID")
     parser.add_argument("--scope", choices=("single", "multi"), default="single")
@@ -59,6 +63,8 @@ def main() -> int:
     )
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
+    if args.issue_id <= 0 or args.uid < 0 or args.gid < 0:
+        parser.error("issue-id must be positive; uid/gid must be nonnegative")
     if args.omr_reuse and (args.source_workers is None or args.component):
         parser.error("OMR reuse requires E2E with explicit source-workers")
     if args.component == "source-paired" and args.source_workers is None:
@@ -75,6 +81,12 @@ def main() -> int:
             ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=root, text=True
         ).strip()
     ).parent
+    # Resolve explicitly: never silently substitute a different benchmark runtime.
+    subprocess.run(
+        [sys.executable, str(root / "scripts/docker_image_resolver.py"), "resolve",
+         "--repo-root", str(root), "--image-ref", args.image, "--explicit"],
+        cwd=root, check=True,
+    )
     cache = Path(
         os.environ.get(
             "PDFSCOREBAR_MODEL_CACHE",
@@ -84,7 +96,7 @@ def main() -> int:
             ),
         )
     )
-    issue = root / "logs/issue447"
+    issue = root / f"logs/issue{args.issue_id}"
     dest = issue / "runs" / args.label
     dest.mkdir(parents=True, exist_ok=False)
     rel = dest.relative_to(root)
@@ -104,7 +116,7 @@ def main() -> int:
     config_path.write_text(yaml.safe_dump(config, sort_keys=False))
     omr_manifest = json.loads((root / "models/omr_dln/manifest.json").read_text())
     omr = omr_manifest["runtime_path"]
-    name = "pdfscore-issue447-" + args.label
+    name = f"pdfscore-issue{args.issue_id}-" + args.label
     command = [
         "docker",
         "run",
@@ -114,7 +126,7 @@ def main() -> int:
         "--gpus",
         "all",
         "--user",
-        f"{os.getuid()}:{os.getgid()}",
+        f"{args.uid}:{args.gid}",
         "-v",
         f"{root}:/workspace",
         "-w",
@@ -231,6 +243,8 @@ def main() -> int:
     (dest / "containers-before.json").write_text(
         subprocess.check_output(["docker", "ps", "--format", "{{json .}}"], text=True)
     )
+    scripts = sorted((root / "tools/issue447").glob("*.py"))
+    scripts += sorted((root / "tools/issue459").glob("*.py"))
     provenance = {
         "command": command,
         "cwd": str(root),
@@ -243,14 +257,14 @@ def main() -> int:
         "compile_cache_empty_at_start": compile_cache_empty,
         "script_sha256": {
             str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted((root / "tools/issue447").glob("*.py"))
+            for p in scripts
         },
         "cache_state": "fresh container/process; persistent Issue-local compile cache; OS cache not flushed",
     }
     (dest / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     snapshots = dest / "script-snapshots"
     snapshots.mkdir()
-    for script in sorted((root / "tools/issue447").glob("*.py")):
+    for script in scripts:
         (snapshots / script.name).write_bytes(script.read_bytes())
     streams = []
     monitors = []
@@ -295,7 +309,7 @@ def main() -> int:
                         "docker",
                         "exec",
                         "--user",
-                        f"{os.getuid()}:{os.getgid()}",
+                        f"{args.uid}:{args.gid}",
                         "-w",
                         "/workspace",
                         name,

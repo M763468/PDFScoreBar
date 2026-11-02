@@ -1,12 +1,11 @@
 # Corrected Final Output Helper
 
-This document describes the helper-level corrected final output connection added for
-Issue #236.
+[日本語](corrected_final_output.ja.md)
 
-This is not the full #226/#227 public `pdfscorebar run INPUT.pdf --output-dir
-OUTPUT_DIR` output profile materializer. It is a narrow connection from the
-manual-correction `apply_corrections` rerun path to a clean final PDF artifact
-for the corrected run.
+This internal helper reference is for developers and maintainers. It describes the narrow
+connection from the manual-correction `apply_corrections` rerun path to a clean final PDF
+artifact for the corrected run. For the supported user-facing distribution workflow, see the
+[User Guide](USER_GUIDE.md).
 
 ## Entry point
 
@@ -27,8 +26,7 @@ python -m src.pipeline.review.apply_corrections \
   --output-name optional-name
 ```
 
-The flag is opt-in so the PR #240 rerun behavior remains backward-compatible by
-default.
+The flag is opt-in; by default the rerun does not generate a final PDF.
 
 ## Output
 
@@ -64,8 +62,8 @@ final PDF.
 This helper does not implement:
 
 - the full `OUTPUT_DIR/{final,review,debug}` public output materializer;
-- public CLI polish around `pdfscorebar run` / `pdfscorebar apply-corrections`;
+- a public `pdfscorebar run` / `pdfscorebar apply-corrections` CLI;
 - GUI launch workflow;
-- #215 real-artifact GUI retry;
+- a real-artifact GUI retry workflow;
 - detector / OCR / MMR accuracy changes;
 - barline or measure override algorithm changes.

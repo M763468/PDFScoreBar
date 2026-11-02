@@ -1,4 +1,9 @@
-# User correction and GT tooling boundary (Issue #393)
+# User correction and GT tooling boundary
+
+[日本語](USER_CORRECTION_BOUNDARY.ja.md)
+
+This developer reference describes the responsibilities and persistence boundaries of the user
+correction and GT tools. For normal user operation, see the [User Guide](USER_GUIDE.md).
 
 The supported user correction application is `tools/review_correction/server.py`. It opens one
 validated `review/manual_correction_input.json` package. The handoff selects the pages, readable
@@ -54,5 +59,5 @@ not change GT/developer handlers or correction payloads.
 
 The authoritative apply engine records the exact finalized reviewed movement payload in
 `corrected_pipeline_config.json`, including an explicitly empty boundary set. This consumed-input
-provenance belongs to the apply integration (#395); the acceptance gate (#397) verifies it on real
-artifacts without owning a second movement-input interpretation.
+provenance is owned by the apply integration. Real-artifact acceptance verifies that consumed
+input without introducing a second movement-input interpretation.

@@ -1,12 +1,15 @@
 # Manual Correction Review Workflow
 
-This document describes the current config-first manual-correction workflow. It connects one
+[日本語](manual_correction_review_package.ja.md)
+
+This developer and operator reference describes the current config-first manual-correction workflow. It connects one
 pipeline run to the existing manual GUI, saves package-local corrections, reruns the pipeline with
 those corrections, and can materialize the corrected final score-numbered PDF.
 
-This is still not a new public `pdfscorebar` console surface. Normal pipeline execution remains
-config-first through `make run-pipeline` / `src.pipeline.main`, and the correction workflow reuses
-the existing review helpers and GUI.
+This is a config-first development and operations reference, not a new public `pdfscorebar`
+console surface. For the supported user distribution workflow, see the [User Guide](USER_GUIDE.md).
+The workflow here uses `make run-pipeline` / `src.pipeline.main` and the existing review helpers
+and GUI.
 
 ## 1. Emit the review package
 
@@ -124,8 +127,8 @@ The user correction entry:
   `review/corrections/`, checking resolved paths again for each request;
 - keeps the current page-local `manual_outputs` routing.
 
-Issue #383 retired the legacy arbitrary-path `manual_config_builder.py`. The maintained manual
-workflow starts from the package-local `review/manual_correction_input.json` handoff described above.
+The legacy arbitrary-path `manual_config_builder.py` is unsupported. Start the maintained manual
+workflow from the validated package-local `review/manual_correction_input.json` handoff described above.
 
 ### Optional movement-boundary evidence
 
@@ -144,7 +147,7 @@ validation rejects differing paths before any correction is saved or applied, so
 one page cannot replace another page's movement decisions in the shared resolved input.
 
 To review detector suggestions, keep the same review package and attach the review-only
-Issue #333 evidence artifact:
+movement-boundary evidence artifact:
 
 ```bash
 python -m tools.movement_boundary_review attach \
@@ -422,21 +425,19 @@ movement inputs retain their existing meaning; unresolved candidates do not beco
 
 The dedicated user UI is `tools/review_correction/index.html` and `app.js`. Primary action,
 validation, and result messages are collected in `tools/review_correction/strings.js`; state labels
-come from `tools/review_correction/state.py::LABELS`. These are the controlled English inputs for
-#361. GT/developer presentation remains in `tools/gt_relabel_gui/` and is not a localization target.
+come from `tools/review_correction/state.py::LABELS`. The user application supports English and Japanese through its language selector.
+GT/developer presentation remains in `tools/gt_relabel_gui/` and is outside that localization scope.
 The browser displays only current-page detail alongside package-wide pending/recorded/error counts.
 
 
-## Acceptance and localization handoff
+## Localization
+
+The user application supports English and Japanese. Its language selector stores the choice locally
+in the browser. GT/developer files remain outside that localization scope.
+
+## Historical acceptance evidence
 
 The real-artifact acceptance procedure and fixed observable result gates are documented in
-[REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md). Evidence is retained under
-`logs/issue397/acceptance/`, separately from each clean corrected `final/` directory.
-
-For #361, the stable user surface consists of `tools/review_correction/index.html`, `strings.js`,
-`app.js`, `correction_state.js`, and the state labels in `state.py::LABELS`.
-Primary copy is catalogued; some detail/status messages remain literal English in `app.js`
-(for example measure/system summaries, removal feedback and artifact-load errors). Localization
-should extract these within the user application and translate validation feedback displayed by
-this application. GT/developer files are not part of that follow-up. The implementation surface is
-ready for #361; integration into `develop` awaits review of the dependency PRs.
+[REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md). Historical evidence is retained under
+`logs/issue397/acceptance/`, separately from each clean corrected `final/` directory. It does not
+claim that the current revision has been revalidated on real artifacts.

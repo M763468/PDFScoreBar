@@ -1,23 +1,23 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"c5211c643f6cf4715fe31663dae863fc7bf2b3ed998bc17f0868a23f1d1ce6e9"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"68a83e53f27fcec18bf4628e5cd386a9bdacfb05c0433f5b77684716f678bf6e"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `c5211c643f6cf4715fe31663dae863fc7bf2b3ed998bc17f0868a23f1d1ce6e9`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `68a83e53f27fcec18bf4628e5cd386a9bdacfb05c0433f5b77684716f678bf6e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 
 | 知りたいこと | 最初に読む文書 |
 | --- | --- |
-| 実行に必要な最小サブセットは何か、抽出できる状態か | [最小 mainline サーフェス（英語）](MINIMAL_MAINLINE_SURFACE.md)とその[正確なファイル一覧](MINIMAL_MAINLINE_SURFACE.json) |
+| 実行に必要な最小サブセットは何か、抽出できる状態か | [最小配布面](MINIMAL_MAINLINE_SURFACE.ja.md)とその[正確なファイル一覧](MINIMAL_MAINLINE_SURFACE.json) |
 | 現在のパイプラインはどのように動作するか | [パイプラインアーキテクチャ（英語）](PIPELINE_ARCHITECTURE.md) / [日本語（reviewed）](PIPELINE_ARCHITECTURE.ja.md) |
 | 検出／番号付けの厳密な実装契約はどこか | [実装リファレンス（英語）](PIPELINE_ARCHITECTURE_REFERENCE.md) / [日本語（reviewed）](PIPELINE_ARCHITECTURE_REFERENCE.ja.md) |
 | 現在のリポジトリを実行するには | [環境ガイド（日本語）](ENVIRONMENTS.ja.md)、必要に応じて[手動補正ワークフロー](manual_correction_review_package.ja.md) |
 | 利用者の補正と GT／開発者向けツールはどう分離されているか | [利用者補正の境界](USER_CORRECTION_BOUNDARY.ja.md) |
 | エンジンの呼び出し元は何を送受信するか | [エンジンジョブ契約（英語）](ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](ENGINE_JOB_CONTRACT.ja.md) |
 | このリポジトリを変更・検証するには | [ブランチ方針](BRANCH_POLICY.ja.md)、[検証方針](dev/VALIDATION_POLICY.ja.md)、[ローカル検証](dev/LOCAL_VALIDATION.ja.md) |
-| 古いコードや検証結果が保持されている理由は | [リポジトリサーフェス台帳（英語、未翻訳）](REPOSITORY_SURFACE_INVENTORY.md)、[ドキュメント台帳（英語、未翻訳）](DOCUMENTATION_INVENTORY.md)、[履歴索引（英語、未翻訳）](HISTORY_INDEX.md) |
+| 古いコードや検証結果が保持されている理由は | [リポジトリサーフェス台帳（英語、未翻訳）](REPOSITORY_SURFACE_INVENTORY.md)、[ドキュメント台帳（英語、未翻訳）](DOCUMENTATION_INVENTORY.md)、[履歴索引](HISTORY_INDEX.ja.md) |
 
 最小選択には説明文書と機械可読の一覧が一つずつあります。リポジトリとドキュメントの台帳は、より広範囲の過去の監査です。これらを実行時の第二のファイル一覧として使用してはいけません。`docs/**` の大半と `tests/**` の全体は develop 専用です。manifest はユーザーガイドと配布メタデータを明示的に選択しています。
 
@@ -33,4 +33,4 @@
 - [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)、[回帰ワークフロー](REGRESSION_TEST_WORKFLOW.ja.md)、[スクリプト管理](SCRIPT_MANAGEMENT.md)（日本語正本、[English](SCRIPT_MANAGEMENT.en.md)）はリポジトリ開発のガイドです。
 - [将来のサービスアーキテクチャ（英語、未翻訳）](FUTURE_SERVICE_ARCHITECTURE.md)はロードマップであり、現在のランタイムの振る舞いではありません。[Two-HOMR マイルストーン（英語、未翻訳）](TWO_HOMR_MILESTONE.md)は固定された比較であり、現在の本番設定ではありません。
 
-過去の調査には[履歴索引（英語、未翻訳）](HISTORY_INDEX.md)を使用し、該当する Issue または受け入れ済みの結果を探してください。現在の振る舞いはソース、テスト、使用中の設定、現在のアーキテクチャ文書で定義されます。振る舞いが変わった場合は該当する現在の契約を更新し、過去のメモを別の一般ガイドにコピーしないでください。
+過去の調査には[履歴索引](HISTORY_INDEX.ja.md)を使用し、該当する Issue または受け入れ済みの結果を探してください。現在の振る舞いはソース、テスト、使用中の設定、現在のアーキテクチャ文書で定義されます。振る舞いが変わった場合は該当する現在の契約を更新し、過去のメモを別の一般ガイドにコピーしないでください。

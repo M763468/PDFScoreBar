@@ -1,5 +1,7 @@
 # PDFScoreBar History Index
 
+[日本語](HISTORY_INDEX.ja.md)
+
 This document is a navigation layer, not a second source of truth.
 
 ## Purpose

@@ -2,7 +2,7 @@
 
 [日本語](manual_correction_review_package.ja.md)
 
-This document describes the current config-first manual-correction workflow. It connects one
+This developer and operator reference describes the current config-first manual-correction workflow. It connects one
 pipeline run to the existing manual GUI, saves package-local corrections, reruns the pipeline with
 those corrections, and can materialize the corrected final score-numbered PDF.
 
@@ -127,8 +127,8 @@ The user correction entry:
   `review/corrections/`, checking resolved paths again for each request;
 - keeps the current page-local `manual_outputs` routing.
 
-Issue #383 retired the legacy arbitrary-path `manual_config_builder.py`. The maintained manual
-workflow starts from the package-local `review/manual_correction_input.json` handoff described above.
+The legacy arbitrary-path `manual_config_builder.py` is unsupported. Start the maintained manual
+workflow from the validated package-local `review/manual_correction_input.json` handoff described above.
 
 ### Optional movement-boundary evidence
 
@@ -147,7 +147,7 @@ validation rejects differing paths before any correction is saved or applied, so
 one page cannot replace another page's movement decisions in the shared resolved input.
 
 To review detector suggestions, keep the same review package and attach the review-only
-Issue #333 evidence artifact:
+movement-boundary evidence artifact:
 
 ```bash
 python -m tools.movement_boundary_review attach \
@@ -430,14 +430,14 @@ GT/developer presentation remains in `tools/gt_relabel_gui/` and is outside that
 The browser displays only current-page detail alongside package-wide pending/recorded/error counts.
 
 
-## Acceptance and localization
+## Localization
+
+The user application supports English and Japanese. Its language selector stores the choice locally
+in the browser. GT/developer files remain outside that localization scope.
+
+## Historical acceptance evidence
 
 The real-artifact acceptance procedure and fixed observable result gates are documented in
-[REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md). Evidence is retained under
-`logs/issue397/acceptance/`, separately from each clean corrected `final/` directory.
-
-Issue #361 delivered localization for the user application. Its user-facing surface includes
-`tools/review_correction/index.html`, `strings.js`, `app.js`, `correction_state.js`, and state
-labels in `state.py::LABELS`. The language selector stores its choice locally in the browser.
-GT/developer files remain outside that scope. The retained #397 acceptance evidence is historical;
-it is not a claim that the current revision has been revalidated on real artifacts.
+[REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md). Historical evidence is retained under
+`logs/issue397/acceptance/`, separately from each clean corrected `final/` directory. It does not
+claim that the current revision has been revalidated on real artifacts.

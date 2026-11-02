@@ -43,7 +43,7 @@ do not indicate full translation.
   [production model artifacts](MODEL_ARTIFACTS.md) ([日本語](MODEL_ARTIFACTS.ja.md)) covers publication and cache workflows;
   [exploration and comparison model selection](dev/EXPERIMENT_MODEL_SELECTION.md) is the
   Japanese developer guide to explicit candidate paths, fixed comparisons, and production
-  validation (#448 / PR #451).
+  validation.
 - [Makefile surface](MAKEFILE_SURFACE.md) ([日本語](MAKEFILE_SURFACE.ja.md)), [regression workflow](REGRESSION_TEST_WORKFLOW.md) ([日本語](REGRESSION_TEST_WORKFLOW.ja.md)),
   and [script management](SCRIPT_MANAGEMENT.md) guide repository development.
 - [Future service architecture](FUTURE_SERVICE_ARCHITECTURE.md) is a roadmap, not current

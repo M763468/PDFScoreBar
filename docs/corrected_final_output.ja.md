@@ -1,14 +1,12 @@
 # 補正済み最終出力ヘルパー
 
-<!-- translation: {"original":"corrected_final_output.md","source":{"sha256":"5b6730b97ee2a1fea26f5cd4db9711b986ce1b9053d12e7c026a573c8c429e93"},"state":"reviewed"} -->
+<!-- translation: {"original":"corrected_final_output.md","source":{"sha256":"fd745dace46145dddbcf42d8d59f1586a82b91951d8b1770d098682889c62624"},"state":"reviewed"} -->
 
 [English / 原文](corrected_final_output.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `5b6730b97ee2a1fea26f5cd4db9711b986ce1b9053d12e7c026a573c8c429e93`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `fd745dace46145dddbcf42d8d59f1586a82b91951d8b1770d098682889c62624`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
-この文書は Issue #236 で追加されたヘルパーレベルの補正済み最終出力への接続を説明します。
-
-これは手動補正の `apply_corrections` 再実行経路から、その補正済み実行のクリーンな最終 PDF 成果物への限定的な接続です。#226／#227 の `pdfscorebar` CLI は設計案であり、サポート対象の配布インターフェースではありません。現在の利用者向けコマンドは[ユーザーガイド](USER_GUIDE.ja.md)を参照してください。
+この内部ヘルパーのリファレンスは開発者・保守担当者向けです。手動補正の `apply_corrections` 再実行経路から、その補正済み実行のクリーンな最終 PDF 成果物への限定的な接続を説明します。サポート対象の利用者向け配布ワークフローは[ユーザーガイド](USER_GUIDE.ja.md)を参照してください。
 
 ## 入口
 
@@ -29,7 +27,7 @@ python -m src.pipeline.review.apply_corrections \
   --output-name optional-name
 ```
 
-このフラグは明示的に指定した場合のみ有効で、既定では PR #240 の再実行動作との後方互換性を維持します。
+このフラグは明示的に指定した場合のみ有効です。既定では再実行時に最終 PDF を生成しません。
 
 ## 出力
 
@@ -60,8 +58,8 @@ dry run ではない補正済み再実行の後で有効にすると、ヘルパ
 このヘルパーは次を実装しません。
 
 - 公開出力の完全な `OUTPUT_DIR/{final,review,debug}` マテリアライザー。
-- 提案されていた `pdfscorebar run`／`pdfscorebar apply-corrections` CLI。
+- 公開 `pdfscorebar run`／`pdfscorebar apply-corrections` CLI。
 - GUI の起動ワークフロー。
-- #215 の実成果物 GUI リトライ。
+- 実成果物を使った GUI リトライのワークフロー。
 - detector／OCR／MMR の精度変更。
 - 小節線または小節 override アルゴリズムの変更。

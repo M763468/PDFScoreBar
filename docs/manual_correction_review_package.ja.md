@@ -1,12 +1,12 @@
 # 手動補正レビューワークフロー
 
-<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"15d01720e5d936570cb9b1d00a8a9585ccd0f08a55d45c8e38dd6efe38c3f707"},"state":"reviewed"} -->
+<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"12dd91cb143f228159274caa75f67687d9269a10a896f8872bb1f569f7d759bf"},"state":"reviewed"} -->
 
 [English / 原文](manual_correction_review_package.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `15d01720e5d936570cb9b1d00a8a9585ccd0f08a55d45c8e38dd6efe38c3f707`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `12dd91cb143f228159274caa75f67687d9269a10a896f8872bb1f569f7d759bf`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
-この文書は現在の config-first の手動補正ワークフローを説明します。一つのパイプライン実行を既存の手動 GUI に接続し、パッケージ内に補正を保存して、補正を使ってパイプラインを再実行し、補正済みの小節番号付き最終 PDF を生成できます。
+この開発者・運用担当者向けリファレンスは、現在の config-first の手動補正ワークフローを説明します。一つのパイプライン実行を既存の手動 GUI に接続し、パッケージ内に補正を保存して、補正を使ってパイプラインを再実行し、補正済みの小節番号付き最終 PDF を生成できます。
 
 これは config-first の開発・運用リファレンスであり、新しい公開 `pdfscorebar` コンソールではありません。サポート対象の利用者向け配布ワークフローは[ユーザーガイド](USER_GUIDE.ja.md)を参照してください。ここでは `make run-pipeline`／`src.pipeline.main` と既存のレビューヘルパー、GUI を使用します。
 
@@ -94,7 +94,7 @@ python3 tools/review_correction/server.py \
 - handoff に宣言された成果物のみを提供し、宣言された `review/corrections/` 配下の出力先にのみ書き込み、要求ごとに解決後のパスを再検査します。
 - 現在のページ単位の `manual_outputs` ルーティングを維持します。
 
-Issue #383 で旧来の任意パスを使う `manual_config_builder.py` は廃止されました。管理対象の手動ワークフローは上記のパッケージ内 `review/manual_correction_input.json` handoff から開始します。
+任意パスを使う旧 `manual_config_builder.py` はサポート対象外です。管理対象の手動ワークフローは、上記の検証済みパッケージ内 `review/manual_correction_input.json` handoff から開始します。
 
 ### 任意の楽章境界の証拠
 
@@ -102,7 +102,7 @@ Issue #383 で旧来の任意パスを使う `manual_config_builder.py` は廃�
 
 手動レビューで証拠がない場合を含め、すべての handoff ページは一つの共通 `correction_outputs.movement_boundary` パスを使う必要があります。既定値は `corrections/movement_boundaries_review.json` です。他の補正種類ではページごとの出力を使えますが、カスタム設定でも楽章レビューパスは共通にしてください。handoff 検証は補正の保存や適用より前に異なるパスを拒否するため、あるページの保存で共有の確定済み入力内の別ページの楽章判断が置き換わることはありません。
 
-Detector の提案をレビューするには、同じレビューパッケージに Issue #333 のレビュー専用証拠成果物を添付します。
+Detector の提案をレビューするには、同じレビューパッケージに レビュー専用の楽章境界証拠成果物を添付します。
 
 ```bash
 python -m tools.movement_boundary_review attach \
@@ -281,8 +281,10 @@ python3 tools/review_correction/server.py --handoff /path/to/run/review/manual_c
 
 専用の利用者 UI は `tools/review_correction/index.html` と `app.js` です。主要な操作、検証、結果のメッセージは `tools/review_correction/strings.js` に集められ、状態ラベルは `tools/review_correction/state.py::LABELS` から取得します。利用者アプリケーションは言語選択で英語と日本語をサポートします。GT／開発者向けの表示は `tools/gt_relabel_gui/` にあり、このローカライズ範囲外です。ブラウザーはパッケージ全体の未記録／記録済み／エラー件数とともに現在のページの詳細のみを表示します。
 
-## 受け入れとローカライズ
+## ローカライズ
 
-実成果物の受け入れ手順と固定された観測可能な結果のゲートは [REVIEW_ACCEPTANCE.md（英語）](dev/REVIEW_ACCEPTANCE.md) に記載されています。証拠はクリーンな補正済み `final/` ディレクトリとは別に `logs/issue397/acceptance/` に保持されています。
+利用者アプリケーションは英語と日本語をサポートし、言語選択はブラウザーにローカル保存されます。GT／開発者向けファイルはローカライズの対象外です。
 
-Issue #361 で利用者アプリケーションのローカライズが実現しました。その利用者向け対象には `tools/review_correction/index.html`、`strings.js`、`app.js`、`correction_state.js`、`state.py::LABELS` の状態ラベルが含まれます。言語選択はブラウザーにローカル保存されます。GT／開発者向けファイルは対象外のままです。保持された #397 の受け入れ証拠は過去のものであり、現在のリビジョンが実成果物で再検証されたことを主張するものではありません。
+## 過去の受け入れ証拠
+
+実成果物の受け入れ手順と固定された観測可能な結果のゲートは [REVIEW_ACCEPTANCE.md（英語）](dev/REVIEW_ACCEPTANCE.md) に記載されています。過去の証拠はクリーンな補正済み `final/` ディレクトリとは別に `logs/issue397/acceptance/` に保持されています。これは現在のリビジョンが実成果物で再検証されたことを主張するものではありません。

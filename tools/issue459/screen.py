@@ -37,6 +37,7 @@ def verdict(baseline, candidate, minimum_improvement=3):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--job-protocol", action="store_true")
     parser.add_argument("--uid", type=int, choices=(0, 1000), default=0)
     parser.add_argument("--scope", choices=("single", "multi"), default="multi")
     parser.add_argument("--compiler-state", choices=("cold", "warm"), default="warm")
@@ -92,6 +93,8 @@ def main():
         ]
         if arm == "o":
             command += ["--source-workers", "1", "--omr-reuse"]
+            if args.job_protocol:
+                command += ["--job-protocol"]
         with (output / "journal.jsonl").open("a") as journal:
             journal.write(json.dumps({"event": "start", "label": label, "command": command}) + "\n")
         try:
@@ -126,6 +129,7 @@ def main():
         values[arm].append(result["docker_e2e_wall_seconds"])
     primary = args.uid == 0 and args.scope == "multi" and args.compiler_state == "warm"
     summary = verdict(values["b"], values["o"], 3 if primary else -3)
+    summary["candidate_protocol"] = "job-v1" if args.job_protocol else "issue447-poc"
     summary["cell"] = {
         "uid": args.uid,
         "scope": args.scope,

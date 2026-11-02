@@ -17,6 +17,11 @@ import yaml
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--job-protocol",
+        action="store_true",
+        help="Issue459 attested OMR job candidate; requires --omr-reuse",
+    )
     parser.add_argument("--issue-id", type=int, default=447)
     parser.add_argument("--uid", type=int, default=os.getuid())
     parser.add_argument("--gid", type=int, default=os.getgid())
@@ -64,6 +69,8 @@ def main() -> int:
     )
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
+    if args.job_protocol and not args.omr_reuse:
+        parser.error("job protocol requires OMR reuse")
     if args.issue_id <= 0 or args.uid < 0 or args.gid < 0:
         parser.error("issue-id must be positive; uid/gid must be nonnegative")
     if args.omr_reuse and (args.source_workers is None or args.component):
@@ -179,6 +186,8 @@ def main() -> int:
             "-e",
             "PYTHONPYCACHEPREFIX=/python-cache",
         ]
+    if args.job_protocol:
+        command += ["-e", "ISSUE459_JOB_PROTOCOL=1"]
     if args.omr_reuse:
         command += ["-e", "ISSUE447_OMR_REUSE=1"]
     if args.source_workers is not None:
@@ -189,7 +198,12 @@ def main() -> int:
             f"ISSUE447_SOURCE_EVENTS=/workspace/{rel}/source-schedule.jsonl",
         ]
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-    command += ["-e", f"PDFSCORE_HOST_SOURCE_COMMIT={commit}"]
+    command += [
+        "-e",
+        f"PDFSCORE_HOST_SOURCE_COMMIT={commit}",
+        "-e",
+        f"PDFSCORE_DOCKER_IMAGE_ID={args.image}",
+    ]
     if args.trace:
         command += [
             "-e",

@@ -15,6 +15,7 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--job-protocol", action="store_true")
     parser.add_argument("--image", required=True)
     parser.add_argument("--seed", type=Path, required=True)
     parser.add_argument("--primary", type=Path, required=True)
@@ -24,6 +25,9 @@ def main():
         parser.error("invalid label")
     root = Path(__file__).resolve().parents[2]
     primary = json.loads(args.primary.read_text())
+    protocol = "job-v1" if args.job_protocol else "issue447-poc"
+    if primary.get("candidate_protocol", "issue447-poc") != protocol:
+        raise ValueError("primary belongs to another candidate protocol")
     if primary["primary_gate"] != "passed":
         raise RuntimeError("primary screen failed; no adoption")
     out = root / "logs/issue459/matrices" / args.label
@@ -57,6 +61,8 @@ def main():
             "--compiler-state",
             state,
         ]
+        if args.job_protocol:
+            command += ["--job-protocol"]
         with (out / "journal.jsonl").open("a") as journal:
             journal.write(json.dumps({"label": label, "command": command}) + "\n")
         subprocess.run(command, cwd=root, check=True)

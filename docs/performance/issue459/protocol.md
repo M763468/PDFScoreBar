@@ -5,10 +5,13 @@ production route. Select only through the experiment launcher's `--job-protocol
 --source-workers 1 --omr-reuse`. This changes the candidate and requires its own
 performance/quality results; PoC timings do not establish v1 performance.
 
-The outer fresh job/container owns the ultimate kill boundary. After the existing
-batch SR worker exits and its fresh request-bound result passes validation, the
-coordinator allocates a new UUID4 and an exclusive output directory. It binds ordered
-source/SR hashes and the selected production model digest into request.json.
+The outer fresh job/container owns the ultimate kill boundary. Before SR, the
+coordinator allocates a UUID4 and records ordered source hashes and the selected
+model-manifest digest. It checks those identities after the existing batch SR worker
+exits, requires each SR result to match this job's requested output inside its fresh
+support directory, and adds the source/run binding to the SR rows. Only then does it
+allocate the exclusive OMR output directory and bind source/SR hashes and the selected
+production model digest into request.json.
 A dedicated job_worker loads that explicit native checkpoint on CUDA once and uses
 the existing OMR run loop for the ordered pages. No model/confidence/threshold change
 or CPU fallback is selected. The worker verifies identities before and after
@@ -51,3 +54,9 @@ attestation, nonzero exit, missing/malformed/partial output, input mutation, tim
 with a SIGTERM-ignoring worker, cancellation and fresh-directory recovery. Actual
 GPU model state, long/varied-shape documents, OOM/kill and correction replay are
 separate gates and are not inferred from those unit tests.
+
+The prediction validator follows the existing strict consensus contract: finite
+numeric coordinates, ordered bounds, and preserved zero-extent clipping at image
+edges. It copies the exact prediction bytes; it does not filter, widen or retune
+barlines. The first v1 E2E exposed an overly strict validator and is retained as a
+failed attempt, not corrected into a successful timing observation.

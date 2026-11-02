@@ -258,3 +258,54 @@ def test_sr_identity_must_bind_the_pre_sr_source_and_current_run(tmp_path, fault
             execute=worker,
         )
     assert not (tmp_path / "phase/completed.json").exists()
+
+
+@pytest.mark.parametrize("fault", [None, "source_changed", "foreign_sr"])
+def test_adapter_captures_source_before_sr_and_rejects_foreign_outputs(
+    tmp_path, monkeypatch, fault
+):
+    from tools.issue447 import omr_reuse_poc as shim
+    from tools.issue459 import omr_reuse_candidate as candidate
+
+    images, sr, model = inputs(tmp_path / "inputs")
+    for key in ("MODULE", "build_manifest", "consume"):
+        monkeypatch.setattr(shim, key, getattr(shim, key))
+    monkeypatch.setattr(shim, "install", lambda cls: None)
+    monkeypatch.setenv("ISSUE459_RUN_ID", "")
+    monkeypatch.setenv("ISSUE459_MODEL_MANIFEST_SHA256", "")
+    output = tmp_path / "job/support"
+
+    class Detector:
+        def __init__(self):
+            self.images = images
+
+        def _batch_sr_worker(self, *, support_output):
+            batch = support_output / "_sr_batch"
+            batch.mkdir(parents=True)
+            items, by_image = [], {}
+            for image in images:
+                fresh = support_output / image.stem / "sr.png"
+                fresh.parent.mkdir(parents=True)
+                fresh.write_bytes(b"fresh generated SR")
+                actual = Path(sr[0]["sr_image"]) if fault == "foreign_sr" else fresh
+                items.append({"image": str(image), "output": str(fresh)})
+                by_image[image] = {
+                    "image": str(image),
+                    "sr_image": str(actual),
+                    "sr_sha256": digest(actual),
+                }
+            (batch / "request.json").write_text(json.dumps({"items": items}))
+            if fault == "source_changed":
+                images[0].write_bytes(b"changed during SR")
+            return by_image, ["sr"], {"status": "completed"}
+
+    candidate.install(Detector)
+    detector = Detector()
+    if fault:
+        with pytest.raises(ValueError):
+            detector._batch_sr_worker(support_output=output)
+    else:
+        by_image, _, _ = detector._batch_sr_worker(support_output=output)
+        binding = json.loads((output.parent / "issue459_sr_inputs.json").read_text())
+        assert by_image[images[0]]["job_run_id"] == binding["run_id"]
+        assert by_image[images[0]]["image_sha256"] == digest(images[0])

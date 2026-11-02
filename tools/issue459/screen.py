@@ -1,14 +1,15 @@
 """Root deployment primary-gate screen; never enables production reuse."""
+
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import statistics
 import subprocess
 import sys
+from pathlib import Path
 
 
 def verdict(baseline, candidate, minimum_improvement=3):
@@ -26,8 +27,10 @@ def verdict(baseline, candidate, minimum_improvement=3):
         "baseline_range": [min(baseline), max(baseline)],
         "candidate_range": [min(candidate), max(candidate)],
         "improvement_percent": improvement,
-        "primary_gate": "passed" if statistics.median(candidate) <= statistics.median(baseline)
-        * (1 - minimum_improvement / 100) else "failed",
+        "primary_gate": "passed"
+        if statistics.median(candidate)
+        <= statistics.median(baseline) * (1 - minimum_improvement / 100)
+        else "failed",
         "adoption": "not_authorized_by_screen",
     }
 
@@ -45,8 +48,11 @@ def main():
         parser.error("invalid label")
     root = Path(__file__).resolve().parents[2]
     seed = args.seed.resolve(strict=True)
-    inventory = {str(p.relative_to(seed)): hashlib.sha256(p.read_bytes()).hexdigest()
-                 for p in sorted(seed.rglob("*")) if p.is_file()}
+    inventory = {
+        str(p.relative_to(seed)): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in sorted(seed.rglob("*"))
+        if p.is_file()
+    }
     if not inventory:
         parser.error("warm seed must not be empty")
     output = root / "logs/issue459/screens" / args.label
@@ -54,6 +60,7 @@ def main():
     (output / "seed.json").write_text(json.dumps(inventory, indent=2) + "\n")
     from tools.issue447.analyze import gpu_summary, proc_summary
     from tools.issue447.deepening_analyze import pipeline_checks
+
     reference = None
     values = {"b": [], "o": []}
     for index, arm in enumerate(("b", "o", "o", "b"), 1):
@@ -63,11 +70,26 @@ def main():
             shutil.copytree(seed, cache)
         else:
             cache.mkdir(parents=True)
-        command = [sys.executable, str(root / "tools/issue447/run_experiment.py"),
-                   "--issue-id", "459", "--uid", str(args.uid), "--gid", str(args.uid),
-                   "--home", "/root" if args.uid == 0 else "/tmp",
-                   "--image", args.image, "--label", label, "--scope", args.scope,
-                   "--compile-cache", str(cache)]
+        command = [
+            sys.executable,
+            str(root / "tools/issue447/run_experiment.py"),
+            "--issue-id",
+            "459",
+            "--uid",
+            str(args.uid),
+            "--gid",
+            str(args.uid),
+            "--home",
+            "/root" if args.uid == 0 else "/tmp",
+            "--image",
+            args.image,
+            "--label",
+            label,
+            "--scope",
+            args.scope,
+            "--compile-cache",
+            str(cache),
+        ]
         if arm == "o":
             command += ["--source-workers", "1", "--omr-reuse"]
         with (output / "journal.jsonl").open("a") as journal:
@@ -75,9 +97,18 @@ def main():
         try:
             subprocess.run(command, cwd=root, check=True)
         except BaseException as exc:
-            (output / "failed.json").write_text(json.dumps({
-                "status": "failed", "label": label, "error": str(exc),
-                "adoption": "not_authorized_by_screen"}, indent=2) + "\n")
+            (output / "failed.json").write_text(
+                json.dumps(
+                    {
+                        "status": "failed",
+                        "label": label,
+                        "error": str(exc),
+                        "adoption": "not_authorized_by_screen",
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
             raise
         result = json.loads((root / "logs/issue459/runs" / label / "result.json").read_text())
         if result["status"] != "completed" or result["trace"] != "off" or result["timed_out"]:
@@ -87,16 +118,20 @@ def main():
         checks = pipeline_checks(root, reference, directory / "pipeline")
         resources = proc_summary(directory / "proc-samples.jsonl")
         gpu = gpu_summary(directory / "gpu-samples.csv")
-        (directory / "screen-checks.json").write_text(json.dumps({
-            "semantic": checks, "resources": resources, "gpu": gpu}, indent=2) + "\n")
+        (directory / "screen-checks.json").write_text(
+            json.dumps({"semantic": checks, "resources": resources, "gpu": gpu}, indent=2) + "\n"
+        )
         if not checks["all_equal"]:
             raise RuntimeError("semantic screen failed; timing cannot justify adoption")
         values[arm].append(result["docker_e2e_wall_seconds"])
     primary = args.uid == 0 and args.scope == "multi" and args.compiler_state == "warm"
     summary = verdict(values["b"], values["o"], 3 if primary else -3)
-    summary["cell"] = {"uid": args.uid, "scope": args.scope,
-                       "compiler_state": args.compiler_state,
-                       "minimum_improvement_percent": 3 if primary else -3}
+    summary["cell"] = {
+        "uid": args.uid,
+        "scope": args.scope,
+        "compiler_state": args.compiler_state,
+        "minimum_improvement_percent": 3 if primary else -3,
+    }
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary))
 

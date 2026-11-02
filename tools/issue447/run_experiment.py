@@ -84,9 +84,18 @@ def main() -> int:
     ).parent
     # Resolve explicitly: never silently substitute a different benchmark runtime.
     subprocess.run(
-        [sys.executable, str(root / "scripts/docker_image_resolver.py"), "resolve",
-         "--repo-root", str(root), "--image-ref", args.image, "--explicit"],
-        cwd=root, check=True,
+        [
+            sys.executable,
+            str(root / "scripts/docker_image_resolver.py"),
+            "resolve",
+            "--repo-root",
+            str(root),
+            "--image-ref",
+            args.image,
+            "--explicit",
+        ],
+        cwd=root,
+        check=True,
     )
     cache = Path(
         os.environ.get(
@@ -257,8 +266,7 @@ def main() -> int:
         "experiment": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         "compile_cache_empty_at_start": compile_cache_empty,
         "script_sha256": {
-            str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in scripts
+            str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in scripts
         },
         "cache_state": "fresh container/process; persistent Issue-local compile cache; OS cache not flushed",
     }

@@ -745,6 +745,8 @@
       "tests/test_issue454_analysis.py"
     ],
     "developer_tool": [
+      "tests/test_issue459_matrix.py",
+      "tests/test_issue459_screen.py",
       "tests/test_issue447_e2e_matrix.py",
       "tests/test_issue447_omr_reuse.py",
       "tests/test_issue447_profiling_tools.py",

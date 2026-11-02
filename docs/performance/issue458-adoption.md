@@ -55,7 +55,7 @@ manager mounted at /workspace, matching nested PYTHONPATH and UID1000/GID1001.
 | Lint/format | Passed | make lint; validation/lint.log; exit0,1216 files formatted |
 | Makefile references | Passed | make check-makefile; validation/makefile.log; exit0 |
 | Release/translation tests | Passed | python3 -m pytest tests/test_release_candidate.py tests/test_doc_translations.py -q; validation/release-translations.log; 32 passed +4 subtests, exit0 |
-| Source scheduling guards | Passed | docker exec --user1000:1001 -w /workspace/.worktrees/issue458 -e PYTHONPATH=/workspace/.worktrees/issue458 pdfscore_pipeline_pytest_dev /opt/venv_pipeline/bin/python -m pytest tests/test_issue458_source_concurrency.py -q; validation/source-focused.log; 17 passed, exit0 |
+| Source scheduling guards | Passed | docker exec --user 1000:1001 -w /workspace/.worktrees/issue458 -e PYTHONPATH=/workspace/.worktrees/issue458 pdfscore_pipeline_pytest_dev /opt/venv_pipeline/bin/python -m pytest tests/test_issue458_source_concurrency.py -q; validation/source-focused.log; 17 passed, exit0 |
 | Two independent static distribution candidates | Passed | release_candidate.py create with frozen source/main SHAs outside source checkout; materialize_distribution.py check --git-checkout; cmp candidate-a.json candidate-b.json; validation/candidate-*.json; identical commit/tree and 118 shipped files |
 | Candidate-local module import | Passed | import src.pipeline.detection.source_concurrency from candidate cwd, verify __file__ is inside candidate; validation/candidate-import.log |
 | Initial candidate launcher attempts | Blocked, corrected | source-local output and mutable refs rejected by tool contract; corrected to /tmp + full 40-character SHAs before successful static checks |

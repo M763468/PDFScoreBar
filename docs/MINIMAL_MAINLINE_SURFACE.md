@@ -1,6 +1,6 @@
 # Minimal distributable surface (#100 / #409)
 
-The candidate has **115 tracked files** in
+The candidate has **117 tracked files** in
 [MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 88 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
 application, minimum user documentation, and checkout-local ignore rules. The exact distribution is the union of
@@ -246,7 +246,7 @@ confer release status. No retained development evidence is deleted by extraction
 
 | Audience | Release selection |
 | --- | --- |
-| User/release | README and USER_GUIDE only: build, run, review/correct, troubleshooting |
+| User/release | English and Japanese README and USER_GUIDE: build, run, review/correct, troubleshooting |
 | Operator/reference | Manifest/model identities; preflight and result provenance |
 | Developer | Architecture, environment, engine contracts, validation policy, inventories; excluded |
 | Historical/investigation | Refactor/Issue docs and accepted experiments; excluded |

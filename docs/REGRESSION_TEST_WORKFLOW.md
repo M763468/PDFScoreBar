@@ -1,26 +1,22 @@
 # Regression Test Workflow
 
+[日本語](REGRESSION_TEST_WORKFLOW.ja.md)
+
 ## Purpose
 - Standardize pre-commit / pre-PR verification so behavior regressions are caught consistently.
 - Keep real-data smoke and parity checks reproducible across sessions.
 
 ## Prerequisites
 - Read `docs/ENVIRONMENTS.md` and run commands in the correct environment.
-- For pipeline real-data checks, use the maintained `pdfscore_pipeline_gpu` container.
+- For pipeline real-data checks, select and verify the image, container, mounts and assets as
+  described in `docs/ENVIRONMENTS.md` and `docs/dev/LOCAL_VALIDATION.md`.
 
-## Mandatory Checks Before Commit/PR
-1. Format
-```bash
-make format
-```
-2. Lint
-```bash
-make lint
-```
-3. Unit tests (minimum)
-```bash
-python3 -m unittest tests.test_pipeline_detection -v
-```
+## Choosing Checks Before Commit/PR
+Use [Validation Policy](dev/VALIDATION_POLICY.md) to select checks for the changed behavior
+and report their status. This workflow supplements that policy; it does not require every
+check for every change. In particular, docs-only changes do not require a universal formatter,
+unit test, GPU smoke, or full evaluation. `make format` changes files; inspect its effects before
+using it. PR CI may run its own checks independently of the local minimum.
 
 ## Test Placement Policy
 - `tests/`: authoritative home for actively maintained lightweight tests for current code paths.
@@ -40,7 +36,9 @@ python3 -m unittest tests.test_pipeline_detection -v
   still-useful assertion in the maintained test or verification surface.
 
 ## Real-Data Smoke (Detection Path)
-Use the already organized smoke assets under `logs/issue23_smoke/`.
+The following is a historical Issue #23 example, not a current mandatory smoke test. Its
+container, configuration and assets must be checked before attempting reproduction; they may
+not be available. For current required checks use the validation policy and environment guides.
 
 1. Run integrated pipeline (inside `pdfscore_pipeline_gpu`)
 ```bash
@@ -53,7 +51,9 @@ docker exec pdfscore_pipeline_gpu bash -lc "cd /workspace && \
 - `logs/full_pipeline_runs/<run_id>/intermediate/probe_scan/*/pipeline2_no_peak_filtered_cnn.json`
 
 ## Real-Data Parity Check (src vs tools)
-Run parity check with the canonical script:
+This historical Issue #34 example uses the parity script with Issue-specific inputs and outputs.
+Verify those paths and the container before attempting reproduction; their availability is not
+guaranteed. It is not a general acceptance gate.
 
 ```bash
 docker exec pdfscore_pipeline_gpu bash -lc "cd /workspace && \
@@ -74,13 +74,17 @@ Reference example (2026-02-08, `issue34_parity_latest`):
 - `row_stats_mode`: `src_count=440`, `tools_count=440`
 
 ## Logging Rules
-- Save new verification outputs under `logs/<topic>/<run_id or timestamp>/`.
+- For Issue-scoped work, save new verification outputs under
+  `logs/issue<N>/<category-or-purpose>/<run-or-artifact>/`. Otherwise follow `logs/README.md`.
+- The `logs/issue23_smoke` and `logs/issue34_smoke` examples above are legacy paths; do not
+  create new `logs/issue<N>_smoke` sibling roots.
 - Do not scatter logs across multiple top-level locations for one issue.
 - If a run location changes, add a short `README.md` in that log folder with canonical paths.
 
 ## Report Template (PR Comment)
+- Tested commit or identified diff
 - Environment used (container/venv)
 - Commands executed
-- Result summary (pass/fail)
-- Real-data parity result (`exact_match` and counts)
+- Result summary (passed / failed / blocked / not run)
+- Real-data parity result (`exact_match` and counts), if applicable
 - Log location

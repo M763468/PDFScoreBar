@@ -13,6 +13,10 @@
       "role": "required by pyproject readme during package installation"
     },
     {
+      "pattern": "README.ja.md",
+      "role": "Japanese translation of the distribution entry point"
+    },
+    {
       "pattern": "configs/dense_full_pipeline.yaml",
       "role": "canonical dense algorithm configuration used as the engine base"
     },
@@ -908,6 +912,10 @@
       "role": "Install, model registration, processing, review and troubleshooting"
     },
     {
+      "pattern": "docs/USER_GUIDE.ja.md",
+      "role": "Japanese translation of the user guide"
+    },
+    {
       "pattern": ".dockerignore",
       "role": "Keep user data and generated output outside production build context"
     },
@@ -941,7 +949,9 @@
   "documentation_audiences": {
     "user_release": [
       "README.md",
-      "docs/USER_GUIDE.md"
+      "README.ja.md",
+      "docs/USER_GUIDE.md",
+      "docs/USER_GUIDE.ja.md"
     ],
     "operator_reference": [
       "docs/MINIMAL_MAINLINE_SURFACE.json"

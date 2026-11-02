@@ -84,9 +84,9 @@ when translating. Historical and scoped records follow the exclusions below.
 
 | Document | Intended role / authority | Language | Counterpart action | Priority |
 | --- | --- | --- | --- | --- |
-| [../README.md](../README.md) | canonical/current | EN | JA needed | P1 |
+| [../README.md](../README.md) | canonical/current | EN | [JA reviewed](../README.ja.md) | P1 |
 | [../AGENTS.md](../AGENTS.md) | canonical/current; agent instructions | EN | not required (agent-only) | N/A |
-| [README.md](README.md) | canonical/current | EN | JA needed | P1 |
+| [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | JA needed | P1 |
 | [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
 | [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
@@ -97,20 +97,20 @@ when translating. Historical and scoped records follow the exclusions below.
 | [ENGINE_SERVICE_READINESS.md](ENGINE_SERVICE_READINESS.md) | current/reference | EN / [JA](ENGINE_SERVICE_READINESS.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [MODEL_ARTIFACT_CONTRACT.md](MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
 | [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
-| [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN | JA needed | P1 |
-| [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | JA needed | P1 |
+| [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN / [JA](ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | [JA reviewed](USER_GUIDE.ja.md) | P1 |
 | [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | JA needed | P1 |
-| [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN | JA needed | P1 |
-| [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN | JA needed | P1 |
-| [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN | JA needed | P1 |
+| [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN / [JA](BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN / [JA](dev/VALIDATION_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN / [JA](dev/LOCAL_VALIDATION.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_CORRECTION_BOUNDARY.md](USER_CORRECTION_BOUNDARY.md) | current/reference | EN | JA needed | P2 |
 | [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | JA needed | P2 |
 | [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
 | [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
 | [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | JA needed | P2 |
 | [BARLINE_MATCHER.md](BARLINE_MATCHER.md) | current/reference | EN | JA needed | P2 |
-| [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN | JA needed | P2 |
-| [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN | JA needed | P2 |
+| [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
+| [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | JA needed | P2 |
 | [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | JA needed | P2 |
 | [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | JA needed | P2 |

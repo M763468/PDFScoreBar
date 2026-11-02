@@ -62,7 +62,15 @@ def main():
                    "--compile-cache", str(cache)]
         if arm == "o":
             command += ["--source-workers", "1", "--omr-reuse"]
-        subprocess.run(command, cwd=root, check=True)
+        with (output / "journal.jsonl").open("a") as journal:
+            journal.write(json.dumps({"event": "start", "label": label, "command": command}) + "\n")
+        try:
+            subprocess.run(command, cwd=root, check=True)
+        except BaseException as exc:
+            (output / "failed.json").write_text(json.dumps({
+                "status": "failed", "label": label, "error": str(exc),
+                "adoption": "not_authorized_by_screen"}, indent=2) + "\n")
+            raise
         result = json.loads((root / "logs/issue459/runs" / label / "result.json").read_text())
         if result["status"] != "completed" or result["trace"] != "off" or result["timed_out"]:
             raise RuntimeError("incomplete or invalid screen run")

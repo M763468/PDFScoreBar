@@ -245,6 +245,10 @@
       "role": "Production profile sources batch sr implementation used by maintained dense processing"
     },
     {
+      "pattern": "src/pipeline/detection/source_concurrency.py",
+      "role": "Resource-admitted ordered page-source scheduling and process cleanup"
+    },
+    {
       "pattern": "src/pipeline/detection/utils.py",
       "role": "detector path helpers"
     },
@@ -759,6 +763,7 @@
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
+      "tests/test_issue458_source_concurrency.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",
       "tests/test_apply_corrections_final_output.py",

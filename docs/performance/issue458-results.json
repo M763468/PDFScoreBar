@@ -1,0 +1,637 @@
+{
+  "warm_baseline": {
+    "median": 261.6036709745531,
+    "range": [
+      260.4653310320573,
+      262.7420109170489
+    ]
+  },
+  "warm_parallel": {
+    "median": 248.78258420148632,
+    "range": [
+      241.58548685791902,
+      255.9796815450536
+    ]
+  },
+  "warm_reduction": 0.04900958279868295,
+  "performance_pass": false,
+  "semantic_pass": true,
+  "resource_pass": true,
+  "tested_scope": "8 frozen production E2Es; 6 actual correction replays; warm performance gate failed",
+  "rows": [
+    {
+      "label": "warm-b1",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 260.4653310320573,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.082084550987929
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 1288,
+        "first_monotonic": 845784.919967089,
+        "last_monotonic": 846044.302250595,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7304929280,
+        "observer_cpu_seconds": 1.6,
+        "cgroup_memory_peak_bytes": 5106515968,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 472168830,
+          "user_usec": 438201407,
+          "system_usec": 33967423,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 86654976,
+          "rios": 0,
+          "wios": 149
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 260,
+          "mean": 41.02307692307692,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 260,
+          "mean": 2261.8846153846152,
+          "peak": 3467.0
+        }
+      }
+    },
+    {
+      "label": "warm-p1",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 255.9796815450536,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.0760697849327698
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 1254,
+        "first_monotonic": 846047.08750931,
+        "last_monotonic": 846301.908855963,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11702509568,
+        "observer_cpu_seconds": 1.8,
+        "cgroup_memory_peak_bytes": 9586647040,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 546897678,
+          "user_usec": 503725773,
+          "system_usec": 43171905,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 85016576,
+          "rios": 0,
+          "wios": 171
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 253,
+          "mean": 42.01185770750988,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 253,
+          "mean": 2624.217391304348,
+          "peak": 6539.0
+        }
+      }
+    },
+    {
+      "label": "warm-p2",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 241.58548685791902,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.1631787680089474
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 1187,
+        "first_monotonic": 846304.617942145,
+        "last_monotonic": 846545.20674875,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11366649856,
+        "observer_cpu_seconds": 1.51,
+        "cgroup_memory_peak_bytes": 9143242752,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 505955562,
+          "user_usec": 469716100,
+          "system_usec": 36239461,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 84471808,
+          "rios": 0,
+          "wios": 170
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 238,
+          "mean": 44.26470588235294,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 238,
+          "mean": 2594.264705882353,
+          "peak": 6546.0
+        }
+      }
+    },
+    {
+      "label": "warm-b2",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 262.7420109170489,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 1.1722783000441268
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 1299,
+        "first_monotonic": 846548.149836548,
+        "last_monotonic": 846809.745224327,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7231533056,
+        "observer_cpu_seconds": 1.61,
+        "cgroup_memory_peak_bytes": 5152006144,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 475129638,
+          "user_usec": 443268513,
+          "system_usec": 31861125,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 802816,
+          "wbytes": 86708224,
+          "rios": 196,
+          "wios": 188
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 262,
+          "mean": 39.13358778625954,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 262,
+          "mean": 2199.2748091603053,
+          "peak": 3393.0
+        }
+      }
+    },
+    {
+      "label": "cold-b1",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 382.946826138068,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.6631908589042723
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 1895,
+        "first_monotonic": 846812.423490711,
+        "last_monotonic": 847194.327638152,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 8566558720,
+        "observer_cpu_seconds": 2.56,
+        "cgroup_memory_peak_bytes": 5198327808,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 603965175,
+          "user_usec": 554493420,
+          "system_usec": 49471755,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 39833600,
+          "wbytes": 114266112,
+          "rios": 383,
+          "wios": 728
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 382,
+          "mean": 28.421465968586386,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 382,
+          "mean": 2088.9057591623036,
+          "peak": 3449.0
+        }
+      }
+    },
+    {
+      "label": "cold-p1",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 363.33743992296513,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "multi",
+        "monitor_teardown_seconds": 0.44162797706667334
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 1794,
+        "first_monotonic": 847196.362473149,
+        "last_monotonic": 847558.661535591,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11561537536,
+        "observer_cpu_seconds": 2.89,
+        "cgroup_memory_peak_bytes": 9422815232,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 640444873,
+          "user_usec": 588263788,
+          "system_usec": 52181085,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 112353280,
+          "rios": 0,
+          "wios": 730
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 362,
+          "mean": 29.834254143646408,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 362,
+          "mean": 2403.6519337016575,
+          "peak": 6598.0
+        }
+      }
+    },
+    {
+      "label": "single-b1",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 111.04057690000627,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 0.6744102529482916
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 547,
+        "first_monotonic": 847560.691298319,
+        "last_monotonic": 847670.654110619,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7307886592,
+        "observer_cpu_seconds": 0.67,
+        "cgroup_memory_peak_bytes": 5063057408,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 192895017,
+          "user_usec": 180352749,
+          "system_usec": 12542267,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 28155904,
+          "rios": 0,
+          "wios": 41
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 111,
+          "mean": 31.774774774774773,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 111,
+          "mean": 1955.4504504504505,
+          "peak": 3449.0
+        }
+      }
+    },
+    {
+      "label": "single-p1",
+      "result": {
+        "status": "completed",
+        "exit_code": 0,
+        "docker_e2e_wall_seconds": 111.52053321804851,
+        "timed_out": false,
+        "trace": "off",
+        "component": null,
+        "scope": "single",
+        "monitor_teardown_seconds": 1.8348679069895297
+      },
+      "resource_pass": true,
+      "semantic_pass": true,
+      "resources": {
+        "sample_count": 550,
+        "first_monotonic": 847672.810501504,
+        "last_monotonic": 847783.426087406,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7231373312,
+        "observer_cpu_seconds": 0.68,
+        "cgroup_memory_peak_bytes": 5041098752,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 194531036,
+          "user_usec": 182275215,
+          "system_usec": 12255820,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 28250112,
+          "rios": 0,
+          "wios": 55
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 112,
+          "mean": 32.607142857142854,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 112,
+          "mean": 1948.125,
+          "peak": 3447.0
+        }
+      }
+    }
+  ],
+  "corrections": [
+    {
+      "label": "warm-b1",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "warm-p1",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "warm-p2",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "warm-b2",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "cold-b1",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "cold-p1",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    }
+  ],
+  "faults": [
+    {
+      "case": "nonzero",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "missing",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "wrong-image",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "kill",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "timeout",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "oom",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 1
+    }
+  ],
+  "final_error_path_commit": "0c52a226",
+  "gpu_smoke": {
+    "status": "Passed",
+    "launched_commit": "51a4800d",
+    "matches": 85,
+    "gt": 85,
+    "hard_fp": 0,
+    "fn": 0,
+    "soft": 0
+  }
+}

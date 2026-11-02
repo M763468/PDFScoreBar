@@ -1,0 +1,1217 @@
+{
+  "original_gate": "Failed: 4.900958%; historical cohort unchanged",
+  "phase": "2026-11-01 practical adoption reassessment",
+  "missing_runs": [],
+  "primary_baseline": {
+    "values": [
+      247.47159420198295,
+      248.5669272360392,
+      248.7644828290213,
+      252.76172560697887
+    ],
+    "median": 248.66570503253024,
+    "range": [
+      247.47159420198295,
+      252.76172560697887
+    ],
+    "mad": 0.6464443135191686
+  },
+  "primary_parallel": {
+    "values": [
+      226.52724778302945,
+      228.40018448606133,
+      226.88270509499125,
+      232.60608395200688
+    ],
+    "median": 227.6414447905263,
+    "range": [
+      226.52724778302945,
+      232.60608395200688
+    ],
+    "mad": 0.9364683515159413
+  },
+  "pairs": [
+    {
+      "pair": 1,
+      "baseline": 247.47159420198295,
+      "parallel": 226.52724778302945,
+      "reduction": 0.08463333533891981
+    },
+    {
+      "pair": 2,
+      "baseline": 248.5669272360392,
+      "parallel": 228.40018448606133,
+      "reduction": 0.08113204348713499
+    },
+    {
+      "pair": 3,
+      "baseline": 248.7644828290213,
+      "parallel": 226.88270509499125,
+      "reduction": 0.08796182431343957
+    },
+    {
+      "pair": 4,
+      "baseline": 252.76172560697887,
+      "parallel": 232.60608395200688,
+      "reduction": 0.07974166819193251
+    }
+  ],
+  "median_saved_seconds": 21.024260242003947,
+  "median_reduction": 0.08454829040157974,
+  "performance_gates": {
+    "positive_median": true,
+    "median_saved_at_least_5s": true,
+    "wins_at_least_3_of_4": true,
+    "no_pair_regression_over_3pct": true
+  },
+  "performance_pass": true,
+  "semantic_pass": true,
+  "resource_pass": true,
+  "selection_pass": true,
+  "no_persistent_cpu_competition": true,
+  "correction_pass": true,
+  "source_commit": "d246ceba14904f9c01ee99f32b93cf0800616407",
+  "analysis_correction_commit": "e70b44d8",
+  "source_seed": {
+    "source": {
+      "commit": "d246ceba14904f9c01ee99f32b93cf0800616407",
+      "source_sha256": "2a580c4d0afd7d05bf98ea35f215fc3bb680de44a7c39edbf4057b2c14de268c"
+    },
+    "seed": {
+      "files": 538,
+      "bytes": 20648097,
+      "sha256": "a0beb8ee131cad711b076c8efa0a00b4dddc33dba55e96cc85785f27a64027dd"
+    }
+  },
+  "groups": {
+    "primary-b": {
+      "ram_peak_gib": 6.470523834228516,
+      "vram_peak_mib": 3472.0,
+      "cpu_median_seconds": 472.5121585
+    },
+    "primary-p": {
+      "ram_peak_gib": 8.22354507446289,
+      "vram_peak_mib": 6610.0,
+      "cpu_median_seconds": 504.0364545
+    },
+    "large-b": {
+      "ram_peak_gib": 4.651264190673828,
+      "vram_peak_mib": 3462.0,
+      "cpu_median_seconds": 407.081369
+    },
+    "large-p": {
+      "ram_peak_gib": 8.607135772705078,
+      "vram_peak_mib": 6613.0,
+      "cpu_median_seconds": 444.597288
+    }
+  },
+  "rows": [
+    {
+      "label": "primary-b1",
+      "elapsed": 247.47159420198295,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 1,
+      "resources": {
+        "sample_count": 1225,
+        "first_monotonic": 923322.984112294,
+        "last_monotonic": 923569.478442462,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7240466432,
+        "observer_cpu_seconds": 1.5,
+        "cgroup_memory_peak_bytes": 6947672064,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 462032788,
+          "user_usec": 427894561,
+          "system_usec": 34138226,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 1837703168,
+          "wbytes": 86654976,
+          "rios": 4849,
+          "wios": 163
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 248,
+          "mean": 41.16935483870968,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 248,
+          "mean": 2258.7862903225805,
+          "peak": 3472.0
+        }
+      }
+    },
+    {
+      "label": "primary-p1",
+      "elapsed": 226.52724778302945,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 2,
+      "resources": {
+        "sample_count": 1118,
+        "first_monotonic": 923572.428978538,
+        "last_monotonic": 923797.902664506,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10837610496,
+        "observer_cpu_seconds": 1.57,
+        "cgroup_memory_peak_bytes": 8582193152,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 503728469,
+          "user_usec": 468780154,
+          "system_usec": 34948314,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 84795392,
+          "rios": 0,
+          "wios": 148
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 227,
+          "mean": 44.19383259911894,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 227,
+          "mean": 2651.964757709251,
+          "peak": 6610.0
+        }
+      }
+    },
+    {
+      "label": "primary-p2",
+      "elapsed": 228.40018448606133,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 2,
+      "resources": {
+        "sample_count": 1127,
+        "first_monotonic": 923801.259908684,
+        "last_monotonic": 924028.620590841,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10980921344,
+        "observer_cpu_seconds": 1.58,
+        "cgroup_memory_peak_bytes": 8829964288,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 504344440,
+          "user_usec": 470431596,
+          "system_usec": 33912844,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 86740992,
+          "rios": 0,
+          "wios": 158
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 229,
+          "mean": 44.5764192139738,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 229,
+          "mean": 2613.113537117904,
+          "peak": 6550.0
+        }
+      }
+    },
+    {
+      "label": "primary-b2",
+      "elapsed": 248.5669272360392,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 1,
+      "resources": {
+        "sample_count": 1230,
+        "first_monotonic": 924032.015598797,
+        "last_monotonic": 924279.523225594,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7308939264,
+        "observer_cpu_seconds": 1.54,
+        "cgroup_memory_peak_bytes": 5095178240,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 473067013,
+          "user_usec": 442981784,
+          "system_usec": 30085228,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 85532672,
+          "rios": 0,
+          "wios": 136
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 249,
+          "mean": 40.1285140562249,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 249,
+          "mean": 2247.8313253012047,
+          "peak": 3453.0
+        }
+      }
+    },
+    {
+      "label": "primary-b3",
+      "elapsed": 248.7644828290213,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 1,
+      "resources": {
+        "sample_count": 1231,
+        "first_monotonic": 924282.346500018,
+        "last_monotonic": 924530.104402596,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7309570048,
+        "observer_cpu_seconds": 1.56,
+        "cgroup_memory_peak_bytes": 5153034240,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 471957304,
+          "user_usec": 442205782,
+          "system_usec": 29751522,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 126976,
+          "wbytes": 85520384,
+          "rios": 31,
+          "wios": 143
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 249,
+          "mean": 40.63453815261044,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 249,
+          "mean": 2258.863453815261,
+          "peak": 3459.0
+        }
+      }
+    },
+    {
+      "label": "primary-p3",
+      "elapsed": 226.88270509499125,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 2,
+      "resources": {
+        "sample_count": 1121,
+        "first_monotonic": 924532.54805345,
+        "last_monotonic": 924758.337402883,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11052597248,
+        "observer_cpu_seconds": 1.53,
+        "cgroup_memory_peak_bytes": 8816885760,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 503554239,
+          "user_usec": 471489335,
+          "system_usec": 32064903,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 84807680,
+          "rios": 0,
+          "wios": 163
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 227,
+          "mean": 45.15418502202643,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 227,
+          "mean": 2635.431718061674,
+          "peak": 6602.0
+        }
+      }
+    },
+    {
+      "label": "primary-p4",
+      "elapsed": 232.60608395200688,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 2,
+      "resources": {
+        "sample_count": 1149,
+        "first_monotonic": 924761.186025454,
+        "last_monotonic": 924992.782758456,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 10783150080,
+        "observer_cpu_seconds": 1.56,
+        "cgroup_memory_peak_bytes": 8555790336,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 519914331,
+          "user_usec": 485445311,
+          "system_usec": 34469019,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 85839872,
+          "rios": 0,
+          "wios": 171
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 233,
+          "mean": 43.527896995708154,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 233,
+          "mean": 2616.1802575107295,
+          "peak": 6548.0
+        }
+      }
+    },
+    {
+      "label": "primary-b4",
+      "elapsed": 252.76172560697887,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 1,
+      "resources": {
+        "sample_count": 1252,
+        "first_monotonic": 924995.671931301,
+        "last_monotonic": 925247.518463639,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7311884288,
+        "observer_cpu_seconds": 1.49,
+        "cgroup_memory_peak_bytes": 5073330176,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 479469847,
+          "user_usec": 448822539,
+          "system_usec": 30647308,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 84701184,
+          "rios": 0,
+          "wios": 150
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 253,
+          "mean": 40.65217391304348,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 253,
+          "mean": 2224.7667984189725,
+          "peak": 3458.0
+        }
+      }
+    },
+    {
+      "label": "large-qualification",
+      "elapsed": 228.94632520200685,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 1,
+      "resources": {
+        "sample_count": 1133,
+        "first_monotonic": 925250.626562242,
+        "last_monotonic": 925478.614823387,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7592751104,
+        "observer_cpu_seconds": 1.44,
+        "cgroup_memory_peak_bytes": 5002178560,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 405977288,
+          "user_usec": 380736021,
+          "system_usec": 25241267,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 77135872,
+          "rios": 0,
+          "wios": 122
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 229,
+          "mean": 41.86026200873363,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 229,
+          "mean": 2286.056768558952,
+          "peak": 3458.0
+        }
+      }
+    },
+    {
+      "label": "large-b1",
+      "elapsed": 229.27621311193798,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 1,
+      "resources": {
+        "sample_count": 1134,
+        "first_monotonic": 925481.026994464,
+        "last_monotonic": 925709.143620097,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7591440384,
+        "observer_cpu_seconds": 1.42,
+        "cgroup_memory_peak_bytes": 4994256896,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 407081369,
+          "user_usec": 381050156,
+          "system_usec": 26031212,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 77078528,
+          "rios": 0,
+          "wios": 117
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 229,
+          "mean": 41.48908296943232,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 229,
+          "mean": 2291.7991266375548,
+          "peak": 3462.0
+        }
+      }
+    },
+    {
+      "label": "large-p1",
+      "elapsed": 202.3125045680208,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 2,
+      "resources": {
+        "sample_count": 997,
+        "first_monotonic": 925711.362531888,
+        "last_monotonic": 925912.571234689,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 11501821952,
+        "observer_cpu_seconds": 1.46,
+        "cgroup_memory_peak_bytes": 9241841664,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 444597288,
+          "user_usec": 412235984,
+          "system_usec": 32361303,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 77991936,
+          "rios": 0,
+          "wios": 117
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 202,
+          "mean": 48.29207920792079,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 202,
+          "mean": 2936.1782178217823,
+          "peak": 6613.0
+        }
+      }
+    },
+    {
+      "label": "single-request2",
+      "elapsed": 115.76015603309497,
+      "semantic_pass": true,
+      "resource_pass": true,
+      "selection_pass": true,
+      "selected_workers": 1,
+      "resources": {
+        "sample_count": 570,
+        "first_monotonic": 925916.903955499,
+        "last_monotonic": 926031.552918044,
+        "interval_seconds": 0.2,
+        "sampled_peak_sum_rss_bytes": 7273525248,
+        "observer_cpu_seconds": 0.76,
+        "cgroup_memory_peak_bytes": 5071912960,
+        "cgroup_cpu_cumulative": {
+          "usage_usec": 209535843,
+          "user_usec": 196073017,
+          "system_usec": 13462826,
+          "nice_usec": 0,
+          "nr_periods": 0,
+          "nr_throttled": 0,
+          "throttled_usec": 0,
+          "nr_bursts": 0,
+          "burst_usec": 0
+        },
+        "cgroup_physical_io_cumulative": {
+          "rbytes": 0,
+          "wbytes": 28225536,
+          "rios": 0,
+          "wios": 55
+        },
+        "limits": "final sample may precede process exit; residency endpoints uncertain by interval; nested workers overlap; per-process I/O must not be summed as exclusive E2E I/O"
+      },
+      "gpu": {
+        "utilization.gpu [%]": {
+          "count": 116,
+          "mean": 29.620689655172413,
+          "peak": 100.0
+        },
+        "memory.used [MiB]": {
+          "count": 116,
+          "mean": 1922.8620689655172,
+          "peak": 3461.0
+        }
+      }
+    }
+  ],
+  "correction_checks": [
+    {
+      "label": "primary-b1",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "primary-p1",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "primary-p2",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "primary-b2",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "primary-b3",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "primary-p3",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "primary-p4",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    },
+    {
+      "label": "primary-b4",
+      "checks": {
+        "remove_matched": true,
+        "one_add": true,
+        "geometry_changed": true,
+        "manual_zero": true,
+        "movement_one": true,
+        "continuity": true,
+        "order": true,
+        "equal": true
+      }
+    }
+  ],
+  "process_faults": [
+    {
+      "case": "nonzero",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "missing",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "wrong-image",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "kill",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "timeout",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    },
+    {
+      "case": "oom",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 1
+    }
+  ],
+  "failed_cuda_injection": [
+    {
+      "case": "cuda-oom",
+      "checks": {
+        "expected_fault": false,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    }
+  ],
+  "cuda_allocator_oom": [
+    {
+      "case": "cuda-allocator-oom",
+      "checks": {
+        "expected_fault": true,
+        "actual_oom_kill_if_requested": true,
+        "failed": true,
+        "children_reaped": true,
+        "no_final_numbering": true,
+        "failure_diagnostic": true,
+        "detection_aborted": true
+      },
+      "exit_code": 1,
+      "oom_kills_before": 0,
+      "oom_kills_after": 0
+    }
+  ],
+  "boundary_audit": {
+    "rows": [
+      {
+        "label": "primary-b1",
+        "max_source_processes": 1,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "primary-p1",
+        "max_source_processes": 2,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "primary-p2",
+        "max_source_processes": 2,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "primary-b2",
+        "max_source_processes": 1,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "primary-b3",
+        "max_source_processes": 1,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "primary-p3",
+        "max_source_processes": 2,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "primary-p4",
+        "max_source_processes": 2,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "primary-b4",
+        "max_source_processes": 1,
+        "distinct_source_processes": 3,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "large-qualification",
+        "max_source_processes": 1,
+        "distinct_source_processes": 2,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "large-b1",
+        "max_source_processes": 1,
+        "distinct_source_processes": 2,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "large-p1",
+        "max_source_processes": 2,
+        "distinct_source_processes": 2,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      },
+      {
+        "label": "single-request2",
+        "max_source_processes": 1,
+        "distinct_source_processes": 1,
+        "checks": {
+          "no_sr_source_overlap": true,
+          "at_most_selected_workers": true,
+          "all_page_processes_observed": true,
+          "input_order": true,
+          "no_foreign_container_start_or_exec": true
+        },
+        "foreign": []
+      }
+    ],
+    "historical_primary_semantics": {
+      "all_equal": true,
+      "checks": {
+        "page_order": true,
+        "input_order": true,
+        "combined_base": true,
+        "combined_final_and_movement_metadata": true,
+        "filters": true,
+        "per_page": {
+          "page_012": {
+            "source_reference": true,
+            "detector_geometry": true,
+            "mmr_geometry": true,
+            "correction_stats": true,
+            "numbering_base": true,
+            "numbering_final_and_metadata": true,
+            "mmr_targets_skips": true
+          },
+          "page_013": {
+            "source_reference": true,
+            "detector_geometry": true,
+            "mmr_geometry": true,
+            "correction_stats": true,
+            "numbering_base": true,
+            "numbering_final_and_metadata": true,
+            "mmr_targets_skips": true
+          },
+          "page_014": {
+            "source_reference": true,
+            "detector_geometry": true,
+            "mmr_geometry": true,
+            "correction_stats": true,
+            "numbering_base": true,
+            "numbering_final_and_metadata": true,
+            "mmr_targets_skips": true
+          }
+        },
+        "source": {
+          "page_012": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          },
+          "page_013": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          },
+          "page_014": {
+            "original": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "x4": {
+              "ordered_predictions": true,
+              "staff_mask": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_symbols": {
+                "equal": true,
+                "different_values": 0
+              },
+              "connector_brace_dot": {
+                "equal": true,
+                "different_values": 0
+              }
+            },
+            "omr": true
+          }
+        }
+      },
+      "allowed_differences": "run paths and display-only OCR score comments; no geometry/order/number/mapping tolerances"
+    },
+    "all_pass": true
+  },
+  "gpu_accuracy_smoke": {
+    "source_commit": "d246ceba",
+    "matches": 85,
+    "gt": 85,
+    "hard_fp": 0,
+    "fn": 0,
+    "soft": 0,
+    "log": "logs/issue458/validation/system/gpu_smoke_20261101T160237Z/gpu_smoke.log"
+  }
+}

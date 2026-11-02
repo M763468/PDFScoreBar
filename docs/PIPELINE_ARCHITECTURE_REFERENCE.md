@@ -476,3 +476,9 @@ the long-term boundary materially changes; do not copy detailed pipeline interna
 
 See `docs/TWO_HOMR_MILESTONE.md` for the accepted Issue #274 accuracy/performance milestone
 that precedes the Issue #284 SR scheduling/runtime optimization.
+
+## Configurable source concurrency
+
+The batch-SR route supports opt-in resource-admitted page-source scheduling after
+the SR process exits, with bounded outstanding jobs and input-order consumption.
+See [configuration and failure policy](performance/issue458-source-concurrency.md).

@@ -20,13 +20,15 @@ def all_equal(value):
     return True
 
 
-def source_checks(root: Path, a: Path, b: Path, pages: list[str]) -> dict:
+def source_checks(
+    root: Path, a: Path, b: Path, pages: list[str], score_name: str = "Shostakovich-Sym5-Va"
+) -> dict:
     checks = {}
     for page in pages:
         original_a = load(a / "baseline/batch" / page / "worker_result.json")["artifacts"]
         original_b = load(b / "baseline/batch" / page / "worker_result.json")["artifacts"]
-        current_a = a / "current_support/Shostakovich-Sym5-Va" / page / "artifacts"
-        current_b = b / "current_support/Shostakovich-Sym5-Va" / page / "artifacts"
+        current_a = a / "current_support" / score_name / page / "artifacts"
+        current_b = b / "current_support" / score_name / page / "artifacts"
         checks[page] = {
             "original": compare_bundle(
                 root,
@@ -99,7 +101,11 @@ def pipeline_checks(root: Path, a: Path, b: Path) -> dict:
         }
     checks["per_page"] = per_page
     checks["source"] = source_checks(
-        root, a / "hybrid_output/pipeline", b / "hybrid_output/pipeline", pages
+        root,
+        a / "hybrid_output/pipeline",
+        b / "hybrid_output/pipeline",
+        pages,
+        score_name=Path(ma["pages"][0]["image_path"]).parent.name,
     )
     return {
         "all_equal": all_equal(checks),

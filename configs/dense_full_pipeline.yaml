@@ -18,6 +18,11 @@ steps:
   overlay: false
 
 detection:
+  # Opt in only with a resource envelope validated for the requested worker count.
+  source_concurrency:
+    workers: 1
+    timeout_sec: 900
+    on_unavailable: error
   enable_sr: true
   sr_scale: 4
   sr_compile_mode: reduce-overhead

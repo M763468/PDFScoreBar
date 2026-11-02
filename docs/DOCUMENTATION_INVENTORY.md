@@ -116,21 +116,21 @@ when translating. Historical and scoped records follow the exclusions below.
 | [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | [JA reviewed](dev/PR_SLICE_VALIDATION.ja.md); #480 currency review | P2 |
 | [dev/codex_local_automation.md](dev/codex_local_automation.md) | current/reference | EN | [JA reviewed](dev/codex_local_automation.ja.md); #480 currency review | P2 |
 | [dev/local_worktree_data.md](dev/local_worktree_data.md) | current/reference | EN | [JA reviewed](dev/local_worktree_data.ja.md); #480 currency review | P2 |
-| [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | JA needed | P2 |
+| [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | [JA reviewed](agent-skills/EVAL.ja.md); #482 | P2 |
 | [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | [EN reviewed](dev/EXPERIMENT_MODEL_SELECTION.en.md); #475 | P1 |
 | [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](SCRIPT_MANAGEMENT.en.md) | P2 |
-| [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | JA needed | P2 |
-| [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | JA needed | P2 |
-| [ai-workflow/GRAPHIFY.md](ai-workflow/GRAPHIFY.md) | current/reference | EN | JA needed | P2 |
-| [ai-workflow/CODEX_GEMINI_COLLAB.md](ai-workflow/CODEX_GEMINI_COLLAB.md) | current/reference | EN | JA needed | P2 |
-| [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | JA needed | P2 |
+| [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | [JA reviewed](ai-workflow/README.ja.md); #482 | P2 |
+| [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | [JA reviewed](ai-workflow/WORKFLOW.ja.md); #482 | P2 |
+| [ai-workflow/GRAPHIFY.md](ai-workflow/GRAPHIFY.md) | current/reference | EN | [JA reviewed](ai-workflow/GRAPHIFY.ja.md); #482 | P2 |
+| [ai-workflow/CODEX_GEMINI_COLLAB.md](ai-workflow/CODEX_GEMINI_COLLAB.md) | current/reference | EN | [JA reviewed](ai-workflow/CODEX_GEMINI_COLLAB.ja.md); #482 | P2 |
+| [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | [JA reviewed](ai-workflow/LABELS.ja.md); #482 | P2 |
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
 | [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed | P3 |
 | [GOALS.md](GOALS.md) | future/direction; currency needs review | mixed | split/review | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; includes frozen evidence | EN | JA needed; preserve evidence labels | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | translate navigation/rules as needed | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |
-| [ai-workflow/RUNNER_DESIGN.md](ai-workflow/RUNNER_DESIGN.md) | legacy runner proposal; conflicts with active task-state rules | EN | review disposition before translating | P3 |
+| [ai-workflow/RUNNER_DESIGN.md](ai-workflow/RUNNER_DESIGN.md) | deprecated runner proposal (#482) | EN | not translated (deprecated) | N/A |
 
 ### Scope boundaries and review queue
 
@@ -153,9 +153,9 @@ when translating. Historical and scoped records follow the exclusions below.
   Read through the history index only when the active task needs that evidence.
 - **Known review needs:** #226–#229 documents describe their own eventual migration into
   standing user/operation docs. Check unique surviving contracts before any retirement.
-  `ai-workflow/RUNNER_DESIGN.md` requires task bundles under `docs/refactors/`, while
-  current `AGENTS.md` / `ai-workflow/WORKFLOW.md` reject mandatory task-state copies.
-  Record this conflict; do not translate the runner proposal as an active instruction.
+  `ai-workflow/RUNNER_DESIGN.md` required task bundles under `docs/refactors/`, which
+  conflicts with current `AGENTS.md` / `ai-workflow/WORKFLOW.md`; #482 marked it deprecated
+  and it is not translated.
   `GOALS.md` contains older optimization non-goals; check current Issue decisions before
   treating them as current planning constraints. These are review items, not runtime fixes.
 - **Archived/deprecated:** `archive/**`, `ai-workflow/AI_AGENT_STRATEGY_2026.md`, and

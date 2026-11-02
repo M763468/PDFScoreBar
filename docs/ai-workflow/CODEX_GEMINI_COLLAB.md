@@ -1,5 +1,7 @@
 # Codex + Gemini consultation notes
 
+[日本語](CODEX_GEMINI_COLLAB.ja.md)
+
 This file is retained only as a historical/optional note. It is not part of the default
 PDFScoreBar development workflow.
 

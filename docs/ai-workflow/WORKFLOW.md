@@ -1,5 +1,7 @@
 # AI-assisted development workflow
 
+[日本語](WORKFLOW.ja.md)
+
 This document describes the lightweight repository workflow around `AGENTS.md`. It is not a
 second instruction hierarchy and does not require a particular model, skill, or orchestration layer.
 

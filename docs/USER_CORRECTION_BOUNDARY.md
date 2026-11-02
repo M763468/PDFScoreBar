@@ -1,5 +1,7 @@
 # User correction and GT tooling boundary (Issue #393)
 
+[日本語](USER_CORRECTION_BOUNDARY.ja.md)
+
 The supported user correction application is `tools/review_correction/server.py`. It opens one
 validated `review/manual_correction_input.json` package. The handoff selects the pages, readable
 artifacts, and correction outputs. Its server exposes only the manual review UI and routes needed

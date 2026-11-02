@@ -1,12 +1,15 @@
 # Manual Correction Review Workflow
 
+[日本語](manual_correction_review_package.ja.md)
+
 This document describes the current config-first manual-correction workflow. It connects one
 pipeline run to the existing manual GUI, saves package-local corrections, reruns the pipeline with
 those corrections, and can materialize the corrected final score-numbered PDF.
 
-This is still not a new public `pdfscorebar` console surface. Normal pipeline execution remains
-config-first through `make run-pipeline` / `src.pipeline.main`, and the correction workflow reuses
-the existing review helpers and GUI.
+This is a config-first development and operations reference, not a new public `pdfscorebar`
+console surface. For the supported user distribution workflow, see the [User Guide](USER_GUIDE.md).
+The workflow here uses `make run-pipeline` / `src.pipeline.main` and the existing review helpers
+and GUI.
 
 ## 1. Emit the review package
 
@@ -422,21 +425,19 @@ movement inputs retain their existing meaning; unresolved candidates do not beco
 
 The dedicated user UI is `tools/review_correction/index.html` and `app.js`. Primary action,
 validation, and result messages are collected in `tools/review_correction/strings.js`; state labels
-come from `tools/review_correction/state.py::LABELS`. These are the controlled English inputs for
-#361. GT/developer presentation remains in `tools/gt_relabel_gui/` and is not a localization target.
+come from `tools/review_correction/state.py::LABELS`. The user application supports English and Japanese through its language selector.
+GT/developer presentation remains in `tools/gt_relabel_gui/` and is outside that localization scope.
 The browser displays only current-page detail alongside package-wide pending/recorded/error counts.
 
 
-## Acceptance and localization handoff
+## Acceptance and localization
 
 The real-artifact acceptance procedure and fixed observable result gates are documented in
 [REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md). Evidence is retained under
 `logs/issue397/acceptance/`, separately from each clean corrected `final/` directory.
 
-For #361, the stable user surface consists of `tools/review_correction/index.html`, `strings.js`,
-`app.js`, `correction_state.js`, and the state labels in `state.py::LABELS`.
-Primary copy is catalogued; some detail/status messages remain literal English in `app.js`
-(for example measure/system summaries, removal feedback and artifact-load errors). Localization
-should extract these within the user application and translate validation feedback displayed by
-this application. GT/developer files are not part of that follow-up. The implementation surface is
-ready for #361; integration into `develop` awaits review of the dependency PRs.
+Issue #361 delivered localization for the user application. Its user-facing surface includes
+`tools/review_correction/index.html`, `strings.js`, `app.js`, `correction_state.js`, and state
+labels in `state.py::LABELS`. The language selector stores its choice locally in the browser.
+GT/developer files remain outside that scope. The retained #397 acceptance evidence is historical;
+it is not a claim that the current revision has been revalidated on real artifacts.

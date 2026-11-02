@@ -99,12 +99,12 @@ when translating. Historical and scoped records follow the exclusions below.
 | [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
 | [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN / [JA](ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | [JA reviewed](USER_GUIDE.ja.md) | P1 |
-| [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | JA needed | P1 |
+| [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | [JA reviewed](manual_correction_review_package.ja.md) | P1 |
 | [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN / [JA](BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN / [JA](dev/VALIDATION_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN / [JA](dev/LOCAL_VALIDATION.ja.md) | reviewed; #465 translation and meaning review | P1 |
-| [USER_CORRECTION_BOUNDARY.md](USER_CORRECTION_BOUNDARY.md) | current/reference | EN | JA needed | P2 |
-| [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | JA needed | P2 |
+| [USER_CORRECTION_BOUNDARY.md](USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](USER_CORRECTION_BOUNDARY.ja.md) | P2 |
+| [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | [JA reviewed](corrected_final_output.ja.md) | P2 |
 | [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
 | [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
 | [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | JA needed | P2 |

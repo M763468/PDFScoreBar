@@ -1,12 +1,14 @@
 # Corrected Final Output Helper
 
+[日本語](corrected_final_output.ja.md)
+
 This document describes the helper-level corrected final output connection added for
 Issue #236.
 
-This is not the full #226/#227 public `pdfscorebar run INPUT.pdf --output-dir
-OUTPUT_DIR` output profile materializer. It is a narrow connection from the
-manual-correction `apply_corrections` rerun path to a clean final PDF artifact
-for the corrected run.
+This is a narrow connection from the manual-correction `apply_corrections` rerun
+path to a clean final PDF artifact for the corrected run. The #226/#227
+`pdfscorebar` CLI was a design proposal, not the supported distribution interface.
+For the current user-facing commands, see the [User Guide](USER_GUIDE.md).
 
 ## Entry point
 
@@ -64,7 +66,7 @@ final PDF.
 This helper does not implement:
 
 - the full `OUTPUT_DIR/{final,review,debug}` public output materializer;
-- public CLI polish around `pdfscorebar run` / `pdfscorebar apply-corrections`;
+- the proposed `pdfscorebar run` / `pdfscorebar apply-corrections` CLI;
 - GUI launch workflow;
 - #215 real-artifact GUI retry;
 - detector / OCR / MMR accuracy changes;

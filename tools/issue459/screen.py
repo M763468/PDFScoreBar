@@ -57,7 +57,7 @@ def main():
         cache = output / "cache" / label
         shutil.copytree(seed, cache)
         command = [sys.executable, str(root / "tools/issue447/run_experiment.py"),
-                   "--issue-id", "459", "--uid", "0", "--gid", "0",
+                   "--issue-id", "459", "--uid", "0", "--gid", "0", "--home", "/root",
                    "--image", args.image, "--label", label, "--scope", "multi",
                    "--compile-cache", str(cache)]
         if arm == "o":

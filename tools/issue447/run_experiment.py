@@ -20,6 +20,7 @@ def main() -> int:
     parser.add_argument("--issue-id", type=int, default=447)
     parser.add_argument("--uid", type=int, default=os.getuid())
     parser.add_argument("--gid", type=int, default=os.getgid())
+    parser.add_argument("--home", default="/tmp", help="Explicit container HOME policy")
     parser.add_argument("--label", required=True)
     parser.add_argument("--image", required=True, help="Verified immutable sha256 image ID")
     parser.add_argument("--scope", choices=("single", "multi"), default="single")
@@ -144,7 +145,7 @@ def main() -> int:
         "-e",
         "PDFSCOREBAR_MODEL_CACHE=/model-cache",
         "-e",
-        "HOME=/tmp",
+        f"HOME={args.home}",
         "-e",
         "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
         "-e",

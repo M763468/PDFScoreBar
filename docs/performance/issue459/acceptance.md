@@ -20,7 +20,8 @@ no competing GPU compute process, and the same source/model digests. Multi-page 
 are Shostakovich-Sym5-Va page_012, page_013, page_014 in order; single is page_013.
 Compare production B against `--source-workers 1 --omr-reuse` O.
 Run B,O,O,B for each UID (0:0 and 1000:1000), scope (multi/single), and
-compiler state (cold/warm). Each arm therefore has two repetitions per cell.
+compiler state (cold/warm). Root uses HOME=/root as in the maintained launcher;
+non-root uses an explicit writable HOME=/tmp. Each arm therefore has two repetitions per cell.
 Record median, min/max and each individual observation, not just the best run.
 
 Cold means an empty private Inductor/Triton directory for every run. Warm means
@@ -52,7 +53,7 @@ No silent retry, fallback, threshold changes or reuse of unknown outputs is allo
 Example root compiler-cold control (use a new label and cache path each time):
 
 ```sh
-python3 tools/issue447/run_experiment.py --issue-id 459 --uid 0 --gid 0 \
+python3 tools/issue447/run_experiment.py --issue-id 459 --uid 0 --gid 0 --home /root \
   --label root-multi-cold-b1 --scope multi --image <immutable-sha256> \
   --compile-cache "$PWD/logs/issue459/cache/root-multi-cold-b1"
 ```
@@ -61,3 +62,8 @@ For O add `--source-workers 1 --omr-reuse`. All artifacts belong beneath
 `logs/issue459/`; snapshots and provenance are retained by the launcher. These are
 research routes; the PoC is not a production worker protocol. Performance success
 alone never authorizes integration before all quality and recovery gates pass.
+
+The initial root-warm-screen1 uses the historical HOME=/tmp override. It is a
+preliminary diagnostic, not default-deployment evidence. The corrected deployment
+screen explicitly sets HOME=/root; the metric, inputs and numerical gates are
+unchanged. Preserve the preliminary results separately.

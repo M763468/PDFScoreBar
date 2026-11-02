@@ -93,6 +93,7 @@ def test_screen_runs_root_abba_with_independent_seed_copies(tmp_path, monkeypatc
         calls.append(command)
         assert command[command.index('--uid') + 1] == '0'
         assert command[command.index('--gid') + 1] == '0'
+        assert command[command.index('--home') + 1] == '/root'
         cache = Path(command[command.index('--compile-cache') + 1])
         assert (cache / 'kernel').read_bytes() == b'seed'
         (cache / 'kernel').write_bytes(b'mutated by this run')

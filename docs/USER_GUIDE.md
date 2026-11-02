@@ -249,7 +249,7 @@ Partial/reordered pages, flattened/re-encoded backgrounds and other interactive 
 shapes require further validation. Export a copy with the original background and
 native annotations. The application does not import MSF files or infer which handwritten numbers it may delete.
 A supplied 15-page MobileSheets annotation-only roundtrip has been checked; other
-versions/export settings and physical printing remain unverified. See [the integration evidence in PR #445](https://github.com/M763468/PDFScoreBar/pull/445).
+versions/export settings and physical printing remain unverified.
 
 ## Troubleshooting and provenance
 

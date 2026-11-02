@@ -12,6 +12,8 @@ from tools.issue459.job_phase import build, consume, digest, execute_worker
 
 
 def inputs(tmp_path):
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    run_id = str(uuid.uuid4())
     images, sr = [], []
     for index in range(2):
         image = tmp_path / f"page{index}.png"
@@ -19,7 +21,15 @@ def inputs(tmp_path):
         support = tmp_path / f"sr{index}.png"
         support.write_bytes(f"fresh SR{index}".encode())
         images.append(image)
-        sr.append({"image": str(image), "sr_image": str(support), "sr_sha256": digest(support)})
+        sr.append(
+            {
+                "image": str(image),
+                "sr_image": str(support),
+                "sr_sha256": digest(support),
+                "image_sha256": digest(image),
+                "job_run_id": run_id,
+            }
+        )
     model = tmp_path / "model.pt"
     model.write_bytes(b"verified model")
     return images, sr, model
@@ -51,7 +61,7 @@ def prepared(tmp_path, execute=worker):
         images,
         sr,
         tmp_path / "phase",
-        run_id=str(uuid.uuid4()),
+        run_id=sr[0]["job_run_id"],
         model=model,
         model_sha256=digest(model),
         execute=execute,
@@ -122,7 +132,7 @@ def test_worker_fault_cannot_publish_complete_and_retains_diagnostics(tmp_path, 
             images,
             sr,
             tmp_path / "phase",
-            run_id=str(uuid.uuid4()),
+            run_id=sr[0]["job_run_id"],
             model=model,
             model_sha256=digest(model),
             execute=failed,
@@ -190,7 +200,7 @@ def test_failed_directory_cannot_be_reused_but_fresh_job_recovers(tmp_path):
             images,
             sr,
             tmp_path / "failed",
-            run_id=str(uuid.uuid4()),
+            run_id=sr[0]["job_run_id"],
             model=model,
             model_sha256=digest(model),
             execute=failed,
@@ -200,18 +210,51 @@ def test_failed_directory_cannot_be_reused_but_fresh_job_recovers(tmp_path):
             images,
             sr,
             tmp_path / "failed",
-            run_id=str(uuid.uuid4()),
+            run_id=sr[0]["job_run_id"],
             model=model,
             model_sha256=digest(model),
             execute=worker,
         )
+    images, sr, model = inputs(tmp_path / "new_inputs")
     recovered = build(
         images,
         sr,
         tmp_path / "fresh",
-        run_id=str(uuid.uuid4()),
+        run_id=sr[0]["job_run_id"],
         model=model,
         model_sha256=digest(model),
         execute=worker,
     )
     assert recovered.manifest.exists()
+
+
+def test_zero_extent_clipped_edges_preserve_existing_strict_consensus_contract(tmp_path):
+    from src.pipeline.steps.hybrid_consensus import load_json_boxes
+    from tools.issue459.job_phase import prediction_bytes
+
+    prediction = tmp_path / "edge.json"
+    data = b"[[0,1166,0,1622],[1,2,3,2]]"
+    prediction.write_bytes(data)
+    assert load_json_boxes(prediction) == [(0, 1166, 0, 1622), (1, 2, 3, 2)]
+    assert prediction_bytes(prediction) == data
+
+
+@pytest.mark.parametrize("fault", ["source_changed_after_sr", "foreign_sr_run"])
+def test_sr_identity_must_bind_the_pre_sr_source_and_current_run(tmp_path, fault):
+    images, sr, model = inputs(tmp_path)
+    run_id = sr[0]["job_run_id"]
+    if fault == "source_changed_after_sr":
+        images[0].write_bytes(b"different source after SR")
+    else:
+        sr[0]["job_run_id"] = str(uuid.uuid4())
+    with pytest.raises(ValueError, match="SR/source run identity"):
+        build(
+            images,
+            sr,
+            tmp_path / "phase",
+            run_id=run_id,
+            model=model,
+            model_sha256=digest(model),
+            execute=worker,
+        )
+    assert not (tmp_path / "phase/completed.json").exists()

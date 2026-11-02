@@ -22,13 +22,16 @@ def build_manifest(images, sr_outputs, directory):
     os.environ.pop("ISSUE459_HANDOFF", None)
     os.environ.pop("ISSUE447_OMR_MANIFEST", None)
     root = Path(__file__).resolve().parents[2]
-    manifest = json.loads((root / "models/omr_dln/manifest.json").read_text())
+    model_manifest = root / "models/omr_dln/manifest.json"
+    if job_phase.digest(model_manifest) != os.environ["ISSUE459_MODEL_MANIFEST_SHA256"]:
+        raise ValueError("model selection changed during SR")
+    manifest = json.loads(model_manifest.read_text())
     model = resolve_omr_dln_model_path(repository_root=root)
     handoff = job_phase.build(
         images,
         sr_outputs,
         directory,
-        run_id=str(uuid.uuid4()),
+        run_id=os.environ["ISSUE459_RUN_ID"],
         model=model,
         model_sha256=manifest["sha256"],
     )
@@ -53,6 +56,56 @@ def configure():
 
 
 def install(detector_class=None):
+    if detector_class is None:
+        from src.pipeline.detection.maintained_profile_hybrid import (
+            BatchSRVerifiedProfileHybridDetector,
+        )
+
+        detector_class = BatchSRVerifiedProfileHybridDetector
+    original = detector_class._batch_sr_worker
+
+    def bound_sr(self, *, support_output):
+        run_id = str(uuid.uuid4())
+        identities = {Path(p).resolve(): job_phase.digest(p) for p in self.images}
+        root = Path(__file__).resolve().parents[2]
+        model_manifest_digest = job_phase.digest(root / "models/omr_dln/manifest.json")
+        os.environ["ISSUE459_RUN_ID"] = run_id
+        os.environ["ISSUE459_MODEL_MANIFEST_SHA256"] = model_manifest_digest
+        job_phase.atomic_publish(
+            support_output.parent / "issue459_sr_inputs.json",
+            (
+                json.dumps(
+                    {
+                        "run_id": run_id,
+                        "model_manifest_sha256": model_manifest_digest,
+                        "inputs": {str(p): sha for p, sha in identities.items()},
+                    },
+                    indent=2,
+                )
+                + "\n"
+            ).encode(),
+        )
+        by_image, command, payload = original(self, support_output=support_output)
+        sr_request_path = support_output / "_sr_batch/request.json"
+        sr_request = json.loads(sr_request_path.read_text())
+        expected_outputs = {
+            Path(item["image"]).resolve(): Path(item["output"]).resolve()
+            for item in sr_request["items"]
+        }
+        if set(expected_outputs) != set(identities):
+            raise ValueError("SR request page association mismatch")
+        for image, expected in identities.items():
+            if job_phase.digest(image) != expected:
+                raise ValueError("source changed during SR")
+            sr_image = Path(by_image[image]["sr_image"]).resolve()
+            if sr_image != expected_outputs[image] or not sr_image.is_relative_to(
+                support_output.resolve()
+            ):
+                raise ValueError("SR result is not the fresh job output")
+            by_image[image] = {**by_image[image], "image_sha256": expected, "job_run_id": run_id}
+        return by_image, command, payload
+
+    detector_class._batch_sr_worker = bound_sr
     configure()
     shim.install(detector_class)
 

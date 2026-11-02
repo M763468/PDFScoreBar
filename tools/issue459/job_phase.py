@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import signal
 import subprocess
@@ -99,9 +100,11 @@ def prediction_bytes(path):
         if (
             not isinstance(row, list)
             or len(row) != 4
-            or any(type(v) is not int for v in row)
-            or row[0] >= row[2]
-            or row[1] >= row[3]
+            or any(type(v) not in (int, float) or not math.isfinite(v) for v in row)
+            # Match hybrid_consensus.load_json_boxes: clipping at image edges
+            # can produce zero extent; preserve the producer's bytes unchanged.
+            or row[0] > row[2]
+            or row[1] > row[3]
         ):
             raise ValueError("invalid source-coordinate barline")
     return data
@@ -146,6 +149,10 @@ def build(
         staged.mkdir()
         rows = []
         for image in images:
+            if by_image[image].get("job_run_id") != run_id or by_image[image].get(
+                "image_sha256"
+            ) != digest(image):
+                raise ValueError("SR/source run identity mismatch")
             sr = Path(by_image[image]["sr_image"]).resolve()
             if digest(sr) != by_image[image]["sr_sha256"]:
                 raise ValueError("fresh SR identity mismatch")

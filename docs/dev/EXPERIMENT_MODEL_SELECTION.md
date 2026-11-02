@@ -1,10 +1,9 @@
-# 開発用モデルの探索・正式比較とproduction選定（#448）
+# 開発用モデルの探索・正式比較とproduction選定
+
+[English](EXPERIMENT_MODEL_SELECTION.en.md)
 
 CNNとOMR-DLN候補は、既存configの明示パスで試せる。
 探索のたびにversion/SHA/provenanceを登録したり、production manifestを編集したりする必要はない。
-[PR #451](https://github.com/M763468/PDFScoreBar/pull/451) で調査と実装をまとめる。
-当初の別selection manifest/専用runner案と独立実装Issue #450は、
-[レビュー方針](https://github.com/M763468/PDFScoreBar/pull/451#issuecomment-6400645077) により置き換えた。
 
 現行productionの正規契約は [モデル契約](../MODEL_ARTIFACT_CONTRACT.md)、
 [モデル登録手順](../MODEL_ARTIFACTS.md)、[検証方針](VALIDATION_POLICY.md) を参照する。
@@ -34,11 +33,11 @@ Preflight成功、pipeline実行成功、精度比較合格、production採用�
 | CNN threshold | configで明示、有限の0〜1。manifestの`production_contract`との一致は不要 | manifest thresholdとの一致を維持 | `dense_orchestrator.py`。threshold探索は比較条件として明示 |
 | CNN NMS/crop/geometry | dense経路のNMS=falseなど既存I/O/scoring条件は維持 | 従来どおり | model identityとは別の下流semantic契約 |
 | OMR-DLNパス | `omr_dln_model_path`を優先、次に環境変数。明示したmissing/corrupt候補から別モデルへfallbackしない | 同じoverrideでもproduction manifest SHA照合が必須 | `model_selection.py`。Docker launcherに重複していた解決/照合を共通化 |
-| OMR-DLN互換性 | native `.pt`、detection taskとbox I/O、明示device、予測I/Oを検証。モデルの意味が「小節」であることは候補作成者が保証する | 従来のselectedモデル | `omr_dln_worker.py`。exported ONNX/TensorRT候補は今回未対応 |
+| OMR-DLN互換性 | native `.pt`、detection taskとbox I/O、明示device、予測I/Oを検証。モデルの意味が「小節」であることは候補作成者が保証する | 従来のselectedモデル | `omr_dln_worker.py`。exported ONNX/TensorRT候補は未対応 |
 | weight hash/version | 探索は実hashを自動記録、比較だけ指定hashと照合 | manifest選定versionのSHAを検証 | 全候補への事前SHA/version/provenance登録義務は設けない |
 | 古い検出出力の再利用 | モデル差替時に古い結果を使わないよう検出のskip-existingを無効化 | 従来どおり | `dense_orchestrator.py`。同じパスで再学習した重みの再実行に対応 |
 | HOMR source pin/marker | 現行maintained runtimeをそのまま利用。候補HOMR差替は未対応 | 必須 | `profile_contract.py` / `maintained_homr_worker.py`。対応しないruntimeまでチェックを削って実行可能とは扱わない |
-| SR / MMR / OCR | 候補交換の検証は今回の対象外 | 既存設定・assetを維持 | SRはimage-owned。MMR raw pathの存在検査は全weight SHA検証ではない |
+| SR / MMR / OCR | 候補交換の検証は対象外 | 既存設定・assetを維持 | SRはimage-owned。MMR raw pathの存在検査は全weight SHA検証ではない |
 | image/runtime互換性 | image存在、immutable ID、runtime fingerprint照合を維持 | 必須 | `scripts/docker_image_resolver.py` / `docker/runtime_contract.py` |
 | source provenance | source fingerprintと実行sourceを記録。image build時とのsource一致自体は拒否条件ではない | frozen配布ではinventory/hash/dirty検証を追加 | runtime互換性とsource identityは別概念 |
 | provider/device | CNN/OMR候補は`cpu`または`cuda`を明示。既定は`cuda`。CUDA要求からCPUへfallbackしない | 現行CUDA/ONNX/maintained契約を維持 | GPU一覧だけで実load成功とは扱わない。MMR OCRのwarning後fallbackまで候補の保証範囲に含めない |
@@ -52,11 +51,12 @@ Preflight成功、pipeline実行成功、精度比較合格、production採用�
 
 `configs/dense_full_pipeline.yaml`等を作業用configへコピーし、次を変更する。
 データ/input/outputの設定は元configの用途に合わせる。下は追加・変更するfieldだけの例。
+`issueNNN` は作業中のIssue番号に置き換える。
 
 ```yaml
 run:
   run_id: candidate_01
-  output_root: logs/issue448/experiments
+  output_root: logs/issueNNN/experiments
 
 detection:
   model_validation: exploration
@@ -96,7 +96,7 @@ import json
 import yaml
 
 config = yaml.safe_load(open("experiments/my_candidate.yaml"))
-observed = json.load(open("logs/issue448/experiments/candidate_01/model_selection.json"))
+observed = json.load(open("logs/issueNNN/experiments/candidate_01/model_selection.json"))
 config["detection"]["model_validation"] = "comparison"
 config["detection"]["model_sha256"] = {
     role: model["sha256"] for role, model in observed["models"].items()
@@ -127,10 +127,15 @@ runtime mismatchはbase/image provenanceを比較して適合imageを選び、�
 ## 設計の根拠と文書連携
 
 #329 / PR #331はversion別SHAとoperator import、#352 / PR #353は共有cacheとruntime/source fingerprintの分離、
-#398 / PR #401はproductionと歴史的Stage-E componentの分離を定めた。今回もこれらのproduction契約を維持する。
-過去のGPU/精度結果は今回の検証結果とは分ける。
+#398 / PR #401はproductionと歴史的Stage-E componentの分離を定めた。本書の探索・比較モードもこれらのproduction契約を維持する。
+過去のGPU/精度結果は、新しい候補の検証結果とは分けて扱う。
 現行Dockerfile/profileはHOMR commit `457e7c6518a10ba755db2e60883419e56c4d7369` を固定する。
 選択資産とarchive hashは[モデル契約](../MODEL_ARTIFACT_CONTRACT.ja.md)を参照する。
 
-[#446](https://github.com/M763468/PDFScoreBar/issues/446) の開発ガイドは本書を現行操作への参照先とし、
-日英同期・配置方針は同Epicに従う。本書の追加だけで英語版翻訳が完了したとは扱わない。
+本書の探索・比較モードは #448 / [PR #451](https://github.com/M763468/PDFScoreBar/pull/451) で導入した。
+当初の別selection manifest/専用runner案と独立実装Issue #450は、
+[レビュー方針](https://github.com/M763468/PDFScoreBar/pull/451#issuecomment-6400645077) により置き換えた。
+この経緯は設計判断の記録であり、現行の操作手順は本書の各節と現行source/testsに従う。
+
+本書は日本語を正本とし、[英語版](EXPERIMENT_MODEL_SELECTION.en.md)を併置する。
+日英同期・配置方針は[文書の言語方針](../DOCUMENTATION_LANGUAGE_POLICY.ja.md)に従う。

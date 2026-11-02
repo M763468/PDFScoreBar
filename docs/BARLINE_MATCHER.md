@@ -1,11 +1,13 @@
 # Shared Barline Matcher Specification
 
+[日本語](BARLINE_MATCHER.ja.md)
+
 ## Overview
-The `src/common/barline_evaluation.py` module provides the shared matcher that both homr and oemer pipelines use for comparing predicted barline boxes against ground truth. The matcher normalises slender barline geometry, performs IoU-based greedy matching, and classifies near-miss cases so downstream reports can promote or demote detections consistently.
+The `src/common/barline_evaluation.py` module provides the shared matcher that the HOMR evaluation scripts (`src/homr_eval_scripts/`) and the evaluation/diagnostic tools under `tools/` use for comparing predicted barline boxes against ground truth. The matcher normalises slender barline geometry, performs IoU-based greedy matching, and classifies near-miss cases so downstream reports can promote or demote detections consistently. It is an evaluation contract; it does not decide which barlines the production pipeline publishes.
 
 ## Geometry Normalisation
 - Each predicted and ground-truth box is padded via `expand_barline_box` before IoU measurement.
-- Default parameters (imported by both pipelines):
+- Default parameters (defined in `src/common/barline_geometry.py` and imported by the matcher and its callers):
   - `BARLINE_DEFAULT_MIN_WIDTH = 12`
   - `BARLINE_X_MARGIN = 3`
   - `BARLINE_Y_MARGIN = 3`
@@ -46,7 +48,7 @@ These terms describe different contracts and must not be conflated:
 After greedy pairing, unmatched predictions are revisited:
 - **Duplicate (`reason="duplicate"`)** when
   - IoU with fallback best ≥ `BARLINE_DUPLICATE_IOU_THRESHOLD` (0.3) and
-  - X-distance ≤ `BARLINE_DUPLICATE_X_TOLERANCE` (currently 12 px, migrating to `1.2 * unit_size`).
+  - X-distance ≤ `BARLINE_DUPLICATE_X_TOLERANCE` (12 px; this soft classification has not been migrated to `unit_size`).
 - **Repeat-like (`reason="repeat_like"`)** when
   - Vertical overlap ≥ `BARLINE_REPEAT_OVERLAP_THRESHOLD` (0.8),
   - X-distance between duplicate tolerance and `BARLINE_REPEAT_X_TOLERANCE` (40 px).
@@ -54,12 +56,12 @@ After greedy pairing, unmatched predictions are revisited:
 Predictions that do not satisfy either rule are treated as hard false positives.
 
 ### Dynamic Normalisation (Resolution Independence)
-While legacy thresholds are defined in pixels (px), new implementations (Issue #36 onward) adopt **unit_size (staff line spacing)** as the base unit for distance thresholds:
+While legacy thresholds are defined in pixels (px), newer distance thresholds use **unit_size (staff line spacing)** as the base unit. The measure-numbering logical layer (`MeasureNumberer` in `src/measure_numbering/numbering.py`) uses:
 - **Deduplication Threshold**: `1.2 * unit_size`
 - **Implicit Start Assumption**: `4.0 * unit_size`
 This ensures the logical layer behaves consistently across different score resolutions (e.g., 300dpi vs 600dpi).
 
-This Issue #313 contract is intentionally limited to strong `center_anchor`
+The center-anchor contract above is intentionally limited to strong `center_anchor`
 acceptance. It does not make the legacy IoU padding or duplicate/repeat soft
 classification pixel thresholds resolution-independent.
 
@@ -71,7 +73,7 @@ consumer also checks that the manifest dimensions equal the actual input image
 dimensions before matching.
 
 ## Left-margin Exclusion Rule
-`apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The homr evaluator currently keeps the guard disabled (`LEFT_MARGIN_FORCE_FP_GT_INDICES = set()`), so no matches are demoted by default. When re-enabled, any GT index listed in the set and matched to a predicted width ≤ `LEFT_MARGIN_FORCE_FP_MAX_WIDTH` (2 px) will be forced back to an FP to suppress intentionally ignored left-gutter pillars.
+`apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The HOMR evaluator (`src/homr_eval_scripts/homr_evaluator.py`) currently keeps the guard disabled (`LEFT_MARGIN_FORCE_FP_GT_INDICES = set()`), so no matches are demoted by default. When re-enabled, any GT index listed in the set and matched to a predicted width ≤ `LEFT_MARGIN_FORCE_FP_MAX_WIDTH` (2 px) will be forced back to an FP to suppress intentionally ignored left-gutter pillars.
 
 When `margin_x` is provided (unused at present) the helper also demotes predictions whose centres fall inside the margin alongside their matched GT centres, allowing configurable left gutter suppression for other scores.
 
@@ -83,7 +85,7 @@ The matcher returns a `BarlineMatchResult` with:
 - `soft_matches`: duplicate/repeat-like records that remain associated with their GT index but are not counted as TP. In visualization overlays, these are typically labeled "OK".
 
 ## Overlay Visualization
-When evaluation scripts (e.g., `src/homr/homr_evaluator.py`) generate overlay images, the following visual semantics are used to represent detection quality:
+When evaluation scripts (e.g., `src/homr_eval_scripts/homr_evaluator.py` and `src/homr_eval_scripts/core/reporting.py`) generate overlay images, the following visual semantics are used to represent detection quality:
 
 -   **Green Box (`TP#{index}`)**: **True Positive**. The detection correctly matched a ground truth barline.
 -   **Red Box (`FP#{index}`)**: **False Positive**. The detection did not match any ground truth barline and was not classified as a soft match.
@@ -91,8 +93,8 @@ When evaluation scripts (e.g., `src/homr/homr_evaluator.py`) generate overlay im
     -   `OK...:dup`: A **duplicate** detection that overlaps with a ground truth barline that was already successfully matched by a better prediction.
     -   `OK...:rep`: A **repeat-like** detection, often a repeat sign or thick note stem, that is visually similar to a barline.
 
-## Thin Barline Recovery Heuristics (2025-10-15)
-The shared `common/thin_barline_finder.py` helper supplements detector output with slender pillars that primary models miss. Recent updates introduced:
+## Thin Barline Recovery Heuristics (historical record, 2025-10)
+The shared `src/common/thin_barline_finder.py` helper supplements detector output with slender pillars that primary models miss; it is used by the HOMR runtime predictor (`src/homr_runtime/predictor.py`) and the HOMR evaluator. The October 2025 updates introduced:
 
 - **Vertical split awareness**: candidates sharing an X coordinate now coexist when their vertical centres differ by more than a staff height, avoiding inadvertent overwrites between systems.
 - **Adjacency relaxation**: if the immediate 3 px neighbour is slightly dark but a wider 6 px window returns to background brightness, the barline is kept. This captures repeat pillars nested beside stems.
@@ -100,6 +102,6 @@ The shared `common/thin_barline_finder.py` helper supplements detector output wi
 - **Single-side guard** (2025-10-17): when one neighbour is confidently background and the opposite side is dark because of a stem/dynamics cluster, detections survive as long as the dark window is not fully inked (`single_side_dark_ratio ≤ 0.6`). The notehead rejection now requires both neighbours to be dense when this override triggers.
 - **Vertical gap closing** (2025-10-17): a 3 px tall morphological closing bridges short ledger/rest gaps before run-length analysis, enabling recovery of split pillars like GT 137.
 
-These heuristics reduced the shared false-negative set on `page_003` from six entries to four while keeping FP growth bounded (homr run `20251015T010556JST_fn_vertical_split_v5`: TP=148 FP=8 FN=4, precision 0.949/recall 0.974). The same logic propagates to the OEMER evaluator (`20251015T010745JST_baseline`: TP=152 FP=6 FN=0).
+At that time, these heuristics reduced the shared false-negative set on `page_003` from six entries to four while keeping FP growth bounded (homr run `20251015T010556JST_fn_vertical_split_v5`: TP=148 FP=8 FN=4, precision 0.949/recall 0.974). The same logic was also applied to the former OEMER evaluator (`20251015T010745JST_baseline`: TP=152 FP=6 FN=0), which is no longer part of the maintained source tree. These figures are historical evaluation evidence for that run, not a guarantee for the current production route.
 
-Evaluators serialise these results into `metrics.json`, `metrics.csv`, overlay images, and human-readable `compare.md` artefacts under `logs/<pipeline>/<timestamp>/`.
+Evaluators serialise these results into `metrics.json`, `metrics.csv`, overlay images, and human-readable `compare.md` artefacts under the evaluator's run directory (historically `logs/<pipeline>/<timestamp>/`).

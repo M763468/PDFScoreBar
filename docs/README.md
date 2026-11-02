@@ -13,7 +13,7 @@ historical evidence and validation guidance; most of those documents are not par
 | How do I run the current repository? | [Environments](ENVIRONMENTS.md) ([日本語](ENVIRONMENTS.ja.md)), then [manual correction workflow](manual_correction_review_package.md) ([日本語](manual_correction_review_package.ja.md)) if needed |
 | How are user corrections separated from GT/developer tools? | [User correction boundary](USER_CORRECTION_BOUNDARY.md) ([日本語](USER_CORRECTION_BOUNDARY.ja.md)) |
 | What does an engine caller send and receive? | [Engine job contract (English)](ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](ENGINE_JOB_CONTRACT.ja.md) |
-| How do I change and verify this repository? | [Branch policy](BRANCH_POLICY.md) ([日本語](BRANCH_POLICY.ja.md)) and [validation policy](dev/VALIDATION_POLICY.md) ([日本語](dev/VALIDATION_POLICY.ja.md)); [local validation](dev/LOCAL_VALIDATION.md) ([日本語](dev/LOCAL_VALIDATION.ja.md)) |
+| How do I change and verify this repository? | [Branch policy](BRANCH_POLICY.md) ([日本語](BRANCH_POLICY.ja.md)) and [validation policy](dev/VALIDATION_POLICY.md) ([日本語](dev/VALIDATION_POLICY.ja.md)); [local validation](dev/LOCAL_VALIDATION.md) ([日本語](dev/LOCAL_VALIDATION.ja.md)); [configuration and entry points](dev/CONFIGURATION_REFERENCE.md) ([日本語](dev/CONFIGURATION_REFERENCE.ja.md)) |
 | Why was older code or evidence retained? | [Repository surface inventory](REPOSITORY_SURFACE_INVENTORY.md), [documentation inventory](DOCUMENTATION_INVENTORY.md), then [history index](HISTORY_INDEX.md) ([日本語](HISTORY_INDEX.ja.md)) |
 
 The minimum selection has one prose explanation and one machine-readable list. The repository

@@ -117,6 +117,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [dev/codex_local_automation.md](dev/codex_local_automation.md) | current/reference | EN | [JA reviewed](dev/codex_local_automation.ja.md); #480 currency review | P2 |
 | [dev/local_worktree_data.md](dev/local_worktree_data.md) | current/reference | EN | [JA reviewed](dev/local_worktree_data.ja.md); #480 currency review | P2 |
 | [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | [JA reviewed](agent-skills/EVAL.ja.md); #482 | P2 |
+| [dev/CONFIGURATION_REFERENCE.md](dev/CONFIGURATION_REFERENCE.md) | current/reference; canonical config keys guarded by `tests/test_configuration_reference.py` | EN | [JA reviewed](dev/CONFIGURATION_REFERENCE.ja.md); #486 | P2 |
 | [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | [EN reviewed](dev/EXPERIMENT_MODEL_SELECTION.en.md); #475 | P1 |
 | [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](SCRIPT_MANAGEMENT.en.md) | P2 |
 | [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | [JA reviewed](ai-workflow/README.ja.md); #482 | P2 |

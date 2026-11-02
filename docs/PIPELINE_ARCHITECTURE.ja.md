@@ -1,11 +1,11 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"2cb1db19929e6815e0aa09c26312c898309ac301c8521f32a62f0be51af30f8c"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"6d1f960c5dbbc32317b5eeeab9c0b345f66a919516fbd690757235532a40ad1c"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）
-- 翻訳元: same PR。原文SHA-256: `2cb1db19929e6815e0aa09c26312c898309ac301c8521f32a62f0be51af30f8c`
+- 翻訳元: same PR。原文SHA-256: `6d1f960c5dbbc32317b5eeeab9c0b345f66a919516fbd690757235532a40ad1c`
 - 状態: `reviewed`。2026-10-29、利用者による読みやすさの確認と、実装照合・Argon独立レビューの結果を踏まえた概要版。
 
 2026-10-31、SR cacheと最小配布に関する追記をCodexが英語正本と対照し、意味・制約・日本語の読みやすさを確認した。
@@ -35,6 +35,10 @@ HOMRとOMR-DLNは楽譜上の特徴を検出する認識システムである。
 全ページのSRプロセスが終了してからページ単位の認識を開始し、各ページでは元画像HOMR、
 4倍画像HOMR、OMR-DLNの順に実行する。認識結果は**小節線候補の判断で合流**し、
 Phase A〜Cはその判断結果を使って段と小節の構造を作り、番号を確定する。
+
+SRの終了後、ページごとのsource生成を、明示的なリソースadmissionと入力順の結果統合を保って
+並列実行できる。既定値は1 workerである。設定と制約は
+[source並列実行の方針（英語）](performance/issue458-source-concurrency.md)を参照。
 
 ```mermaid
 flowchart TD
@@ -141,3 +145,5 @@ Phase Cは採択・補正済みの小節線、譜表マスク、利用可能な�
 | 利用者による訂正手順 | [ユーザーガイド（英語）](USER_GUIDE.md)、[ユーザー補正の境界（英語）](USER_CORRECTION_BOUNDARY.md) |
 
 実装リファレンスには、厳密な受入条件や、過去の調査への参照を残している。この概要では**現在の処理と各工程が必要な理由**に集中する。
+
+2026-11-02、Codexがsource並列実行の追記を現行英語原文と照合し、翻訳とSHA-256記録を同期した。

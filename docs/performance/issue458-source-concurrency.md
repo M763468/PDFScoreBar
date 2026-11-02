@@ -6,9 +6,11 @@ start; source results are consumed in input order. At most `workers` unconsumed
 jobs exist, including running and completed jobs. Models remain disposable per
 page, with no OMR reuse or persistent inference pool.
 
-The following opt-in proposal is supported by the separate
-[practical reassessment](issue458-reassessment.md), pending the owner's activation
-decision. The [original >=5% result](issue458-results.md) remains Failed. It
+The owner approved integrating this feature into the production code path in
+[PR467 comment6578962019](https://github.com/M763468/PDFScoreBar/pull/467#issuecomment-6578962019).
+The following explicit opt-in configuration is approved for the measured
+environment, supported by the [practical reassessment](issue458-reassessment.md).
+The generic production configuration remains one worker. The [original >=5% result](issue458-results.md) remains Failed. It
 applies only to the measured non-root, single RTX 4060 deployment:
 
 ```yaml
@@ -64,3 +66,17 @@ A simulated nonzero OOM-like exit is not evidence of real GPU OOM recovery.
 Use private compiler caches writable by the deployment UID. Never share a root-
 owned cache with a non-root job or change retained caches in place. Performance
 claims apply only to the UID, input shapes and cache policy in the results.
+
+## Integration scope and operational follow-up
+
+This exact-shape/error-policy example is specific to the verified deployment;
+it is not a common configuration for all users. Comprehensive operational
+fail-safe selection/rejection, resource budgets, timeouts and coordination with
+other runtime settings require separate design work. This PR preserves the
+existing explicit pre-start selection/rejection and no-silent-retry contracts;
+it does not redesign the production configuration system. Integration into
+`develop` is separate from release promotion to `main` and service deployment.
+
+To roll back new jobs, restore the generic `workers: 1` block (timeout900s,
+unavailable:error, removing the opt-in envelope/thread settings). Retain a failed
+run and its diagnosis; do not silently rerun it or relabel it successful.

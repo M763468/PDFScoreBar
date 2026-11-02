@@ -1,11 +1,11 @@
 # 現行パイプライン — 実装・技術契約リファレンス
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"750df08eba75ea156e01f1a4d32b646d87677f165e4e238ee4152641060c879f"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"547e36215748c4b9fcc1226998d09e8bc88f170c6925ee7e8edc14a03633774e"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE_REFERENCE.md) · [アーキテクチャ概要に戻る](PIPELINE_ARCHITECTURE.ja.md)
 
 - 原文: [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md)（英語正本）。
-- 翻訳元: same PR。原文 SHA-256: `750df08eba75ea156e01f1a4d32b646d87677f165e4e238ee4152641060c879f`。
+- 翻訳元: same PR。原文 SHA-256: `547e36215748c4b9fcc1226998d09e8bc88f170c6925ee7e8edc14a03633774e`。
 - 状態: `reviewed`。2026-10-29、主担当による現行source・原文との照合とArgon独立レビューを踏まえて確認済み。
 
 この文書は[現行パイプラインのアーキテクチャ概要](PIPELINE_ARCHITECTURE.ja.md)を補う、実装者向けの詳細リファレンスである。入出力の厳密な条件、ワーカーとモデルの責任、座標、閾値、例外・互換動作、成果物を扱う。
@@ -464,3 +464,11 @@ final/review成果物、補正の意味、ライフサイクル/エラー/リソ
 
 Issue #284のSRスケジューリング/実行環境最適化に先立つ、採択済みIssue #274の精度/性能マイルストーンは
 `docs/TWO_HOMR_MILESTONE.md`を参照。
+
+## source生成の並列数設定
+
+batch-SR経路は、SR process終了後のページごとのsource生成に、リソースadmission付きの
+opt-in並列実行を提供する。未消費job数には上限を設け、結果は入力順に統合する。
+[設定と失敗時の方針（英語）](performance/issue458-source-concurrency.md)を参照。
+
+2026-11-02、Codexがsource並列実行の追記を現行英語原文と照合し、翻訳とSHA-256記録を同期した。

@@ -287,4 +287,4 @@ python3 tools/review_correction/server.py --handoff /path/to/run/review/manual_c
 
 ## 過去の受け入れ証拠
 
-実成果物の受け入れ手順と固定された観測可能な結果のゲートは [REVIEW_ACCEPTANCE.md（英語）](dev/REVIEW_ACCEPTANCE.md) に記載されています。過去の証拠はクリーンな補正済み `final/` ディレクトリとは別に `logs/issue397/acceptance/` に保持されています。これは現在のリビジョンが実成果物で再検証されたことを主張するものではありません。
+実成果物の受け入れ手順と固定された観測可能な結果のゲートは [利用者補正の受入検証](dev/REVIEW_ACCEPTANCE.ja.md) に記載されています。過去の証拠はクリーンな補正済み `final/` ディレクトリとは別に `logs/issue397/acceptance/` に保持されています。これは現在のリビジョンが実成果物で再検証されたことを主張するものではありません。

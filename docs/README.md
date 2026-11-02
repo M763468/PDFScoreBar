@@ -46,7 +46,7 @@ do not indicate full translation.
   developer guide to explicit candidate paths, fixed comparisons, and production
   validation.
 - [Makefile surface](MAKEFILE_SURFACE.md) ([日本語](MAKEFILE_SURFACE.ja.md)), [regression workflow](REGRESSION_TEST_WORKFLOW.md) ([日本語](REGRESSION_TEST_WORKFLOW.ja.md)),
-  and [script management](SCRIPT_MANAGEMENT.md) guide repository development.
+  and [script management](SCRIPT_MANAGEMENT.en.md) ([日本語 / original](SCRIPT_MANAGEMENT.md)) guide repository development.
 - [Future service architecture](FUTURE_SERVICE_ARCHITECTURE.md) is a roadmap, not current
   runtime behavior. [Two-HOMR milestone](TWO_HOMR_MILESTONE.md) is a frozen comparison,
   not the current production configuration.

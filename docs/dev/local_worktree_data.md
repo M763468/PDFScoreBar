@@ -1,5 +1,7 @@
 # Local Worktree Data Links
 
+[日本語](local_worktree_data.ja.md)
+
 Worktrees often need local-only data that is intentionally not tracked by git: datasets, generated logs, model artifacts, and caches. Do not copy or commit those assets just to make a worktree run.
 
 ## Recommended Layout
@@ -12,7 +14,7 @@ worktree and mount it explicitly when Docker needs it.
 Keep a local asset root outside issue worktrees, for example:
 
 ```bash
-/home/masaki_muramatsu/pdfscore-local-assets/
+/path/to/pdfscore-local-assets/
   datasets/
   logs/models/
   cache/
@@ -35,7 +37,7 @@ fi
 Equivalent Makefile wrapper:
 
 ```bash
-make setup-local-worktree-links LOCAL_DATA_ROOT=/home/masaki_muramatsu/pdfscore-local-assets
+make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/pdfscore-local-assets
 ```
 
 ## Custom Items
@@ -50,7 +52,7 @@ Override the list with an environment variable:
 
 ```bash
 PDFSCORE_LINK_ITEMS="datasets logs/models external/homr external/omr_dln cache" \
-  scripts/setup_local_worktree_links.sh --source /home/masaki_muramatsu/pdfscore-local-assets
+  scripts/setup_local_worktree_links.sh --source /path/to/pdfscore-local-assets
 ```
 
 The script skips missing sources and existing destinations. It does not overwrite, move, or delete files.
@@ -62,7 +64,7 @@ Symlinks that point outside the worktree are useful on the WSL host, but Docker 
 For Docker-based validation, pass an explicit bind mount instead of relying on the symlink alone:
 
 ```bash
-DOCKER_EXTRA_ARGS="-v /home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/pdfs:/workspace/data/evaluation2/pdfs:ro" \
+DOCKER_EXTRA_ARGS="-v /path/to/PDFScoreBar/data/evaluation2/pdfs:/workspace/data/evaluation2/pdfs:ro" \
   make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml
 ```
 

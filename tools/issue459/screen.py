@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 
-def verdict(baseline, candidate):
+def verdict(baseline, candidate, minimum_improvement=3):
     """A screen pass only permits further validation; it is not adoption."""
     if len(baseline) != 2 or len(candidate) != 2:
         raise ValueError("two completed observations per arm are required")
@@ -26,13 +26,17 @@ def verdict(baseline, candidate):
         "baseline_range": [min(baseline), max(baseline)],
         "candidate_range": [min(candidate), max(candidate)],
         "improvement_percent": improvement,
-        "primary_gate": "passed" if improvement >= 3 else "failed",
+        "primary_gate": "passed" if statistics.median(candidate) <= statistics.median(baseline)
+        * (1 - minimum_improvement / 100) else "failed",
         "adoption": "not_authorized_by_screen",
     }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--uid", type=int, choices=(0, 1000), default=0)
+    parser.add_argument("--scope", choices=("single", "multi"), default="multi")
+    parser.add_argument("--compiler-state", choices=("cold", "warm"), default="warm")
     parser.add_argument("--image", required=True)
     parser.add_argument("--seed", type=Path, required=True)
     parser.add_argument("--label", required=True)
@@ -55,10 +59,14 @@ def main():
     for index, arm in enumerate(("b", "o", "o", "b"), 1):
         label = f"{args.label}-{index}-{arm}"
         cache = output / "cache" / label
-        shutil.copytree(seed, cache)
+        if args.compiler_state == "warm":
+            shutil.copytree(seed, cache)
+        else:
+            cache.mkdir(parents=True)
         command = [sys.executable, str(root / "tools/issue447/run_experiment.py"),
-                   "--issue-id", "459", "--uid", "0", "--gid", "0", "--home", "/root",
-                   "--image", args.image, "--label", label, "--scope", "multi",
+                   "--issue-id", "459", "--uid", str(args.uid), "--gid", str(args.uid),
+                   "--home", "/root" if args.uid == 0 else "/tmp",
+                   "--image", args.image, "--label", label, "--scope", args.scope,
                    "--compile-cache", str(cache)]
         if arm == "o":
             command += ["--source-workers", "1", "--omr-reuse"]
@@ -84,7 +92,11 @@ def main():
         if not checks["all_equal"]:
             raise RuntimeError("semantic screen failed; timing cannot justify adoption")
         values[arm].append(result["docker_e2e_wall_seconds"])
-    summary = verdict(values["b"], values["o"])
+    primary = args.uid == 0 and args.scope == "multi" and args.compiler_state == "warm"
+    summary = verdict(values["b"], values["o"], 3 if primary else -3)
+    summary["cell"] = {"uid": args.uid, "scope": args.scope,
+                       "compiler_state": args.compiler_state,
+                       "minimum_improvement_percent": 3 if primary else -3}
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary))
 

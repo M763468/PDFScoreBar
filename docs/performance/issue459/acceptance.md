@@ -67,3 +67,13 @@ The initial root-warm-screen1 uses the historical HOME=/tmp override. It is a
 preliminary diagnostic, not default-deployment evidence. The corrected deployment
 screen explicitly sets HOME=/root; the metric, inputs and numerical gates are
 unchanged. Preserve the preliminary results separately.
+
+After the root primary passes, execute the remaining cells in this fixed order:
+root multi cold; root single warm; root single cold; non-root multi warm;
+non-root multi cold; non-root single warm; non-root single cold. Each uses ABBA.
+Stop at the first failed required gate, retain it, and reject adoption; remaining
+cells are Not run because a required gate already failed. This ordering and early
+stop rule are set before observing those cells, and do not omit a failure.
+`python3 -m tools.issue459.matrix --image <sha256> --seed <seed> --primary
+<root-summary.json> --label <fresh-label>` runs this sequence. Passing all timing
+cells still requires the quality, lifetime and recovery gates above.

@@ -112,3 +112,8 @@ def test_screen_runs_root_abba_with_independent_seed_copies(tmp_path, monkeypatc
     summary = json.loads((tmp_path / 'logs/issue459/screens/test/summary.json').read_text())
     assert summary['primary_gate'] == 'passed'
     assert summary['adoption'] == 'not_authorized_by_screen'
+
+
+def test_regression_gate_keeps_original_three_percent_tolerance():
+    assert verdict([100, 100], [103, 103], -3)['primary_gate'] == 'passed'
+    assert verdict([100, 100], [103.01, 103.01], -3)['primary_gate'] == 'failed'

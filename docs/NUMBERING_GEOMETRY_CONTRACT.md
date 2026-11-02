@@ -1,7 +1,11 @@
 # Measure-numbering geometry scale contract
 
-Issue #267 makes musical geometry decisions in the measure-numbering path
-resolution-independent.
+[日本語](NUMBERING_GEOMETRY_CONTRACT.ja.md)
+
+Musical geometry decisions in the measure-numbering path are
+resolution-independent: distance thresholds are expressed in staff-line
+spacing (`unit_size`) rather than fixed pixels. This contract was introduced
+by Issue #267; its acceptance record is kept at the end of this document.
 
 ## Unit definition
 
@@ -51,7 +55,7 @@ Existing ratio-based logic remains ratio-based, including divisi/grouping staff
 height ratios, connector density, ghost-start median/staff-height checks, and the
 vertical morphology kernel derived from the actual inter-staff gap.
 
-## Three-or-more-staff divisi support (Issue #218)
+## Three-or-more-staff divisi support
 
 `ConnectorAwareSystemBuilder` may attach a voice with no accepted barline
 candidates when generated positive left-connector evidence forms a chain of
@@ -72,10 +76,64 @@ into an extra measure. Single/two-staff numbering is unchanged.
 See [the real-score validation](refactors/issue218_real_divisi_validation.md)
 for fixed input contracts and regression results.
 
+## Short non-staff mask fragments
+
+`StaffExtractor` checks each accepted component against the original binary mask,
+prior to vertical dilation. It rejects a component only when all conditions hold:
+
+- at most two horizontally persistent row runs (the existing 0.25 coverage floor);
+- the full foreground vertical span is strictly less than two staff-line spaces;
+- Original-mask column runs provide positive evidence of two opposing line
+  trajectories: at least one staff-space worth of columns with exactly two runs,
+  spanning at least two spaces horizontally. Least-squares fits to their upper
+  and lower centers must have opposite slope signs, with each fitted trajectory
+  moving at least 0.25 spaces over that support span.
+
+Span and spacing are compared in mask coordinates; target-page scaling does not
+change the decision. Page spacing is preferred, with the existing component-local
+fallback for short staves. Unknown spacing remains accepted. Five visible lines
+are deliberately not required: broken or tilted scan lines must remain usable.
+This shared extractor also supplies connector semantics and MMR support geometry.
+
+One-line and parallel two-line staves, including tilted/curved or broken masks,
+remain accepted. Few rows and a short span alone are not evidence of a non-staff
+component: legitimate percussion uses reduced-line notation. Ambiguous scan
+borders, beams and incomplete hairpin masks also remain accepted. This explicit
+abstention is preferred to dropping legitimate staff geometry. The earlier #218
+candidate using only the first two conditions failed this percussion contract;
+its 56 empty removals and old 43/68 exact-JSON failure remain historical results.
+
+A rejected component may disappear from `empty_systems`; it contributes no measures
+or numbering increments. Removal from a numbered system still requires downstream
+membership/count/number/geometry validation, rather than assuming an empty-only change.
+
+## Open intervals clipped by the original image edge
+
+After grouping, `ClippedSystemEndDetector` may add one logical end boundary at the
+original image width. Phase A and Phase C use the same source image and rule; the
+marker does not participate in staff grouping. A mask extending into a margin
+alone is insufficient. Recovery requires:
+
+- known positive staff-line spacing in source-image coordinates;
+- a trailing region at least four staff spaces wide after the last assigned bar;
+- five thin, regular source-ink line runs in the final one-space strip and the
+  preceding four-space strip (coverage >=0.6, thickness <=0.35 spaces, consecutive
+  spacing 0.75..1.25 spaces, corresponding center displacement <=0.5 spaces);
+- non-horizontal ink inside the five-line span after removing horizontal runs
+  of at least two spaces: a component of height >=0.5 spaces, width >=0.4 spaces
+  and area >=0.25 square spaces. The source-ink threshold is 180.
+
+Blank tails, short post-bar regions, missing/uncertain lines or unknown spacing
+abstain. Missing/mismatched source images also preserve existing behavior.
+The five-line check is positive evidence for this optional clipping recovery;
+it does not become a five-line requirement for accepting staff components.
+The new interval shares the complete system height and consumes one physical
+measure, with ordinary MMR overrides applied by the same numbering path.
+
 ## Fixed-pixel operations intentionally retained
 
 The following fixed pixel values are implementation details rather than musical
-geometry acceptance thresholds and remain unchanged in this issue:
+geometry acceptance thresholds and intentionally remain in pixels:
 
 - `StaffExtractor.min_height=10` connected-component noise floor;
 - `StaffExtractor` 20x1 dilation kernel;
@@ -91,7 +149,7 @@ evidence shows that one of these raster operations changes extracted staff
 topology, it should be migrated as a separate morphology/segmentation change
 with its own regression evidence.
 
-MMR OCR crop/mask pixel geometry is outside Issue #267 scope.
+MMR OCR crop/mask pixel geometry is outside this contract.
 
 ## Validation contract
 
@@ -105,14 +163,21 @@ Resolution-independence tests cover equivalent 1x/2x geometry for:
 - small-gap connector handling;
 - barline-to-staff overlap assignment.
 
-The final acceptance check must additionally compare current accepted
-numbering/physical-measure counts against the pre-#267 baseline. Unit tests alone
-are not sufficient evidence that the new thresholds preserve the accepted
-full-corpus counting contract.
+A change to these geometry rules must additionally compare accepted
+numbering/physical-measure counts against the pre-change baseline on the same
+retained upstream inputs. Unit tests alone are not sufficient evidence that new
+thresholds preserve the accepted full-corpus counting contract.
 
-For that final gate, replay the same retained accepted upstream inputs on
-`develop` and the #267 candidate, then compare the resulting
-`intermediate/page_*/numbering_base.json` signatures with:
+## Historical acceptance record: Issue #267 migration
+
+This section records how the migration from fixed pixels to `unit_size` was
+accepted. It is not a procedure every change must rerun. The comparator below
+can be reused for a later geometry change with that change's own baseline and
+retained inputs; the full-68 wrapper is pinned to the recorded pre-#267 baseline.
+
+For the final gate, the same retained accepted upstream inputs were replayed on
+`develop` and the #267 candidate, then the resulting
+`intermediate/page_*/numbering_base.json` signatures were compared with:
 
 ```bash
 python tools/issue267/compare_numbering_count_signatures.py \
@@ -128,7 +193,7 @@ The comparator also reports `semantic_match` plus exact staff/measure/empty-syst
 geometry differences as diagnostics. Geometry-only drift such as a small BBox shift
 is reviewable evidence but is not itself a count-regression failure.
 
-### Local full-68 count-validation procedure
+### Local full-68 count-validation procedure (#267)
 
 The #267 replay is intentionally downstream-only. It reuses:
 
@@ -168,57 +233,3 @@ The accepted Issue #264 `_02` replay directory must already exist under
 `ARTIFACT_ROOT/logs/issue264_phase_c_mmr_regression/`. Do not silently
 substitute a newly generated HOMR/support run for the final comparison, because
 that would mix producer/runtime variation into the #267 geometry comparison.
-
-### Short non-staff mask fragments (#218)
-
-`StaffExtractor` checks each accepted component against the original binary mask,
-prior to vertical dilation. It rejects a component only when all conditions hold:
-
-- at most two horizontally persistent row runs (the existing 0.25 coverage floor);
-- the full foreground vertical span is strictly less than two staff-line spaces;
-- Original-mask column runs provide positive evidence of two opposing line
-  trajectories: at least one staff-space worth of columns with exactly two runs,
-  spanning at least two spaces horizontally. Least-squares fits to their upper
-  and lower centers must have opposite slope signs, with each fitted trajectory
-  moving at least 0.25 spaces over that support span.
-
-Span and spacing are compared in mask coordinates; target-page scaling does not
-change the decision. Page spacing is preferred, with the existing component-local
-fallback for short staves. Unknown spacing remains accepted. Five visible lines
-are deliberately not required: broken or tilted scan lines must remain usable.
-This shared extractor also supplies connector semantics and MMR support geometry.
-
-One-line and parallel two-line staves, including tilted/curved or broken masks,
-remain accepted. Few rows and a short span alone are not evidence of a non-staff
-component: legitimate percussion uses reduced-line notation. Ambiguous scan
-borders, beams and incomplete hairpin masks also remain accepted. This explicit
-abstention is preferred to dropping legitimate staff geometry. The earlier #218
-candidate using only the first two conditions failed this percussion contract;
-its 56 empty removals and old 43/68 exact-JSON failure remain historical results.
-
-A rejected component may disappear from `empty_systems`; it contributes no measures
-or numbering increments. Removal from a numbered system still requires downstream
-membership/count/number/geometry validation, rather than assuming an empty-only change.
-
-### Open intervals clipped by the original image edge (#218)
-
-After grouping, `ClippedSystemEndDetector` may add one logical end boundary at the
-original image width. Phase A and Phase C use the same source image and rule; the
-marker does not participate in staff grouping. A mask extending into a margin
-alone is insufficient. Recovery requires:
-
-- known positive staff-line spacing in source-image coordinates;
-- a trailing region at least four staff spaces wide after the last assigned bar;
-- five thin, regular source-ink line runs in the final one-space strip and the
-  preceding four-space strip (coverage >=0.6, thickness <=0.35 spaces, consecutive
-  spacing 0.75..1.25 spaces, corresponding center displacement <=0.5 spaces);
-- non-horizontal ink inside the five-line span after removing horizontal runs
-  of at least two spaces: a component of height >=0.5 spaces, width >=0.4 spaces
-  and area >=0.25 square spaces. The source-ink threshold is 180.
-
-Blank tails, short post-bar regions, missing/uncertain lines or unknown spacing
-abstain. Missing/mismatched source images also preserve existing behavior.
-The five-line check is positive evidence for this optional clipping recovery;
-it does not become a five-line requirement for accepting staff components.
-The new interval shares the complete system height and consumes one physical
-measure, with ordinary MMR overrides applied by the same numbering path.

@@ -105,13 +105,13 @@ when translating. Historical and scoped records follow the exclusions below.
 | [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN / [JA](dev/LOCAL_VALIDATION.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_CORRECTION_BOUNDARY.md](USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](USER_CORRECTION_BOUNDARY.ja.md) | P2 |
 | [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | [JA reviewed](corrected_final_output.ja.md) | P2 |
-| [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
-| [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
+| [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | [JA reviewed](MOVEMENT_BOUNDARY_CONTRACT.ja.md); #477 currency review | P2 |
+| [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | [JA reviewed](NUMBERING_GEOMETRY_CONTRACT.ja.md); #477 currency review | P2 |
 | [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
 | [BARLINE_MATCHER.md](BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](BARLINE_MATCHER.ja.md); #475 currency review | P2 |
 | [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
-| [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | JA needed | P2 |
+| [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | [JA reviewed](dev/MMR_RAPIDOCR_PROVIDER.ja.md); #477 currency review | P2 |
 | [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | JA needed | P2 |
 | [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | JA needed | P2 |
 | [dev/codex_local_automation.md](dev/codex_local_automation.md) | current/reference | EN | JA needed | P2 |

@@ -1,7 +1,10 @@
 # Resolved movement-boundary consumer contract
 
-Issue #268 consumes resolved movement boundaries; it does not detect or infer
-movements. Detection and resolution remain owned by Issue #333.
+[日本語](MOVEMENT_BOUNDARY_CONTRACT.ja.md)
+
+The numbering pipeline consumes resolved movement boundaries; it does not detect
+or infer movements. Candidate detection is a separate, review-only producer
+described below, and resolution is an explicit manual or reviewed decision.
 
 ## Input
 
@@ -174,9 +177,9 @@ stale pair until the review is saved successfully. Both paths remain constrained
 to the review package. Older handoffs receive the same default resolved-output
 destination when loaded; attaching synthetic detection evidence is unnecessary.
 
-Issue #346 extends the existing manual-correction review package and GUI rather
-than introducing a separate movement editor. Generate the Issue #333 evidence
-artifact as described below, then attach it to an existing
+Candidate review extends the existing manual-correction review package and GUI
+rather than introducing a separate movement editor. Generate the evidence
+artifact with the geometry review producer described below, then attach it to an existing
 `review/manual_correction_input.json` package:
 
 ```bash
@@ -196,14 +199,15 @@ references. A reviewer can:
 - add a movement boundary at any supported page/system location even when the
   producer emitted no candidate there.
 
-The third operation is required because the Issue #333 producer missed real
-movement starts. Candidate absence is never converted to `no_boundary`. A
+The third operation is required because the geometry review producer can miss
+real movement starts. Candidate absence is never converted to `no_boundary`. A
 `no_boundary` review action is valid only for an explicit unresolved
 candidate.
 
 Saving writes package-local
-`corrections/movement_boundaries_review.json`. The GUI's **Export movement
-boundaries** action, or the equivalent CLI command,
+`corrections/movement_boundaries_review.json`. The GUI's **Finish movement
+review** action (refused while unresolved candidates remain), or the equivalent
+CLI command,
 
 ```bash
 python -m tools.movement_boundary_review export \
@@ -251,7 +255,7 @@ artifact hash, parameters, and producer commit are retained for GUI or manual
 review. Export to `issue268.movement_boundaries.v1` remains a separate explicit
 review/configuration action.
 
-The representative Issue #333 fixture is
+The representative fixture is
 `tests/fixtures/movement_boundaries/issue333_representative.json`; the complete
 seven-source inventory and full-document ground truth are retained under
 `experiments/issue333/phase25_ground_truth.json`. Both fix source-PDF hashes
@@ -268,7 +272,8 @@ same rule: a direct-PDF reference must have a valid nonnegative `source_page`,
 a valid source-document SHA-256, and a digest matching top-level
 `source_document.sha256`; contradictory verified references fail fast.
 
-The producer is assistive only: Phase 2.5 all-staff-union replay found 14/16
-transitions and one false candidate. Its 15/917 candidate rate is generation
+The producer is assistive only. In the recorded Issue #333 audit (historical
+evidence, not a current guarantee), the Phase 2.5 all-staff-union replay found
+14/16 transitions and one false candidate. Its 15/917 candidate rate is generation
 burden, not total correctness review burden. Candidate absence never means
 `no_boundary`.

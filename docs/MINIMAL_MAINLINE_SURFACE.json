@@ -233,6 +233,14 @@
       "role": "formal production OMR-DLN worker"
     },
     {
+      "pattern": "src/pipeline/detection/omr_job.py",
+      "role": "Per-job OMR-DLN route selection, attested handoff publication and consumption"
+    },
+    {
+      "pattern": "src/pipeline/detection/omr_job_worker.py",
+      "role": "Per-job OMR-DLN worker: one verified model lifetime for ordered pages"
+    },
+    {
       "pattern": "src/pipeline/detection/profile_contract.py",
       "role": "Production profile contract implementation used by maintained dense processing"
     },
@@ -821,6 +829,8 @@
       "tests/test_numbering_geometry_scale.py",
       "tests/test_numbering_overrides.py",
       "tests/test_omr_dln_worker.py",
+      "tests/test_omr_job.py",
+      "tests/test_omr_job_route.py",
       "tests/test_pdf_to_images_progress.py",
       "tests/test_pipeline_detection.py",
       "tests/test_pipeline_integration.py",

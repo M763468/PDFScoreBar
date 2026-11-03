@@ -19,6 +19,7 @@ from typing import Any
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.perf_trace import span
 
+from . import omr_job
 from .current_support_worker import _require_precomputed_sr
 from .profile_sources import ProfileHybridDetector
 from .source_concurrency import SourceJobs, available_resources, select_workers
@@ -70,6 +71,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         image: Path,
         output_root: Path,
         precomputed_sr: Mapping[str, Any] | None = None,
+        precomputed_omr: Mapping[str, Any] | None = None,
     ) -> tuple[dict[str, Any], list[str]]:
         _require_precomputed_sr({"precomputed_sr": precomputed_sr}, image=image)
         page_root = output_root / image.parent.name / image.stem
@@ -90,6 +92,8 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         }
         if precomputed_sr is not None:
             request["precomputed_sr"] = dict(precomputed_sr)
+        if precomputed_omr is not None:
+            request["precomputed_omr"] = dict(precomputed_omr)
         request_path.write_text(
             json.dumps(request, indent=2, ensure_ascii=False, default=str) + "\n",
             encoding="utf-8",
@@ -135,6 +139,9 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             "dedicated_sr_batch_process"
         ):
             raise ValueError("Current x4 support did not consume the dedicated SR batch output")
+        expected_omr_scope = "omr_job_process" if precomputed_omr is not None else "page_subprocess"
+        if payload.get("omr_execution_scope", "page_subprocess") != expected_omr_scope:
+            raise ValueError("Current x4 support did not use the selected OMR route")
         return dict(payload), command
 
     def _generate_one_page_sources_in_process(
@@ -144,6 +151,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         baseline_output: Path,
         support_output: Path,
         precomputed_sr: Mapping[str, Any] | None = None,
+        precomputed_omr: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Generate baseline/current support after the optional SR phase has exited."""
 
@@ -160,6 +168,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             image=image,
             output_root=support_output,
             precomputed_sr=precomputed_sr,
+            precomputed_omr=precomputed_omr,
         )
         sr_image = Path(str(payload["sr_image"])).resolve()
         omr = Path(str(payload["current_omr"])).resolve()
@@ -179,6 +188,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             "x4_homr_neural_inference_count": 1,
             "x4_detector_support_owner": "current_x4_support",
             "sr_execution_scope": payload.get("sr_execution_scope"),
+            "omr_execution_scope": payload.get("omr_execution_scope", "page_subprocess"),
         }
 
     def _source_page_worker(
@@ -189,6 +199,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         baseline_output: Path,
         support_output: Path,
         precomputed_sr: Mapping[str, Any],
+        precomputed_omr: Mapping[str, Any] | None = None,
     ) -> tuple[dict[str, Any], list[str]]:
         page_root = worker_output / image.parent.name / image.stem
         page_root.mkdir(parents=True, exist_ok=False)
@@ -206,6 +217,8 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             "support_output": str(support_output.resolve()),
             "precomputed_sr": dict(precomputed_sr),
         }
+        if precomputed_omr is not None:
+            request["precomputed_omr"] = dict(precomputed_omr)
         request_path.write_text(
             json.dumps(request, indent=2, ensure_ascii=False, default=str) + "\n",
             encoding="utf-8",
@@ -270,6 +283,9 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             raise ValueError(
                 "Verified source-page worker must execute exactly one x4 HOMR inference"
             )
+        expected_omr_scope = "omr_job_process" if precomputed_omr is not None else "page_subprocess"
+        if payload.get("omr_execution_scope", "page_subprocess") != expected_omr_scope:
+            raise ValueError("Verified source-page worker did not use the selected OMR route")
         return dict(payload), command
 
     def _batch_sr_worker(
@@ -392,11 +408,33 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                 )
             return current_sr_detections, omr_predictions, commands
 
+        from .model_selection import model_validation_mode
+
+        # The OMR route is fixed before the job starts and never changes on failure.
+        self._omr_route = omr_job.select_route(
+            self.det_cfg.get("omr_job_reuse"),
+            page_count=len(self.images),
+            uid=os.getuid(),
+            model_validation=model_validation_mode(self.det_cfg),
+            dry_run=self.dry_run,
+        )
+        omr_binding = (
+            omr_job.bind_sources(self.images)
+            if self._omr_route["route"] == omr_job.ROUTE_JOB
+            else None
+        )
         precomputed_by_image, batch_command, batch_payload = self._batch_sr_worker(
             support_output=support_output
         )
         self._last_sr_batch_result = batch_payload
         commands.append(batch_command)
+        precomputed_omr = None
+        if omr_binding is not None:
+            handoff, omr_command = self._omr_job_phase(
+                omr_binding, precomputed_by_image, support_output=support_output
+            )
+            precomputed_omr = handoff.to_request()
+            commands.append(omr_command)
 
         worker_output = baseline_output.parent / "source_page_workers"
         policy = dict(self.det_cfg.get("source_concurrency", {}))
@@ -449,6 +487,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                 baseline_output=baseline_output,
                 support_output=support_output,
                 precomputed_sr=precomputed_by_image[image.resolve()],
+                **({} if precomputed_omr is None else {"precomputed_omr": precomputed_omr}),
             )
 
         jobs = self._source_jobs.ordered(
@@ -477,6 +516,49 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             raise
         finally:
             jobs.close()
+
+    def _omr_job_phase(self, binding, precomputed_by_image, *, support_output):
+        """Run one OMR process for all ordered pages after the SR process exited."""
+        from src.common.model_artifacts import load_model_artifact_manifest
+
+        from .model_selection import resolve_omr_model
+
+        sr_request = json.loads(
+            (support_output / "_sr_batch" / "request.json").read_text(encoding="utf-8")
+        )
+        expected_outputs = {
+            Path(item["image"]).resolve(): Path(item["output"]).resolve()
+            for item in sr_request["items"]
+        }
+        rows = omr_job.bind_sr(
+            binding,
+            precomputed_by_image,
+            support_output=support_output,
+            expected_outputs=expected_outputs,
+        )
+        model = resolve_omr_model(self.det_cfg, self.project_root)
+        manifest = load_model_artifact_manifest(self.project_root / "models/omr_dln/manifest.json")
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(
+            [str(self.project_root), env.get("PYTHONPATH", "")]
+        ).strip(os.pathsep)
+        worker = get_pipeline_python("omr_dln") + ["-m", "src.pipeline.detection.omr_job_worker"]
+        directory = support_output.parent / "omr_job"
+        with span("current_support.omr_job_subprocess"):
+            handoff = omr_job.build(
+                self.images,
+                rows,
+                directory,
+                run_id=binding["run_id"],
+                model=model,
+                model_sha256=manifest.sha256,
+                worker_command=worker,
+                timeout=self._omr_route["timeout_sec"],
+                cwd=self.project_root,
+                env=env,
+            )
+        self._omr_job_handoff = handoff
+        return handoff, worker + ["--request", str(directory / "request.json")]
 
     def _consume_source_jobs(self, jobs, current_sr_detections, omr_predictions, commands):
         for image, (payload, worker_command) in jobs:
@@ -515,6 +597,10 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             }
         )
         result["source_concurrency"] = getattr(self, "_source_admission", None)
+        result["omr_route"] = getattr(self, "_omr_route", None)
+        handoff = getattr(self, "_omr_job_handoff", None)
+        if handoff is not None:
+            result["omr_job"] = handoff.to_request()
         if self._last_sr_batch_result is not None:
             result["current_sr_batch"] = {
                 key: self._last_sr_batch_result.get(key)

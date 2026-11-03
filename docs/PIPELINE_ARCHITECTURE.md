@@ -120,6 +120,7 @@ These are the modules worth knowing first. This is a responsibility map, not an 
 | Choose and run the production detector | `src/pipeline/detection/__init__.py` and `src/pipeline/detection/dense_orchestrator_batch_sr.py` | Select the configured detection route; schedule image enlargement, sources, candidate construction and CNN |
 | Produce the per-page recognition sources | `src/pipeline/detection/maintained_source_page_worker.py` and `src/pipeline/detection/current_support_worker.py` | Obtain original-image baseline results and enlarged-image support results |
 | Prepare the x4 page batch | `src/pipeline/detection/current_sr_batch_worker.py` | Reuse the enlargement model and finish SR before page recognition |
+| Run OMR-DLN once per multi-page root job | `src/pipeline/detection/omr_job.py` and `src/pipeline/detection/omr_job_worker.py` | After SR, one OMR process serves all ordered pages and publishes a hash-bound handoff; single-page and non-root jobs keep the per-page OMR route ([OMR job reuse](performance/issue459-omr-job-reuse.md)) |
 | Recognize multi-measure rests | `src/pipeline/mmr_geometry_handoff.py` and `src/measure_numbering/mmr.py` | Reuse Phase-A layout, map vertical staff support and recognize rests |
 | Adjust barline candidates for CNN | `src/pipeline/steps/staff_strokes.py` | Reconcile multi-staff vertical candidates before scoring |
 | Construct systems and measures | `src/measure_numbering/pipeline.py` | Turn positions and connector evidence into the page's measure structure |

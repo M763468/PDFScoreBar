@@ -252,32 +252,50 @@ def run(request_path: Path, result_path: Path) -> Path:
     homr_paths = _require_current_homr_bundle(homr_payload)
 
     omr_output = output_root / "omr_sr"
-    # The batch worker writes the same stable per-page SR layout used by the old
-    # page-local SR worker. The production OMR-DLN worker accepts that persisted
-    # path directly; experiment/evaluation code is no longer part of runtime.
-    sr_directory = actual_sr.parent.parent
-    omr_cmd = get_pipeline_python("omr_dln") + [
-        "-m",
-        "src.pipeline.detection.omr_dln_worker",
-        "--images",
-        str(image),
-        "--output-dir",
-        str(omr_output),
-        "--pre-computed-sr",
-        str(sr_directory),
-    ]
-    from .model_selection import model_validation_mode, resolve_omr_model
+    precomputed_omr = request.get("precomputed_omr")
+    if precomputed_omr is not None:
+        if precomputed_sr is None:
+            raise ValueError("An OMR job handoff requires precomputed batch SR")
+        from .omr_job import Handoff, consume
 
-    mode = model_validation_mode(det_cfg)
-    if mode != "production":
-        model_path = resolve_omr_model(det_cfg, Path(__file__).resolve().parents[3])
-        omr_cmd += [
-            "--model-path",
-            str(model_path),
-            "--device",
-            str(det_cfg.get("omr_dln_device", "cuda")),
+        handoff = Handoff.from_request(precomputed_omr)
+        # Validates the complete job manifest before exposing exact prediction bytes.
+        consume(handoff, image, actual_sr, omr_output / stem / "predictions.json")
+        omr_cmd = ["omr-job-handoff", str(handoff.manifest), str(image)]
+        omr_execution_scope = "omr_job_process"
+        memory_phase_boundaries = [
+            "sr_batch_process_exited",
+            "omr_job_process_exited",
+            "current_homr",
         ]
-    run_with_logging(omr_cmd, env=env, check=True)
+    else:
+        # The batch worker writes the same stable per-page SR layout used by the old
+        # page-local SR worker. The production OMR-DLN worker accepts that persisted
+        # path directly; experiment/evaluation code is no longer part of runtime.
+        sr_directory = actual_sr.parent.parent
+        omr_cmd = get_pipeline_python("omr_dln") + [
+            "-m",
+            "src.pipeline.detection.omr_dln_worker",
+            "--images",
+            str(image),
+            "--output-dir",
+            str(omr_output),
+            "--pre-computed-sr",
+            str(sr_directory),
+        ]
+        from .model_selection import model_validation_mode, resolve_omr_model
+
+        mode = model_validation_mode(det_cfg)
+        if mode != "production":
+            model_path = resolve_omr_model(det_cfg, Path(__file__).resolve().parents[3])
+            omr_cmd += [
+                "--model-path",
+                str(model_path),
+                "--device",
+                str(det_cfg.get("omr_dln_device", "cuda")),
+            ]
+        run_with_logging(omr_cmd, env=env, check=True)
+        omr_execution_scope = "page_subprocess"
 
     omr_predictions = omr_output / stem / "predictions.json"
     if not omr_predictions.is_file():
@@ -298,6 +316,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "connector_brace_dot": str(homr_paths["connector_brace_dot"]),
         "homr_api_compat": homr_payload.get("homr_api_compat"),
         "current_omr": str(omr_predictions),
+        "omr_execution_scope": omr_execution_scope,
         "support_root": str(output_root),
         "current_homr_executed": True,
         "memory_phase_boundaries": memory_phase_boundaries,

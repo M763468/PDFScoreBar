@@ -5,6 +5,11 @@ directory, and a ``#fragment`` pointing into a Markdown file must match a headin
 (GitHub style) or an explicit ``<a id="...">`` / ``<a name="...">`` anchor. External URLs,
 links inside fenced code blocks and inline code spans are ignored. This checks link
 integrity only; it does not judge whether the linked content is current or correct.
+
+Parsing approximates GitHub-flavored Markdown (inline and reference links, escapes,
+fenced/indented code, ATX/Setext headings) without a Markdown dependency. If an unusual
+construct is misread, add an explicit ``<a id="...">`` anchor or extend the fixtures in
+``tests/test_doc_links.py`` rather than disabling the check.
 """
 
 from __future__ import annotations
@@ -22,13 +27,17 @@ HEADING = re.compile(r"^ {0,3}#{1,6}\s+(.*?)\s*#*\s*$")
 ANCHOR = re.compile(r"<a\s+(?:id|name)=\"([^\"]+)\"", re.IGNORECASE)
 REFERENCE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(<[^>]*>|\S+)")
 ESCAPE = re.compile(r"\\([!-/:-@\[-`{-~])")
+LIST_ITEM = re.compile(r"^ {0,3}(?:[-*+]|\d+[.)])\s")
+EMPHASIS = re.compile(r"(\*{1,3}|(?<!\w)_{1,3})(?=\S)(.+?)(?<=\S)\1(?!\w)")
 SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:|^//")
 
 
 def prose_lines(text: str) -> list[str]:
-    """Return lines outside fenced code blocks."""
+    """Return lines outside fenced and indented code blocks (blank lines kept)."""
     lines: list[str] = []
     fence = None
+    previous_blank = True
+    in_list_or_code = False
     for line in text.splitlines():
         match = FENCE.match(line)
         if match:
@@ -37,15 +46,37 @@ def prose_lines(text: str) -> list[str]:
                 fence = marker
             elif marker[0] == fence[0] and len(marker) >= len(fence) and not rest.strip():
                 fence = None
+            previous_blank = False
             continue
-        if fence is None:
+        if fence is not None:
+            continue
+        if not line.strip():
+            lines.append("")
+            previous_blank = True
+            continue
+        indented = line.startswith(("    ", "\t"))
+        if indented and (in_list_or_code or not previous_blank):
+            # List continuation or paragraph continuation: keep it as prose.
             lines.append(line)
+        elif indented:
+            # An indented code block after a blank line outside a list.
+            in_list_or_code = False
+            previous_blank = False
+            continue
+        else:
+            in_list_or_code = bool(LIST_ITEM.match(line))
+            lines.append(line)
+        previous_blank = False
     return lines
 
 
 def slugify(heading: str) -> str:
     text = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", heading)
-    text = re.sub(r"<[^>]+>", "", text).replace("`", "").strip().lower()
+    text = re.sub(r"<[^>]+>", "", text).replace("`", "")
+    previous = None
+    while previous != text:
+        previous, text = text, EMPHASIS.sub(r"\2", text)
+    text = text.strip().lower()
     text = re.sub(r"[^\w\- ]", "", text)
     return text.replace(" ", "-")
 

@@ -85,6 +85,14 @@ class DocLinkChecks(unittest.TestCase):
         body = "[a](target.md?plain=1) [b](target.md?plain=1#repeat) ![c](target.md?raw=true)\n"
         self.assertEqual(self.run_check(body), [])
 
+    def test_indented_code_block_is_ignored_but_list_continuation_is_checked(self):
+        body = "Text\n\n    [a](missing.md)\n\n- item\n\n    [b](absent.md)\n"
+        self.assertEqual(self.run_check(body), ["missing target: source.md: absent.md"])
+
+    def test_emphasis_is_removed_from_heading_slugs(self):
+        self.assertEqual(slugify("An _emphasized_ **bold** heading"), "an-emphasized-bold-heading")
+        self.assertEqual(slugify("snake_case_name"), "snake_case_name")
+
     def test_relative_paths_are_resolved_against_root(self):
         source = self.root / "source.md"
         source.write_text("[a](target.md)\n", encoding="utf-8")

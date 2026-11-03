@@ -8,7 +8,7 @@
 
 この開発者・運用担当者向けリファレンスは、現在の config-first の手動補正ワークフローを説明します。一つのパイプライン実行を既存の手動 GUI に接続し、パッケージ内に補正を保存して、補正を使ってパイプラインを再実行し、補正済みの小節番号付き最終 PDF を生成できます。
 
-これは config-first の開発・運用リファレンスであり、新しい公開 `pdfscorebar` コンソールではありません。サポート対象の利用者向け配布ワークフローは[ユーザーガイド](USER_GUIDE.ja.md)を参照してください。ここでは `make run-pipeline`／`src.pipeline.main` と既存のレビューヘルパー、GUI を使用します。
+これは config-first の開発・運用リファレンスであり、新しい公開 `pdfscorebar` コンソールではありません。サポート対象の利用者向け配布ワークフローは[ユーザーガイド](../USER_GUIDE.ja.md)を参照してください。ここでは `make run-pipeline`／`src.pipeline.main` と既存のレビューヘルパー、GUI を使用します。
 
 ## 1. レビューパッケージを出力する
 
@@ -287,4 +287,4 @@ python3 tools/review_correction/server.py --handoff /path/to/run/review/manual_c
 
 ## 過去の受け入れ証拠
 
-実成果物の受け入れ手順と固定された観測可能な結果のゲートは [利用者補正の受入検証](dev/REVIEW_ACCEPTANCE.ja.md) に記載されています。過去の証拠はクリーンな補正済み `final/` ディレクトリとは別に `logs/issue397/acceptance/` に保持されています。これは現在のリビジョンが実成果物で再検証されたことを主張するものではありません。
+実成果物の受け入れ手順と固定された観測可能な結果のゲートは [利用者補正の受入検証](REVIEW_ACCEPTANCE.ja.md) に記載されています。過去の証拠はクリーンな補正済み `final/` ディレクトリとは別に `logs/issue397/acceptance/` に保持されています。これは現在のリビジョンが実成果物で再検証されたことを主張するものではありません。

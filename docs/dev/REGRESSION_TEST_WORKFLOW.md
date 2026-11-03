@@ -7,12 +7,12 @@
 - Keep real-data smoke and parity checks reproducible across sessions.
 
 ## Prerequisites
-- Read `docs/ENVIRONMENTS.md` and run commands in the correct environment.
+- Read `docs/dev/ENVIRONMENTS.md` and run commands in the correct environment.
 - For pipeline real-data checks, select and verify the image, container, mounts and assets as
-  described in `docs/ENVIRONMENTS.md` and `docs/dev/LOCAL_VALIDATION.md`.
+  described in `docs/dev/ENVIRONMENTS.md` and `docs/dev/LOCAL_VALIDATION.md`.
 
 ## Choosing Checks Before Commit/PR
-Use [Validation Policy](dev/VALIDATION_POLICY.md) to select checks for the changed behavior
+Use [Validation Policy](VALIDATION_POLICY.md) to select checks for the changed behavior
 and report their status. This workflow supplements that policy; it does not require every
 check for every change. In particular, docs-only changes do not require a universal formatter,
 unit test, GPU smoke, or full evaluation. `make format` changes files; inspect its effects before

@@ -31,12 +31,12 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 - [`docs/architecture/PIPELINE_ARCHITECTURE.ja.md`](architecture/PIPELINE_ARCHITECTURE.ja.md) — 現在の本番アーキテクチャ
 - [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md)（英語） — 固定した、受け入れ済みの #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) の比較のマイルストーン
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)（英語） — 文書の分類
-- [`docs/ENVIRONMENTS.ja.md`](ENVIRONMENTS.ja.md) — 保守対象の実行環境
-- [`docs/BRANCH_POLICY.ja.md`](BRANCH_POLICY.ja.md) — ブランチ方針
+- [`docs/dev/ENVIRONMENTS.ja.md`](dev/ENVIRONMENTS.ja.md) — 保守対象の実行環境
+- [`docs/dev/BRANCH_POLICY.ja.md`](dev/BRANCH_POLICY.ja.md) — ブランチ方針
 - [`docs/dev/VALIDATION_POLICY.ja.md`](dev/VALIDATION_POLICY.ja.md) — 検証方針
 - [`docs/contracts/BARLINE_MATCHER.ja.md`](contracts/BARLINE_MATCHER.ja.md) — 検出器のマッチング・評価の契約
-- [`docs/GT_PREPARATION_POLICY.ja.md`](GT_PREPARATION_POLICY.ja.md) — GTの方針
-- [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) — スクリプトの所有とライフサイクル
+- [`docs/dev/GT_PREPARATION_POLICY.ja.md`](dev/GT_PREPARATION_POLICY.ja.md) — GTの方針
+- [`docs/dev/SCRIPT_MANAGEMENT.md`](dev/SCRIPT_MANAGEMENT.md) — スクリプトの所有とライフサイクル
 
 ## 過去の系譜
 
@@ -172,7 +172,7 @@ Issue #268 は利用とリセットの意味を所有します。Issue #333 は�
 - [`docs/refactors/issue227/`](refactors/issue227/)
 - [`docs/refactors/issue228/`](refactors/issue228/)
 - [`docs/refactors/issue229/`](refactors/issue229/)
-- [`docs/manual_correction_review_package.ja.md`](manual_correction_review_package.ja.md)
+- [`docs/dev/manual_correction_review_package.ja.md`](dev/manual_correction_review_package.ja.md)
 - [`docs/contracts/corrected_final_output.ja.md`](contracts/corrected_final_output.ja.md)
 
 現在の挙動については、現在のソースと現在の利用者向け文書を使います。
@@ -186,10 +186,10 @@ Issue #268 は利用とリセットの意味を所有します。Issue #333 は�
 最初に読むもの:
 
 - [`AGENTS.md`](../AGENTS.md)（英語）
-- [`docs/BRANCH_POLICY.ja.md`](BRANCH_POLICY.ja.md)
-- [`docs/ENVIRONMENTS.ja.md`](ENVIRONMENTS.ja.md)
+- [`docs/dev/BRANCH_POLICY.ja.md`](dev/BRANCH_POLICY.ja.md)
+- [`docs/dev/ENVIRONMENTS.ja.md`](dev/ENVIRONMENTS.ja.md)
 - [`docs/dev/VALIDATION_POLICY.ja.md`](dev/VALIDATION_POLICY.ja.md)
-- [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md)
+- [`docs/dev/SCRIPT_MANAGEMENT.md`](dev/SCRIPT_MANAGEMENT.md)
 - [`docs/ai-workflow/`](ai-workflow/)
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)（英語）
 - [`docs/history/DEVELOPMENT_LOG.md`](history/DEVELOPMENT_LOG.md)（英語。Issue 以前・初期のプロジェクトの起源のマイルストーンを簡潔にまとめた台帳としてだけ）

@@ -22,7 +22,7 @@ redefine detector, HOMR, OMR-DLN, numbering, MMR, or current process/memory beha
 Current behavior remains authoritative in:
 
 - [`PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) for the production pipeline;
-- [`manual_correction_review_package.md`](../manual_correction_review_package.md) for the current
+- [`manual_correction_review_package.md`](../dev/manual_correction_review_package.md) for the current
   config-first review/correction workflow;
 - current source, tests, and production configuration for implementation details.
 
@@ -88,7 +88,7 @@ Current correction semantics include, as applicable to the current workflow:
 - package-local manual movement boundaries, with optional detector evidence for candidate review.
 
 The current detailed operating contract remains
-[`manual_correction_review_package.md`](../manual_correction_review_package.md). Future machine
+[`manual_correction_review_package.md`](../dev/manual_correction_review_package.md). Future machine
 contracts should expose compatible correction concepts through stable versioned inputs/artifact
 descriptors rather than requiring external callers to understand arbitrary internal `logs/` or
 run-directory paths.

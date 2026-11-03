@@ -66,7 +66,7 @@ state that they were not rerun for the current change; missing provenance remain
 A previous commit, another worktree, CI, or another environment passing does not establish a
 current rerun. Preserve separate attempts when a blocked check is later retried successfully.
 
-Before execution, follow the [environment preflight](../ENVIRONMENTS.md#execution-preflight)
+Before execution, follow the [environment preflight](ENVIRONMENTS.md#execution-preflight)
 to avoid selecting unavailable tools or testing a different checkout.
 
 Example (illustrative only; these rows are not actual validation results):

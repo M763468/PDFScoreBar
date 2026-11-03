@@ -38,7 +38,7 @@ config-driven entry point in `src/pipeline/main.py`. The root `Dockerfile` build
 the maintained production runtime. Historical Stage-E source, venv, model assets and
 provenance live in the explicit `docker/Dockerfile.stage-e` reproduction extension;
 canonical preflight requires only maintained-profile provenance. See
-[`ENVIRONMENTS.md`](../ENVIRONMENTS.md) for the two build paths.
+[`ENVIRONMENTS.md`](../dev/ENVIRONMENTS.md) for the two build paths.
 
 ```bash
 make docker-build

@@ -8,7 +8,7 @@
 
 配布候補は、[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json) にある **118個の追跡ファイル**です。内訳は `src/` 配下の89ファイルと、本番の config・モデル・Docker・パッケージのファイル、パッケージに含める利用者向け補正アプリケーション、最小限の利用者向け文書、チェックアウト用の ignore 規則です。正確な配布物は、`runtime_bundle_patterns`、`distribution_support_patterns`、`distribution_metadata_patterns` の和集合です。生成される `DISTRIBUTION_PROVENANCE.json` は、ソースの識別情報、dirty の状態、配布する各ファイルのハッシュを記録します。
 
-この選定は Issue #100 と #409 で定め、#410（リリース候補 RC4、PR #442）で初めて `main` へ昇格しました。`develop` の変更が `main` に届くのは、[ブランチ方針](BRANCH_POLICY.ja.md)に従った後のリリース昇格を通じてだけです。過去の各候補サイズでの受入の証拠は、[#409 の受入履歴](releases/issue409/ACCEPTANCE_HISTORY.md)（英語）に残しています。
+この選定は Issue #100 と #409 で定め、#410（リリース候補 RC4、PR #442）で初めて `main` へ昇格しました。`develop` の変更が `main` に届くのは、[ブランチ方針](dev/BRANCH_POLICY.ja.md)に従った後のリリース昇格を通じてだけです。過去の各候補サイズでの受入の証拠は、[#409 の受入履歴](releases/issue409/ACCEPTANCE_HISTORY.md)（英語）に残しています。
 
 ## 選定の理由
 

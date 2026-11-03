@@ -27,12 +27,12 @@ A newer comment on an unrelated Issue does not supersede the current task's acce
 - [`docs/architecture/PIPELINE_ARCHITECTURE.md`](architecture/PIPELINE_ARCHITECTURE.md) — current production architecture
 - [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md) — frozen accepted #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) comparison milestone
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) — documentation classification
-- [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md) — maintained execution environments
-- [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md) — branch policy
+- [`docs/dev/ENVIRONMENTS.md`](dev/ENVIRONMENTS.md) — maintained execution environments
+- [`docs/dev/BRANCH_POLICY.md`](dev/BRANCH_POLICY.md) — branch policy
 - [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) — validation policy
 - [`docs/contracts/BARLINE_MATCHER.md`](contracts/BARLINE_MATCHER.md) — detector matching/evaluation contract
-- [`docs/GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) — GT policy
-- [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) — script ownership and lifecycle
+- [`docs/dev/GT_PREPARATION_POLICY.md`](dev/GT_PREPARATION_POLICY.md) — GT policy
+- [`docs/dev/SCRIPT_MANAGEMENT.md`](dev/SCRIPT_MANAGEMENT.md) — script ownership and lifecycle
 
 ## Historical lineages
 
@@ -173,7 +173,7 @@ Start with:
 - [`docs/refactors/issue227/`](refactors/issue227/)
 - [`docs/refactors/issue228/`](refactors/issue228/)
 - [`docs/refactors/issue229/`](refactors/issue229/)
-- [`docs/manual_correction_review_package.md`](manual_correction_review_package.md)
+- [`docs/dev/manual_correction_review_package.md`](dev/manual_correction_review_package.md)
 - [`docs/contracts/corrected_final_output.md`](contracts/corrected_final_output.md)
 
 Use current source and current user-facing docs for present behavior.
@@ -187,10 +187,10 @@ Useful anchors:
 Start with:
 
 - [`AGENTS.md`](../AGENTS.md)
-- [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md)
-- [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md)
+- [`docs/dev/BRANCH_POLICY.md`](dev/BRANCH_POLICY.md)
+- [`docs/dev/ENVIRONMENTS.md`](dev/ENVIRONMENTS.md)
 - [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md)
-- [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md)
+- [`docs/dev/SCRIPT_MANAGEMENT.md`](dev/SCRIPT_MANAGEMENT.md)
 - [`docs/ai-workflow/`](ai-workflow/)
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)
 - [`docs/history/DEVELOPMENT_LOG.md`](history/DEVELOPMENT_LOG.md) only for the compact pre-/early-Issue project-origin milestone ledger

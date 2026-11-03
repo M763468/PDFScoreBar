@@ -13,7 +13,7 @@ This document records the design outcome for #226. It intentionally does not imp
 
 This file is an issue-scoped design handoff, not the permanent home for the user-facing pipeline documentation.
 
-After the user-facing CLI is implemented and accepted, the stable parts of this design must be moved into formal documentation such as the root `README.md`, `docs/ENVIRONMENTS.md`, a future user guide, and/or the relevant operational docs. At that point, this issue-specific document and its `docs/README.md` index entry should be removed.
+After the user-facing CLI is implemented and accepted, the stable parts of this design must be moved into formal documentation such as the root `README.md`, `docs/dev/ENVIRONMENTS.md`, a future user guide, and/or the relevant operational docs. At that point, this issue-specific document and its `docs/README.md` index entry should be removed.
 
 Permanent repository behavior must not depend on a document whose only discoverable name is tied to a completed issue number.
 

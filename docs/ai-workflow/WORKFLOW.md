@@ -22,7 +22,7 @@ revalidation.
 
 1. Identify the concrete task and scope.
 2. Inspect only the source/docs/history needed for that task.
-3. For normal work, branch from `develop`; see `docs/BRANCH_POLICY.md`.
+3. For normal work, branch from `develop`; see `docs/dev/BRANCH_POLICY.md`.
 4. Implement the smallest coherent change that satisfies the task.
 5. Choose validation from `docs/dev/VALIDATION_POLICY.md`.
 6. Review the diff for scope drift and unintended config/dependency/evaluation changes.

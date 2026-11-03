@@ -107,7 +107,7 @@ runtime, application/config revision and input/model identities against the orig
 That work is outside
 [#398's clarified acceptance](https://github.com/M763468/PDFScoreBar/issues/398#issuecomment-5969279832).
 #398 validates independent production/minimal builds and execution without historical bytes or historical preflight requirements. See
-[`ENVIRONMENTS.md`](../ENVIRONMENTS.md) for the maintained and compatibility build paths.
+[`ENVIRONMENTS.md`](../dev/ENVIRONMENTS.md) for the maintained and compatibility build paths.
 
 Do not use `--skip-existing` when a separately prepared historical run requires fresh output.
 

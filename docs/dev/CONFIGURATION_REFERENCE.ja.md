@@ -17,7 +17,7 @@
 | `python3 docker/distribution.py build / preflight / run / review` | 配布パッケージの利用者 | [利用者ガイド](../USER_GUIDE.ja.md)を参照してください。 |
 | `bash scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke] [--pipeline-only]` | 開発者 | Docker ランタイムの契約を検証し、指定した config（既定は `configs/smoke_test.yaml`）を実行します。環境変数: `DOCKER_IMAGE`、`DOCKER_EXTRA_ARGS`、`PDFSCORE_SR_COMPILER_CACHE`、`PDFSCOREBAR_MODEL_CACHE`、`OMR_DLN_MODEL_PATH`。 |
 | `python -m src.pipeline.main --config PATH [options]` | 開発者（準備済みの環境内） | パイプラインを直接実行します。マウントとイメージの来歴は呼び出し側の責任です。 |
-| `make <target>` | 開発者 | [Makefile サーフェス](../MAKEFILE_SURFACE.ja.md)を参照してください。 |
+| `make <target>` | 開発者 | [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)を参照してください。 |
 
 ### `src.pipeline.main` のオプション
 
@@ -152,6 +152,6 @@
 | その他の `detection.source_concurrency` の設定 | [source の並行処理](../performance/issue458-source-concurrency.md) |
 | `mmr.rapidocr_provider` | [MMR RapidOCR のプロバイダモード](MMR_RAPIDOCR_PROVIDER.ja.md) |
 | `inputs.movement_boundaries` | [楽章境界の契約](../contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md) |
-| `outputs.review` | [手動補正のレビューパッケージ](../manual_correction_review_package.ja.md) |
+| `outputs.review` | [手動補正のレビューパッケージ](manual_correction_review_package.ja.md) |
 
 `inputs.pdf_path`、`inputs.barline_overrides`、`inputs.measure_overrides`、`mmr.debug_root` など、ソースが読むその他のキーは、個別の所有文書のない開発用の入力です。使う前に、それを読むソースを確認してください。

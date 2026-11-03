@@ -416,7 +416,7 @@ This contract reuses rather than replaces the accepted productization lineage:
 - #227 defines `final` / `review` / `debug` output-profile meaning;
 - #236 connects the review package, manual correction GUI, canonical correction
   files, corrected rerun, and final artifact flow;
-- `docs/manual_correction_review_package.md` remains the current operator guide.
+- `docs/dev/manual_correction_review_package.md` remains the current operator guide.
 
 The engine contract gives those concepts a caller-facing versioned envelope.
 Current internal run directories remain implementation details.

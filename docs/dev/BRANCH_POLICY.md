@@ -36,7 +36,7 @@ For a `develop -> main` promotion PR, include at minimum:
 Do not embed one issue's acceptance numbers as a permanent repository-wide rule. If a specific issue defines a canonical contract, apply that contract in the promotion PR for the relevant promotion cycle and cite the issue or PR where the contract was accepted.
 
 For the first minimal-distribution promotion, see the
-[#410 scope and acceptance record](releases/issue410/PROMOTION_SCOPE.md), including
+[#410 scope and acceptance record](../releases/issue410/PROMOTION_SCOPE.md), including
 the distinction between semantic regression gates and diagnostic JSON differences.
 
 Use versioned, disposable `release/<cycle>-rc<N>` candidate branches. Generate each

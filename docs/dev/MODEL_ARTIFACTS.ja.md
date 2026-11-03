@@ -57,7 +57,7 @@ Issue #315の公開検証では、ローカルの採用checkpoint、新たにダ
 
 通常の既定値はworktree間で共有される。production CNNのフォールバックパスは `~/.cache/pdfscorebar/models/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth`。実際に選択される場所は以下の `path` コマンドで確認する。既存のチェックアウト内 `.model_cache/` ディレクトリは自動的に検索・移行されない。移行時に必要なら `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` で明示的に選択する。
 
-releaseを元にするキャッシュ資産はrelease資産と追跡対象manifestから復元できる。共有キャッシュには運用者提供の資産も含まれ得るため、キャッシュルート全体を破棄可能として扱ってはならない。[正規資産契約](contracts/MODEL_ARTIFACT_CONTRACT.ja.md)を参照。
+releaseを元にするキャッシュ資産はrelease資産と追跡対象manifestから復元できる。共有キャッシュには運用者提供の資産も含まれ得るため、キャッシュルート全体を破棄可能として扱ってはならない。[正規資産契約](../contracts/MODEL_ARTIFACT_CONTRACT.ja.md)を参照。
 
 ## 配置と検証
 

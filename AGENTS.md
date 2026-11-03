@@ -30,7 +30,7 @@ container state, run tags, and issue handoff notes do not belong here.
 ## 3. Branch and GitHub policy
 
 - Normal feature, fix, refactor, documentation, and performance work branches from `develop` and
-  opens a PR to `develop`; `main` is the stable/release branch. See `docs/BRANCH_POLICY.md` when
+  opens a PR to `develop`; `main` is the stable/release branch. See `docs/dev/BRANCH_POLICY.md` when
   creating or changing branches or PRs.
 - Use a topic branch. Do not merge to `develop` or `main` automatically.
 - Create normal issue worktrees at `<manager-checkout>/.worktrees/issue<N>`; add a purpose
@@ -45,7 +45,7 @@ container state, run tags, and issue handoff notes do not belong here.
 
 ## 4. Environment and command selection
 
-- Read `docs/ENVIRONMENTS.md` when the task will run Docker, GPU, models, datasets, the full
+- Read `docs/dev/ENVIRONMENTS.md` when the task will run Docker, GPU, models, datasets, the full
   pipeline, or another environment-sensitive command. Do not require it for unrelated docs or
   static repository edits.
 - Prefer maintained Makefile targets and existing scripts when they fit the task, but inspect current

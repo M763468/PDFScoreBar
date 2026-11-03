@@ -3,7 +3,7 @@
 [日本語](MODEL_ARTIFACT_CONTRACT.ja.md)
 
 This document records the model/weight identities consumed by the maintained Docker and
-production runtime. It complements `docs/ENVIRONMENTS.md`; it does not move ownership away
+production runtime. It complements `docs/dev/ENVIRONMENTS.md`; it does not move ownership away
 from the Issues that selected or validated a model.
 
 The common rule is:

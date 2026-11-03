@@ -7,7 +7,7 @@ pipeline run to the existing manual GUI, saves package-local corrections, reruns
 those corrections, and can materialize the corrected final score-numbered PDF.
 
 This is a config-first development and operations reference, not a new public `pdfscorebar`
-console surface. For the supported user distribution workflow, see the [User Guide](USER_GUIDE.md).
+console surface. For the supported user distribution workflow, see the [User Guide](../USER_GUIDE.md).
 The workflow here uses `make run-pipeline` / `src.pipeline.main` and the existing review helpers
 and GUI.
 
@@ -438,6 +438,6 @@ in the browser. GT/developer files remain outside that localization scope.
 ## Historical acceptance evidence
 
 The real-artifact acceptance procedure and fixed observable result gates are documented in
-[REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md). Historical evidence is retained under
+[REVIEW_ACCEPTANCE.md](REVIEW_ACCEPTANCE.md). Historical evidence is retained under
 `logs/issue397/acceptance/`, separately from each clean corrected `final/` directory. It does not
 claim that the current revision has been revalidated on real artifacts.

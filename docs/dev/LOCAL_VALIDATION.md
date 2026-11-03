@@ -29,7 +29,7 @@ the evidence:
    environment when possible.
 
 For pipeline use, additionally resolve the image against the active worktree and run the
-production preflight described in [Environment & Tooling](../ENVIRONMENTS.md). A tool
+production preflight described in [Environment & Tooling](ENVIRONMENTS.md). A tool
 availability probe is not a passed application acceptance test. Report the actual check as
 Passed, Failed, Blocked, or Not run under the [evidence rules](VALIDATION_POLICY.md#validation-status-and-evidence).
 
@@ -232,6 +232,6 @@ from those probes.
 Keep datasets, logs, models, and caches outside issue source worktrees where practical. Use
 [`local_worktree_data.md`](local_worktree_data.md) for symlink and explicit Docker mount rules;
 Docker cannot follow a host-only symlink unless its target is mounted into the container.
-Use [Environment & Tooling](../ENVIRONMENTS.md) for maintained images, asset ownership, and
+Use [Environment & Tooling](ENVIRONMENTS.md) for maintained images, asset ownership, and
 runtime compatibility. This file owns the worktree and validation commands; linked documents
 should point here rather than duplicate those procedures.

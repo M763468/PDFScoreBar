@@ -38,7 +38,7 @@ The repository was reorganized so experimental code moved away from production p
 lightweight GUI helper was used for manual inspection of difficult detections. These were workflow
 transitions, not permanent architecture contracts.
 
-Current placement/lifecycle rules are in `docs/SCRIPT_MANAGEMENT.md` and current user-facing
+Current placement/lifecycle rules are in `docs/dev/SCRIPT_MANAGEMENT.md` and current user-facing
 review flows should be resolved from current docs/source rather than this history.
 
 ### 4. Geometry-only FP reduction reached a safety boundary

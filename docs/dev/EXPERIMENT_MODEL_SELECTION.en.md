@@ -10,7 +10,7 @@ CNN and OMR-DLN candidates can be tried through explicit paths in an existing co
 You do not need to register a version/SHA/provenance or edit the production manifest for each exploration.
 
 For the canonical current production contract, see the [model artifact contract](../contracts/MODEL_ARTIFACT_CONTRACT.md),
-the [model registration procedure](../MODEL_ARTIFACTS.md), and the [validation policy](VALIDATION_POLICY.md).
+the [model registration procedure](MODEL_ARTIFACTS.md), and the [validation policy](VALIDATION_POLICY.md).
 
 ## Validation modes
 
@@ -122,7 +122,7 @@ Comparison mode stops on a missing hash or a changed checkpoint. Results after a
    For operator-supplied models, keep the acquisition/import contract and license boundary.
 3. If image-owned assets/runtime are affected, build the image. Run the canonical preflight/GPU smoke,
    the required accuracy/semantic evaluation, and engine and distribution provenance validation.
-4. Release promotion to main follows the [branch policy](../BRANCH_POLICY.md). Old cache/rollback assets are not deleted automatically.
+4. Release promotion to main follows the [branch policy](BRANCH_POLICY.md). Old cache/rollback assets are not deleted automatically.
 
 For a missing/corrupt candidate, fix the path/checkpoint. For a shape/task/device mismatch, recreate it in a supported format.
 A comparison hash mismatch means the model or comparison target changed; do not overwrite an existing comparison result and treat it as passed.

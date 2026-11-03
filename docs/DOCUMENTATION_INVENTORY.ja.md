@@ -36,14 +36,14 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | `docs/contracts/ENGINE_TELEMETRY.md` / `.ja.md` | #339 の構造化された進捗・リソースのテレメトリー契約 | current/reference（英語正本）、日本語は reviewed | v1 のステージ・状態の語彙を保ったまま、追加的な経過時間・詳細のフィールド、ページの進捗、簡潔な要約、オプトインのプロセス・GPU のサンプリングを定める |
 | `docs/contracts/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 の参照 executor と互換性ゲート | current/reference（英語正本）、日本語は reviewed | サポート対象の succeeded/failed の公開境界。v1 の補正の直接実行、ライフサイクルの制御、公開サービスの隔離は現在のサポートの対象外のまま |
 | `docs/history/TWO_HOMR_MILESTONE.md` | 受け入れ済みの #274 のアーキテクチャ・精度・性能の比較 | frozen milestone | #274 / PR #279 の再現記録として保持する。後の本番の変更に合わせて黙って書き換えない |
-| `docs/ENVIRONMENTS.md` | 実行・ランタイムのガイダンス | current/reference | 保持 |
-| `docs/BRANCH_POLICY.md` | ブランチ方針 | current/reference | 保持 |
+| `docs/dev/ENVIRONMENTS.md` | 実行・ランタイムのガイダンス | current/reference | 保持 |
+| `docs/dev/BRANCH_POLICY.md` | ブランチ方針 | current/reference | 保持 |
 | `docs/dev/VALIDATION_POLICY.md` | 検証方針 | current/reference | 保持 |
-| `docs/REGRESSION_TEST_WORKFLOW.md` | 回帰ワークフロー | current/reference | 保持 |
-| `docs/GT_PREPARATION_POLICY.md` | GT の方針 | current/reference | 保持 |
+| `docs/dev/REGRESSION_TEST_WORKFLOW.md` | 回帰ワークフロー | current/reference | 保持 |
+| `docs/dev/GT_PREPARATION_POLICY.md` | GT の方針 | current/reference | 保持 |
 | `docs/contracts/BARLINE_MATCHER.md` | マッチング・評価のルール | current/reference | 保持 |
-| `docs/SCRIPT_MANAGEMENT.md` | スクリプトの配置・ライフサイクルの方針 | current/reference | 簡潔に保つ。過去の移動・削除の記録は #45 / PR #184 に属する |
-| `docs/manual_correction_review_package.md` | 内部のレビュー引き継ぎ | current/reference | 保持 |
+| `docs/dev/SCRIPT_MANAGEMENT.md` | スクリプトの配置・ライフサイクルの方針 | current/reference | 簡潔に保つ。過去の移動・削除の記録は #45 / PR #184 に属する |
+| `docs/dev/manual_correction_review_package.md` | 内部のレビュー引き継ぎ | current/reference | 保持 |
 | `docs/contracts/corrected_final_output.md` | 補正済み出力のワークフロー | scoped/reference | 保持する。出力のワークフローを変更するときはソースと照合する |
 | `docs/ai-workflow/GRAPHIFY.md` | Graphify の運用 | current/reference | 保持 |
 | `.agents/skills/graphify/**` | エージェントの Graphify スキル | current/reference | 保持 |
@@ -98,21 +98,21 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [ENGINE_TELEMETRY.md](contracts/ENGINE_TELEMETRY.md) | current/reference | EN / [JA](contracts/ENGINE_TELEMETRY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [ENGINE_SERVICE_READINESS.md](contracts/ENGINE_SERVICE_READINESS.md) | current/reference | EN / [JA](contracts/ENGINE_SERVICE_READINESS.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [MODEL_ARTIFACT_CONTRACT.md](contracts/MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](contracts/MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
-| [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
-| [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN / [JA](ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [MODEL_ARTIFACTS.md](dev/MODEL_ARTIFACTS.md) | current/reference | EN / [JA](dev/MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
+| [ENVIRONMENTS.md](dev/ENVIRONMENTS.md) | current/reference | EN / [JA](dev/ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | [JA reviewed](USER_GUIDE.ja.md) | P1 |
-| [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | [JA reviewed](manual_correction_review_package.ja.md) | P1 |
-| [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN / [JA](BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [manual_correction_review_package.md](dev/manual_correction_review_package.md) | current/reference | EN | [JA reviewed](dev/manual_correction_review_package.ja.md) | P1 |
+| [BRANCH_POLICY.md](dev/BRANCH_POLICY.md) | current/reference | EN / [JA](dev/BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN / [JA](dev/VALIDATION_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN / [JA](dev/LOCAL_VALIDATION.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_CORRECTION_BOUNDARY.md](contracts/USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](contracts/USER_CORRECTION_BOUNDARY.ja.md) | P2 |
 | [corrected_final_output.md](contracts/corrected_final_output.md) | current/reference | EN | [JA reviewed](contracts/corrected_final_output.ja.md) | P2 |
 | [MOVEMENT_BOUNDARY_CONTRACT.md](contracts/MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md); #477 currency review | P2 |
 | [NUMBERING_GEOMETRY_CONTRACT.md](contracts/NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/NUMBERING_GEOMETRY_CONTRACT.ja.md); #477 currency review | P2 |
-| [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
+| [GT_PREPARATION_POLICY.md](dev/GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](dev/GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
 | [BARLINE_MATCHER.md](contracts/BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](contracts/BARLINE_MATCHER.ja.md); #475 currency review | P2 |
-| [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
-| [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
+| [MAKEFILE_SURFACE.md](dev/MAKEFILE_SURFACE.md) | current/reference | EN / [JA](dev/MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
+| [REGRESSION_TEST_WORKFLOW.md](dev/REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](dev/REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | [JA reviewed](dev/MMR_RAPIDOCR_PROVIDER.ja.md); #477 currency review | P2 |
 | [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | [JA reviewed](dev/REVIEW_ACCEPTANCE.ja.md); #480 currency review | P2 |
 | [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | [JA reviewed](dev/PR_SLICE_VALIDATION.ja.md); #480 currency review | P2 |
@@ -121,7 +121,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | [JA reviewed](agent-skills/EVAL.ja.md); #482 | P2 |
 | [dev/CONFIGURATION_REFERENCE.md](dev/CONFIGURATION_REFERENCE.md) | current/reference; canonical config keys and values guarded in PR CI by `tests/test_configuration_reference.py` | EN | [JA reviewed](dev/CONFIGURATION_REFERENCE.ja.md); #486 | P2 |
 | [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | [EN reviewed](dev/EXPERIMENT_MODEL_SELECTION.en.md); #475 | P1 |
-| [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](SCRIPT_MANAGEMENT.en.md) | P2 |
+| [SCRIPT_MANAGEMENT.md](dev/SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](dev/SCRIPT_MANAGEMENT.en.md) | P2 |
 | [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | [JA reviewed](ai-workflow/README.ja.md); #482 | P2 |
 | [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | [JA reviewed](ai-workflow/WORKFLOW.ja.md); #482 | P2 |
 | [ai-workflow/GRAPHIFY.md](ai-workflow/GRAPHIFY.md) | current/reference | EN | [JA reviewed](ai-workflow/GRAPHIFY.ja.md); #482 | P2 |

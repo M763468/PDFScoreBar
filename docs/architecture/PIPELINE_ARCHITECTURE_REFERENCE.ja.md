@@ -43,7 +43,7 @@ engineとともに、パッケージに紐付く`tools/review_correction`アプ�
 ルートの`Dockerfile`は保守対象のproduction実行環境だけをビルドする。
 過去のStage-Eのソース、venv、モデル資産、provenanceは、明示的な再現用拡張
 `docker/Dockerfile.stage-e`に置く。正規の事前確認で必要なのは、保守対象プロファイルのprovenanceだけである。
-2種類のビルド経路は[環境（英語・未翻訳）](../ENVIRONMENTS.md)を参照。
+2種類のビルド経路は[環境（英語・未翻訳）](../dev/ENVIRONMENTS.md)を参照。
 
 ```bash
 make docker-build

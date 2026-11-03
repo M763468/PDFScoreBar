@@ -141,7 +141,7 @@ Phase Cは採択・補正済みの小節線、譜表マスク、利用可能な�
 | ワーカー、モデル・GPUメモリの利用期間、失敗処理、座標の変換 | [実装リファレンス：実行順序と処理の責任](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#入力から出力までの処理順序) |
 | 小節線候補の調整、CNN、閾値、検出元の記録 | [候補の調整](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#入力から出力までの処理順序)、[検出元の記録とスコアリング](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#detector入力のprovenanceとスコアリングのデフォルト) |
 | 譜表の接続情報、MMRへの位置情報の引き渡し、最終番号のインデックス | [Phase A](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#譜表小節構造と基本番号付けphase-aコネクターの意味情報と座標の所有権)、[Phase B](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#複数小節休符の認識phase-bmmrサポートの再利用)、[Phase C](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#補正を反映した最終番号付けphase-c削除済みのmmr再構築との違い) |
-| 実行コマンドやDocker環境 | [環境ガイド（英語）](../ENVIRONMENTS.md) |
+| 実行コマンドやDocker環境 | [環境ガイド（英語）](../dev/ENVIRONMENTS.md) |
 | 利用者による訂正手順 | [ユーザーガイド（英語）](../USER_GUIDE.md)、[ユーザー補正の境界（英語）](../contracts/USER_CORRECTION_BOUNDARY.md) |
 
 実装リファレンスには、厳密な受入条件や、過去の調査への参照を残している。この概要では**現在の処理と各工程が必要な理由**に集中する。

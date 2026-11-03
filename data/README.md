@@ -36,7 +36,7 @@ The old tracked `data/training/**`, `data/evaluation/**`, and `data/workbench/**
 retired by Issue #381 after the evaluation2 workflow became canonical. Their historical bytes remain
 recoverable from Git history; do not recreate those directories as current GT locations.
 
-For ad-hoc scratch work, follow `docs/SCRIPT_MANAGEMENT.md` and use ignored `tmp/` rather than a
+For ad-hoc scratch work, follow `docs/dev/SCRIPT_MANAGEMENT.md` and use ignored `tmp/` rather than a
 tracked workbench tree.
 
 ## Retention rule

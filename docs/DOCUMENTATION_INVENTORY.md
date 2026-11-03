@@ -32,14 +32,14 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/contracts/ENGINE_TELEMETRY.md` / `.ja.md` | #339 structured progress/resource telemetry contract | current/reference (English original); Japanese reviewed | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
 | `docs/contracts/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 reference executor and compatibility gates | current/reference (English original); Japanese reviewed | supported succeeded/failed publication boundary; direct v1 corrections, lifecycle controls and public-service isolation remain outside current support |
 | `docs/history/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
-| `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
-| `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
+| `docs/dev/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
+| `docs/dev/BRANCH_POLICY.md` | branch policy | current/reference | keep |
 | `docs/dev/VALIDATION_POLICY.md` | validation policy | current/reference | keep |
-| `docs/REGRESSION_TEST_WORKFLOW.md` | regression workflow | current/reference | keep |
-| `docs/GT_PREPARATION_POLICY.md` | GT policy | current/reference | keep |
+| `docs/dev/REGRESSION_TEST_WORKFLOW.md` | regression workflow | current/reference | keep |
+| `docs/dev/GT_PREPARATION_POLICY.md` | GT policy | current/reference | keep |
 | `docs/contracts/BARLINE_MATCHER.md` | matching/evaluation rules | current/reference | keep |
-| `docs/SCRIPT_MANAGEMENT.md` | script placement/lifecycle policy | current/reference | keep compact; historical move/delete ledger belongs in #45 / PR #184 |
-| `docs/manual_correction_review_package.md` | internal review handoff | current/reference | keep |
+| `docs/dev/SCRIPT_MANAGEMENT.md` | script placement/lifecycle policy | current/reference | keep compact; historical move/delete ledger belongs in #45 / PR #184 |
+| `docs/dev/manual_correction_review_package.md` | internal review handoff | current/reference | keep |
 | `docs/contracts/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against source when modifying output workflow |
 | `docs/ai-workflow/GRAPHIFY.md` | Graphify operation | current/reference | keep |
 | `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep |
@@ -100,21 +100,21 @@ when translating. Historical and scoped records follow the exclusions below.
 | [ENGINE_TELEMETRY.md](contracts/ENGINE_TELEMETRY.md) | current/reference | EN / [JA](contracts/ENGINE_TELEMETRY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [ENGINE_SERVICE_READINESS.md](contracts/ENGINE_SERVICE_READINESS.md) | current/reference | EN / [JA](contracts/ENGINE_SERVICE_READINESS.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [MODEL_ARTIFACT_CONTRACT.md](contracts/MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](contracts/MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
-| [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
-| [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN / [JA](ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [MODEL_ARTIFACTS.md](dev/MODEL_ARTIFACTS.md) | current/reference | EN / [JA](dev/MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
+| [ENVIRONMENTS.md](dev/ENVIRONMENTS.md) | current/reference | EN / [JA](dev/ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | [JA reviewed](USER_GUIDE.ja.md) | P1 |
-| [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | [JA reviewed](manual_correction_review_package.ja.md) | P1 |
-| [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN / [JA](BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [manual_correction_review_package.md](dev/manual_correction_review_package.md) | current/reference | EN | [JA reviewed](dev/manual_correction_review_package.ja.md) | P1 |
+| [BRANCH_POLICY.md](dev/BRANCH_POLICY.md) | current/reference | EN / [JA](dev/BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN / [JA](dev/VALIDATION_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN / [JA](dev/LOCAL_VALIDATION.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_CORRECTION_BOUNDARY.md](contracts/USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](contracts/USER_CORRECTION_BOUNDARY.ja.md) | P2 |
 | [corrected_final_output.md](contracts/corrected_final_output.md) | current/reference | EN | [JA reviewed](contracts/corrected_final_output.ja.md) | P2 |
 | [MOVEMENT_BOUNDARY_CONTRACT.md](contracts/MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md); #477 currency review | P2 |
 | [NUMBERING_GEOMETRY_CONTRACT.md](contracts/NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/NUMBERING_GEOMETRY_CONTRACT.ja.md); #477 currency review | P2 |
-| [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
+| [GT_PREPARATION_POLICY.md](dev/GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](dev/GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
 | [BARLINE_MATCHER.md](contracts/BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](contracts/BARLINE_MATCHER.ja.md); #475 currency review | P2 |
-| [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
-| [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
+| [MAKEFILE_SURFACE.md](dev/MAKEFILE_SURFACE.md) | current/reference | EN / [JA](dev/MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
+| [REGRESSION_TEST_WORKFLOW.md](dev/REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](dev/REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | [JA reviewed](dev/MMR_RAPIDOCR_PROVIDER.ja.md); #477 currency review | P2 |
 | [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | [JA reviewed](dev/REVIEW_ACCEPTANCE.ja.md); #480 currency review | P2 |
 | [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | [JA reviewed](dev/PR_SLICE_VALIDATION.ja.md); #480 currency review | P2 |
@@ -123,7 +123,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | [JA reviewed](agent-skills/EVAL.ja.md); #482 | P2 |
 | [dev/CONFIGURATION_REFERENCE.md](dev/CONFIGURATION_REFERENCE.md) | current/reference; canonical config keys and values guarded in PR CI by `tests/test_configuration_reference.py` | EN | [JA reviewed](dev/CONFIGURATION_REFERENCE.ja.md); #486 | P2 |
 | [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | [EN reviewed](dev/EXPERIMENT_MODEL_SELECTION.en.md); #475 | P1 |
-| [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](SCRIPT_MANAGEMENT.en.md) | P2 |
+| [SCRIPT_MANAGEMENT.md](dev/SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](dev/SCRIPT_MANAGEMENT.en.md) | P2 |
 | [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | [JA reviewed](ai-workflow/README.ja.md); #482 | P2 |
 | [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | [JA reviewed](ai-workflow/WORKFLOW.ja.md); #482 | P2 |
 | [ai-workflow/GRAPHIFY.md](ai-workflow/GRAPHIFY.md) | current/reference | EN | [JA reviewed](ai-workflow/GRAPHIFY.ja.md); #482 | P2 |

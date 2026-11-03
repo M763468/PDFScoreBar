@@ -119,7 +119,7 @@ make docker-build DOCKER_IMAGE=pdfscore_issue352
 
 ## 実行プリフライト
 
-環境に依存するチェックを実行する前に、アクティブな worktree のコミット／差分、選択されたインタプリタまたは不変のイメージ ID、実際のチェックアウトマウント、実行時の UID/GID、書き込み可能な出力パス、および Docker／`gh` の権限が利用可能であることを確認してください。ホストの Python、共有 pytest コンテナ、本番 GPU イメージ、または Node/Playwright ブラウザランナーの選択には、[Local validation](dev/LOCAL_VALIDATION.md) を使用してください。コンテナ名や以前に確認したイメージタグは、現在のマウント状態や互換性を証明するものではありません。
+環境に依存するチェックを実行する前に、アクティブな worktree のコミット／差分、選択されたインタプリタまたは不変のイメージ ID、実際のチェックアウトマウント、実行時の UID/GID、書き込み可能な出力パス、および Docker／`gh` の権限が利用可能であることを確認してください。ホストの Python、共有 pytest コンテナ、本番 GPU イメージ、または Node/Playwright ブラウザランナーの選択には、[Local validation](LOCAL_VALIDATION.md) を使用してください。コンテナ名や以前に確認したイメージタグは、現在のマウント状態や互換性を証明するものではありません。
 
 標準の共有 pytest コンテナは、マネージャーチェックアウトを `/workspace` にマウントするため、`.worktrees/` 配下の Issue 用 worktree は `/workspace/.worktrees/` 配下に現れます。専用のコンテナプリフライトスクリプトは `/workspace` への直接のチェックアウトを要求するため、このネストされたレイアウトを意図的に拒否します。代わりに Local validation に記載されているネストされたパス用のチェックを使用してください。`/workspace` に直接マウントされた専用の固定（frozen）候補コンテナは例外のままとなります。
 
@@ -198,7 +198,7 @@ configs/detector_profiles/stage_e_verified_homr.json
 
 リポジトリの pytest も必要とする反復的なパイプライン評価には、`pdfscore_pipeline_gpu` をベースとした名前付きの永続コンテナを使用してください。本番ランタイムには意図的に pytest を含めていませんが、それを理由にリポジトリの pytest カバレッジを弱めたり書き換えたりしないでください。
 
-この共有コンテナの作成や検査は、マネージャーチェックアウトから行ってください。このコンテナの `/workspace` マウントは `.worktrees/` 配下に Issue 用 worktree を公開するため、[Local validation](dev/LOCAL_VALIDATION.md#python-and-pytest) に従って、ネストされた worktree パスとそれに対応する `PYTHONPATH` を指定して pytest を実行してください。以下のコマンドはマネージャーチェックアウト自体に対して実行するものです。分離された候補環境から直接マウントされた専用コンテナは明示的な例外です。ブラウザチェックには、[Local validation](dev/LOCAL_VALIDATION.md#browser-validation) に記載されている別のランナーを使用します。
+この共有コンテナの作成や検査は、マネージャーチェックアウトから行ってください。このコンテナの `/workspace` マウントは `.worktrees/` 配下に Issue 用 worktree を公開するため、[Local validation](LOCAL_VALIDATION.md#python-and-pytest) に従って、ネストされた worktree パスとそれに対応する `PYTHONPATH` を指定して pytest を実行してください。以下のコマンドはマネージャーチェックアウト自体に対して実行するものです。分離された候補環境から直接マウントされた専用コンテナは明示的な例外です。ブラウザチェックには、[Local validation](LOCAL_VALIDATION.md#browser-validation) に記載されている別のランナーを使用します。
 
 コンテナが存在しない場合は作成します。このコンテナでパイプラインチェックを実行できるよう、本番タグを検証済みの不変イメージに解決し、登録済みの外部 OMR-DLN 重みをマウントします。
 

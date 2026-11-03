@@ -1,5 +1,7 @@
 # PR slice validation workflow
 
+[日本語](PR_SLICE_VALIDATION.ja.md)
+
 This document defines the lightweight local validation path for focused PRs.
 It is intended to prevent formatter-only follow-up commits and to make focused pytest sets reusable across review iterations.
 
@@ -59,7 +61,7 @@ Rules:
 
 - Use one pytest argument per line.
 - Blank lines and lines starting with `#` are ignored.
-- Keep profile names tied to issue or feature scope, for example `issue241-pr-validation` or `issue236-apply-corrections`.
+- Keep profile names tied to issue or feature scope, for example `issue236-apply-corrections` or `issue267-numbering-geometry`.
 - Prefer stable, lightweight tests that do not require GPU, Docker, model artifacts, or full evaluation data.
 - If a slice needs heavier validation, keep that requirement in the PR body and in `docs/dev/VALIDATION_POLICY.md` terms instead of hiding it inside the lightweight profile.
 
@@ -88,11 +90,11 @@ Use a full profile hook only when the focused pytest set is fast enough for norm
 
 ## GitHub Actions coverage
 
-The PR validation workflow in `.github/workflows/pr-validation.yml` currently runs `make lint` on pull requests and manual dispatches.
+The PR validation workflow in `.github/workflows/pr-validation.yml` runs on pull requests to `develop` and `main` and on manual dispatch. Its `make lint` job checks documentation translation provenance (`tools/verification/check_doc_translations.py` and its tests), Makefile repository references (`make check-makefile`), and `make lint`. Its `engine contract compatibility` job installs a small dependency set and runs a fixed list of engine-contract pytest files.
 
-Focused pytest is intentionally not enabled in GitHub Actions yet. This repository can require optional or heavy dependencies such as PyMuPDF, OpenCV, torch-related packages, OCR backends, Docker, GPU, or model artifacts depending on which tests are selected. Until a stable CI dependency layer is defined, focused pytest remains a local profile-based check.
+The profile-based focused pytest sets in `scripts/pr_validation_profiles/` are not run in GitHub Actions. Depending on the selected tests, they can require optional or heavy dependencies such as PyMuPDF, OpenCV, torch-related packages, OCR backends, Docker, GPU, or model artifacts. Until a stable CI dependency layer is defined for a profile, it remains a local check.
 
-When CI dependency setup becomes reliable, extend the workflow with a profile command such as:
+When CI dependency setup becomes reliable for a profile, extend the workflow with a profile command such as:
 
 ```bash
 bash scripts/check_pr_slice.sh issue236-apply-corrections --pytest-only

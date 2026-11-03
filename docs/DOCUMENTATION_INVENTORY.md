@@ -112,13 +112,13 @@ when translating. Historical and scoped records follow the exclusions below.
 | [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | [JA reviewed](dev/MMR_RAPIDOCR_PROVIDER.ja.md); #477 currency review | P2 |
-| [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | JA needed | P2 |
-| [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | JA needed | P2 |
-| [dev/codex_local_automation.md](dev/codex_local_automation.md) | current/reference | EN | JA needed | P2 |
-| [dev/local_worktree_data.md](dev/local_worktree_data.md) | current/reference | EN | JA needed | P2 |
+| [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | [JA reviewed](dev/REVIEW_ACCEPTANCE.ja.md); #480 currency review | P2 |
+| [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | [JA reviewed](dev/PR_SLICE_VALIDATION.ja.md); #480 currency review | P2 |
+| [dev/codex_local_automation.md](dev/codex_local_automation.md) | current/reference | EN | [JA reviewed](dev/codex_local_automation.ja.md); #480 currency review | P2 |
+| [dev/local_worktree_data.md](dev/local_worktree_data.md) | current/reference | EN | [JA reviewed](dev/local_worktree_data.ja.md); #480 currency review | P2 |
 | [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | JA needed | P2 |
 | [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | [EN reviewed](dev/EXPERIMENT_MODEL_SELECTION.en.md); #475 | P1 |
-| [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | mixed | split/review | P2 |
+| [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](SCRIPT_MANAGEMENT.en.md) | P2 |
 | [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | JA needed | P2 |
 | [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | JA needed | P2 |
 | [ai-workflow/GRAPHIFY.md](ai-workflow/GRAPHIFY.md) | current/reference | EN | JA needed | P2 |

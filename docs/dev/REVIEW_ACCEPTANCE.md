@@ -1,4 +1,10 @@
-# User correction acceptance (#397)
+# User correction acceptance
+
+[日本語](REVIEW_ACCEPTANCE.ja.md)
+
+This document describes the repeatable real-artifact acceptance runner for the user
+correction application. The runner was introduced by Issue #397; the evidence and
+review history from that acceptance are kept in the historical sections at the end.
 
 The user review application consumes a retained review package, records corrections,
 and applies them through the authoritative review engine. It does not edit canonical
@@ -10,12 +16,14 @@ Run the repeatable real-artifact gates in a fresh directory:
 python -m tools.review_correction.acceptance \
   --source-run /absolute/retained/single-page/run \
   --movement-review /absolute/retained/movement/package \
-  --evidence-root logs/issue397/acceptance/<run> \
+  --evidence-root logs/issue<N>/acceptance/<run> \
   --runtime-identity <immutable-image-id>
 ```
 
-The currently fixed cases use the Issue #354 production page and Issue #346
-Shostakovich movement evidence. The runner freezes paths, original artifact hashes,
+Use the active Issue's evidence root for `<N>`.
+
+The fixed cases use a retained single production page and retained Shostakovich
+movement-review evidence (originally from Issues #354 and #346). The runner freezes paths, original artifact hashes,
 model identity, runtime, corrections and expected effects before starting HTTP
 requests. Only copied manifests receive path adaptations; geometry, tolerances and
 model thresholds are preserved. The movement gate deliberately selects page_008
@@ -54,7 +62,7 @@ With an installed Playwright module and Chromium, open a fresh writable copied p
 ```bash
 PLAYWRIGHT_MODULE=/path/to/playwright CHROMIUM_PATH=/path/to/chromium \
   node tools/review_correction/browser_acceptance.cjs \
-  http://127.0.0.1:8010 logs/issue397/acceptance/<run>/browser
+  http://127.0.0.1:8010 logs/issue<N>/acceptance/<run>/browser
 ```
 
 The script selects the retained first measure and uses actual form controls to save, apply,
@@ -62,9 +70,10 @@ retrieve the PDF, and remove the correction. It checks pending/recorded/current/
 and retains screenshots, state snapshots and the downloaded PDF. Use a fresh copied package
 whose original first-measure span is one.
 
-### Validation evidence (2026-10-03)
+### Historical validation evidence (#397, 2026-10-03)
 
-The GPU run at `logs/issue397/acceptance/gpu01` passed all fixed gates with candidate
+This evidence was recorded for the #397 candidate and has not been rerun for later
+revisions. The GPU run at `logs/issue397/acceptance/gpu01` passed all fixed gates with candidate
 `36964070dcdec8dc03f26c234c2ba36343f28a1e`, image
 `sha256:3eaccf844d6d18b6212e8aed4551bc0fb4a424fc776568058d465f8335aef3ab`, and model SHA256
 `f163fa2a7679d12c0f4fe6fc2fadc7ed1f144035779a18b83a303bfa6d35903a`.
@@ -80,7 +89,7 @@ Playwright's unconfigured request client. Its log and outputs remain retained; `
 corrects that harness error. No production thresholds or acceptance expectations were changed.
 
 
-### Review responsibility correction (2026-10-03)
+### Historical review responsibility correction (#394–#397, 2026-10-03)
 
 Failed-apply error counting is owned and tested by #394. Retention of the consumed reviewed
 movement payload in corrected config is owned and tested by #395. These fixes have been moved

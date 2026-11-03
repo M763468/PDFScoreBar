@@ -1,6 +1,8 @@
 # Codex Local Automation
 
-Issue #173 adds optional local automation entrypoints for Codex app, Codex CLI, WSL, and GitHub CLI work. These helpers are intended to make local validation repeatable without replacing normal manual development.
+[日本語](codex_local_automation.ja.md)
+
+The repository provides optional local automation entrypoints for Codex app, Codex CLI, WSL, and GitHub CLI work. These helpers are intended to make local validation repeatable without replacing normal manual development.
 
 Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts are helpers for applying that policy; they are not a reason to weaken required checks or ignore scope boundaries.
 
@@ -22,7 +24,7 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
 
    ```bash
    if [[ "${ISSUE_ID:-}" =~ ^[0-9]+$ ]]; then
-     cd /home/masaki_muramatsu/ws_PDFScoreBar
+     cd /path/to/PDFScoreBar
      git fetch origin
      mkdir -p .worktrees
      git worktree add ".worktrees/issue${ISSUE_ID}" -b "fix/issue${ISSUE_ID}" origin/develop

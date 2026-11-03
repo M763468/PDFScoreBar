@@ -1,10 +1,10 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"1f29cd0ffd272751c9046fe1550218c87acfe0d8e04bac46b8025875c057a0f8"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"c5211c643f6cf4715fe31663dae863fc7bf2b3ed998bc17f0868a23f1d1ce6e9"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `1f29cd0ffd272751c9046fe1550218c87acfe0d8e04bac46b8025875c057a0f8`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `c5211c643f6cf4715fe31663dae863fc7bf2b3ed998bc17f0868a23f1d1ce6e9`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 
@@ -30,7 +30,7 @@
 - [エンジンのライフサイクル](ENGINE_JOB_LIFECYCLE.ja.md)、[入力の安全性](ENGINE_INPUT_SAFETY.ja.md)、[テレメトリー](ENGINE_TELEMETRY.ja.md)は単一ジョブの契約を詳述します。[サービス準備ゲート](ENGINE_SERVICE_READINESS.ja.md)は、サポート対象の executor の振る舞いと互換性チェックを説明します。将来の worker 分離は別のものです。
 - [最終出力](corrected_final_output.ja.md)、[番号付けの幾何](NUMBERING_GEOMETRY_CONTRACT.ja.md)、[楽章境界](MOVEMENT_BOUNDARY_CONTRACT.ja.md)、[GT 準備](GT_PREPARATION_POLICY.ja.md)、[小節線マッチング](BARLINE_MATCHER.ja.md)は、より限定された出力や検証の振る舞いを説明します。
 - [モデル成果物契約](MODEL_ARTIFACT_CONTRACT.ja.md)は現在のモデル識別情報を定義し、[本番モデル成果物](MODEL_ARTIFACTS.ja.md)は公開とキャッシュのワークフローを扱います。[探索・比較用モデルの選択](dev/EXPERIMENT_MODEL_SELECTION.md)（日本語正本、[English](dev/EXPERIMENT_MODEL_SELECTION.en.md)）は、明示的な候補パス、固定比較、本番検証に関する開発者向けガイドです。
-- [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)、[回帰ワークフロー](REGRESSION_TEST_WORKFLOW.ja.md)、[スクリプト管理（英語、未翻訳）](SCRIPT_MANAGEMENT.md)はリポジトリ開発のガイドです。
+- [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)、[回帰ワークフロー](REGRESSION_TEST_WORKFLOW.ja.md)、[スクリプト管理](SCRIPT_MANAGEMENT.md)（日本語正本、[English](SCRIPT_MANAGEMENT.en.md)）はリポジトリ開発のガイドです。
 - [将来のサービスアーキテクチャ（英語、未翻訳）](FUTURE_SERVICE_ARCHITECTURE.md)はロードマップであり、現在のランタイムの振る舞いではありません。[Two-HOMR マイルストーン（英語、未翻訳）](TWO_HOMR_MILESTONE.md)は固定された比較であり、現在の本番設定ではありません。
 
 過去の調査には[履歴索引（英語、未翻訳）](HISTORY_INDEX.md)を使用し、該当する Issue または受け入れ済みの結果を探してください。現在の振る舞いはソース、テスト、使用中の設定、現在のアーキテクチャ文書で定義されます。振る舞いが変わった場合は該当する現在の契約を更新し、過去のメモを別の一般ガイドにコピーしないでください。

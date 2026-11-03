@@ -26,7 +26,7 @@ differences: a floor and a noise criterion remain (P1 to P3).
 
 ## Performance evidence (root, multi-page Sym5 pages 012/013/014, warm seed copy)
 
-New labels `v2-primary-{1,2,3}`. Each is a full fresh ABBA block from
+New labels `v2-primary-{2,3,4}` (see "Invalid attempt" below for `v2-primary-1`). Each is a full fresh ABBA block from
 `tools.issue459.screen --job-protocol` (same seed `logs/issue459/cache/root-multi-cold-b2`).
 v1's block is reported next to them but is **not** included in the v2 statistics.
 
@@ -57,7 +57,7 @@ visible. Any failure is reported and fails gate R; no rerun or exclusion.
 | ID | Check | Pass condition |
 | --- | --- | --- |
 | Q1 | Three-page semantic equality | All v2 primary and cell runs pass the retained `pipeline_checks` |
-| Q2 | Real correction replay | Fixed barline remove/add, manual number and movement reset replayed on v2 primary B and O outputs (`e2e_correction_replay.run`); every built-in check true and corrected boxes/stats/base/final pages equal between B and O |
+| Q2 | Real correction replay | Fixed barline remove/add, manual number and movement reset replayed on the first v2 primary block's B and O outputs (`e2e_correction_replay.run`); every built-in check true and corrected boxes/stats/base/final pages equal between B and O |
 | L1 | Long document | All 25 Sym5 pages, root warm, one B and one O run: completes; semantic equality; O uses exactly one OMR worker process |
 | L2 | Varied shapes | 8 pages interleaving four scores with four page sizes (copied inputs under `logs/issue459/inputs/`), root warm, one B and one O: same as L1 |
 | M1 | Memory growth | For L1 and L2: O cgroup RAM peak <= 1.10 x B peak; O device VRAM peak <= B peak + 512 MiB |
@@ -89,3 +89,12 @@ results, timeout and cancel.
   **undecided**.
 - No threshold, input, seed, tolerance or metric change after observing v2 data.
   Any such change creates v3 and keeps v2 visible.
+
+## Invalid attempt (recorded before any v2 timing existed)
+
+The first campaign start (`v2-primary-1`, run `1-b` only) overlapped a concurrent
+CPU-only correction-replay dry run (on v1 outputs) on the same host. It was stopped
+before `result.json` existed, so no v2 wall time was observed. Artifacts are retained;
+see `logs/issue459/v2/invalid-attempt-v2-primary-1.json`. Primary blocks use fresh
+labels `v2-primary-{2,3,4}`; no gate, input or threshold changed. No other workload
+runs on the host during a timed v2 run.

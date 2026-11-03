@@ -19,8 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 V2 = "logs/issue459/v2"
 SEED = "logs/issue459/cache/root-multi-cold-b2"
-PRIMARY_BLOCKS = ("v2-primary-1", "v2-primary-2", "v2-primary-3")
-REFERENCE = "logs/issue459/runs/v2-primary-1-1-b"
+PRIMARY_BLOCKS = ("v2-primary-2", "v2-primary-3", "v2-primary-4")
+REFERENCE = "logs/issue459/runs/v2-primary-2-1-b"
 CELLS = (
     (0, "multi", "cold"),
     (0, "single", "warm"),
@@ -332,7 +332,7 @@ def replay(args):
 
     out = ROOT / V2 / "correction-replay"
     out.mkdir(parents=True, exist_ok=False)
-    labels = ["v2-primary-1-1-b", "v2-primary-1-2-o"]
+    labels = [f"{PRIMARY_BLOCKS[0]}-1-b", f"{PRIMARY_BLOCKS[0]}-2-o"]
     manifest = json.loads((run_dir(labels[0]) / "pipeline/manifest.json").read_text())
     box = normalize_barlines(
         json.loads(local_path(ROOT, manifest["pages"][0]["barlines_json"]).read_text())

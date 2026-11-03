@@ -1,10 +1,10 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"2d857f32baddb46819d0fb6a91a2d1df949b045cd8ca302b0db51c422ace5cc0"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"7adf2843a14e1b6d0485e72ab5513b8b422415e4bbc88796d919b36946f60781"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `2d857f32baddb46819d0fb6a91a2d1df949b045cd8ca302b0db51c422ace5cc0`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `7adf2843a14e1b6d0485e72ab5513b8b422415e4bbc88796d919b36946f60781`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 
@@ -17,13 +17,13 @@
 | 利用者の補正と GT／開発者向けツールはどう分離されているか | [利用者補正の境界](USER_CORRECTION_BOUNDARY.ja.md) |
 | エンジンの呼び出し元は何を送受信するか | [エンジンジョブ契約（英語）](ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](ENGINE_JOB_CONTRACT.ja.md) |
 | このリポジトリを変更・検証するには | [ブランチ方針](BRANCH_POLICY.ja.md)、[検証方針](dev/VALIDATION_POLICY.ja.md)、[ローカル検証](dev/LOCAL_VALIDATION.ja.md)、[設定と実行入口](dev/CONFIGURATION_REFERENCE.ja.md) |
-| 古いコードや検証結果が保持されている理由は | [リポジトリサーフェス台帳（英語、未翻訳）](REPOSITORY_SURFACE_INVENTORY.md)、[ドキュメント台帳（英語、未翻訳）](DOCUMENTATION_INVENTORY.md)、[履歴索引](HISTORY_INDEX.ja.md) |
+| 古いコードや検証結果が保持されている理由は | [リポジトリサーフェス台帳（英語、未翻訳）](REPOSITORY_SURFACE_INVENTORY.md)、[ドキュメント台帳](DOCUMENTATION_INVENTORY.ja.md)、[履歴索引](HISTORY_INDEX.ja.md) |
 
 最小選択には説明文書と機械可読の一覧が一つずつあります。リポジトリとドキュメントの台帳は、より広範囲の過去の監査です。これらを実行時の第二のファイル一覧として使用してはいけません。`docs/**` の大半と `tests/**` の全体は develop 専用です。manifest はユーザーガイドと配布メタデータを明示的に選択しています。
 
 ## ドキュメントの言語
 
-[カバレッジ台帳（英語、未翻訳）](DOCUMENTATION_INVENTORY.md#bilingual-coverage-and-translation-scope)には原文の言語、未作成の対訳、翻訳の優先順位が記録されています。翻訳を追加・更新するときは[言語・保守方針](DOCUMENTATION_LANGUAGE_POLICY.ja.md)に従ってください。完全な日本語版がないガイドは台帳で確認できます。日本語の UI 例があることは全文翻訳を意味しません。
+[カバレッジ台帳](DOCUMENTATION_INVENTORY.ja.md#bilingual-coverage-and-translation-scope)には原文の言語、未作成の対訳、翻訳の優先順位が記録されています。翻訳を追加・更新するときは[言語・保守方針](DOCUMENTATION_LANGUAGE_POLICY.ja.md)に従ってください。完全な日本語版がないガイドは台帳で確認できます。日本語の UI 例があることは全文翻訳を意味しません。
 
 ## より具体的な契約
 

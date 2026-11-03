@@ -1,5 +1,7 @@
 # Durable Documentation Inventory
 
+[日本語](DOCUMENTATION_INVENTORY.ja.md)
+
 Issue #280 established the repository documentation audit against the accepted #274-era production state. This file records documentation history and maintenance rules. It is not the entrypoint for the minimum runtime selection; use `MINIMAL_MAINLINE_SURFACE.md` for that question.
 
 ## Classification rule
@@ -52,6 +54,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | audit individually; keep current scoped contracts, retire temporary handoff/task-control bundles after distillation |
 | `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retired | important #25/#60/#70 results moved to their Issue threads; active-looking task-control copies removed |
 | `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and decisions are recoverable elsewhere |
+| `docs/GOALS.md` | pre-#446 project goals and "current" direction | retired | the owner decided in #446 that it no longer states current project direction; removed in #488 without translation; recover through Git history |
 | `docs/model_experiments/*.md` | old model survey/future plans | retired when superseded | active-looking plan text is not a current model roadmap; accepted experiment evidence remains elsewhere |
 | `docs/model_experiments/*.pdf` | pre-experiment literature/dataset/model surveys | retired | content-level audit under #308 found no unique project-specific operating/reproduction contract; project-specific experiment evidence remains under `experiments/models/`, and exact old survey prose remains in Git history |
 | `docs/fp_reduction/**` | duplicate Dec-2025 FP-reduction narratives | retired | removed after reusable safety guidance moved to `docs/ai-workflow/LESSONS.md`; tooling remains under `experiments/fp_reduction/` |
@@ -87,7 +90,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [../README.md](../README.md) | canonical/current | EN | [JA reviewed](../README.ja.md) | P1 |
 | [../AGENTS.md](../AGENTS.md) | canonical/current; agent instructions | EN | not required (agent-only) | N/A |
 | [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
-| [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | JA needed | P1 |
+| [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | [JA reviewed](DOCUMENTATION_INVENTORY.ja.md); #488 | P1 |
 | [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
 | [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
 | [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |
@@ -127,7 +130,6 @@ when translating. Historical and scoped records follow the exclusions below.
 | [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | [JA reviewed](ai-workflow/LABELS.ja.md); #482 | P2 |
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
 | [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
-| [GOALS.md](GOALS.md) | future/direction; currency needs owner review | mixed | split/review after the owner confirms current goals (#484) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |
@@ -152,13 +154,14 @@ when translating. Historical and scoped records follow the exclusions below.
   to current design. The #441 and #410 records are Japanese-centered; `refactors/**`
   is predominantly English with mixed Japanese records (notably #94 and the rebuild plan).
   Read through the history index only when the active task needs that evidence.
+  Some of these records, notably `dev/ISSUE441_*.md`, contain machine-specific absolute
+  paths as part of their recorded commands. They are historical evidence, not reusable
+  instructions; #488 kept them unchanged instead of rewriting the evidence.
 - **Known review needs:** #226–#229 documents describe their own eventual migration into
   standing user/operation docs. Check unique surviving contracts before any retirement.
   `ai-workflow/RUNNER_DESIGN.md` required task bundles under `docs/refactors/`, which
   conflicts with current `AGENTS.md` / `ai-workflow/WORKFLOW.md`; #482 marked it deprecated
-  and it is not translated.
-  `GOALS.md` contains older optimization non-goals; check current Issue decisions before
-  treating them as current planning constraints. These are review items, not runtime fixes.
+  and it is not translated. These are review items, not runtime fixes.
 - **Archived/deprecated:** `archive/**`, `ai-workflow/AI_AGENT_STRATEGY_2026.md`, and
   `ai-workflow/LONG_HORIZON_WORKFLOW.md` remain historical pointers, not translation gates.
   `ai-workflow/templates/task/**` are optional English templates, not mandatory task setup.
@@ -171,11 +174,13 @@ when translating. Historical and scoped records follow the exclusions below.
   selected current guide when translating that guide. Their absence here is not a claim
   that they are obsolete or bilingual.
 
-The next translation batches start with **production architecture**, then **engine/model
-contracts**, in small independently reviewed units. P1 is not a single translation batch.
-Use the P1 rows to bound work. Operation/validation and user onboarding can be separate
-batches after checking their link dependencies. Directory relocation and new design layers
-remain deferred until Japanese content review establishes a need; track decisions in #446.
+Under #446, the translation batches #452–#486 covered the P1 rows and the P2 rows marked
+reviewed above, in small independently reviewed units. Rows still marked **JA needed**,
+**EN needed**, deferred or not translated are intentional; translate them when a concrete
+need arises. #488 decided not to relocate documents into new directories: the English and
+Japanese indexes reach every current document, while moving files would change existing
+links, tool references and the distribution manifest without a demonstrated reader benefit.
+Whether new design layers are needed is reviewed separately (#489).
 
 ## Historical navigation and retirement rule
 

@@ -1,4 +1,12 @@
-# AI Agent Runner Design
+# AI Agent Runner Design — deprecated
+
+This document is a retired proposal, not an active instruction source. Its central idea of
+keeping task state (`Prompt.md`, `Plan.md`, `Log.md`) under `docs/refactors/<TASK-ID>/`
+conflicts with root `AGENTS.md` and `docs/ai-workflow/WORKFLOW.md`, which keep transient
+plans and task state out of general project documentation. Follow those documents instead.
+The original proposal is kept below unchanged for historical reference and is not translated.
+
+---
 
 To support multiple coding agents (Codex, Gemini CLI, Claude, etc.), we keep the workflow state tool-agnostic. The repository itself stores the task state in Markdown files.
 

@@ -1,5 +1,7 @@
 # AI Agent Workflow Documentation
 
+[日本語](README.ja.md)
+
 This directory contains optional guidance for AI-assisted development in PDFScoreBar. Root
 `AGENTS.md` is the active repository instruction source.
 
@@ -24,6 +26,7 @@ Archived task workflows remain historical even if translated.
 
 - [AI Agent Strategy 2026](AI_AGENT_STRATEGY_2026.md)
 - [Long-Horizon Task Workflow](LONG_HORIZON_WORKFLOW.md)
+- [AI Agent Runner Design](RUNNER_DESIGN.md)
 
 These files are retained as pointers to archived history and are not active instructions.
 
@@ -31,4 +34,5 @@ These files are retained as pointers to archived history and are not active inst
 
 Use repository skills only when their narrow workflow materially helps. The retained skills should
 not be treated as mandatory routing for ordinary Issue/PR reading, implementation, review, testing,
-or status reporting.
+or status reporting. When adding or materially changing a Skill, use the
+[lightweight Skill evaluation](../agent-skills/EVAL.md).

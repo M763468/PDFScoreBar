@@ -1,5 +1,7 @@
 # Graphify operating procedure
 
+[日本語](GRAPHIFY.ja.md)
+
 ## Purpose
 
 Graphify is an optional repository-navigation aid for complex architecture, dependency, and call-path

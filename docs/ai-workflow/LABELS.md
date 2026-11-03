@@ -1,6 +1,9 @@
 # Label Dictionary
 
+[日本語](LABELS.ja.md)
+
 This document standardizes label usage for this repository. Consistent labels are essential for automation, triage, and communication.
+The authoritative list of existing labels is the repository's GitHub label list (`gh label list`). Issue templates under `.github/ISSUE_TEMPLATE/` apply some labels automatically.
 
 ## AI Agent Labels
 
@@ -41,3 +44,17 @@ Scope labels help estimate the effort required and decide whether an issue needs
 | `bug` | A bug report. | Identifies an issue that describes a defect in the code. |
 | `feature` | A feature request. | For new functionality or enhancements. |
 | `task` | A task or chore. | For maintenance, refactoring, documentation, or other non-feature/bug work. |
+
+## Other labels in use
+
+The following labels exist in the repository but have no repository-specific usage rule beyond their name
+and GitHub description. Apply them descriptively; do not rely on them for automation.
+
+| Label | Notes |
+| --- | --- |
+| `documentation` | Documentation improvements or additions; commonly combined with `task`. |
+| `enhancement` | GitHub default; overlaps with `feature`. |
+| `investigation` | Investigation-only work. |
+| `refactor`, `regression`, `follow-up` | Descriptive classification. |
+| `ready for review`, `has-pr`, `review-addressed`, `completed` | Status markers; no automation sets or reads them. |
+| `duplicate`, `invalid`, `wontfix`, `question`, `good first issue`, `help wanted` | GitHub defaults. |

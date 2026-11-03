@@ -1,5 +1,7 @@
 # Agent Skill Lightweight Evaluation
 
+[日本語](EVAL.ja.md)
+
 Use this small repeatable protocol when adding or materially changing a repository Skill that is
 intended to improve task outcomes. It is a manual comparison protocol; do not run it for every
 ordinary code change.

@@ -60,6 +60,9 @@ jobs:
       - name: Compile service-readiness entrypoints
         run: python -m compileall -q src/pipeline/engine_executor.py tools/verification/verify_engine_service_readiness.py
 
+      - name: Check configuration reference drift
+        run: python -m pytest tests/test_configuration_reference.py
+
       - name: Run engine compatibility gate
         run: >-
           PYTHONPATH=. python -m pytest

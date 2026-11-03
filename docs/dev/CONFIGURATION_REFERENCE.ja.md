@@ -1,12 +1,12 @@
 # パイプラインの設定と実行入口のリファレンス
 
-<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"90112a302cf5cfaed487a5bc1ac9564b2b15e257a9bf92a4b3aec8d1b41bd8a3"},"state":"reviewed"} -->
+<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"220ff5c570d4371e06d7022edbb19de1f1022ffcfda3aca275c72dc43ea83e21"},"state":"reviewed"} -->
 
 [English / 原文](CONFIGURATION_REFERENCE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `90112a302cf5cfaed487a5bc1ac9564b2b15e257a9bf92a4b3aec8d1b41bd8a3`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `220ff5c570d4371e06d7022edbb19de1f1022ffcfda3aca275c72dc43ea83e21`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
-このリファレンスは、開発用パイプラインの起動方法と、正規の本番設定 `configs/dense_full_pipeline.yaml` の各キーが何を制御するかをまとめたものです。現在のソースの挙動を説明するもので、既定値を変えたり新しい設定を定めたりはしません。正規の設定にキーを追加してここに記載しないと、`tests/test_configuration_reference.py` が失敗します。
+このリファレンスは、開発用パイプラインの起動方法と、正規の本番設定 `configs/dense_full_pipeline.yaml` の各キーが何を制御するかをまとめたものです。現在のソースの挙動を説明するもので、既定値を変えたり新しい設定を定めたりはしません。PR検証ワークフローで実行する `tests/test_configuration_reference.py` は、正規の設定のキーが本書または英語の原文のキーの表にない場合、複数回記載されている場合、記載した値が正規の値と異なる場合に失敗します。意味の列は検査しません。
 
 配布パッケージの利用者は、このファイルを直接編集しません。[利用者ガイド](../USER_GUIDE.ja.md)に従って `docker/distribution.py` を使います。
 

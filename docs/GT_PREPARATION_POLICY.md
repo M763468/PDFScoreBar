@@ -24,7 +24,7 @@ The following labels (saved as each box's `barline_type`; `barline` is the defau
 ## 2. Machine Learning (CNN) Integration
 
 ### 2.1 Training Strategy
-- **Binary classification (current)**: The production CNN is a binary barline classifier (Barline vs. Non-Barline). Under this policy, all labels (`barline`, `double_barline`, `end_barline`, `repeat`) are treated as **Label 1 (Positive)** for binary training data. The selected model and threshold are defined by the [model artifact contract](MODEL_ARTIFACT_CONTRACT.md) and `configs/dense_full_pipeline.yaml`, not by this policy.
+- **Binary classification (current)**: The production CNN is a binary barline classifier (Barline vs. Non-Barline). Under this policy, all labels (`barline`, `double_barline`, `end_barline`, `repeat`) are treated as **Label 1 (Positive)** for binary training data. The selected model and threshold are defined by the [model artifact contract](contracts/MODEL_ARTIFACT_CONTRACT.md) and `configs/dense_full_pipeline.yaml`, not by this policy.
 - **Multi-class Phase (Future)**: The detailed labels may later be used to train a classifier capable of distinguishing line types. No multi-class classifier is currently part of production.
 
 ### 2.2 DeepScores Consistency

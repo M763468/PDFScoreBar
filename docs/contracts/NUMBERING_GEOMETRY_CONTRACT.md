@@ -73,7 +73,7 @@ X-deduplication tolerance. Ghost boundaries remain supported. This rejects
 an isolated short note/clef fragment that would otherwise split every voice
 into an extra measure. Single/two-staff numbering is unchanged.
 
-See [the real-score validation](refactors/issue218_real_divisi_validation.md)
+See [the real-score validation](../refactors/issue218_real_divisi_validation.md)
 for fixed input contracts and regression results.
 
 ## Short non-staff mask fragments

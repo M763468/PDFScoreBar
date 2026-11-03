@@ -9,7 +9,7 @@ Translation source: same PR / SHA-256 `628226aee13b762e405fe475eb3630d76fb2273a7
 CNN and OMR-DLN candidates can be tried through explicit paths in an existing config.
 You do not need to register a version/SHA/provenance or edit the production manifest for each exploration.
 
-For the canonical current production contract, see the [model artifact contract](../MODEL_ARTIFACT_CONTRACT.md),
+For the canonical current production contract, see the [model artifact contract](../contracts/MODEL_ARTIFACT_CONTRACT.md),
 the [model registration procedure](../MODEL_ARTIFACTS.md), and the [validation policy](VALIDATION_POLICY.md).
 
 ## Validation modes
@@ -134,7 +134,7 @@ For a runtime mismatch, compare base/image provenance to choose a compatible ima
 and #398 / PR #401 separated production from historical Stage-E components. The exploration and comparison modes in this document keep these production contracts.
 Past GPU/accuracy results are treated separately from the validation results of a new candidate.
 The current Dockerfile/profile pins HOMR commit `457e7c6518a10ba755db2e60883419e56c4d7369`.
-For selected assets and archive hashes, see the [model artifact contract](../MODEL_ARTIFACT_CONTRACT.md).
+For selected assets and archive hashes, see the [model artifact contract](../contracts/MODEL_ARTIFACT_CONTRACT.md).
 
 The exploration and comparison modes in this document were introduced in #448 / [PR #451](https://github.com/M763468/PDFScoreBar/pull/451).
 The initial proposal of a separate selection manifest/dedicated runner and the standalone implementation Issue #450 were

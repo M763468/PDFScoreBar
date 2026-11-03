@@ -103,7 +103,7 @@
 | `detection.candidate_filter_kwargs.paper_threshold` | `200` | 受け入れ済みの候補フィルタのパラメータ。 |
 | `detection.candidate_filter_kwargs.min_paper_overlap_ratio` | `0.6` | 受け入れ済みの候補フィルタのパラメータ。 |
 | `detection.candidate_filter_kwargs.min_staff_overlap_ratio` | `0.02` | 受け入れ済みの候補フィルタのパラメータ。 |
-| `detection.cnn_model_manifest` | `models/barline_cnn/manifest.json` | 選定済みの CNN モデルの manifest。[モデル資産の契約](../MODEL_ARTIFACT_CONTRACT.ja.md)を参照してください。 |
+| `detection.cnn_model_manifest` | `models/barline_cnn/manifest.json` | 選定済みの CNN モデルの manifest。[モデル資産の契約](../contracts/MODEL_ARTIFACT_CONTRACT.ja.md)を参照してください。 |
 | `detection.cnn_threshold` | `0.4965248107910156` | CNN の採用閾値。本番モードでは manifest と一致する必要があります。 |
 | `detection.cnn_apply_nms` | `false` | CNN のスコアリングでの NMS（受け入れ済みの既定は無効）。 |
 | `detection.divisi_rescue` | `true` | 受け入れ済みの救済のスイッチ。 |
@@ -151,7 +151,7 @@
 | `detection.model_validation`、`detection.cnn_model_path`、`detection.cnn_device`、`detection.omr_dln_model_path`、`detection.omr_dln_device`、`detection.model_sha256` | [開発用モデルの選定](EXPERIMENT_MODEL_SELECTION.md) |
 | その他の `detection.source_concurrency` の設定 | [source の並行処理](../performance/issue458-source-concurrency.md) |
 | `mmr.rapidocr_provider` | [MMR RapidOCR のプロバイダモード](MMR_RAPIDOCR_PROVIDER.ja.md) |
-| `inputs.movement_boundaries` | [楽章境界の契約](../MOVEMENT_BOUNDARY_CONTRACT.ja.md) |
+| `inputs.movement_boundaries` | [楽章境界の契約](../contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md) |
 | `outputs.review` | [手動補正のレビューパッケージ](../manual_correction_review_package.ja.md) |
 
 `inputs.pdf_path`、`inputs.barline_overrides`、`inputs.measure_overrides`、`mmr.debug_root` など、ソースが読むその他のキーは、個別の所有文書のない開発用の入力です。使う前に、それを読むソースを確認してください。

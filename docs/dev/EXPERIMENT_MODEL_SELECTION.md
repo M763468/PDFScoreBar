@@ -5,7 +5,7 @@
 CNNとOMR-DLN候補は、既存configの明示パスで試せる。
 探索のたびにversion/SHA/provenanceを登録したり、production manifestを編集したりする必要はない。
 
-現行productionの正規契約は [モデル契約](../MODEL_ARTIFACT_CONTRACT.md)、
+現行productionの正規契約は [モデル契約](../contracts/MODEL_ARTIFACT_CONTRACT.md)、
 [モデル登録手順](../MODEL_ARTIFACTS.md)、[検証方針](VALIDATION_POLICY.md) を参照する。
 
 ## 検証の段階
@@ -130,7 +130,7 @@ runtime mismatchはbase/image provenanceを比較して適合imageを選び、�
 #398 / PR #401はproductionと歴史的Stage-E componentの分離を定めた。本書の探索・比較モードもこれらのproduction契約を維持する。
 過去のGPU/精度結果は、新しい候補の検証結果とは分けて扱う。
 現行Dockerfile/profileはHOMR commit `457e7c6518a10ba755db2e60883419e56c4d7369` を固定する。
-選択資産とarchive hashは[モデル契約](../MODEL_ARTIFACT_CONTRACT.ja.md)を参照する。
+選択資産とarchive hashは[モデル契約](../contracts/MODEL_ARTIFACT_CONTRACT.ja.md)を参照する。
 
 本書の探索・比較モードは #448 / [PR #451](https://github.com/M763468/PDFScoreBar/pull/451) で導入した。
 当初の別selection manifest/専用runner案と独立実装Issue #450は、

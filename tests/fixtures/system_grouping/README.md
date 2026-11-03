@@ -120,7 +120,7 @@ The final implementation also rejects short non-staff fragments in the original
 mask: at most two persistent row runs and a foreground span below two staff
 spaces additionally require two opposing line trajectories. One-line and parallel
 two-line percussion, including tilted/curved/broken masks, remain accepted.
-See `docs/NUMBERING_GEOMETRY_CONTRACT.md` for the normalized limits. The complete
+See `docs/contracts/NUMBERING_GEOMETRY_CONTRACT.md` for the normalized limits. The complete
 La Mer and Alizadeh contracts pass after MMR/OCR and final numbering. The 68-page
 corpus preserves all numbered systems and MMR crop geometry. The current filter
 removes one empty system, so raw empty-inclusive equality is **67/68 FAIL**.

@@ -3,7 +3,7 @@
 [日本語](USER_CORRECTION_BOUNDARY.ja.md)
 
 This developer reference describes the responsibilities and persistence boundaries of the user
-correction and GT tools. For normal user operation, see the [User Guide](USER_GUIDE.md).
+correction and GT tools. For normal user operation, see the [User Guide](../USER_GUIDE.md).
 
 The supported user correction application is `tools/review_correction/server.py`. It opens one
 validated `review/manual_correction_input.json` package. The handoff selects the pages, readable

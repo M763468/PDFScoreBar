@@ -14,8 +14,8 @@
 | 現在のパイプラインはどのように動作するか | [パイプラインアーキテクチャ（英語）](architecture/PIPELINE_ARCHITECTURE.md) / [日本語（reviewed）](architecture/PIPELINE_ARCHITECTURE.ja.md) |
 | 検出／番号付けの厳密な実装契約はどこか | [実装リファレンス（英語）](architecture/PIPELINE_ARCHITECTURE_REFERENCE.md) / [日本語（reviewed）](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md) |
 | 現在のリポジトリを実行するには | [環境ガイド（日本語）](ENVIRONMENTS.ja.md)、必要に応じて[手動補正ワークフロー](manual_correction_review_package.ja.md) |
-| 利用者の補正と GT／開発者向けツールはどう分離されているか | [利用者補正の境界](USER_CORRECTION_BOUNDARY.ja.md) |
-| エンジンの呼び出し元は何を送受信するか | [エンジンジョブ契約（英語）](ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](ENGINE_JOB_CONTRACT.ja.md) |
+| 利用者の補正と GT／開発者向けツールはどう分離されているか | [利用者補正の境界](contracts/USER_CORRECTION_BOUNDARY.ja.md) |
+| エンジンの呼び出し元は何を送受信するか | [エンジンジョブ契約（英語）](contracts/ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](contracts/ENGINE_JOB_CONTRACT.ja.md) |
 | このリポジトリを変更・検証するには | [ブランチ方針](BRANCH_POLICY.ja.md)、[検証方針](dev/VALIDATION_POLICY.ja.md)、[ローカル検証](dev/LOCAL_VALIDATION.ja.md)、[設定と実行入口](dev/CONFIGURATION_REFERENCE.ja.md) |
 | 古いコードや検証結果が保持されている理由は | [リポジトリサーフェス台帳（英語、未翻訳）](REPOSITORY_SURFACE_INVENTORY.md)、[ドキュメント台帳](DOCUMENTATION_INVENTORY.ja.md)、[履歴索引](HISTORY_INDEX.ja.md) |
 
@@ -27,9 +27,9 @@
 
 ## より具体的な契約
 
-- [エンジンのライフサイクル](ENGINE_JOB_LIFECYCLE.ja.md)、[入力の安全性](ENGINE_INPUT_SAFETY.ja.md)、[テレメトリー](ENGINE_TELEMETRY.ja.md)は単一ジョブの契約を詳述します。[サービス準備ゲート](ENGINE_SERVICE_READINESS.ja.md)は、サポート対象の executor の振る舞いと互換性チェックを説明します。将来の worker 分離は別のものです。
-- [最終出力](corrected_final_output.ja.md)、[番号付けの幾何](NUMBERING_GEOMETRY_CONTRACT.ja.md)、[楽章境界](MOVEMENT_BOUNDARY_CONTRACT.ja.md)、[GT 準備](GT_PREPARATION_POLICY.ja.md)、[小節線マッチング](BARLINE_MATCHER.ja.md)は、より限定された出力や検証の振る舞いを説明します。
-- [モデル成果物契約](MODEL_ARTIFACT_CONTRACT.ja.md)は現在のモデル識別情報を定義し、[本番モデル成果物](MODEL_ARTIFACTS.ja.md)は公開とキャッシュのワークフローを扱います。[探索・比較用モデルの選択](dev/EXPERIMENT_MODEL_SELECTION.md)（日本語正本、[English](dev/EXPERIMENT_MODEL_SELECTION.en.md)）は、明示的な候補パス、固定比較、本番検証に関する開発者向けガイドです。
+- [エンジンのライフサイクル](contracts/ENGINE_JOB_LIFECYCLE.ja.md)、[入力の安全性](contracts/ENGINE_INPUT_SAFETY.ja.md)、[テレメトリー](contracts/ENGINE_TELEMETRY.ja.md)は単一ジョブの契約を詳述します。[サービス準備ゲート](contracts/ENGINE_SERVICE_READINESS.ja.md)は、サポート対象の executor の振る舞いと互換性チェックを説明します。将来の worker 分離は別のものです。
+- [最終出力](contracts/corrected_final_output.ja.md)、[番号付けの幾何](contracts/NUMBERING_GEOMETRY_CONTRACT.ja.md)、[楽章境界](contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md)、[GT 準備](GT_PREPARATION_POLICY.ja.md)、[小節線マッチング](contracts/BARLINE_MATCHER.ja.md)は、より限定された出力や検証の振る舞いを説明します。
+- [モデル成果物契約](contracts/MODEL_ARTIFACT_CONTRACT.ja.md)は現在のモデル識別情報を定義し、[本番モデル成果物](MODEL_ARTIFACTS.ja.md)は公開とキャッシュのワークフローを扱います。[探索・比較用モデルの選択](dev/EXPERIMENT_MODEL_SELECTION.md)（日本語正本、[English](dev/EXPERIMENT_MODEL_SELECTION.en.md)）は、明示的な候補パス、固定比較、本番検証に関する開発者向けガイドです。
 - [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)、[回帰ワークフロー](REGRESSION_TEST_WORKFLOW.ja.md)、[スクリプト管理](SCRIPT_MANAGEMENT.md)（日本語正本、[English](SCRIPT_MANAGEMENT.en.md)）はリポジトリ開発のガイドです。
 - [将来のサービスアーキテクチャ（英語、未翻訳）](architecture/FUTURE_SERVICE_ARCHITECTURE.md)はロードマップであり、現在のランタイムの振る舞いではありません。[Two-HOMR マイルストーン（英語、未翻訳）](history/TWO_HOMR_MILESTONE.md)は固定された比較であり、現在の本番設定ではありません。
 

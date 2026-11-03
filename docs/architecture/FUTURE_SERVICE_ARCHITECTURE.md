@@ -65,7 +65,7 @@ The current config-first review workflow can materialize a package containing
 user correction app can review the package, stage/save supported corrections, and the apply path can
 canonicalize those corrections and regenerate corrected final numbering/PDF output.
 The maintained user entry is `tools/review_correction/server.py`; GT/evaluation editing remains a
-separate developer tool. See [`USER_CORRECTION_BOUNDARY.md`](../USER_CORRECTION_BOUNDARY.md).
+separate developer tool. See [`USER_CORRECTION_BOUNDARY.md`](../contracts/USER_CORRECTION_BOUNDARY.md).
 The local application now retains immutable checkpoints, restores a selected checkpoint
 into a separate annotated-PDF session and persists application success/failure/interruption.
 This is a local filesystem contract with retained recognition dependencies, not a portable
@@ -241,7 +241,7 @@ desktop or web application may provide another UI. The engine boundary should ne
 one compatible correction meaning.
 
 The v1 machine contract is now defined in
-[`ENGINE_JOB_CONTRACT.md`](../ENGINE_JOB_CONTRACT.md). It maps the current barline,
+[`ENGINE_JOB_CONTRACT.md`](../contracts/ENGINE_JOB_CONTRACT.md). It maps the current barline,
 measure-construction, MMR, and movement-boundary concepts into versioned correction records; binds
 each correction set to the source job/artifact hash/coordinate/version; treats corrected execution
 as a new job that may reuse compatible retained artifacts; rejects conflicts and stale source
@@ -258,12 +258,12 @@ decisions.
 ## 5. Versioned engine contract direction
 
 Issue #336 defines the exact v1 serialized contract in
-[`ENGINE_JOB_CONTRACT.md`](../ENGINE_JOB_CONTRACT.md), with lightweight Python representations in
+[`ENGINE_JOB_CONTRACT.md`](../contracts/ENGINE_JOB_CONTRACT.md), with lightweight Python representations in
 `src/pipeline/engine_contract.py`. This section remains the architecture-level summary of that
 boundary; the contract document owns exact fields, compatibility, correction provenance,
 idempotency/conflict behavior, and deterministic serialization. Issue #339 defines the
 progress/timing/resource observation semantics in
-[`ENGINE_TELEMETRY.md`](../ENGINE_TELEMETRY.md) without changing the v1 stage/status vocabulary.
+[`ENGINE_TELEMETRY.md`](../contracts/ENGINE_TELEMETRY.md) without changing the v1 stage/status vocabulary.
 
 ### JobRequest
 
@@ -324,9 +324,9 @@ The architecture therefore requires explicit engine-side contracts for:
 
 Detailed lifecycle, safety, telemetry, and compatibility contracts are intentionally split into
 #337, #338, #339, and #340. Issue #337's accepted lifecycle semantics are recorded in
-[`ENGINE_JOB_LIFECYCLE.md`](../ENGINE_JOB_LIFECYCLE.md), and Issue #338's untrusted-PDF,
+[`ENGINE_JOB_LIFECYCLE.md`](../contracts/ENGINE_JOB_LIFECYCLE.md), and Issue #338's untrusted-PDF,
 path/network, per-job-bound, and worker-isolation semantics are recorded in
-[`ENGINE_INPUT_SAFETY.md`](../ENGINE_INPUT_SAFETY.md). Both preserve the v1 status/error envelope
+[`ENGINE_INPUT_SAFETY.md`](../contracts/ENGINE_INPUT_SAFETY.md). Both preserve the v1 status/error envelope
 from `ENGINE_JOB_CONTRACT.md`.
 
 ## 7. Phased roadmap

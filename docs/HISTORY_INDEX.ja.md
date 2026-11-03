@@ -34,7 +34,7 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 - [`docs/ENVIRONMENTS.ja.md`](ENVIRONMENTS.ja.md) — 保守対象の実行環境
 - [`docs/BRANCH_POLICY.ja.md`](BRANCH_POLICY.ja.md) — ブランチ方針
 - [`docs/dev/VALIDATION_POLICY.ja.md`](dev/VALIDATION_POLICY.ja.md) — 検証方針
-- [`docs/BARLINE_MATCHER.ja.md`](BARLINE_MATCHER.ja.md) — 検出器のマッチング・評価の契約
+- [`docs/contracts/BARLINE_MATCHER.ja.md`](contracts/BARLINE_MATCHER.ja.md) — 検出器のマッチング・評価の契約
 - [`docs/GT_PREPARATION_POLICY.ja.md`](GT_PREPARATION_POLICY.ja.md) — GTの方針
 - [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) — スクリプトの所有とライフサイクル
 
@@ -107,7 +107,7 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 
 最初に読むもの:
 
-- [`docs/MOVEMENT_BOUNDARY_CONTRACT.ja.md`](MOVEMENT_BOUNDARY_CONTRACT.ja.md)（現在の確定済み境界の利用側と、候補・根拠の契約）
+- [`docs/contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md`](contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md)（現在の確定済み境界の利用側と、候補・根拠の契約）
 - [`docs/history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`](history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md)（拡張した7曲のコーパス、ホールドアウト・モデルの比較、レビュー用生成器の証拠、自動検出の判定）
 - 番号付けの挙動については現在のソース・テスト
 
@@ -173,7 +173,7 @@ Issue #268 は利用とリセットの意味を所有します。Issue #333 は�
 - [`docs/refactors/issue228/`](refactors/issue228/)
 - [`docs/refactors/issue229/`](refactors/issue229/)
 - [`docs/manual_correction_review_package.ja.md`](manual_correction_review_package.ja.md)
-- [`docs/corrected_final_output.ja.md`](corrected_final_output.ja.md)
+- [`docs/contracts/corrected_final_output.ja.md`](contracts/corrected_final_output.ja.md)
 
 現在の挙動については、現在のソースと現在の利用者向け文書を使います。
 

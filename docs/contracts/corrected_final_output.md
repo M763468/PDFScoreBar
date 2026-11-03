@@ -5,7 +5,7 @@
 This internal helper reference is for developers and maintainers. It describes the narrow
 connection from the manual-correction `apply_corrections` rerun path to a clean final PDF
 artifact for the corrected run. For the supported user-facing distribution workflow, see the
-[User Guide](USER_GUIDE.md).
+[User Guide](../USER_GUIDE.md).
 
 ## Entry point
 

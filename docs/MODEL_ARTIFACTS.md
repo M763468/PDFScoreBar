@@ -75,7 +75,7 @@ with `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` if needed during migration.
 
 Release-backed cached artifacts can be restored from their release asset and tracked manifest.
 The shared cache may also contain operator-supplied artifacts, so the entire cache root must not
-be treated as disposable. See [the canonical artifact contract](MODEL_ARTIFACT_CONTRACT.md).
+be treated as disposable. See [the canonical artifact contract](contracts/MODEL_ARTIFACT_CONTRACT.md).
 
 ## Materialize and verify
 

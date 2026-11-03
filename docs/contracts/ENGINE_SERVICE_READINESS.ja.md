@@ -76,7 +76,7 @@ Docker ランタイムラッパーは、イメージ・モデル資産契約を�
 | 契約・スキーマ・エグゼキューターのユニットテスト範囲だけの変更 | PRの `engine-contract` ゲートと `make test-fast` |
 | コンテナ・サービス境界の接続 | `make verify-service-readiness-smoke` |
 | 本番のGPU・モデル読み込み、detector ランタイム経路 | 上記に加え `make verify-gpu-smoke` |
-| detector/MMR/番号付けの数値的挙動、または正規評価出力 | 既存の対象別テスト + GPU スモークテスト + [検証方針（英語・未翻訳）](dev/VALIDATION_POLICY.md)で要求する高負荷・全体評価 |
+| detector/MMR/番号付けの数値的挙動、または正規評価出力 | 既存の対象別テスト + GPU スモークテスト + [検証方針（英語・未翻訳）](../dev/VALIDATION_POLICY.md)で要求する高負荷・全体評価 |
 
 シリアライズ、失敗マッピング、成果物記述子、CIの接続、サービス準備スモークテストだけが変わったことを理由に、full68実行は要求しない。本番の精度挙動にも影響する変更の場合は、既存の精度方針を引き続き正とする。
 

@@ -47,7 +47,7 @@ The filter now additionally requires positive opposing line trajectories in the
 original mask. Column runs must supply two line centers across at least two staff
 spaces horizontally and at least one space worth of sampled columns. Each fitted
 branch must move at least 0.25 spaces, in opposite directions. See the updated
-[geometry contract](../NUMBERING_GEOMETRY_CONTRACT.md). Genuine one-line and
+[geometry contract](../contracts/NUMBERING_GEOMETRY_CONTRACT.md). Genuine one-line and
 parallel two-line notation, including tilted, curved and incomplete masks, is
 kept. Ambiguous non-staff ink is also kept. The parameters and all existing
 inputs/GT/gates were fixed before evaluating this separately recorded candidate;
@@ -241,7 +241,7 @@ It requires five thin, regularly spaced lines continuing through the final
 staff-space strip and the preceding four spaces, together with musical ink
 inside the staff in a tail at least four spaces wide. Only then does it append
 one shared logical end boundary at the image edge. See the
-[geometry contract](../NUMBERING_GEOMETRY_CONTRACT.md) for all normalized limits.
+[geometry contract](../contracts/NUMBERING_GEOMETRY_CONTRACT.md) for all normalized limits.
 Blank margins, empty staff continuations, short post-bar regions, uncertain
 spacing and incomplete line evidence abstain. Staff extraction still accepts
 broken lines; this positive clipping check does not impose a five-line staff
@@ -463,7 +463,7 @@ two distinct staves. It uses existing staff-space/deduplication units and preser
 ghosts. Detector/CNN thresholds, routing, model bytes and accepted datasets were
 not retuned. These fixes do not remove upstream false-positive model candidates.
 
-See [the geometry contract](../NUMBERING_GEOMETRY_CONTRACT.md).
+See [the geometry contract](../contracts/NUMBERING_GEOMETRY_CONTRACT.md).
 Current/future architecture documents were reviewed: process ownership, pipeline
 phases, public surfaces and future service responsibilities are unchanged.
 

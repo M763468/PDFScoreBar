@@ -47,7 +47,7 @@
 | リポジトリのソース／設定／入力データ | アクティブなチェックアウト | `/workspace` にバインドマウント |
 | 生成された実行アーティファクト | アクティブなチェックアウト／オペレータ | Git 管理外の `logs/`、`artifacts/`、および設定された出力パス |
 
-モデル横断でのバージョン、プロビナンス（来歴）、整合性、および更新ルールは `docs/MODEL_ARTIFACT_CONTRACT.md` に整理されています。ホスト側のモデルアーティファクトは、デフォルトでユーザー単位の共有キャッシュである `$XDG_CACHE_HOME/pdfscorebar/models`（`XDG_CACHE_HOME` が未設定の場合は `~/.cache/pdfscorebar/models`）に配置されます。`PDFSCOREBAR_MODEL_CACHE` は引き続き明示的なオーバーライドとして使用できます。検証済みの登録を複数の worktree 間で再利用できるよう、デフォルトの場所は意図的にアクティブなチェックアウトから独立しています。移行期間中は、既存のチェックアウトローカルなキャッシュを `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` で明示的に選択することも可能ですが、暗黙的なフォールバックとしては扱われなくなりました。
+モデル横断でのバージョン、プロビナンス（来歴）、整合性、および更新ルールは `docs/contracts/MODEL_ARTIFACT_CONTRACT.md` に整理されています。ホスト側のモデルアーティファクトは、デフォルトでユーザー単位の共有キャッシュである `$XDG_CACHE_HOME/pdfscorebar/models`（`XDG_CACHE_HOME` が未設定の場合は `~/.cache/pdfscorebar/models`）に配置されます。`PDFSCOREBAR_MODEL_CACHE` は引き続き明示的なオーバーライドとして使用できます。検証済みの登録を複数の worktree 間で再利用できるよう、デフォルトの場所は意図的にアクティブなチェックアウトから独立しています。移行期間中は、既存のチェックアウトローカルなキャッシュを `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` で明示的に選択することも可能ですが、暗黙的なフォールバックとしては扱われなくなりました。
 
 Real-ESRGAN リゾルバはイメージ内の `PDFSCORE_REALESRGAN_WEIGHTS_DIR` を使用し、従来のチェックアウトパスはホスト開発時のフォールバックとしてのみ保持します。標準の Docker スモークテストでは、`external/realesrgan/weights` への重みの手動コピーを必要としてはなりません。
 

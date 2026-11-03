@@ -26,21 +26,21 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/architecture/PIPELINE_ARCHITECTURE.md` / `.ja.md` | reader-oriented current production architecture | canonical/current (English original); Japanese reviewed | pipeline components, data flow, execution order and module responsibilities; precise contracts moved to reference |
 | `docs/architecture/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | production implementation reference | current/reference (English original); Japanese reviewed | detailed detector/numbering contracts and historical compatibility rationale; read from the architecture overview |
 | `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
-| `docs/ENGINE_JOB_CONTRACT.md` / `.ja.md` | versioned one-job engine caller contract | current/reference (English original); Japanese reviewed | normative v1 serialized boundary and compatibility/correction semantics; `PipelineJobExecutor` is the reference adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
-| `docs/ENGINE_JOB_LIFECYCLE.md` / `.ja.md` | #337 one-job lifecycle contract | current/reference (English original); Japanese reviewed | v1 lifecycle requirements and reusable control helpers; #337 audit is historical, while cancellation/deadline integration remains pending |
-| `docs/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 untrusted-PDF safety contract | current/reference (English original); Japanese reviewed | implemented bounded preflight and safe errors; hard quotas/process-tree/network isolation remain future worker requirements |
-| `docs/ENGINE_TELEMETRY.md` / `.ja.md` | #339 structured progress/resource telemetry contract | current/reference (English original); Japanese reviewed | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
-| `docs/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 reference executor and compatibility gates | current/reference (English original); Japanese reviewed | supported succeeded/failed publication boundary; direct v1 corrections, lifecycle controls and public-service isolation remain outside current support |
+| `docs/contracts/ENGINE_JOB_CONTRACT.md` / `.ja.md` | versioned one-job engine caller contract | current/reference (English original); Japanese reviewed | normative v1 serialized boundary and compatibility/correction semantics; `PipelineJobExecutor` is the reference adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
+| `docs/contracts/ENGINE_JOB_LIFECYCLE.md` / `.ja.md` | #337 one-job lifecycle contract | current/reference (English original); Japanese reviewed | v1 lifecycle requirements and reusable control helpers; #337 audit is historical, while cancellation/deadline integration remains pending |
+| `docs/contracts/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 untrusted-PDF safety contract | current/reference (English original); Japanese reviewed | implemented bounded preflight and safe errors; hard quotas/process-tree/network isolation remain future worker requirements |
+| `docs/contracts/ENGINE_TELEMETRY.md` / `.ja.md` | #339 structured progress/resource telemetry contract | current/reference (English original); Japanese reviewed | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
+| `docs/contracts/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 reference executor and compatibility gates | current/reference (English original); Japanese reviewed | supported succeeded/failed publication boundary; direct v1 corrections, lifecycle controls and public-service isolation remain outside current support |
 | `docs/history/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
 | `docs/dev/VALIDATION_POLICY.md` | validation policy | current/reference | keep |
 | `docs/REGRESSION_TEST_WORKFLOW.md` | regression workflow | current/reference | keep |
 | `docs/GT_PREPARATION_POLICY.md` | GT policy | current/reference | keep |
-| `docs/BARLINE_MATCHER.md` | matching/evaluation rules | current/reference | keep |
+| `docs/contracts/BARLINE_MATCHER.md` | matching/evaluation rules | current/reference | keep |
 | `docs/SCRIPT_MANAGEMENT.md` | script placement/lifecycle policy | current/reference | keep compact; historical move/delete ledger belongs in #45 / PR #184 |
 | `docs/manual_correction_review_package.md` | internal review handoff | current/reference | keep |
-| `docs/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against source when modifying output workflow |
+| `docs/contracts/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against source when modifying output workflow |
 | `docs/ai-workflow/GRAPHIFY.md` | Graphify operation | current/reference | keep |
 | `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep |
 | `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable architecture changes |
@@ -94,12 +94,12 @@ when translating. Historical and scoped records follow the exclusions below.
 | [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md) | current/reference; translation and documentation maintenance rules | EN | [JA reviewed](DOCUMENTATION_LANGUAGE_POLICY.ja.md); #489 | P1 |
 | [PIPELINE_ARCHITECTURE.md](architecture/PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
 | [PIPELINE_ARCHITECTURE_REFERENCE.md](architecture/PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
-| [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_JOB_LIFECYCLE.md](ENGINE_JOB_LIFECYCLE.md) | current/reference | EN / [JA](ENGINE_JOB_LIFECYCLE.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_INPUT_SAFETY.md](ENGINE_INPUT_SAFETY.md) | current/reference | EN / [JA](ENGINE_INPUT_SAFETY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_TELEMETRY.md](ENGINE_TELEMETRY.md) | current/reference | EN / [JA](ENGINE_TELEMETRY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_SERVICE_READINESS.md](ENGINE_SERVICE_READINESS.md) | current/reference | EN / [JA](ENGINE_SERVICE_READINESS.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [MODEL_ARTIFACT_CONTRACT.md](MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
+| [ENGINE_JOB_CONTRACT.md](contracts/ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](contracts/ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_JOB_LIFECYCLE.md](contracts/ENGINE_JOB_LIFECYCLE.md) | current/reference | EN / [JA](contracts/ENGINE_JOB_LIFECYCLE.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_INPUT_SAFETY.md](contracts/ENGINE_INPUT_SAFETY.md) | current/reference | EN / [JA](contracts/ENGINE_INPUT_SAFETY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_TELEMETRY.md](contracts/ENGINE_TELEMETRY.md) | current/reference | EN / [JA](contracts/ENGINE_TELEMETRY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_SERVICE_READINESS.md](contracts/ENGINE_SERVICE_READINESS.md) | current/reference | EN / [JA](contracts/ENGINE_SERVICE_READINESS.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [MODEL_ARTIFACT_CONTRACT.md](contracts/MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](contracts/MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
 | [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
 | [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN / [JA](ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | [JA reviewed](USER_GUIDE.ja.md) | P1 |
@@ -107,12 +107,12 @@ when translating. Historical and scoped records follow the exclusions below.
 | [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN / [JA](BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN / [JA](dev/VALIDATION_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN / [JA](dev/LOCAL_VALIDATION.ja.md) | reviewed; #465 translation and meaning review | P1 |
-| [USER_CORRECTION_BOUNDARY.md](USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](USER_CORRECTION_BOUNDARY.ja.md) | P2 |
-| [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | [JA reviewed](corrected_final_output.ja.md) | P2 |
-| [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | [JA reviewed](MOVEMENT_BOUNDARY_CONTRACT.ja.md); #477 currency review | P2 |
-| [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | [JA reviewed](NUMBERING_GEOMETRY_CONTRACT.ja.md); #477 currency review | P2 |
+| [USER_CORRECTION_BOUNDARY.md](contracts/USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](contracts/USER_CORRECTION_BOUNDARY.ja.md) | P2 |
+| [corrected_final_output.md](contracts/corrected_final_output.md) | current/reference | EN | [JA reviewed](contracts/corrected_final_output.ja.md) | P2 |
+| [MOVEMENT_BOUNDARY_CONTRACT.md](contracts/MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md); #477 currency review | P2 |
+| [NUMBERING_GEOMETRY_CONTRACT.md](contracts/NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/NUMBERING_GEOMETRY_CONTRACT.ja.md); #477 currency review | P2 |
 | [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
-| [BARLINE_MATCHER.md](BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](BARLINE_MATCHER.ja.md); #475 currency review | P2 |
+| [BARLINE_MATCHER.md](contracts/BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](contracts/BARLINE_MATCHER.ja.md); #475 currency review | P2 |
 | [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | [JA reviewed](dev/MMR_RAPIDOCR_PROVIDER.ja.md); #477 currency review | P2 |

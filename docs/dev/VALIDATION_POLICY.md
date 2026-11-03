@@ -29,7 +29,7 @@ This document defines how to choose validation for local automation and manual P
 | Baseline / canonical target | Reproduction command plus comparison artifact | Required when pipeline is involved | Required by default | Baseline, candidate, per-gate delta, PASS/FAIL under the original contract, log path |
 | Dependency / build configuration | Relevant install/build/smoke check | Required if GPU/Docker/runtime stack is affected | Depends on affected behavior; document decision | Changed files, environment, failure mode risk |
 
-For the v1 engine boundary, see [`ENGINE_SERVICE_READINESS.md`](../ENGINE_SERVICE_READINESS.md)
+For the v1 engine boundary, see [`ENGINE_SERVICE_READINESS.md`](../contracts/ENGINE_SERVICE_READINESS.md)
 for the clean container smoke and its separation from production accuracy evidence.
 
 ## Validation status and evidence

@@ -64,7 +64,7 @@ The ownership rules are:
 | generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
 
 The cross-model version/provenance/integrity and update rules are inventoried in
-`docs/MODEL_ARTIFACT_CONTRACT.md`. Host-side model artifacts default to a shared per-user
+`docs/contracts/MODEL_ARTIFACT_CONTRACT.md`. Host-side model artifacts default to a shared per-user
 cache at `$XDG_CACHE_HOME/pdfscorebar/models`, or `~/.cache/pdfscorebar/models` when
 `XDG_CACHE_HOME` is unset. `PDFSCOREBAR_MODEL_CACHE` remains the explicit override. The
 default is intentionally independent of the active checkout so one verified registration can

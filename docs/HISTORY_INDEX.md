@@ -30,7 +30,7 @@ A newer comment on an unrelated Issue does not supersede the current task's acce
 - [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md) — maintained execution environments
 - [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md) — branch policy
 - [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) — validation policy
-- [`docs/BARLINE_MATCHER.md`](BARLINE_MATCHER.md) — detector matching/evaluation contract
+- [`docs/contracts/BARLINE_MATCHER.md`](contracts/BARLINE_MATCHER.md) — detector matching/evaluation contract
 - [`docs/GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) — GT policy
 - [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) — script ownership and lifecycle
 
@@ -103,7 +103,7 @@ Primary lineage:
 
 Start with:
 
-- [`docs/MOVEMENT_BOUNDARY_CONTRACT.md`](MOVEMENT_BOUNDARY_CONTRACT.md) for the
+- [`docs/contracts/MOVEMENT_BOUNDARY_CONTRACT.md`](contracts/MOVEMENT_BOUNDARY_CONTRACT.md) for the
   current resolved consumer and candidate/evidence contracts;
 - [`docs/history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`](history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md)
   for the expanded seven-score corpus, holdout/model comparisons, review
@@ -174,7 +174,7 @@ Start with:
 - [`docs/refactors/issue228/`](refactors/issue228/)
 - [`docs/refactors/issue229/`](refactors/issue229/)
 - [`docs/manual_correction_review_package.md`](manual_correction_review_package.md)
-- [`docs/corrected_final_output.md`](corrected_final_output.md)
+- [`docs/contracts/corrected_final_output.md`](contracts/corrected_final_output.md)
 
 Use current source and current user-facing docs for present behavior.
 

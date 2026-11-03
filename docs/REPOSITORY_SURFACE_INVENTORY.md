@@ -60,7 +60,7 @@ than internal run-directory details.
   `docs/manual_correction_review_package.md`.
 - The supported user GUI is `tools/review_correction/server.py`; it starts from
   `review/manual_correction_input.json` and enforces the same-package handoff. See
-  `docs/USER_CORRECTION_BOUNDARY.md` for its separation from GT/developer tooling.
+  `docs/contracts/USER_CORRECTION_BOUNDARY.md` for its separation from GT/developer tooling.
 - Issue #383 retired the legacy arbitrary-path manual-config builder; the supported GUI route begins
   from the package-local review handoff above.
 - Final output remains the clean score-numbered PDF; review/debug geometry and correction provenance

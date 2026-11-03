@@ -28,7 +28,7 @@
 ## 2. 機械学習（CNN）との連携
 
 ### 2.1 学習の方針
-- **二値分類（現行）**: 本番のCNNは、バーラインかそれ以外かを判定する二値分類器です。この方針では、二値の学習データにおいてすべてのラベル（`barline`、`double_barline`、`end_barline`、`repeat`）を**ラベル1（正例）**として扱います。選定済みのモデルと閾値は、この方針ではなく[モデル資産の契約](MODEL_ARTIFACT_CONTRACT.ja.md)と `configs/dense_full_pipeline.yaml` で定めます。
+- **二値分類（現行）**: 本番のCNNは、バーラインかそれ以外かを判定する二値分類器です。この方針では、二値の学習データにおいてすべてのラベル（`barline`、`double_barline`、`end_barline`、`repeat`）を**ラベル1（正例）**として扱います。選定済みのモデルと閾値は、この方針ではなく[モデル資産の契約](contracts/MODEL_ARTIFACT_CONTRACT.ja.md)と `configs/dense_full_pipeline.yaml` で定めます。
 - **多クラス段階（将来）**: 詳細なラベルは、将来、線の種類を区別できる分類器の学習に使う可能性があります。現在、多クラス分類器は本番に含まれていません。
 
 ### 2.2 DeepScoresとの整合

@@ -137,6 +137,6 @@ Start from the stage in the diagram, then follow the corresponding reference sec
 | Barline candidate normalization, CNN rules, thresholds or detection provenance | [candidate normalization](PIPELINE_ARCHITECTURE_REFERENCE.md#end-to-end-order) and [detector provenance and scoring](PIPELINE_ARCHITECTURE_REFERENCE.md#detector-input-provenance-and-scoring-defaults) |
 | Connector evidence, MMR geometry handoff or final numbering indices | [Phase A](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-a-staff-and-measure-structure-connector-semantics-and-coordinate-ownership), [Phase B](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-b-multi-measure-rest-recognition-and-support-reuse) and [Phase C](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-c-final-numbering-with-corrections-not-the-removed-mmr-rebuild) |
 | How to run the pipeline and its Docker environment | [Environment guide](../ENVIRONMENTS.md) |
-| The supported user correction workflow | [User guide](../USER_GUIDE.md) and [review boundary](../USER_CORRECTION_BOUNDARY.md) |
+| The supported user correction workflow | [User guide](../USER_GUIDE.md) and [review boundary](../contracts/USER_CORRECTION_BOUNDARY.md) |
 
 The implementation reference retains the precise acceptance constraints and links to historical investigations. The overview concentrates on the present path and the reason each stage exists.

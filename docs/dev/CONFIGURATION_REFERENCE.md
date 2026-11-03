@@ -113,7 +113,7 @@ it does not inherit earlier acceptance results.
 | `detection.candidate_filter_kwargs.paper_threshold` | `200` | Accepted candidate-filter parameter. |
 | `detection.candidate_filter_kwargs.min_paper_overlap_ratio` | `0.6` | Accepted candidate-filter parameter. |
 | `detection.candidate_filter_kwargs.min_staff_overlap_ratio` | `0.02` | Accepted candidate-filter parameter. |
-| `detection.cnn_model_manifest` | `models/barline_cnn/manifest.json` | Selected CNN model manifest; see the [model artifact contract](../MODEL_ARTIFACT_CONTRACT.md). |
+| `detection.cnn_model_manifest` | `models/barline_cnn/manifest.json` | Selected CNN model manifest; see the [model artifact contract](../contracts/MODEL_ARTIFACT_CONTRACT.md). |
 | `detection.cnn_threshold` | `0.4965248107910156` | CNN acceptance threshold; must match the manifest in production mode. |
 | `detection.cnn_apply_nms` | `false` | CNN-scoring NMS (accepted default off). |
 | `detection.divisi_rescue` | `true` | Accepted rescue switch. |
@@ -162,7 +162,7 @@ this list only points to them.
 | `detection.model_validation`, `detection.cnn_model_path`, `detection.cnn_device`, `detection.omr_dln_model_path`, `detection.omr_dln_device`, `detection.model_sha256` | [Experiment model selection](EXPERIMENT_MODEL_SELECTION.en.md) |
 | Further `detection.source_concurrency` settings | [Source concurrency](../performance/issue458-source-concurrency.md) |
 | `mmr.rapidocr_provider` | [MMR RapidOCR provider](MMR_RAPIDOCR_PROVIDER.md) |
-| `inputs.movement_boundaries` | [Movement boundary contract](../MOVEMENT_BOUNDARY_CONTRACT.md) |
+| `inputs.movement_boundaries` | [Movement boundary contract](../contracts/MOVEMENT_BOUNDARY_CONTRACT.md) |
 | `outputs.review` | [Manual correction review package](../manual_correction_review_package.md) |
 
 Other keys read by source, such as `inputs.pdf_path`, `inputs.barline_overrides`,

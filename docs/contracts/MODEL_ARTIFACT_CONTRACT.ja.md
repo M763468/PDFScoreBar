@@ -4,7 +4,7 @@
 
 [English / 原文](MODEL_ARTIFACT_CONTRACT.md)
 
-本文書は、保守対象のDockerおよびproduction runtimeが使用するモデル・重みの識別情報を記録する。[環境文書](ENVIRONMENTS.md)を補完するものであり、モデルの選定や検証を行ったIssueから責任を移すものではない。処理の概要は[アーキテクチャ概要](architecture/PIPELINE_ARCHITECTURE.ja.md)、詳細は[実装リファレンス](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md)を参照。
+本文書は、保守対象のDockerおよびproduction runtimeが使用するモデル・重みの識別情報を記録する。[環境文書](../ENVIRONMENTS.md)を補完するものであり、モデルの選定や検証を行ったIssueから責任を移すものではない。処理の概要は[アーキテクチャ概要](../architecture/PIPELINE_ARCHITECTURE.ja.md)、詳細は[実装リファレンス](../architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md)を参照。
 
 共通ルールは次のとおり。
 

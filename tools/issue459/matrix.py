@@ -12,6 +12,30 @@ import subprocess
 import sys
 from pathlib import Path
 
+PRIMARY_CELL = {"uid": 0, "scope": "multi", "compiler_state": "warm"}
+PRIMARY_MINIMUM_IMPROVEMENT_PERCENT = 3
+
+
+def validate_primary(primary):
+    """Accept only a passed root/multi/warm screen under the original >=3% gate.
+
+    Other cells use a regression tolerance, so their ``primary_gate`` cannot stand
+    in for the primary result. The gate is recomputed from the recorded medians.
+    """
+    cell = primary.get("cell")
+    if not isinstance(cell, dict) or any(cell.get(k) != v for k, v in PRIMARY_CELL.items()):
+        raise ValueError("primary summary is not the root multi-page warm cell")
+    if cell.get("minimum_improvement_percent") != PRIMARY_MINIMUM_IMPROVEMENT_PERCENT:
+        raise ValueError("primary summary does not use the original >=3% threshold")
+    if primary.get("primary_gate") != "passed":
+        raise RuntimeError("primary screen failed; no adoption")
+    baseline = primary.get("baseline_median")
+    candidate = primary.get("candidate_median")
+    if not all(isinstance(v, (int, float)) and 0 < v < float("inf") for v in (baseline, candidate)):
+        raise ValueError("primary summary lacks valid medians")
+    if candidate > baseline * (1 - PRIMARY_MINIMUM_IMPROVEMENT_PERCENT / 100):
+        raise ValueError("primary summary medians do not satisfy the >=3% gate")
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -28,8 +52,7 @@ def main():
     protocol = "job-v1" if args.job_protocol else "issue447-poc"
     if primary.get("candidate_protocol", "issue447-poc") != protocol:
         raise ValueError("primary belongs to another candidate protocol")
-    if primary["primary_gate"] != "passed":
-        raise RuntimeError("primary screen failed; no adoption")
+    validate_primary(primary)
     out = root / "logs/issue459/matrices" / args.label
     out.mkdir(parents=True, exist_ok=False)
     cells = [

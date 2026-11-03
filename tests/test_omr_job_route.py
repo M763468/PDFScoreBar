@@ -337,3 +337,17 @@ def test_coordinator_rejects_result_from_the_other_route(tmp_path, monkeypatch):
             precomputed_sr={"image": str(images[0])},
             precomputed_omr={"run_id": "run"},
         )
+
+
+def test_omr_job_failure_diagnostics_survive_engine_scratch_removal(tmp_path):
+    directory = tmp_path / "job/.engine-work/hybrid/pipeline/omr_job"
+    directory.mkdir(parents=True)
+    (directory / "failed.json").write_text('{"status": "failed"}\n')
+    (directory / "worker.log").write_text(
+        "".join(f"line {i}\n" for i in range(200)) + "CUDA error\n"
+    )
+    batch_sr._retain_omr_job_diagnostics(directory)
+    retained = tmp_path / "job"
+    assert json.loads((retained / "failed-omr-job.json").read_text()) == {"status": "failed"}
+    tail = (retained / "failed-omr-job.log").read_text()
+    assert tail.endswith("CUDA error\n") and "line 0\n" not in tail

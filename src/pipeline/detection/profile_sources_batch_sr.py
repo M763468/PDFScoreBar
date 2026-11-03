@@ -58,6 +58,19 @@ def _retain_source_diagnostics(worker_output: Path) -> None:
         )
 
 
+def _retain_omr_job_diagnostics(directory: Path) -> None:
+    """Keep bounded OMR job failure evidence outside disposable engine scratch."""
+    work_root = next((p for p in directory.parents if p.name == ".engine-work"), None)
+    if work_root is None:
+        return
+    failure = directory / "failed.json"
+    if failure.is_file():
+        (work_root.parent / "failed-omr-job.json").write_bytes(failure.read_bytes())
+    log = directory / "worker.log"
+    if log.is_file():
+        (work_root.parent / "failed-omr-job.log").write_bytes(_bounded_worker_log_tail(log))
+
+
 class BatchSRProfileHybridDetector(ProfileHybridDetector):
     """Verified profile detector with a dedicated reusable current-SR phase."""
 
@@ -548,18 +561,22 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         worker = get_pipeline_python("omr_dln") + ["-m", "src.pipeline.detection.omr_job_worker"]
         directory = support_output.parent / "omr_job"
         with span("current_support.omr_job_subprocess"):
-            handoff = omr_job.build(
-                self.images,
-                rows,
-                directory,
-                run_id=binding["run_id"],
-                model=model,
-                model_sha256=manifest.sha256,
-                worker_command=worker,
-                timeout=self._omr_route["timeout_sec"],
-                cwd=self.project_root,
-                env=env,
-            )
+            try:
+                handoff = omr_job.build(
+                    self.images,
+                    rows,
+                    directory,
+                    run_id=binding["run_id"],
+                    model=model,
+                    model_sha256=manifest.sha256,
+                    worker_command=worker,
+                    timeout=self._omr_route["timeout_sec"],
+                    cwd=self.project_root,
+                    env=env,
+                )
+            except BaseException:
+                _retain_omr_job_diagnostics(directory)
+                raise
         self._omr_job_handoff = handoff
         return handoff, worker + ["--request", str(directory / "request.json")]
 

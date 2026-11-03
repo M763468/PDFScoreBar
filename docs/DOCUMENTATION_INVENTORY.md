@@ -19,7 +19,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `AGENTS.md` | repository agent constitution | current | keep |
 | `docs/README.md` | documentation index | canonical/current | keep current-vs-historical navigation accurate |
 | `docs/REPOSITORY_SURFACE_INVENTORY.md` | #230 development-repository audit and #100 input | historical/reference | retain for lineage; its old present-tense paths do not define the current extraction set |
-| `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 minimum executable selection and machine-readable drift definition | canonical/current for extraction | use as the single explanation and exact file list for the proposed runtime subset |
+| `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 minimum executable selection and machine-readable drift definition | canonical/current for extraction | use as the single explanation and exact file list for the distributed runtime subset; per-candidate #409 acceptance evidence moved to `docs/releases/issue409/ACCEPTANCE_HISTORY.md` (#484) |
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
 | `docs/PIPELINE_ARCHITECTURE.md` / `.ja.md` | reader-oriented current production architecture | canonical/current (English original); Japanese reviewed | pipeline components, data flow, execution order and module responsibilities; precise contracts moved to reference |
 | `docs/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | production implementation reference | current/reference (English original); Japanese reviewed | detailed detector/numbering contracts and historical compatibility rationale; read from the architecture overview |
@@ -125,10 +125,10 @@ when translating. Historical and scoped records follow the exclusions below.
 | [ai-workflow/CODEX_GEMINI_COLLAB.md](ai-workflow/CODEX_GEMINI_COLLAB.md) | current/reference | EN | [JA reviewed](ai-workflow/CODEX_GEMINI_COLLAB.ja.md); #482 | P2 |
 | [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | [JA reviewed](ai-workflow/LABELS.ja.md); #482 | P2 |
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
-| [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed | P3 |
-| [GOALS.md](GOALS.md) | future/direction; currency needs review | mixed | split/review | P3 |
-| [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; includes frozen evidence | EN | JA needed; preserve evidence labels | P2 |
-| [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | translate navigation/rules as needed | P2 |
+| [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
+| [GOALS.md](GOALS.md) | future/direction; currency needs owner review | mixed | split/review after the owner confirms current goals (#484) | P3 |
+| [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
+| [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |
 | [ai-workflow/RUNNER_DESIGN.md](ai-workflow/RUNNER_DESIGN.md) | deprecated runner proposal (#482) | EN | not translated (deprecated) | N/A |
 

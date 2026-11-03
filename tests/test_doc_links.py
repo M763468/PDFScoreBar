@@ -58,6 +58,14 @@ class DocLinkChecks(unittest.TestCase):
             self.run_check("[d](guide(v2).md)\n"), ["missing target: source.md: guide(v2).md"]
         )
 
+    def test_escaped_destination_is_decoded(self):
+        (self.root / "guide(v1).md").write_text("# Guide\n", encoding="utf-8")
+        self.assertEqual(self.run_check("[a](guide\\(v1\\).md)\n"), [])
+
+    def test_reference_definitions_are_checked(self):
+        body = "[a][ok] [b][bad]\n\n[ok]: target.md#repeat\n[bad]: missing.md\n"
+        self.assertEqual(self.run_check(body), ["missing target: source.md: missing.md"])
+
     def test_relative_paths_are_resolved_against_root(self):
         source = self.root / "source.md"
         source.write_text("[a](target.md)\n", encoding="utf-8")

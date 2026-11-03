@@ -19,6 +19,8 @@ FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
 HEADING = re.compile(r"^ {0,3}#{1,6}\s+(.*?)\s*#*\s*$")
 ANCHOR = re.compile(r"<a\s+(?:id|name)=\"([^\"]+)\"", re.IGNORECASE)
+REFERENCE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(<[^>]*>|\S+)")
+ESCAPE = re.compile(r"\\([!-/:-@\[-`{-~])")
 SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:|^//")
 
 
@@ -98,10 +100,16 @@ def destinations(line: str) -> list[str]:
 
 
 def links(text: str) -> list[str]:
+    """Return inline and reference-definition destinations with Markdown escapes decoded."""
     targets: list[str] = []
     for line in prose_lines(text):
+        reference = REFERENCE.match(line)
+        if reference:
+            target = reference.group(1)
+            targets.append(target[1:-1] if target.startswith("<") else target)
+            continue
         targets.extend(destinations(INLINE_CODE.sub("", line)))
-    return targets
+    return [ESCAPE.sub(r"\1", target) for target in targets]
 
 
 def check(root: Path, files: list[Path]) -> list[str]:

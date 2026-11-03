@@ -1,10 +1,10 @@
 # バーライン検出のGT作成方針
 
-<!-- translation: {"original":"GT_PREPARATION_POLICY.md","source":{"sha256":"62a0715316a906b158aead47f718db463abc70aea981f4a52fc4fece0df96713"},"state":"reviewed"} -->
+<!-- translation: {"original":"GT_PREPARATION_POLICY.md","source":{"sha256":"c024e03ed2f38dc891a13dd7c2c4b13a87ed46e9dfa520207c5429cba80e6b7b"},"state":"reviewed"} -->
 
 [English / 原文](GT_PREPARATION_POLICY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `62a0715316a906b158aead47f718db463abc70aea981f4a52fc4fece0df96713`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `c024e03ed2f38dc891a13dd7c2c4b13a87ed46e9dfa520207c5429cba80e6b7b`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この文書は、バーライン検出用の正解データ（GT）を作成するときの方針を定めます。特に、複縦線や終止線のような複雑なケースを対象にしています。
 

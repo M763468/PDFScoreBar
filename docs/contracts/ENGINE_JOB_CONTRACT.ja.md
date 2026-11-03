@@ -1,10 +1,10 @@
 # エンジンジョブ契約 v1
 
-<!-- translation: {"original":"ENGINE_JOB_CONTRACT.md","source":{"sha256":"ef941b2d929ae7ce46cf7c889570823b5765faf420f66963a29900bfd61900c9"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENGINE_JOB_CONTRACT.md","source":{"sha256":"85899853945cb4393bdc9edd3ee932a8aa9edeec4d93424f1bc40ee3ba0b31bd"},"state":"reviewed"} -->
 
 [English / 原文](ENGINE_JOB_CONTRACT.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `ef941b2d929ae7ce46cf7c889570823b5765faf420f66963a29900bfd61900c9`。状態: `reviewed`。全文の意味・制約・例外を原文と照合し、日本語の可読性も確認済み。
+翻訳元: same PR / SHA-256 `85899853945cb4393bdc9edd3ee932a8aa9edeec4d93424f1bc40ee3ba0b31bd`。状態: `reviewed`。全文の意味・制約・例外を原文と照合し、日本語の可読性も確認済み。
 
 本書はIssue #336の規範となるシリアライズ境界を定義する。現在の設定ファイルを起点とするCLIや内部の実行ディレクトリ構成から独立して、PDFScoreBar エンジンの1件の同期ジョブを規定する。
 

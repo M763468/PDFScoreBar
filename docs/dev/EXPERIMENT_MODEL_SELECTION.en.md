@@ -1,10 +1,10 @@
 # Development model exploration, fixed comparison, and production selection
 
-<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"628226aee13b762e405fe475eb3630d76fb2273a748be4a6b140674687d792e1"},"state":"reviewed"} -->
+<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"a4c37e44712a82d71f7139798fdfe2f1bcdd9d3673ece62025686c8ce2c66308"},"state":"reviewed"} -->
 
 [日本語 / Original](EXPERIMENT_MODEL_SELECTION.md) (Japanese original)
 
-Translation source: same PR / SHA-256 `628226aee13b762e405fe475eb3630d76fb2273a748be4a6b140674687d792e1`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
+Translation source: same PR / SHA-256 `a4c37e44712a82d71f7139798fdfe2f1bcdd9d3673ece62025686c8ce2c66308`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
 
 CNN and OMR-DLN candidates can be tried through explicit paths in an existing config.
 You do not need to register a version/SHA/provenance or edit the production manifest for each exploration.

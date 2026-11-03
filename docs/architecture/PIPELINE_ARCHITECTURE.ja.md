@@ -1,11 +1,11 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"6d1f960c5dbbc32317b5eeeab9c0b345f66a919516fbd690757235532a40ad1c"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"bd683f342fa80c3506134c64d5dedba5f57239a930c1296604a32ee1224e5ed1"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）
-- 翻訳元: same PR。原文SHA-256: `6d1f960c5dbbc32317b5eeeab9c0b345f66a919516fbd690757235532a40ad1c`
+- 翻訳元: same PR。原文SHA-256: `bd683f342fa80c3506134c64d5dedba5f57239a930c1296604a32ee1224e5ed1`
 - 状態: `reviewed`。2026-10-29、利用者による読みやすさの確認と、実装照合・Argon独立レビューの結果を踏まえた概要版。
 
 2026-10-31、SR cacheと最小配布に関する追記をCodexが英語正本と対照し、意味・制約・日本語の読みやすさを確認した。

@@ -1,10 +1,10 @@
 # 回帰テストのワークフロー
 
-<!-- translation: {"original":"REGRESSION_TEST_WORKFLOW.md","source":{"sha256":"cd75541373915df4b4777fde51cf5fc187e0e3121f6e30d4f45520d6bc763b58"},"state":"reviewed"} -->
+<!-- translation: {"original":"REGRESSION_TEST_WORKFLOW.md","source":{"sha256":"1b7990fab275c866c1ca54575427d43fc5013f6975ec373e88c098a4dccba0ef"},"state":"reviewed"} -->
 
 [English / 原文](REGRESSION_TEST_WORKFLOW.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `cd75541373915df4b4777fde51cf5fc187e0e3121f6e30d4f45520d6bc763b58`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `1b7990fab275c866c1ca54575427d43fc5013f6975ec373e88c098a4dccba0ef`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 ## 目的
 - コミット前・PR前の検証を標準化し、挙動の回帰を一貫して検出する。

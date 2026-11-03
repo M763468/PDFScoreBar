@@ -1,10 +1,10 @@
 # 利用者の補正と GT ツールの境界
 
-<!-- translation: {"original":"USER_CORRECTION_BOUNDARY.md","source":{"sha256":"88211d15c707dce449c0e43b7d12e697c89249d1b565266c458924eac33b6cb2"},"state":"reviewed"} -->
+<!-- translation: {"original":"USER_CORRECTION_BOUNDARY.md","source":{"sha256":"622a71e06f827ba35a8294f03692dacdd253a5217f2baa7e4b639a6eed4ebe58"},"state":"reviewed"} -->
 
 [English / 原文](USER_CORRECTION_BOUNDARY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `88211d15c707dce449c0e43b7d12e697c89249d1b565266c458924eac33b6cb2`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `622a71e06f827ba35a8294f03692dacdd253a5217f2baa7e4b639a6eed4ebe58`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この開発者向けリファレンスは、利用者向け補正ツールと GT ツールの責務と永続化の境界を説明します。通常の利用者操作は[ユーザーガイド](../USER_GUIDE.ja.md)を参照してください。
 

@@ -1,10 +1,10 @@
 # ブランチ方針
 
-<!-- translation: {"original":"BRANCH_POLICY.md","source":{"sha256":"18b26af0d0a5161af81a9b1ffb8bf8c48f8201c16992ac871ef0daf478cf9db7"},"state":"reviewed"} -->
+<!-- translation: {"original":"BRANCH_POLICY.md","source":{"sha256":"12c85d1553953b12b13749b7de2b98f889593b491b2f6f291138c6e5d0566f47"},"state":"reviewed"} -->
 
 [English / 原文](BRANCH_POLICY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `18b26af0d0a5161af81a9b1ffb8bf8c48f8201c16992ac871ef0daf478cf9db7`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `12c85d1553953b12b13749b7de2b98f889593b491b2f6f291138c6e5d0566f47`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 本書はリポジトリ全体のブランチ方針を定める。新規作業とリリース昇格の恒常的な規則である。Issue固有の判断は一般規則を変更せず、この方針を適用して該当IssueまたはPRに記録する。
 

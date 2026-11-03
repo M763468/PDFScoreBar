@@ -1,10 +1,10 @@
 # 検証ポリシー
 
-<!-- translation: {"original":"VALIDATION_POLICY.md","source":{"sha256":"3b3ef363c3fad0ddb3c95c5c6b4a9d64831b15d8c872b9800166e2ff6747284f"},"state":"reviewed"} -->
+<!-- translation: {"original":"VALIDATION_POLICY.md","source":{"sha256":"144fc0418072953151c767e71ecd4970a015c2a85fb0da17710b8e2f646c5721"},"state":"reviewed"} -->
 
 [English / 原文](VALIDATION_POLICY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `3b3ef363c3fad0ddb3c95c5c6b4a9d64831b15d8c872b9800166e2ff6747284f`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `144fc0418072953151c767e71ecd4970a015c2a85fb0da17710b8e2f646c5721`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 このドキュメントでは、ローカル自動化および手動の PR 作業において実行すべき検証の選択方法を定義します。これは単なる任意のヘルパースクリプトよりも意図的に厳格に設計されており、自動化によってスキップされた検証を可視化し、スコープの逸脱（スコープドリフト）を早期に検知することを目的としています。
 

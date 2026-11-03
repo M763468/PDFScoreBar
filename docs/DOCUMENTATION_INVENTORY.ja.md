@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"9cae8478d8d104853ddcf663f2dff24a5e87a134a2daf6be7d265f4ce0579cd2"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"fddad603d6aca09118bfb803660cdb858e2a97d1575fd7553ccdb7f25431204e"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `9cae8478d8d104853ddcf663f2dff24a5e87a134a2daf6be7d265f4ce0579cd2`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `fddad603d6aca09118bfb803660cdb858e2a97d1575fd7553ccdb7f25431204e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 

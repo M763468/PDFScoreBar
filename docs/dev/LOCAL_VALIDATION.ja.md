@@ -1,10 +1,10 @@
 # ローカル検証環境
 
-<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"19d9e14ccec3da0c890971efbb608ac17a1338354d0a49aa74e92cceed82144c"},"state":"reviewed"} -->
+<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"ec8d7387b0dd01e18a7d5ffa16d7b3fc8f9981716814d95a1abb42f573f04371"},"state":"reviewed"} -->
 
 [English / 原文](LOCAL_VALIDATION.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `19d9e14ccec3da0c890971efbb608ac17a1338354d0a49aa74e92cceed82144c`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `ec8d7387b0dd01e18a7d5ffa16d7b3fc8f9981716814d95a1abb42f573f04371`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 アクティブな Issue ワークツリーに対して必要なチェックを実行できる環境を選択してください。
 このガイドは [Validation Policy](VALIDATION_POLICY.md) の検証レベルと併せて使用します。以前に確認されたツールやコンテナは検証の手がかりにすぎず、現在も存在することや互換性があることを保証するものではありません。本番イメージや他のワークツリーで使用されているコンテナはそのまま維持してください。

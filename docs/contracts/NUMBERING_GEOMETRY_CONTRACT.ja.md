@@ -1,10 +1,10 @@
 # 小節番号付けの幾何スケール契約
 
-<!-- translation: {"original":"NUMBERING_GEOMETRY_CONTRACT.md","source":{"sha256":"80eaf3034f64ab9655117c037bffec541fb00d1b9af0439b3b648091285091b8"},"state":"reviewed"} -->
+<!-- translation: {"original":"NUMBERING_GEOMETRY_CONTRACT.md","source":{"sha256":"94ad521adb43de8fa31c22bc4ad29124884cefd5f01caec54688907112f5124e"},"state":"reviewed"} -->
 
 [English / 原文](NUMBERING_GEOMETRY_CONTRACT.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `80eaf3034f64ab9655117c037bffec541fb00d1b9af0439b3b648091285091b8`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `94ad521adb43de8fa31c22bc4ad29124884cefd5f01caec54688907112f5124e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 小節番号付けの経路における音楽的な幾何判定は、解像度に依存しません。距離の閾値は固定のピクセルではなく、五線間隔（`unit_size`）で表します。この契約は Issue #267 で導入されました。その受入記録は本書の末尾に残しています。
 

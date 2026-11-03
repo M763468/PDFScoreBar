@@ -1,6 +1,6 @@
 # Productionモデル資産
 
-<!-- translation: {"original":"MODEL_ARTIFACTS.md","source":{"sha256":"3fc1eb9bbb00fc656dd53796a176ee4411521a3d29c6b94e9eb4e3f429750b13"},"state":"reviewed"} -->
+<!-- translation: {"original":"MODEL_ARTIFACTS.md","source":{"sha256":"f2f03d00848698075ee41902810629e618a3bec9cc7cde66e2af90b7287050d8"},"state":"reviewed"} -->
 
 [English / 原文](MODEL_ARTIFACTS.md)
 

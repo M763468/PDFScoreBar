@@ -1,10 +1,10 @@
 # PDFScoreBar 履歴索引
 
-<!-- translation: {"original":"HISTORY_INDEX.md","source":{"sha256":"db030cd94f34349da8e28ccb7d76b54acd1d77a431930043f586bf0e8f925fb4"},"state":"reviewed"} -->
+<!-- translation: {"original":"HISTORY_INDEX.md","source":{"sha256":"55eb189d33e967cedba5927afc78c969d924519bb41eb4465d149f2c43c5aaec"},"state":"reviewed"} -->
 
 [English / 原文](HISTORY_INDEX.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `db030cd94f34349da8e28ccb7d76b54acd1d77a431930043f586bf0e8f925fb4`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `55eb189d33e967cedba5927afc78c969d924519bb41eb4465d149f2c43c5aaec`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この文書はナビゲーションの層であり、2つ目の情報の正本ではありません。
 

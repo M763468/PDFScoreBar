@@ -1,10 +1,10 @@
 # エンジンの1ジョブ・ライフサイクル契約
 
-<!-- translation: {"original":"ENGINE_JOB_LIFECYCLE.md","source":{"sha256":"cb519a21fd3713081d3a46c68b4173a4ed3a727195b865f8cf359e6edfc9d19d"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENGINE_JOB_LIFECYCLE.md","source":{"sha256":"8d0c42758c39a3e639f12f33782a1d805b9e4aa6ef42fb72f97f03e299f15908"},"state":"reviewed"} -->
 
 [English / 原文](ENGINE_JOB_LIFECYCLE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `cb519a21fd3713081d3a46c68b4173a4ed3a727195b865f8cf359e6edfc9d19d`。状態: `reviewed`。全文の意味・制約・例外を原文と照合し、日本語の可読性も確認済み。
+翻訳元: same PR / SHA-256 `8d0c42758c39a3e639f12f33782a1d805b9e4aa6ef42fb72f97f03e299f15908`。状態: `reviewed`。全文の意味・制約・例外を原文と照合し、日本語の可読性も確認済み。
 
 > **状態: エンジンジョブ契約 v1を基盤とするIssue #337のライフサイクル契約。**
 >

@@ -1,10 +1,10 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"7adf2843a14e1b6d0485e72ab5513b8b422415e4bbc88796d919b36946f60781"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"02b9070e70b3069a529e419ace96959dad01574ef3ee881d570ebf5a64b65f3e"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `7adf2843a14e1b6d0485e72ab5513b8b422415e4bbc88796d919b36946f60781`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `02b9070e70b3069a529e419ace96959dad01574ef3ee881d570ebf5a64b65f3e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 

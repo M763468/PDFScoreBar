@@ -90,7 +90,7 @@ Use a full profile hook only when the focused pytest set is fast enough for norm
 
 ## GitHub Actions coverage
 
-The PR validation workflow in `.github/workflows/pr-validation.yml` runs on pull requests to `develop` and `main` and on manual dispatch. Its `make lint` job checks documentation translation provenance (`tools/verification/check_doc_translations.py` and its tests), Makefile repository references (`make check-makefile`), and `make lint`. Its `engine contract compatibility` job installs a small dependency set and runs a fixed list of engine-contract pytest files.
+The PR validation workflow in `.github/workflows/pr-validation.yml` runs on pull requests to `develop` and `main` and on manual dispatch. Its `make lint` job checks documentation translation provenance (`tools/verification/check_doc_translations.py` and its tests), Makefile repository references (`make check-makefile`), and `make lint`. Its `engine contract compatibility` job installs a small dependency set, checks that the [configuration reference](CONFIGURATION_REFERENCE.md) matches the canonical configuration (`tests/test_configuration_reference.py`), and runs a fixed list of engine-contract pytest files.
 
 The profile-based focused pytest sets in `scripts/pr_validation_profiles/` are not run in GitHub Actions. Depending on the selected tests, they can require optional or heavy dependencies such as PyMuPDF, OpenCV, torch-related packages, OCR backends, Docker, GPU, or model artifacts. Until a stable CI dependency layer is defined for a profile, it remains a local check.
 

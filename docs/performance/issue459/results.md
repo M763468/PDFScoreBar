@@ -1,6 +1,6 @@
 # Issue #459 deployment evidence
 
-**Decision: do not adopt the implemented job-v1 candidate.** It shortened the default-deployment warm median by 2.5652%, below the predeclared >=3% adoption gate. The earlier Issue447 PoC is separate evidence and does not override this result.
+**Decision: do not adopt the implemented job-v1 candidate.** It shortened the default-deployment warm median by 2.5652%, below the predeclared >=3% adoption gate. The earlier Issue447 PoC is separate evidence and does not override this result. The separate adoption-v2 evaluation (bottom of this file) also concluded **not eligible**.
 
 ## Fixed contract and runtime
 
@@ -87,3 +87,86 @@ All completed runs passed the retained three-page semantic comparison. OMR proce
 Artifacts: `logs/issue459/screens/jobv1-root-warm2/` and `logs/issue459/runs/jobv1-root-warm2-{1-b,2-o,3-o,4-b}/`. The initial failed v1 OMR bytes were also rescored directly against the corrected baseline: all three match (`logs/issue459/validation/failed-v1-retained-rescore.json`). No expensive inference was rerun just to compare those retained bytes.
 
 **Not run for the corrected candidate:** remaining cold/single/non-root cells, actual long/varied-shape model-state/memory-growth checks, actual OOM/container kill recovery and real correction replay. The required primary adoption gate already failed; these cannot rescue that result and were not used as alternative success criteria. Unit timeout/cancel/failure recovery tests and the unchanged-production GPU smoke are separate evidence, not substitutes for these gates. Reconsidering adoption requires a new candidate and the complete original gates.
+
+
+## Adoption-v2 result (separate experiment; v1 result above unchanged)
+
+Contract: [adoption-v2.md](adoption-v2.md), pre-registered in 4d7045db; block labels
+changed in adc30825 before any v2 wall time existed (invalid first attempt below).
+Runner: `tools.issue459.adoption_v2`; driver `logs/issue459/v2/campaign.sh`; log
+`logs/issue459/v2/campaign.log`; evaluation `logs/issue459/v2/decision.json`.
+All v2 runs used source commit adc30825 (no source diff), image
+`sha256:5c5979a26f4b232bc93af6b2d040226a6e6f0c45557ccc8ad4db56153fa0398a`, RTX 4060,
+trace OFF, fresh containers, independent copies of seed `root-multi-cold-b2`
+(warm) or empty compiler caches (cold). 2026-11-03 18:30 to 22:22 JST.
+
+**Decision: not eligible** for a production-integration proposal. Gate R failed
+(UID1000 single-page cold) and L1 failed (25-page document; see below). Production
+reuse remains disabled.
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| P1 direction | Passed | block improvements 3.2205 / 2.3271 / 3.4226% |
+| P2 noise | Passed | pooled 2.3959% >= B spread 2.4944% / 2 |
+| P3 floor | Passed | pooled 2.3959% >= 1.5% |
+| R regression cells | **Failed** | UID1000 single cold -6.7686% (limit -3%); other six cells within limit |
+| Q1 semantic | Passed | all v2 primary and cell runs equal to their first B |
+| Q2 correction replay | Passed | `logs/issue459/v2/correction-replay/summary.json` (v2-primary-2 B vs O) |
+| L1 long document | **Failed** | both B and O exit1 on page_001 in production current x4 support |
+| M1 (long) | **Failed** (not assessable) | both runs failed; no memory comparison possible |
+| L2 mixed shapes | Passed | completed, semantic equal, O used one OMR process (B: 8) |
+| M1 (mixed) | Passed | RAM peak O 6.162 vs B 6.202 GB; VRAM O 3558 vs B 3567 MiB |
+| F1 container SIGKILL | Passed | exit137, no completed.json, diagnostics retained, no downstream, no survivor |
+| F2 real cgroup OOM | Passed | two Docker `oom` events, exit137, no completed.json, diagnostics retained |
+| F3 recovery | Passed | fresh jobs after F1 and F2 completed and matched v2-primary-2-1-b |
+
+### Primary performance blocks (root, multi-page, warm)
+
+| Block | B s | O s | Improvement |
+| --- | --- | --- | ---: |
+| v2-primary-2 | 237.299 / 243.240 | 232.376 / 232.688 | 3.2205% |
+| v2-primary-3 | 237.959 / 237.738 | 235.045 / 229.582 | 2.3271% |
+| v2-primary-4 | 241.530 / 238.360 | 230.934 / 232.531 | 3.4226% |
+
+Pooled: B median 238.159 s, O median 232.453 s, **2.3959%** (5.706 s per three-page
+job). v1 `jobv1-root-warm2` (2.5652%) is reported only for context and is not pooled.
+Sampled OMR processes were 3 (B) and 1 (O); O cgroup RAM peaks 4.81 to 4.91 GiB and
+device VRAM peaks about 3445 MiB were comparable to B.
+
+### Regression cells (ABBA, original limits)
+
+| Cell | B s | O s | Improvement | Gate |
+| --- | --- | --- | ---: | --- |
+| root multi cold | 357.517 / 351.576 | 347.834 / 342.304 | 2.673% | Passed |
+| root single warm | 98.626 / 97.910 | 99.370 / 99.324 | -1.098% | Passed |
+| root single cold | 223.719 / 220.095 | 226.569 / 221.190 | -0.889% | Passed |
+| UID1000 multi warm | 246.719 / 247.868 | 234.684 / 241.553 | 3.710% | Passed |
+| UID1000 multi cold | 369.002 / 372.443 | 362.082 / 353.153 | 3.535% | Passed |
+| UID1000 single warm | 106.398 / 109.146 | 109.818 / 106.920 | -0.554% | Passed |
+| UID1000 single cold | 229.849 / 231.821 | **258.046** / 234.873 | **-6.769%** | **Failed** |
+
+The failing cell's O observations are 258.046 and 234.873 s; the second alone would be
+within the limit. Under the contract a two-run median is the cell statistic and no
+observation is excluded or retried, so R is Failed. The cause of the slow run was
+not investigated in this campaign; it is not attributed to noise. Artifacts:
+`logs/issue459/screens/v2-cell-*/` and the corresponding `logs/issue459/runs/`.
+
+### Lifetime, input and fault notes
+
+- L1: `v2-long-b` and `v2-long-o` both failed (exit1) with `Current x4 support requires
+  a complete connector semantic pair` on Sym5 page_001 (log also shows "No noteheads
+  found"). The production route fails the same way, so this is an input/production
+  limitation, not a candidate difference. In O the job worker had already processed
+  all 25 pages in one process and published `completed.json` (25 rows) before the
+  shared downstream failure. The gate is still Failed as pre-registered. A rerun on
+  pages 002 to 025 would be a new experiment and requires approval.
+- L2: the contract describes four page sizes, but the eight pages from four scores
+  have three distinct sizes (Sibelius and Prokofiev Symphony 1 are both 3600x4680).
+  Inputs and their hashes are in `logs/issue459/inputs/mixed-shape-v2.json`. Timings
+  (B 766.6 s, O 731.2 s) are single observations and are descriptive only.
+- F2: the kernel OOM-killed the coordinator as well as the worker, so no `failed.json`
+  was written; the contract accepts nonzero exit with no completed publication.
+- Invalid attempt: `v2-primary-1` overlapped a CPU dry run and was stopped before any
+  wall time (`logs/issue459/v2/invalid-attempt-v2-primary-1.json`). It contributes no data.
+- Not covered: very long documents without the page_001 limitation, OOM confined to the
+  worker only, and repeated cell observations. These are not inferred.

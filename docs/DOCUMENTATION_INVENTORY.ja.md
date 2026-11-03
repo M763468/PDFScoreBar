@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"fddad603d6aca09118bfb803660cdb858e2a97d1575fd7553ccdb7f25431204e"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"63c55ff61549fa800b4709d0638542b6a8b2fa94cc266ba5e67d39fcc46a43b7"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `fddad603d6aca09118bfb803660cdb858e2a97d1575fd7553ccdb7f25431204e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `63c55ff61549fa800b4709d0638542b6a8b2fa94cc266ba5e67d39fcc46a43b7`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 
@@ -54,7 +54,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | `docs/history/DEVELOPMENT_LOG.md` | プロジェクト発足時・Issue 運用前の履歴 | historical/reference | 短い旧マイルストーンの記録に圧縮した。古い実行日誌の正確な内容は Git 履歴にだけある |
 | `docs/DEVLOG_CNN_TRAINING.md` | CNN 開発の日誌 | retired | 初期の実験の永続的な記録は Issue #44 へ移した。現在の検証済み CNN は #296 / PR #310 と source/config/tests |
 | `docs/history/DEVLOG_MEASURE_NUMBERING.md` | 初期の番号付け・MMR の開発の経緯 | historical/reference | 短い旧マイルストーンの記録に圧縮した。現在の範囲限定の MMR の分析は `docs/refactors/issue94/MMR_CURRENT_STATE.md` と Issue #94 |
-| `docs/` 直下の `ISSUE*.md` | Issue の調査・再現の記録 | historical | 固有の永続的な証拠か、有効な再現の契約が残っている間だけ保持する。そうでなければ要約して retire する |
+| `docs/history/ISSUE*.md`（#492 以前は `docs/` 直下） | Issue の調査・再現の記録 | historical | 固有の永続的な証拠か、有効な再現の契約が残っている間だけ保持する。そうでなければ要約して retire する |
 | `docs/refactors/issue*/**` | 範囲限定の設計・経緯 | historical/scoped | 個別に監査する。現在の範囲限定の契約は保持し、一時的な引き継ぎ・タスク管理の束は要約した後に retire する |
 | `docs/long-horizon-tasks/**` | 完了した Prompt/Plan/Log/Benchmarks のタスクの束 | retired | #25/#60/#70 の重要な結果はそれぞれの Issue のスレッドへ移した。有効に見えるタスク管理のコピーは削除した |
 | `docs/notes/**`、`docs/future/**` | メモ・計画 | historical/planning | 置き換えられ、判断が他の場所から回復できるようになったら retire する |
@@ -148,6 +148,32 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 - **隣接する文書:** `docs/` の外にある data、tools、experiments、skills、モデル固有の README は、ここで網羅的には台帳化していません。選んだ現行のガイドから辿られるものは、そのガイドを翻訳するときに監査してください。ここに載っていないことは、それが古い、あるいは日英対訳済みであるという主張ではありません。
 
 #446 では、翻訳の作業単位 #452–#486 が、上の P1 の行と reviewed と記した P2 の行を、小さく独立してレビューした単位で扱いました。まだ **JA needed**、**EN needed**、延期、翻訳しない、と記した行は意図的なものです。具体的な必要が生じたときに翻訳してください。#488 では、文書を新しいディレクトリへ移動しないと決めました。英語と日本語の索引からすべての現行文書に到達でき、一方でファイルを移動すると、読者にとっての利点が示されないまま、既存のリンク、ツールの参照、配布の manifest が変わるためです。新しい設計の層が必要かどうかは別にレビューします（#489）。
+#492 では、索引だけでは GitHub の `docs/` 一覧が読みやすくならないため、この判断を再評価し、次の節に記録したとおり役割ごとの文書群を移動しました。#488 の記録は、その時点の判断として残します。
+
+<a id="directory-layout-and-492-reorganization"></a>
+
+## ディレクトリ構成と #492 の再編
+
+#492 以前の `docs/` 直下には Markdown 66 件（と manifest の JSON）があり、入口、現在のアーキテクチャ、エンジン・モデルの契約、開発者向けの手順、凍結された Issue の記録、過去の台帳が混在していました。`docs/**` 全体の Markdown は、言語ごとに数えて 160 件でした。#492 では、直下の Markdown 53 件を `git mv` で役割別のディレクトリへ移動し、各原文を対応訳と同じ場所に置きました。現在の直下は Markdown 13 件と manifest の JSON で、`docs/**` 全体は 160 件のまま変わりません。ファイルを移動しても、上の分類は変わりません。将来のアーキテクチャはロードマップのままであり、`history/` の下の Issue 限定の契約も、その範囲での権威を保ちます。
+
+| 場所 | 役割 | #492 で移動した、または残したファイル |
+| --- | --- | --- |
+| `docs/` 直下 | 入口、案内、台帳、配布の契約 | 残した: `README`、`USER_GUIDE`、`MINIMAL_MAINLINE_SURFACE`（`.md` / `.ja.md` / `.json`）、`DOCUMENTATION_INVENTORY`、`DOCUMENTATION_LANGUAGE_POLICY`、`HISTORY_INDEX`、`REPOSITORY_SURFACE_INVENTORY.md` |
+| `architecture/` | 現在のアーキテクチャの概説とリファレンス、明示的に将来のものとしたアーキテクチャ | `PIPELINE_ARCHITECTURE`、`PIPELINE_ARCHITECTURE_REFERENCE`、`FUTURE_SERVICE_ARCHITECTURE.md` |
+| `contracts/` | 現在のエンジン、モデル、出力、番号付け、補正の境界、matcher の契約 | `ENGINE_JOB_CONTRACT`、`ENGINE_JOB_LIFECYCLE`、`ENGINE_INPUT_SAFETY`、`ENGINE_TELEMETRY`、`ENGINE_SERVICE_READINESS`、`MODEL_ARTIFACT_CONTRACT`、`corrected_final_output`、`NUMBERING_GEOMETRY_CONTRACT`、`MOVEMENT_BOUNDARY_CONTRACT`、`USER_CORRECTION_BOUNDARY`、`BARLINE_MATCHER` |
+| `dev/`（既存） | 開発者・運用者向けの手順と方針 | 追加: `BRANCH_POLICY`、`ENVIRONMENTS`、`MAKEFILE_SURFACE`、`REGRESSION_TEST_WORKFLOW`、`SCRIPT_MANAGEMENT`（`.md` / `.en.md`）、`GT_PREPARATION_POLICY`、`MODEL_ARTIFACTS`、`manual_correction_review_package` |
+| `history/` | 凍結された Issue 限定の記録と過去の台帳 | `ISSUE44_ITER7_FINAL_REPORT.md`、`ISSUE120_EVALUATION_CONTRACT.md`、`ISSUE120_ARTIFACT_RETENTION.md`、`ISSUE158_DENSE_ROUTE_NAMING.md`、`ISSUE162_PIPELINE_LOGGING_TAXONOMY.md`、`ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`、`ISSUE363_RUNTIME_DEPENDENCY_REVIEW.md`、`DEVELOPMENT_LOG.md`、`DEVLOG_MEASURE_NUMBERING.md`、`TWO_HOMR_MILESTONE.md` |
+| `ai-workflow/`、`agent-skills/`、`performance/`、`refactors/`、`releases/`、`archive/` | 既存の領域 | 変更なし |
+
+単一のファイル名を示した場合を除き、各名前は `.md` / `.ja.md` の組を表します。移動した各ファイルの旧パスは `docs/<name>`、新パスは `docs/<location>/<name>` です。
+
+**直下に残したもの。** `README` はドキュメントの入口です。`USER_GUIDE` と `MINIMAL_MAINLINE_SURFACE`（`tools/check_repository_surface.py`、配布ツールとそのテストが読む JSON を含む）は、配布の入口と契約です。`DOCUMENTATION_INVENTORY`、`DOCUMENTATION_LANGUAGE_POLICY`、`HISTORY_INDEX` は、`AGENTS.md` と索引が指す案内・保守の層です。`REPOSITORY_SURFACE_INVENTORY.md` は manifest の `reference_checks` が参照するリポジトリ全体の監査であり、一つの Issue の `docs/history/` の記録ではありません。
+
+**移動と同時に更新した参照。** すべての相対 Markdown リンクとフラグメント。追跡対象の Markdown、`AGENTS.md`、`.gemini/GEMINI.md`、PR テンプレート、Graphify の Skill、`data/README.md`、`scripts/docker_container_preflight.sh`、`tools/issue120/inventory_tracked_artifacts.py` にある `docs/...` のパスの記述。`MINIMAL_MAINLINE_SURFACE.json` のエンジン契約の `documentation_patterns` と `documentation_audiences`。移動したファイルを名前で指すテスト。この台帳、言語方針、ドキュメントガイドを除き、原文の変更はリンクのパスだけです。対応訳にも同じパスの変更を反映し、`same PR` の SHA-256 の識別情報を更新しました。ランタイム、配布の選択、翻訳の状態は変わっていません。
+
+**更新しなかったもの。** 追跡対象の `graphify-out/**` は生成物であり、`ai-workflow/GRAPHIFY.md` に従って次に更新されるまで旧パスを含みます。過去の Issue／PR の本文や外部からの `blob/<branch>/docs/<name>` へのリンクは、`develop` 上では解決できなくなります。コミットを固定したリンクは引き続き解決できます。新しい場所はこの表で探してください。古い本文は書き換えません。
+
+**保留したもの。** すでに `dev/` の下にある Issue 限定の記録（`dev/ISSUE441_*.md`、`dev/issue441/`、`dev/historical_stage_phase_naming_audit.md`）と、既存の `performance/`、`refactors/` の領域は、直下の再編の対象外でした。これらを `history/` へ移す場合は、Epic #446 の下で別に判断します。
 
 ## 履歴の案内と retire のルール
 

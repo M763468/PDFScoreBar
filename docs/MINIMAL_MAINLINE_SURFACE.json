@@ -965,13 +965,13 @@
     ],
     "developer": [
       "docs/*.md",
+      "docs/architecture/**",
+      "docs/contracts/**",
       "docs/dev/**",
       "docs/ai-workflow/**"
     ],
     "historical_investigation": [
       "docs/refactors/**",
-      "docs/issue*",
-      "docs/ISSUE*",
       "docs/history/**"
     ]
   },

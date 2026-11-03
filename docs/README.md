@@ -20,6 +20,21 @@ The minimum selection has one prose explanation and one machine-readable list. T
 and documentation inventories are broader historical audits. They must not be used as a second
 runtime file list. Most `docs/**` and all `tests/**` remain develop-only; the manifest explicitly selects the user guide and distribution metadata.
 
+## Directory layout
+
+| Location | Contents |
+| --- | --- |
+| `docs/` root | this guide, the user guide, the minimal distribution contract, inventories, language policy and history index |
+| [`architecture/`](architecture/) | current pipeline architecture and implementation reference; the explicitly future service architecture |
+| [`contracts/`](contracts/) | current engine job, model artifact, output, numbering, movement, correction-boundary and matcher contracts |
+| [`dev/`](dev/) | branch, environment, validation, configuration, Makefile, script and model-publication procedures |
+| [`history/`](history/), [`refactors/`](refactors/), [`releases/`](releases/), [`performance/`](performance/) | frozen Issue records, milestone ledgers, refactor/release evidence and performance results |
+| [`ai-workflow/`](ai-workflow/), [`agent-skills/`](agent-skills/), [`archive/`](archive/) | optional agent workflow guidance, skill evaluation and archived pointers |
+
+Language counterparts sit beside their original. #492 moved these files out of the root; its
+[old-to-new path table](DOCUMENTATION_INVENTORY.md#directory-layout-and-492-reorganization)
+helps resolve links in older Issues and PRs.
+
 ## Documentation languages
 
 The [coverage inventory](DOCUMENTATION_INVENTORY.md#bilingual-coverage-and-translation-scope)

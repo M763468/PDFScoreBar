@@ -1,11 +1,11 @@
 # 文書の言語・更新方針
 
-<!-- translation: {"original":"DOCUMENTATION_LANGUAGE_POLICY.md","source":{"sha256":"63817ec0cb88587c92fa5b5378769b0a23d1c27251a8220b33ad28ea8b38169b"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_LANGUAGE_POLICY.md","source":{"sha256":"6c7a111e861ca4f0805e8ccd8aaa6c2b897659bc325e3495fc4fb21546543933"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_LANGUAGE_POLICY.md)
 
 - 原文: [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md)（英語）。
-- 翻訳元: same PR。原文ファイルの SHA-256: `63817ec0cb88587c92fa5b5378769b0a23d1c27251a8220b33ad28ea8b38169b`。
+- 翻訳元: same PR。原文ファイルの SHA-256: `6c7a111e861ca4f0805e8ccd8aaa6c2b897659bc325e3495fc4fb21546543933`。
 - 状態: `reviewed`。全文に対応する日本語版。原文との意味・制約・例外と日本語の可読性を確認済み（#489）。
 
 本方針はEpic #446に対応する。[文書台帳](DOCUMENTATION_INVENTORY.md)で適用範囲と
@@ -30,9 +30,12 @@ production動作を暗黙に変更したり、原文にない保証を翻訳に�
 ## 配置とナビゲーション
 
 既存原文のパスを保持する。翻訳は原文の隣に、日本語は`.ja.md`、英語は`.en.md`として
-配置する。例: `PIPELINE_ARCHITECTURE.md`と`PIPELINE_ARCHITECTURE.ja.md`、
+配置する。例: `architecture/PIPELINE_ARCHITECTURE.md`と`architecture/PIPELINE_ARCHITECTURE.ja.md`、
 `dev/EXPERIMENT_MODEL_SELECTION.md`と`dev/EXPERIMENT_MODEL_SELECTION.en.md`。
 除外した`AGENTS.md`以外のルート文書にも同じ規約を適用する。翻訳だけを理由に原文を新しい階層へ移動しない。
+[文書台帳](DOCUMENTATION_INVENTORY.ja.md#directory-layout-and-492-reorganization)に記録した#492の
+役割別配置のように、情報構造のために行う移動は別の判断とする。原文は対応訳と一緒に移動し、
+指定された原文の言語と状態を維持し、リンクと翻訳元の識別情報を同じPRで更新する。
 
 両ファイルが存在したら相互の言語リンクを追加する。対応言語のリンク先があれば使用し、
 なければ原文へリンクして言語と未翻訳であることを示す。作成予定だけのファイルには
@@ -80,7 +83,7 @@ docs-onlyの変更は`git diff --check`、`python3 tools/verification/check_doc_
 
 機械可読契約と正確な配布manifestを保持する。`develop`に翻訳を追加しても、`main`や
 最小配布へ含まれるわけではない。配布変更には範囲を明示した別の判断と対応する検証が
-必要。履歴の一括翻訳、物理的な再配置、新しい設計階層はEpicで別に判断する。
+必要。履歴の一括翻訳、これ以上の物理的な再配置、新しい設計階層はEpicで別に判断する。
 
 ## 再実行可能な静的チェック
 

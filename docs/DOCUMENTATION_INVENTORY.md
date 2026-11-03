@@ -50,7 +50,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/history/DEVELOPMENT_LOG.md` | project-origin / pre-Issue history | historical/reference | compressed to a short legacy milestone ledger; exact old execution diary is Git-history only |
 | `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | retired | durable early experiment ledger moved to Issue #44; current verified CNN is #296 / PR #310 plus source/config/tests |
 | `docs/history/DEVLOG_MEASURE_NUMBERING.md` | early numbering/MMR development history | historical/reference | compressed to a short legacy milestone ledger; current/scoped MMR analysis is `docs/refactors/issue94/MMR_CURRENT_STATE.md` and Issue #94 |
-| top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
+| `docs/history/ISSUE*.md` (top-level before #492) | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | audit individually; keep current scoped contracts, retire temporary handoff/task-control bundles after distillation |
 | `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retired | important #25/#60/#70 results moved to their Issue threads; active-looking task-control copies removed |
 | `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and decisions are recoverable elsewhere |
@@ -182,6 +182,60 @@ need arises. #488 decided not to relocate documents into new directories: the En
 Japanese indexes reach every current document, while moving files would change existing
 links, tool references and the distribution manifest without a demonstrated reader benefit.
 Whether new design layers are needed is reviewed separately (#489).
+#492 re-evaluated that decision because indexes alone did not make the GitHub `docs/`
+listing readable, and moved role groups as recorded in the next section. The #488 record is
+kept as the decision at that time.
+
+## Directory layout and #492 reorganization
+
+Before #492 the `docs/` root held 66 Markdown files (plus the manifest JSON) that mixed
+entry points, current architecture, engine/model contracts, developer procedures, frozen
+Issue records and legacy ledgers; `docs/**` held 160 Markdown files counting each language
+separately. #492 moved 53 root Markdown files into role directories with `git mv`, keeping
+each original with its counterparts. The root now holds 13 Markdown files plus the manifest
+JSON; the `docs/**` total is unchanged at 160. Moving a file does not change its
+classification above: the future architecture stays a roadmap, and Issue-scoped contracts
+under `history/` keep their scoped authority.
+
+| Location | Role | Files moved or kept by #492 |
+| --- | --- | --- |
+| `docs/` root | entry, navigation, inventory and distribution contract | kept: `README`, `USER_GUIDE`, `MINIMAL_MAINLINE_SURFACE` (`.md` / `.ja.md` / `.json`), `DOCUMENTATION_INVENTORY`, `DOCUMENTATION_LANGUAGE_POLICY`, `HISTORY_INDEX`, `REPOSITORY_SURFACE_INVENTORY.md` |
+| `architecture/` | current architecture overview and reference; explicitly future architecture | `PIPELINE_ARCHITECTURE`, `PIPELINE_ARCHITECTURE_REFERENCE`, `FUTURE_SERVICE_ARCHITECTURE.md` |
+| `contracts/` | current engine, model, output, numbering, correction-boundary and matcher contracts | `ENGINE_JOB_CONTRACT`, `ENGINE_JOB_LIFECYCLE`, `ENGINE_INPUT_SAFETY`, `ENGINE_TELEMETRY`, `ENGINE_SERVICE_READINESS`, `MODEL_ARTIFACT_CONTRACT`, `corrected_final_output`, `NUMBERING_GEOMETRY_CONTRACT`, `MOVEMENT_BOUNDARY_CONTRACT`, `USER_CORRECTION_BOUNDARY`, `BARLINE_MATCHER` |
+| `dev/` (existing) | developer and operator procedures and policies | added `BRANCH_POLICY`, `ENVIRONMENTS`, `MAKEFILE_SURFACE`, `REGRESSION_TEST_WORKFLOW`, `SCRIPT_MANAGEMENT` (`.md` / `.en.md`), `GT_PREPARATION_POLICY`, `MODEL_ARTIFACTS`, `manual_correction_review_package` |
+| `history/` | frozen Issue-scoped records and legacy ledgers | `ISSUE44_ITER7_FINAL_REPORT.md`, `ISSUE120_EVALUATION_CONTRACT.md`, `ISSUE120_ARTIFACT_RETENTION.md`, `ISSUE158_DENSE_ROUTE_NAMING.md`, `ISSUE162_PIPELINE_LOGGING_TAXONOMY.md`, `ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`, `ISSUE363_RUNTIME_DEPENDENCY_REVIEW.md`, `DEVELOPMENT_LOG.md`, `DEVLOG_MEASURE_NUMBERING.md`, `TWO_HOMR_MILESTONE.md` |
+| `ai-workflow/`, `agent-skills/`, `performance/`, `refactors/`, `releases/`, `archive/` | existing areas | unchanged |
+
+Unless a single file is named, each name covers its `.md` / `.ja.md` pair. The old path of
+every moved file is `docs/<name>`; the new path is `docs/<location>/<name>`.
+
+**Kept at the root.** `README` is the documentation entry. `USER_GUIDE` and
+`MINIMAL_MAINLINE_SURFACE` (including the JSON read by `tools/check_repository_surface.py`,
+the distribution tools and their tests) are distribution entries and contracts.
+`DOCUMENTATION_INVENTORY`, `DOCUMENTATION_LANGUAGE_POLICY` and `HISTORY_INDEX` are the
+navigation and maintenance layer that `AGENTS.md` and the indexes point to.
+`REPOSITORY_SURFACE_INVENTORY.md` is a repository-wide audit consumed by the manifest's
+`reference_checks`; it is not a `docs/history/` record of one Issue.
+
+**References updated with the move.** All relative Markdown links and fragments; `docs/...`
+path mentions in tracked Markdown, `AGENTS.md`, `.gemini/GEMINI.md`, the PR template, the
+Graphify skill, `data/README.md`, `scripts/docker_container_preflight.sh`,
+`tools/issue120/inventory_tracked_artifacts.py`, the engine-contract
+`documentation_patterns` and `documentation_audiences` in `MINIMAL_MAINLINE_SURFACE.json`,
+and the tests that name moved files. Apart from this inventory, the language policy and the
+documentation guide, originals changed only in link paths; their
+counterparts received the same path changes and refreshed `same PR` SHA-256 identities.
+No runtime, distribution selection, or translation state changed.
+
+**Not updated.** Tracked `graphify-out/**` is generated output and still names old paths
+until its next refresh under `ai-workflow/GRAPHIFY.md`. Past Issue/PR bodies and external
+links to `blob/<branch>/docs/<name>` no longer resolve on `develop`; commit-pinned links
+still resolve. Use this table to find the new location; old bodies are not rewritten.
+
+**Deferred.** Issue-scoped records already under `dev/` (`dev/ISSUE441_*.md`,
+`dev/issue441/`, `dev/historical_stage_phase_naming_audit.md`) and the existing
+`performance/` and `refactors/` areas were outside the root reorganization. Move them to
+`history/` only through a separate decision under Epic #446.
 
 ## Historical navigation and retirement rule
 

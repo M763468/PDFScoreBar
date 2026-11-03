@@ -1,10 +1,10 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"02b9070e70b3069a529e419ace96959dad01574ef3ee881d570ebf5a64b65f3e"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"255e88fb09d30037bf04130a9d3e8d21f1c4e6f47a140b29135590c02afbd099"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `02b9070e70b3069a529e419ace96959dad01574ef3ee881d570ebf5a64b65f3e`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `255e88fb09d30037bf04130a9d3e8d21f1c4e6f47a140b29135590c02afbd099`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 
@@ -20,6 +20,19 @@
 | 古いコードや検証結果が保持されている理由は | [リポジトリサーフェス台帳（英語、未翻訳）](REPOSITORY_SURFACE_INVENTORY.md)、[ドキュメント台帳](DOCUMENTATION_INVENTORY.ja.md)、[履歴索引](HISTORY_INDEX.ja.md) |
 
 最小選択には説明文書と機械可読の一覧が一つずつあります。リポジトリとドキュメントの台帳は、より広範囲の過去の監査です。これらを実行時の第二のファイル一覧として使用してはいけません。`docs/**` の大半と `tests/**` の全体は develop 専用です。manifest はユーザーガイドと配布メタデータを明示的に選択しています。
+
+## ディレクトリ構成
+
+| 場所 | 内容 |
+| --- | --- |
+| `docs/` 直下 | このガイド、ユーザーガイド、最小配布の契約、台帳、言語方針、履歴索引 |
+| [`architecture/`](architecture/) | 現在のパイプラインのアーキテクチャと実装リファレンス、明示的に将来のものとしたサービスアーキテクチャ |
+| [`contracts/`](contracts/) | 現在のエンジンジョブ、モデル成果物、出力、番号付け、楽章、補正の境界、matcher の契約 |
+| [`dev/`](dev/) | ブランチ、環境、検証、設定、Makefile、スクリプト、モデル公開の手順 |
+| [`history/`](history/)、[`refactors/`](refactors/)、[`releases/`](releases/)、[`performance/`](performance/) | 凍結された Issue の記録、マイルストーンの台帳、リファクタリング・リリースの証拠、性能の結果 |
+| [`ai-workflow/`](ai-workflow/)、[`agent-skills/`](agent-skills/)、[`archive/`](archive/) | 任意のエージェント作業ガイド、Skill の評価、アーカイブした案内 |
+
+言語の対応訳は原文の隣にあります。#492 ではこれらのファイルを直下から移動しました。古い Issue や PR のリンクを解決するには、その[旧パスと新パスの対応表](DOCUMENTATION_INVENTORY.ja.md#directory-layout-and-492-reorganization)を使ってください。
 
 ## ドキュメントの言語
 

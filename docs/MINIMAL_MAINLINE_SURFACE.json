@@ -727,6 +727,7 @@
     ],
     "validation_harness": [
       "tests/test_doc_translations.py",
+      "tests/test_doc_links.py",
       "tests/test_configuration_reference.py",
       "tests/test_experiment_model_selection.py",
       "tests/test_release_candidate.py",

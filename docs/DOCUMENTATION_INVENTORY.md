@@ -91,6 +91,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [../AGENTS.md](../AGENTS.md) | canonical/current; agent instructions | EN | not required (agent-only) | N/A |
 | [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | [JA reviewed](DOCUMENTATION_INVENTORY.ja.md); #488 | P1 |
+| [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md) | current/reference; translation and documentation maintenance rules | EN | [JA reviewed](DOCUMENTATION_LANGUAGE_POLICY.ja.md); #489 | P1 |
 | [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
 | [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
 | [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |

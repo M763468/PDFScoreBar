@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"3467140d1bc55181139089c5688aa6538cba61d63b082f2df0c53299d988e7e2"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"9cae8478d8d104853ddcf663f2dff24a5e87a134a2daf6be7d265f4ce0579cd2"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `3467140d1bc55181139089c5688aa6538cba61d63b082f2df0c53299d988e7e2`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `9cae8478d8d104853ddcf663f2dff24a5e87a134a2daf6be7d265f4ce0579cd2`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 
@@ -89,6 +89,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [../AGENTS.md](../AGENTS.md) | canonical/current; agent instructions | EN | not required (agent-only) | N/A |
 | [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | [JA reviewed](DOCUMENTATION_INVENTORY.ja.md); #488 | P1 |
+| [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md) | current/reference; translation and documentation maintenance rules | EN | [JA reviewed](DOCUMENTATION_LANGUAGE_POLICY.ja.md); #489 | P1 |
 | [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
 | [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
 | [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |

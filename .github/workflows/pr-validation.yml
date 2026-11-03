@@ -27,6 +27,11 @@ jobs:
           python3 tools/verification/check_doc_translations.py
           python3 -m unittest discover -s tests -p test_doc_translations.py
 
+      - name: Check local Markdown links and fragments
+        run: |
+          python3 tools/verification/check_doc_links.py
+          python3 -m unittest discover -s tests -p test_doc_links.py
+
       - name: Check Makefile repository references
         run: make check-makefile
 

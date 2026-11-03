@@ -1,0 +1,119 @@
+"""Dependency-free regression fixtures for the Markdown link checker."""
+
+import os
+import tempfile
+import unittest
+from pathlib import Path
+
+from tools.verification.check_doc_links import check, prose_lines, slugify
+
+
+class DocLinkChecks(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        (self.root / "target.md").write_text(
+            "# Target guide\n## Browser `workflow`\n## Repeat\n## Repeat\n"
+            '<a id="explicit-anchor"></a>\n### ブラウザ検証\n',
+            encoding="utf-8",
+        )
+
+    def run_check(self, body):
+        source = self.root / "source.md"
+        source.write_text(body, encoding="utf-8")
+        return check(self.root, [source])
+
+    def test_valid_links_and_fragments(self):
+        body = (
+            "[a](target.md) [b](target.md#target-guide) [c](target.md#browser-workflow)\n"
+            "[d](target.md#repeat-1) [e](target.md#explicit-anchor) [f](#local)\n"
+            "[g](target.md#ブラウザ検証) [h](https://example.invalid/x) [i](./)\n# Local\n"
+        )
+        self.assertEqual(self.run_check(body), [])
+
+    def test_missing_target_and_fragment_are_reported(self):
+        errors = self.run_check("[a](missing.md) [b](target.md#absent)\n")
+        self.assertEqual(
+            errors,
+            [
+                "missing target: source.md: missing.md",
+                "missing fragment: source.md: target.md#absent",
+            ],
+        )
+
+    def test_code_examples_are_ignored(self):
+        body = "`[a](missing.md)`\n```text\n[b](missing.md)\n```\n"
+        self.assertEqual(self.run_check(body), [])
+
+    def test_percent_encoded_target(self):
+        (self.root / "main().md").write_text("# Main\n", encoding="utf-8")
+        self.assertEqual(self.run_check("[m](main%28%29.md)\n"), [])
+
+    def test_balanced_parentheses_and_angle_destinations(self):
+        (self.root / "guide(v1).md").write_text("# Guide\n", encoding="utf-8")
+        body = '[a](guide(v1).md) [b](<guide(v1).md#guide>) [c](target.md "title")\n'
+        self.assertEqual(self.run_check(body), [])
+        self.assertEqual(
+            self.run_check("[d](guide(v2).md)\n"), ["missing target: source.md: guide(v2).md"]
+        )
+
+    def test_escaped_destination_is_decoded(self):
+        (self.root / "guide(v1).md").write_text("# Guide\n", encoding="utf-8")
+        self.assertEqual(self.run_check("[a](guide\\(v1\\).md)\n"), [])
+
+    def test_reference_definitions_are_checked(self):
+        body = "[a][ok] [b][bad]\n\n[ok]: target.md#repeat\n[bad]: missing.md\n"
+        self.assertEqual(self.run_check(body), ["missing target: source.md: missing.md"])
+
+    def test_setext_headings_are_anchors(self):
+        (self.root / "setext.md").write_text(
+            "Setext title\n============\n\nSecond part\n-----------\n", encoding="utf-8"
+        )
+        body = "[a](setext.md#setext-title) [b](setext.md#second-part)\n"
+        self.assertEqual(self.run_check(body), [])
+
+    def test_inline_code_spanning_lines_is_ignored(self):
+        body = "Example `code\n[a](missing.md)\nend` text [b](target.md)\n"
+        self.assertEqual(self.run_check(body), [])
+        self.assertEqual(
+            self.run_check("Unclosed `tick\n\n[c](missing.md)\n"),
+            ["missing target: source.md: missing.md"],
+        )
+
+    def test_query_string_is_not_part_of_the_path(self):
+        body = "[a](target.md?plain=1) [b](target.md?plain=1#repeat) ![c](target.md?raw=true)\n"
+        self.assertEqual(self.run_check(body), [])
+
+    def test_indented_code_block_is_ignored_but_list_continuation_is_checked(self):
+        body = "Text\n\n    [a](missing.md)\n\n- item\n\n    [b](absent.md)\n"
+        self.assertEqual(self.run_check(body), ["missing target: source.md: absent.md"])
+
+    def test_multi_line_indented_code_block_is_ignored(self):
+        body = (
+            "Intro\n\n    literal example\n    [a](missing.md)\n\n    [b](gone.md)\n"
+            "\nAfter [c](absent.md)\n"
+        )
+        self.assertEqual(self.run_check(body), ["missing target: source.md: absent.md"])
+        self.assertEqual(
+            prose_lines("Intro\n\n    literal example\n    [example](missing.md)\n"),
+            ["Intro", ""],
+        )
+
+    def test_emphasis_is_removed_from_heading_slugs(self):
+        self.assertEqual(slugify("An _emphasized_ **bold** heading"), "an-emphasized-bold-heading")
+        self.assertEqual(slugify("snake_case_name"), "snake_case_name")
+
+    def test_relative_paths_are_resolved_against_root(self):
+        source = self.root / "source.md"
+        source.write_text("[a](target.md)\n", encoding="utf-8")
+        relative = Path(os.path.relpath(source))
+        self.assertEqual(check(Path(os.path.relpath(self.root)), [relative]), [])
+
+    def test_slugify_keeps_unicode_and_drops_punctuation(self):
+        self.assertEqual(slugify("Phase A: staff, measures (v1)"), "phase-a-staff-measures-v1")
+        self.assertEqual(slugify("ワークツリーとマウントの規約"), "ワークツリーとマウントの規約")
+
+
+if __name__ == "__main__":
+    unittest.main()

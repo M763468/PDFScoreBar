@@ -37,7 +37,8 @@ def prose_lines(text: str) -> list[str]:
     lines: list[str] = []
     fence = None
     previous_blank = True
-    in_list_or_code = False
+    in_list = False
+    in_code = False
     for line in text.splitlines():
         match = FENCE.match(line)
         if match:
@@ -46,25 +47,32 @@ def prose_lines(text: str) -> list[str]:
                 fence = marker
             elif marker[0] == fence[0] and len(marker) >= len(fence) and not rest.strip():
                 fence = None
+            in_code = False
             previous_blank = False
             continue
         if fence is not None:
             continue
         if not line.strip():
+            # Blank lines neither open nor close an indented code block.
             lines.append("")
             previous_blank = True
             continue
         indented = line.startswith(("    ", "\t"))
-        if indented and (in_list_or_code or not previous_blank):
+        if indented and in_code:
+            # Later line of an indented code block (including after blank lines).
+            previous_blank = False
+            continue
+        if indented and (in_list or not previous_blank):
             # List continuation or paragraph continuation: keep it as prose.
             lines.append(line)
         elif indented:
-            # An indented code block after a blank line outside a list.
-            in_list_or_code = False
+            # An indented code block opened after a blank line outside a list.
+            in_code = True
             previous_blank = False
             continue
         else:
-            in_list_or_code = bool(LIST_ITEM.match(line))
+            in_code = False
+            in_list = bool(LIST_ITEM.match(line))
             lines.append(line)
         previous_blank = False
     return lines

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.verification.check_doc_links import check, slugify
+from tools.verification.check_doc_links import check, prose_lines, slugify
 
 
 class DocLinkChecks(unittest.TestCase):
@@ -88,6 +88,17 @@ class DocLinkChecks(unittest.TestCase):
     def test_indented_code_block_is_ignored_but_list_continuation_is_checked(self):
         body = "Text\n\n    [a](missing.md)\n\n- item\n\n    [b](absent.md)\n"
         self.assertEqual(self.run_check(body), ["missing target: source.md: absent.md"])
+
+    def test_multi_line_indented_code_block_is_ignored(self):
+        body = (
+            "Intro\n\n    literal example\n    [a](missing.md)\n\n    [b](gone.md)\n"
+            "\nAfter [c](absent.md)\n"
+        )
+        self.assertEqual(self.run_check(body), ["missing target: source.md: absent.md"])
+        self.assertEqual(
+            prose_lines("Intro\n\n    literal example\n    [example](missing.md)\n"),
+            ["Intro", ""],
+        )
 
     def test_emphasis_is_removed_from_heading_slugs(self):
         self.assertEqual(slugify("An _emphasized_ **bold** heading"), "an-emphasized-bold-heading")

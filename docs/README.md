@@ -37,12 +37,12 @@ do not indicate full translation.
   [Service-readiness gates](ENGINE_SERVICE_READINESS.md) ([日本語](ENGINE_SERVICE_READINESS.ja.md))
   describe supported executor behavior and compatibility checks; future worker isolation remains separate.
 - [Final output](corrected_final_output.md) ([日本語](corrected_final_output.ja.md)), [numbering geometry](NUMBERING_GEOMETRY_CONTRACT.md),
-  [GT preparation](GT_PREPARATION_POLICY.md), and [barline matching](BARLINE_MATCHER.md)
+  [GT preparation](GT_PREPARATION_POLICY.md) ([日本語](GT_PREPARATION_POLICY.ja.md)), and [barline matching](BARLINE_MATCHER.md) ([日本語](BARLINE_MATCHER.ja.md))
   describe narrower output or validation behavior.
 - [Model artifact contract](MODEL_ARTIFACT_CONTRACT.md) ([日本語](MODEL_ARTIFACT_CONTRACT.ja.md)) defines current model identities;
   [production model artifacts](MODEL_ARTIFACTS.md) ([日本語](MODEL_ARTIFACTS.ja.md)) covers publication and cache workflows;
-  [exploration and comparison model selection](dev/EXPERIMENT_MODEL_SELECTION.md) is the
-  Japanese developer guide to explicit candidate paths, fixed comparisons, and production
+  [exploration and comparison model selection](dev/EXPERIMENT_MODEL_SELECTION.en.md) ([日本語 / original](dev/EXPERIMENT_MODEL_SELECTION.md)) is the
+  developer guide to explicit candidate paths, fixed comparisons, and production
   validation.
 - [Makefile surface](MAKEFILE_SURFACE.md) ([日本語](MAKEFILE_SURFACE.ja.md)), [regression workflow](REGRESSION_TEST_WORKFLOW.md) ([日本語](REGRESSION_TEST_WORKFLOW.ja.md)),
   and [script management](SCRIPT_MANAGEMENT.md) guide repository development.

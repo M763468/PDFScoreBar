@@ -1,10 +1,10 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"1d80630620379ea40ce6d76d4a2e1b7c37ec036d5bca303f08cb9f4fb1cbf381"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"d668d512a9698b13061f38d8c78af0e4034cb98bf1b4018686ffe694fbf59fbb"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `1d80630620379ea40ce6d76d4a2e1b7c37ec036d5bca303f08cb9f4fb1cbf381`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `d668d512a9698b13061f38d8c78af0e4034cb98bf1b4018686ffe694fbf59fbb`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 
@@ -28,8 +28,8 @@
 ## より具体的な契約
 
 - [エンジンのライフサイクル](ENGINE_JOB_LIFECYCLE.ja.md)、[入力の安全性](ENGINE_INPUT_SAFETY.ja.md)、[テレメトリー](ENGINE_TELEMETRY.ja.md)は単一ジョブの契約を詳述します。[サービス準備ゲート](ENGINE_SERVICE_READINESS.ja.md)は、サポート対象の executor の振る舞いと互換性チェックを説明します。将来の worker 分離は別のものです。
-- [最終出力](corrected_final_output.ja.md)、[番号付けの幾何](NUMBERING_GEOMETRY_CONTRACT.md)、[GT 準備](GT_PREPARATION_POLICY.md)、[小節線マッチング](BARLINE_MATCHER.md)（最終出力以外は英語、未翻訳）は、より限定された出力や検証の振る舞いを説明します。
-- [モデル成果物契約](MODEL_ARTIFACT_CONTRACT.ja.md)は現在のモデル識別情報を定義し、[本番モデル成果物](MODEL_ARTIFACTS.ja.md)は公開とキャッシュのワークフローを扱います。[探索・比較用モデルの選択](dev/EXPERIMENT_MODEL_SELECTION.md)は、明示的な候補パス、固定比較、本番検証に関する日本語の開発者向けガイドです。
+- [最終出力](corrected_final_output.ja.md)、[番号付けの幾何](NUMBERING_GEOMETRY_CONTRACT.md)、[GT 準備](GT_PREPARATION_POLICY.ja.md)、[小節線マッチング](BARLINE_MATCHER.ja.md)（番号付けの幾何は英語、未翻訳）は、より限定された出力や検証の振る舞いを説明します。
+- [モデル成果物契約](MODEL_ARTIFACT_CONTRACT.ja.md)は現在のモデル識別情報を定義し、[本番モデル成果物](MODEL_ARTIFACTS.ja.md)は公開とキャッシュのワークフローを扱います。[探索・比較用モデルの選択](dev/EXPERIMENT_MODEL_SELECTION.md)（日本語正本、[English](dev/EXPERIMENT_MODEL_SELECTION.en.md)）は、明示的な候補パス、固定比較、本番検証に関する開発者向けガイドです。
 - [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)、[回帰ワークフロー](REGRESSION_TEST_WORKFLOW.ja.md)、[スクリプト管理（英語、未翻訳）](SCRIPT_MANAGEMENT.md)はリポジトリ開発のガイドです。
 - [将来のサービスアーキテクチャ（英語、未翻訳）](FUTURE_SERVICE_ARCHITECTURE.md)はロードマップであり、現在のランタイムの振る舞いではありません。[Two-HOMR マイルストーン（英語、未翻訳）](TWO_HOMR_MILESTONE.md)は固定された比較であり、現在の本番設定ではありません。
 

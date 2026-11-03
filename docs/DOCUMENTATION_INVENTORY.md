@@ -107,8 +107,8 @@ when translating. Historical and scoped records follow the exclusions below.
 | [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | [JA reviewed](corrected_final_output.ja.md) | P2 |
 | [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
 | [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | JA needed | P2 |
-| [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | JA needed | P2 |
-| [BARLINE_MATCHER.md](BARLINE_MATCHER.md) | current/reference | EN | JA needed | P2 |
+| [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
+| [BARLINE_MATCHER.md](BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](BARLINE_MATCHER.ja.md); #475 currency review | P2 |
 | [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | JA needed | P2 |
@@ -117,7 +117,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [dev/codex_local_automation.md](dev/codex_local_automation.md) | current/reference | EN | JA needed | P2 |
 | [dev/local_worktree_data.md](dev/local_worktree_data.md) | current/reference | EN | JA needed | P2 |
 | [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | JA needed | P2 |
-| [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | EN needed | P1 |
+| [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | [EN reviewed](dev/EXPERIMENT_MODEL_SELECTION.en.md); #475 | P1 |
 | [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | mixed | split/review | P2 |
 | [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | JA needed | P2 |
 | [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | JA needed | P2 |

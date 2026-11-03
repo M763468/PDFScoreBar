@@ -16,7 +16,7 @@ compatibility extension alone does not reconstruct that complete environment.
 - Accepted squash merge: `df130d12a71a8e7f65382f3e9d97e1ea9c3ee9ca`
 - PR: #279
 - Production config: `configs/dense_full_pipeline.yaml`
-- Canonical architecture: `docs/PIPELINE_ARCHITECTURE.md`
+- Canonical architecture: `docs/architecture/PIPELINE_ARCHITECTURE.md`
 - HOMR profile: `configs/detector_profiles/stage_e_verified_homr.json`
 
 The two preceding architecture comparison refs were:
@@ -322,7 +322,7 @@ different questions.
 
 Keep in Git:
 
-- this milestone document and `docs/PIPELINE_ARCHITECTURE.md`;
+- this milestone document and `docs/architecture/PIPELINE_ARCHITECTURE.md`;
 - `configs/dense_full_pipeline.yaml`;
 - `docs/history/ISSUE44_ITER7_FINAL_REPORT.md` and the Iter 7 train config/scripts needed to
   reconstruct the CNN training contract;

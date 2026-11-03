@@ -27,9 +27,9 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | `docs/REPOSITORY_SURFACE_INVENTORY.md` | #230 の開発リポジトリ監査であり #100 への入力 | historical/reference | 経緯のために保持する。古い現在形のパス表記は現在の抽出対象を定めない |
 | `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 の最小実行選定と、機械可読なずれの定義 | 抽出については canonical/current | 配布するランタイムのサブセットについての唯一の説明と正確なファイル一覧として使う。候補ごとの #409 の受入証拠は `docs/releases/issue409/ACCEPTANCE_HISTORY.md` に移した（#484） |
 | `docs/HISTORY_INDEX.md` | 過去の経緯の案内 | current/reference | 重複させずに、Issue/PR/commit と保持している契約を指す |
-| `docs/PIPELINE_ARCHITECTURE.md` / `.ja.md` | 読者向けの現在の本番アーキテクチャ | canonical/current（英語正本）、日本語は reviewed | パイプラインの構成要素、データフロー、実行順序、モジュールの責務。厳密な契約はリファレンスへ移した |
-| `docs/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | 本番実装のリファレンス | current/reference（英語正本）、日本語は reviewed | 検出器・番号付けの詳細な契約と、過去の互換性の根拠。アーキテクチャの概要から読む |
-| `docs/FUTURE_SERVICE_ARCHITECTURE.md` | 将来のエンジン・サービスの責務境界 | future/roadmap | 現在のランタイムとは明示的に分けて保つ。長期的なエンジン・呼び出し元・補正・サービス境界の意図が大きく変わったときに更新する |
+| `docs/architecture/PIPELINE_ARCHITECTURE.md` / `.ja.md` | 読者向けの現在の本番アーキテクチャ | canonical/current（英語正本）、日本語は reviewed | パイプラインの構成要素、データフロー、実行順序、モジュールの責務。厳密な契約はリファレンスへ移した |
+| `docs/architecture/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | 本番実装のリファレンス | current/reference（英語正本）、日本語は reviewed | 検出器・番号付けの詳細な契約と、過去の互換性の根拠。アーキテクチャの概要から読む |
+| `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` | 将来のエンジン・サービスの責務境界 | future/roadmap | 現在のランタイムとは明示的に分けて保つ。長期的なエンジン・呼び出し元・補正・サービス境界の意図が大きく変わったときに更新する |
 | `docs/ENGINE_JOB_CONTRACT.md` / `.ja.md` | バージョン付きの単一ジョブのエンジン呼び出し契約 | current/reference（英語正本）、日本語は reviewed | 規範となる v1 のシリアライズ境界と、互換性・補正の意味論。`PipelineJobExecutor` は参照アダプタであり、v1 の `CorrectionSet` の直接実行はそのアダプタの対象外のまま |
 | `docs/ENGINE_JOB_LIFECYCLE.md` / `.ja.md` | #337 の単一ジョブのライフサイクル契約 | current/reference（英語正本）、日本語は reviewed | v1 のライフサイクル要件と再利用可能な制御ヘルパー。#337 の監査は履歴であり、キャンセルや期限の統合は未完了のまま |
 | `docs/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 の信頼できない PDF に対する安全性の契約 | current/reference（英語正本）、日本語は reviewed | 実装済みの上限付き preflight と安全なエラー。厳格なクォータ、プロセスツリー、ネットワーク隔離は将来の worker の要件のまま |
@@ -90,8 +90,8 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | [JA reviewed](DOCUMENTATION_INVENTORY.ja.md); #488 | P1 |
 | [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md) | current/reference; translation and documentation maintenance rules | EN | [JA reviewed](DOCUMENTATION_LANGUAGE_POLICY.ja.md); #489 | P1 |
-| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
-| [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
+| [PIPELINE_ARCHITECTURE.md](architecture/PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
+| [PIPELINE_ARCHITECTURE_REFERENCE.md](architecture/PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
 | [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [ENGINE_JOB_LIFECYCLE.md](ENGINE_JOB_LIFECYCLE.md) | current/reference | EN / [JA](ENGINE_JOB_LIFECYCLE.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [ENGINE_INPUT_SAFETY.md](ENGINE_INPUT_SAFETY.md) | current/reference | EN / [JA](ENGINE_INPUT_SAFETY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
@@ -128,7 +128,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [ai-workflow/CODEX_GEMINI_COLLAB.md](ai-workflow/CODEX_GEMINI_COLLAB.md) | current/reference | EN | [JA reviewed](ai-workflow/CODEX_GEMINI_COLLAB.ja.md); #482 | P2 |
 | [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | [JA reviewed](ai-workflow/LABELS.ja.md); #482 | P2 |
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
-| [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
+| [FUTURE_SERVICE_ARCHITECTURE.md](architecture/FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |

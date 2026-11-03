@@ -32,7 +32,7 @@ Phases A–C use that decision to build the layout and finalize numbering.
 
 Page-source jobs can run concurrently after SR exits, with explicit resource
 admission and input-order consumption. The default is one worker. See
-[source concurrency](performance/issue458-source-concurrency.md) for policy and limits.
+[source concurrency](../performance/issue458-source-concurrency.md) for policy and limits.
 
 ```mermaid
 flowchart TD
@@ -80,7 +80,7 @@ The maintained Docker launcher supports an explicit private SR compiler cache th
 retaining the SR model or changing compile mode. Runtime/weight/device/source/UID identity,
 inventory integrity and a single-writer lease govern reuse; invalid or busy caches fail
 explicitly. The cache module is included in the minimal runtime distribution. When the
-variable is unset, the existing SR execution path is unchanged. See [the cache contract](performance/issue454-implementation.md).
+variable is unset, the existing SR execution path is unchanged. See [the cache contract](../performance/issue454-implementation.md).
 
 ### 3.2 Locate and score barline candidates
 
@@ -125,7 +125,7 @@ These are the modules worth knowing first. This is a responsibility map, not an 
 | Construct systems and measures | `src/measure_numbering/pipeline.py` | Turn positions and connector evidence into the page's measure structure |
 | Review and produce final user outputs | `tools/review_correction/`, `src/pipeline/review/apply_corrections.py` and `src/pipeline/review/final_output.py` | The review app accepts corrections; the pipeline applies them and materializes the final PDF. Annotated-PDF resumes use `src/pipeline/review/number_layer.py` |
 
-The canonical route is selected by `detection.detector_route: dense_full_pipeline` and `detection.homr_profile: maintained_original` in [`configs/dense_full_pipeline.yaml`](../configs/dense_full_pipeline.yaml). Optional page filters, user corrections, MMR and output features are controlled by their corresponding configuration or review workflow.
+The canonical route is selected by `detection.detector_route: dense_full_pipeline` and `detection.homr_profile: maintained_original` in [`configs/dense_full_pipeline.yaml`](../../configs/dense_full_pipeline.yaml). Optional page filters, user corrections, MMR and output features are controlled by their corresponding configuration or review workflow.
 
 ## 5. Inspecting a specific behavior
 
@@ -136,7 +136,7 @@ Start from the stage in the diagram, then follow the corresponding reference sec
 | Exact workers, model/process lifetime, failure behavior or coordinate conversion | [Implementation reference — execution and ownership](PIPELINE_ARCHITECTURE_REFERENCE.md#end-to-end-order) |
 | Barline candidate normalization, CNN rules, thresholds or detection provenance | [candidate normalization](PIPELINE_ARCHITECTURE_REFERENCE.md#end-to-end-order) and [detector provenance and scoring](PIPELINE_ARCHITECTURE_REFERENCE.md#detector-input-provenance-and-scoring-defaults) |
 | Connector evidence, MMR geometry handoff or final numbering indices | [Phase A](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-a-staff-and-measure-structure-connector-semantics-and-coordinate-ownership), [Phase B](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-b-multi-measure-rest-recognition-and-support-reuse) and [Phase C](PIPELINE_ARCHITECTURE_REFERENCE.md#phase-c-final-numbering-with-corrections-not-the-removed-mmr-rebuild) |
-| How to run the pipeline and its Docker environment | [Environment guide](ENVIRONMENTS.md) |
-| The supported user correction workflow | [User guide](USER_GUIDE.md) and [review boundary](USER_CORRECTION_BOUNDARY.md) |
+| How to run the pipeline and its Docker environment | [Environment guide](../ENVIRONMENTS.md) |
+| The supported user correction workflow | [User guide](../USER_GUIDE.md) and [review boundary](../USER_CORRECTION_BOUNDARY.md) |
 
 The implementation reference retains the precise acceptance constraints and links to historical investigations. The overview concentrates on the present path and the reason each stage exists.

@@ -32,10 +32,10 @@ engineとともに、パッケージに紐付く`tools/review_correction`アプ�
 再開を繰り返す場合は、元のレビュー配下のフラットなセッションレジストリを使い、
 チェックポイント状態と番号付けの所有権をそれぞれ解決する。
 チェックポイントIDとセッションIDはローカルな成果物のidentityであり、公開service/job APIを追加するものではない。
-[Issue #441の製品統合](dev/ISSUE441_PRODUCT_INTEGRATION.md)を参照。
+[Issue #441の製品統合](../dev/ISSUE441_PRODUCT_INTEGRATION.md)を参照。
 正確な選択範囲とdevelop限定の境界は
-[最小mainline構成（英語・未翻訳）](MINIMAL_MAINLINE_SURFACE.md)、ユーザーの操作方法は
-[ユーザーガイド（英語・未翻訳）](USER_GUIDE.md)に記載する。
+[最小mainline構成（英語・未翻訳）](../MINIMAL_MAINLINE_SURFACE.md)、ユーザーの操作方法は
+[ユーザーガイド（英語・未翻訳）](../USER_GUIDE.md)に記載する。
 共通の小節線ジオメトリは`src/common/barline_geometry.py`に置く。GTマッチングは配布対象外とする。
 
 保守対象のフルパイプライン実行環境は`pdfscore_pipeline_gpu`イメージであり、
@@ -43,7 +43,7 @@ engineとともに、パッケージに紐付く`tools/review_correction`アプ�
 ルートの`Dockerfile`は保守対象のproduction実行環境だけをビルドする。
 過去のStage-Eのソース、venv、モデル資産、provenanceは、明示的な再現用拡張
 `docker/Dockerfile.stage-e`に置く。正規の事前確認で必要なのは、保守対象プロファイルのprovenanceだけである。
-2種類のビルド経路は[環境（英語・未翻訳）](ENVIRONMENTS.md)を参照。
+2種類のビルド経路は[環境（英語・未翻訳）](../ENVIRONMENTS.md)を参照。
 
 ```bash
 make docker-build
@@ -469,6 +469,6 @@ Issue #284のSRスケジューリング/実行環境最適化に先立つ、採�
 
 batch-SR経路は、SR process終了後のページごとのsource生成に、リソースadmission付きの
 opt-in並列実行を提供する。未消費job数には上限を設け、結果は入力順に統合する。
-[設定と失敗時の方針（英語）](performance/issue458-source-concurrency.md)を参照。
+[設定と失敗時の方針（英語）](../performance/issue458-source-concurrency.md)を参照。
 
 2026-11-02、Codexがsource並列実行の追記を現行英語原文と照合し、翻訳とSHA-256記録を同期した。

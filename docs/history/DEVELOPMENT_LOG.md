@@ -2,7 +2,7 @@
 
 > [!IMPORTANT]
 > This file is **historical navigation**, not a current source of truth.
-> For current behavior, use current source/tests/config plus `docs/PIPELINE_ARCHITECTURE.md` and the active Issue/PR.
+> For current behavior, use current source/tests/config plus `docs/architecture/PIPELINE_ARCHITECTURE.md` and the active Issue/PR.
 
 ## Why this file is compact
 
@@ -84,7 +84,7 @@ code/input provenance.
 
 The durable lesson is to preserve provenance and distinguish accepted, rejected, invalidated, and
 superseded runs. Current detector-input provenance rules are documented in
-`docs/PIPELINE_ARCHITECTURE.md` and the relevant Issue lineages.
+`docs/architecture/PIPELINE_ARCHITECTURE.md` and the relevant Issue lineages.
 
 ### 8. Transition to Issue/PR-driven durable history — Jan 2026 onward
 
@@ -103,7 +103,7 @@ source, tests, and retained reproduction contract.
 | Early performance work | Issues #25 / #60 / #70 / #78 |
 | Recent performance work | Issues #281–#294 as applicable to the active task |
 | FP-filter safety lesson | `docs/ai-workflow/LESSONS.md` |
-| Current architecture | `docs/PIPELINE_ARCHITECTURE.md`, current source/tests/config |
+| Current architecture | `docs/architecture/PIPELINE_ARCHITECTURE.md`, current source/tests/config |
 
 ## Historical-state rule
 

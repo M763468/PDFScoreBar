@@ -24,7 +24,7 @@ A newer comment on an unrelated Issue does not supersede the current task's acce
 
 ## Canonical current entry points
 
-- [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) — current production architecture
+- [`docs/architecture/PIPELINE_ARCHITECTURE.md`](architecture/PIPELINE_ARCHITECTURE.md) — current production architecture
 - [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md) — frozen accepted #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) comparison milestone
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) — documentation classification
 - [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md) — maintained execution environments
@@ -122,7 +122,7 @@ Primary lineage:
 
 Start with:
 
-- [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md), including the current detector-input provenance contract
+- [`docs/architecture/PIPELINE_ARCHITECTURE.md`](architecture/PIPELINE_ARCHITECTURE.md), including the current detector-input provenance contract
 - [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md)
 - [Issue #245](https://github.com/M763468/PDFScoreBar/issues/245) / [PR #251](https://github.com/M763468/PDFScoreBar/pull/251) for forensic detail behind `fresh_upstream` vs `precomputed_candidate_route`
 - #255 / #264 / #274 Issue records when further forensic detail is required

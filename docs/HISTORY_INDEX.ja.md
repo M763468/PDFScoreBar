@@ -28,7 +28,7 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 
 ## 正規の現在の入口
 
-- [`docs/PIPELINE_ARCHITECTURE.ja.md`](PIPELINE_ARCHITECTURE.ja.md) — 現在の本番アーキテクチャ
+- [`docs/architecture/PIPELINE_ARCHITECTURE.ja.md`](architecture/PIPELINE_ARCHITECTURE.ja.md) — 現在の本番アーキテクチャ
 - [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md)（英語） — 固定した、受け入れ済みの #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) の比較のマイルストーン
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)（英語） — 文書の分類
 - [`docs/ENVIRONMENTS.ja.md`](ENVIRONMENTS.ja.md) — 保守対象の実行環境
@@ -121,7 +121,7 @@ Issue #268 は利用とリセットの意味を所有します。Issue #333 は�
 
 最初に読むもの:
 
-- [`docs/PIPELINE_ARCHITECTURE.ja.md`](PIPELINE_ARCHITECTURE.ja.md)（現在の検出器の入力の来歴の契約を含む）
+- [`docs/architecture/PIPELINE_ARCHITECTURE.ja.md`](architecture/PIPELINE_ARCHITECTURE.ja.md)（現在の検出器の入力の来歴の契約を含む）
 - [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md)（英語）
 - [Issue #245](https://github.com/M763468/PDFScoreBar/issues/245) / [PR #251](https://github.com/M763468/PDFScoreBar/pull/251)（`fresh_upstream` と `precomputed_candidate_route` の違いの背景にある詳細な調査）
 - さらに詳細な調査が必要な場合は #255 / #264 / #274 の Issue の記録

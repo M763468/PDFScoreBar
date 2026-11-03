@@ -80,7 +80,7 @@ current review-package/apply flow remains the concrete correction execution path
 
 Future HTTP/API, queue, database, object-store, authentication, billing, persistence, and other
 service/control-plane implementation concerns are not repository-surface requirements for
-PDFScoreBar. `docs/FUTURE_SERVICE_ARCHITECTURE.md` deliberately permits those concerns to live in
+PDFScoreBar. `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` deliberately permits those concerns to live in
 another repository.
 
 ## Top-level inventory
@@ -169,7 +169,7 @@ document-by-document classification here.
 For repository-surface purposes:
 
 - canonical/current and current/reference docs are KEEP;
-- `docs/FUTURE_SERVICE_ARCHITECTURE.md` is KEEP as an explicitly future responsibility boundary;
+- `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` is KEEP as an explicitly future responsibility boundary;
 - Issue/refactor docs are ARCHIVE only when they retain a scoped contract or unique evidence;
 - completed task-control/handoff prose with no unique durable content is REMOVE under the #280
   retirement rule;

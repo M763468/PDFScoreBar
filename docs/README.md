@@ -8,8 +8,8 @@ historical evidence and validation guidance; most of those documents are not par
 | Question | Read first |
 | --- | --- |
 | What is the minimum executable subset, and is it ready to extract? | [Minimal mainline surface](MINIMAL_MAINLINE_SURFACE.md) ([日本語](MINIMAL_MAINLINE_SURFACE.ja.md)) and its [exact file list](MINIMAL_MAINLINE_SURFACE.json) |
-| How does the current pipeline work? | [Pipeline architecture (English)](PIPELINE_ARCHITECTURE.md) / [日本語（reviewed）](PIPELINE_ARCHITECTURE.ja.md) |
-| Where are exact detection/numbering implementation contracts? | [Implementation reference (English)](PIPELINE_ARCHITECTURE_REFERENCE.md) / [日本語（reviewed）](PIPELINE_ARCHITECTURE_REFERENCE.ja.md) |
+| How does the current pipeline work? | [Pipeline architecture (English)](architecture/PIPELINE_ARCHITECTURE.md) / [日本語（reviewed）](architecture/PIPELINE_ARCHITECTURE.ja.md) |
+| Where are exact detection/numbering implementation contracts? | [Implementation reference (English)](architecture/PIPELINE_ARCHITECTURE_REFERENCE.md) / [日本語（reviewed）](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md) |
 | How do I run the current repository? | [Environments](ENVIRONMENTS.md) ([日本語](ENVIRONMENTS.ja.md)), then [manual correction workflow](manual_correction_review_package.md) ([日本語](manual_correction_review_package.ja.md)) if needed |
 | How are user corrections separated from GT/developer tools? | [User correction boundary](USER_CORRECTION_BOUNDARY.md) ([日本語](USER_CORRECTION_BOUNDARY.ja.md)) |
 | What does an engine caller send and receive? | [Engine job contract (English)](ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](ENGINE_JOB_CONTRACT.ja.md) |
@@ -47,7 +47,7 @@ do not indicate full translation.
   validation.
 - [Makefile surface](MAKEFILE_SURFACE.md) ([日本語](MAKEFILE_SURFACE.ja.md)), [regression workflow](REGRESSION_TEST_WORKFLOW.md) ([日本語](REGRESSION_TEST_WORKFLOW.ja.md)),
   and [script management](SCRIPT_MANAGEMENT.en.md) ([日本語 / original](SCRIPT_MANAGEMENT.md)) guide repository development.
-- [Future service architecture](FUTURE_SERVICE_ARCHITECTURE.md) is a roadmap, not current
+- [Future service architecture](architecture/FUTURE_SERVICE_ARCHITECTURE.md) is a roadmap, not current
   runtime behavior. [Two-HOMR milestone](history/TWO_HOMR_MILESTONE.md) is a frozen comparison,
   not the current production configuration.
 

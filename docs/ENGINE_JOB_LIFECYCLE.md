@@ -11,7 +11,7 @@
 > artifacts may be treated as published.
 >
 > Current production runtime behavior remains authoritative in
-> [`PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md), current source/tests, and the active
+> [`PIPELINE_ARCHITECTURE.md`](architecture/PIPELINE_ARCHITECTURE.md), current source/tests, and the active
 > production configuration.
 
 ## 1. Scope and authority

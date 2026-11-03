@@ -38,7 +38,7 @@ Phase A〜Cはその判断結果を使って段と小節の構造を作り、番
 
 SRの終了後、ページごとのsource生成を、明示的なリソースadmissionと入力順の結果統合を保って
 並列実行できる。既定値は1 workerである。設定と制約は
-[source並列実行の方針（英語）](performance/issue458-source-concurrency.md)を参照。
+[source並列実行の方針（英語）](../performance/issue458-source-concurrency.md)を参照。
 
 ```mermaid
 flowchart TD
@@ -85,7 +85,7 @@ maintained Docker launcherでは、`PDFSCORE_SR_COMPILER_CACHE`で私有のSR co
 明示指定できる。SRモデルを常駐させず、compile方式も変えずに短命job間でcompiled artifactを保持する。
 runtime・weight・device・source・UIDのidentity、inventory整合性、単一writerの排他で再利用を管理し、
 不正または使用中のcacheは明示的に失敗する。このcacheモジュールは最小配布にも含まれる。
-環境変数を指定しない場合は、従来のSR実行経路を維持する。[cache契約](performance/issue454-implementation.md)を参照。
+環境変数を指定しない場合は、従来のSR実行経路を維持する。[cache契約](../performance/issue454-implementation.md)を参照。
 
 ### 3.2 小節線候補を探し、判定する
 
@@ -130,7 +130,7 @@ Phase Cは採択・補正済みの小節線、譜表マスク、利用可能な�
 | 段・小節の構築 | `src/measure_numbering/pipeline.py` | 譜表位置、小節線、接続情報から小節構造を作る |
 | 利用者の確認と最終出力 | `tools/review_correction/`、`src/pipeline/review/apply_corrections.py`、`src/pipeline/review/final_output.py` | レビューアプリが訂正を受け、パイプラインが反映して最終PDFを生成する。注釈付きPDFの再開には`src/pipeline/review/number_layer.py`を使う |
 
-現在の主要経路は[`configs/dense_full_pipeline.yaml`](../configs/dense_full_pipeline.yaml)で`detection.detector_route: dense_full_pipeline`、`detection.homr_profile: maintained_original`として選択される。ページの選別、利用者の訂正、MMR、出力については、それぞれの設定やレビュー操作に応じて実行する。
+現在の主要経路は[`configs/dense_full_pipeline.yaml`](../../configs/dense_full_pipeline.yaml)で`detection.detector_route: dense_full_pipeline`、`detection.homr_profile: maintained_original`として選択される。ページの選別、利用者の訂正、MMR、出力については、それぞれの設定やレビュー操作に応じて実行する。
 
 ## 5. 詳細を調べるときの入口
 
@@ -141,8 +141,8 @@ Phase Cは採択・補正済みの小節線、譜表マスク、利用可能な�
 | ワーカー、モデル・GPUメモリの利用期間、失敗処理、座標の変換 | [実装リファレンス：実行順序と処理の責任](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#入力から出力までの処理順序) |
 | 小節線候補の調整、CNN、閾値、検出元の記録 | [候補の調整](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#入力から出力までの処理順序)、[検出元の記録とスコアリング](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#detector入力のprovenanceとスコアリングのデフォルト) |
 | 譜表の接続情報、MMRへの位置情報の引き渡し、最終番号のインデックス | [Phase A](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#譜表小節構造と基本番号付けphase-aコネクターの意味情報と座標の所有権)、[Phase B](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#複数小節休符の認識phase-bmmrサポートの再利用)、[Phase C](PIPELINE_ARCHITECTURE_REFERENCE.ja.md#補正を反映した最終番号付けphase-c削除済みのmmr再構築との違い) |
-| 実行コマンドやDocker環境 | [環境ガイド（英語）](ENVIRONMENTS.md) |
-| 利用者による訂正手順 | [ユーザーガイド（英語）](USER_GUIDE.md)、[ユーザー補正の境界（英語）](USER_CORRECTION_BOUNDARY.md) |
+| 実行コマンドやDocker環境 | [環境ガイド（英語）](../ENVIRONMENTS.md) |
+| 利用者による訂正手順 | [ユーザーガイド（英語）](../USER_GUIDE.md)、[ユーザー補正の境界（英語）](../USER_CORRECTION_BOUNDARY.md) |
 
 実装リファレンスには、厳密な受入条件や、過去の調査への参照を残している。この概要では**現在の処理と各工程が必要な理由**に集中する。
 

@@ -26,10 +26,10 @@ old PDF presence does not establish success. Repeated resumes use a flat session
 under the original review, with checkpoint state and numbering ownership resolved separately.
 Checkpoint IDs and session IDs are local artifact identities;
 they do not add a public service/job API. See
-[`dev/ISSUE441_PRODUCT_INTEGRATION.md`](dev/ISSUE441_PRODUCT_INTEGRATION.md).
+[`dev/ISSUE441_PRODUCT_INTEGRATION.md`](../dev/ISSUE441_PRODUCT_INTEGRATION.md).
 The exact selection and develop-only boundary are in
-[`MINIMAL_MAINLINE_SURFACE.md`](MINIMAL_MAINLINE_SURFACE.md); user operation is in
-[`USER_GUIDE.md`](USER_GUIDE.md). Shared barline geometry lives in
+[`MINIMAL_MAINLINE_SURFACE.md`](../MINIMAL_MAINLINE_SURFACE.md); user operation is in
+[`USER_GUIDE.md`](../USER_GUIDE.md). Shared barline geometry lives in
 `src/common/barline_geometry.py`; GT matching stays outside the distribution.
 
 
@@ -38,7 +38,7 @@ config-driven entry point in `src/pipeline/main.py`. The root `Dockerfile` build
 the maintained production runtime. Historical Stage-E source, venv, model assets and
 provenance live in the explicit `docker/Dockerfile.stage-e` reproduction extension;
 canonical preflight requires only maintained-profile provenance. See
-[`ENVIRONMENTS.md`](ENVIRONMENTS.md) for the two build paths.
+[`ENVIRONMENTS.md`](../ENVIRONMENTS.md) for the two build paths.
 
 ```bash
 make docker-build
@@ -481,4 +481,4 @@ that precedes the Issue #284 SR scheduling/runtime optimization.
 
 The batch-SR route supports opt-in resource-admitted page-source scheduling after
 the SR process exits, with bounded outstanding jobs and input-order consumption.
-See [configuration and failure policy](performance/issue458-source-concurrency.md).
+See [configuration and failure policy](../performance/issue458-source-concurrency.md).

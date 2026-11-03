@@ -23,9 +23,9 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/REPOSITORY_SURFACE_INVENTORY.md` | #230 development-repository audit and #100 input | historical/reference | retain for lineage; its old present-tense paths do not define the current extraction set |
 | `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 minimum executable selection and machine-readable drift definition | canonical/current for extraction | use as the single explanation and exact file list for the distributed runtime subset; per-candidate #409 acceptance evidence moved to `docs/releases/issue409/ACCEPTANCE_HISTORY.md` (#484) |
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
-| `docs/PIPELINE_ARCHITECTURE.md` / `.ja.md` | reader-oriented current production architecture | canonical/current (English original); Japanese reviewed | pipeline components, data flow, execution order and module responsibilities; precise contracts moved to reference |
-| `docs/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | production implementation reference | current/reference (English original); Japanese reviewed | detailed detector/numbering contracts and historical compatibility rationale; read from the architecture overview |
-| `docs/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
+| `docs/architecture/PIPELINE_ARCHITECTURE.md` / `.ja.md` | reader-oriented current production architecture | canonical/current (English original); Japanese reviewed | pipeline components, data flow, execution order and module responsibilities; precise contracts moved to reference |
+| `docs/architecture/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | production implementation reference | current/reference (English original); Japanese reviewed | detailed detector/numbering contracts and historical compatibility rationale; read from the architecture overview |
+| `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
 | `docs/ENGINE_JOB_CONTRACT.md` / `.ja.md` | versioned one-job engine caller contract | current/reference (English original); Japanese reviewed | normative v1 serialized boundary and compatibility/correction semantics; `PipelineJobExecutor` is the reference adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
 | `docs/ENGINE_JOB_LIFECYCLE.md` / `.ja.md` | #337 one-job lifecycle contract | current/reference (English original); Japanese reviewed | v1 lifecycle requirements and reusable control helpers; #337 audit is historical, while cancellation/deadline integration remains pending |
 | `docs/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 untrusted-PDF safety contract | current/reference (English original); Japanese reviewed | implemented bounded preflight and safe errors; hard quotas/process-tree/network isolation remain future worker requirements |
@@ -92,8 +92,8 @@ when translating. Historical and scoped records follow the exclusions below.
 | [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | [JA reviewed](DOCUMENTATION_INVENTORY.ja.md); #488 | P1 |
 | [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md) | current/reference; translation and documentation maintenance rules | EN | [JA reviewed](DOCUMENTATION_LANGUAGE_POLICY.ja.md); #489 | P1 |
-| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
-| [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
+| [PIPELINE_ARCHITECTURE.md](architecture/PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
+| [PIPELINE_ARCHITECTURE_REFERENCE.md](architecture/PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
 | [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [ENGINE_JOB_LIFECYCLE.md](ENGINE_JOB_LIFECYCLE.md) | current/reference | EN / [JA](ENGINE_JOB_LIFECYCLE.ja.md) | reviewed; #463 implementation/meaning review | P1 |
 | [ENGINE_INPUT_SAFETY.md](ENGINE_INPUT_SAFETY.md) | current/reference | EN / [JA](ENGINE_INPUT_SAFETY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
@@ -130,7 +130,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [ai-workflow/CODEX_GEMINI_COLLAB.md](ai-workflow/CODEX_GEMINI_COLLAB.md) | current/reference | EN | [JA reviewed](ai-workflow/CODEX_GEMINI_COLLAB.ja.md); #482 | P2 |
 | [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | [JA reviewed](ai-workflow/LABELS.ja.md); #482 | P2 |
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
-| [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
+| [FUTURE_SERVICE_ARCHITECTURE.md](architecture/FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |

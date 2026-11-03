@@ -31,7 +31,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 untrusted-PDF safety contract | current/reference (English original); Japanese reviewed | implemented bounded preflight and safe errors; hard quotas/process-tree/network isolation remain future worker requirements |
 | `docs/ENGINE_TELEMETRY.md` / `.ja.md` | #339 structured progress/resource telemetry contract | current/reference (English original); Japanese reviewed | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
 | `docs/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 reference executor and compatibility gates | current/reference (English original); Japanese reviewed | supported succeeded/failed publication boundary; direct v1 corrections, lifecycle controls and public-service isolation remain outside current support |
-| `docs/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
+| `docs/history/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
 | `docs/dev/VALIDATION_POLICY.md` | validation policy | current/reference | keep |
@@ -47,9 +47,9 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/PIPELINE_DATAFLOW.md`, `docs/FULL_PIPELINE_README.md`, `docs/best_configuration_summary.md` | obsolete current-guide narratives | retired | removed in earlier cleanup; recover through Git history |
 | `docs/CNN_RETRAINING_GUIDE.md` | #44-era FP active-learning / ResNet18 plan | retired | historical core moved to #44; current verified CNN is #296 / PR #310 plus source/config/tests |
 | `docs/performance_comparison.md` | dated Phase 1–6 performance narrative | retired | benchmark ledger distilled into #78; later performance lineage is in #281–#294 |
-| `docs/DEVELOPMENT_LOG.md` | project-origin / pre-Issue history | historical/reference | compressed to a short legacy milestone ledger; exact old execution diary is Git-history only |
+| `docs/history/DEVELOPMENT_LOG.md` | project-origin / pre-Issue history | historical/reference | compressed to a short legacy milestone ledger; exact old execution diary is Git-history only |
 | `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | retired | durable early experiment ledger moved to Issue #44; current verified CNN is #296 / PR #310 plus source/config/tests |
-| `docs/DEVLOG_MEASURE_NUMBERING.md` | early numbering/MMR development history | historical/reference | compressed to a short legacy milestone ledger; current/scoped MMR analysis is `docs/refactors/issue94/MMR_CURRENT_STATE.md` and Issue #94 |
+| `docs/history/DEVLOG_MEASURE_NUMBERING.md` | early numbering/MMR development history | historical/reference | compressed to a short legacy milestone ledger; current/scoped MMR analysis is `docs/refactors/issue94/MMR_CURRENT_STATE.md` and Issue #94 |
 | top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | audit individually; keep current scoped contracts, retire temporary handoff/task-control bundles after distillation |
 | `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retired | important #25/#60/#70 results moved to their Issue threads; active-looking task-control copies removed |
@@ -206,13 +206,13 @@ over retaining chat transcripts or copying the same result into another summary 
 
 ## Frozen #274 milestone versus current production
 
-`docs/TWO_HOMR_MILESTONE.md` deliberately preserves the accepted #274 / PR #279 comparison contract. That comparison used the Issue #44 / PR #57 Iter 7 final-rescue CNN artifact at:
+`docs/history/TWO_HOMR_MILESTONE.md` deliberately preserves the accepted #274 / PR #279 comparison contract. That comparison used the Issue #44 / PR #57 Iter 7 final-rescue CNN artifact at:
 
 ```text
 logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
 ```
 
-`docs/ISSUE44_ITER7_FINAL_REPORT.md` remains the reconstruction procedure for **that historical comparison checkpoint**. This does not mean Iter 7 is the current production CNN.
+`docs/history/ISSUE44_ITER7_FINAL_REPORT.md` remains the reconstruction procedure for **that historical comparison checkpoint**. This does not mean Iter 7 is the current production CNN.
 
 The verified dense production route was later refreshed in Issue #296 / PR #310 to the current-producer candidate-aligned EfficientNet-B0 D27 checkpoint and validation-selected threshold. Current source/tests and `configs/dense_full_pipeline.yaml` are authoritative for the active production model contract.
 

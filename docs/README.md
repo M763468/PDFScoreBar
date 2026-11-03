@@ -48,7 +48,7 @@ do not indicate full translation.
 - [Makefile surface](MAKEFILE_SURFACE.md) ([日本語](MAKEFILE_SURFACE.ja.md)), [regression workflow](REGRESSION_TEST_WORKFLOW.md) ([日本語](REGRESSION_TEST_WORKFLOW.ja.md)),
   and [script management](SCRIPT_MANAGEMENT.en.md) ([日本語 / original](SCRIPT_MANAGEMENT.md)) guide repository development.
 - [Future service architecture](FUTURE_SERVICE_ARCHITECTURE.md) is a roadmap, not current
-  runtime behavior. [Two-HOMR milestone](TWO_HOMR_MILESTONE.md) is a frozen comparison,
+  runtime behavior. [Two-HOMR milestone](history/TWO_HOMR_MILESTONE.md) is a frozen comparison,
   not the current production configuration.
 
 For a historical investigation, use the [history index](HISTORY_INDEX.md) to locate its

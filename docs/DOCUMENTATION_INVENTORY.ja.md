@@ -35,7 +35,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | `docs/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 の信頼できない PDF に対する安全性の契約 | current/reference（英語正本）、日本語は reviewed | 実装済みの上限付き preflight と安全なエラー。厳格なクォータ、プロセスツリー、ネットワーク隔離は将来の worker の要件のまま |
 | `docs/ENGINE_TELEMETRY.md` / `.ja.md` | #339 の構造化された進捗・リソースのテレメトリー契約 | current/reference（英語正本）、日本語は reviewed | v1 のステージ・状態の語彙を保ったまま、追加的な経過時間・詳細のフィールド、ページの進捗、簡潔な要約、オプトインのプロセス・GPU のサンプリングを定める |
 | `docs/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 の参照 executor と互換性ゲート | current/reference（英語正本）、日本語は reviewed | サポート対象の succeeded/failed の公開境界。v1 の補正の直接実行、ライフサイクルの制御、公開サービスの隔離は現在のサポートの対象外のまま |
-| `docs/TWO_HOMR_MILESTONE.md` | 受け入れ済みの #274 のアーキテクチャ・精度・性能の比較 | frozen milestone | #274 / PR #279 の再現記録として保持する。後の本番の変更に合わせて黙って書き換えない |
+| `docs/history/TWO_HOMR_MILESTONE.md` | 受け入れ済みの #274 のアーキテクチャ・精度・性能の比較 | frozen milestone | #274 / PR #279 の再現記録として保持する。後の本番の変更に合わせて黙って書き換えない |
 | `docs/ENVIRONMENTS.md` | 実行・ランタイムのガイダンス | current/reference | 保持 |
 | `docs/BRANCH_POLICY.md` | ブランチ方針 | current/reference | 保持 |
 | `docs/dev/VALIDATION_POLICY.md` | 検証方針 | current/reference | 保持 |
@@ -51,9 +51,9 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | `docs/PIPELINE_DATAFLOW.md`、`docs/FULL_PIPELINE_README.md`、`docs/best_configuration_summary.md` | 古くなった現行ガイドの説明 | retired | 以前の整理で削除した。Git 履歴から回復する |
 | `docs/CNN_RETRAINING_GUIDE.md` | #44 時点の FP 能動学習・ResNet18 の計画 | retired | 過去の要点は #44 へ移した。現在の検証済み CNN は #296 / PR #310 と source/config/tests |
 | `docs/performance_comparison.md` | 日付付きの Phase 1–6 の性能の記述 | retired | ベンチマークの記録は #78 に要約した。その後の性能の経緯は #281–#294 にある |
-| `docs/DEVELOPMENT_LOG.md` | プロジェクト発足時・Issue 運用前の履歴 | historical/reference | 短い旧マイルストーンの記録に圧縮した。古い実行日誌の正確な内容は Git 履歴にだけある |
+| `docs/history/DEVELOPMENT_LOG.md` | プロジェクト発足時・Issue 運用前の履歴 | historical/reference | 短い旧マイルストーンの記録に圧縮した。古い実行日誌の正確な内容は Git 履歴にだけある |
 | `docs/DEVLOG_CNN_TRAINING.md` | CNN 開発の日誌 | retired | 初期の実験の永続的な記録は Issue #44 へ移した。現在の検証済み CNN は #296 / PR #310 と source/config/tests |
-| `docs/DEVLOG_MEASURE_NUMBERING.md` | 初期の番号付け・MMR の開発の経緯 | historical/reference | 短い旧マイルストーンの記録に圧縮した。現在の範囲限定の MMR の分析は `docs/refactors/issue94/MMR_CURRENT_STATE.md` と Issue #94 |
+| `docs/history/DEVLOG_MEASURE_NUMBERING.md` | 初期の番号付け・MMR の開発の経緯 | historical/reference | 短い旧マイルストーンの記録に圧縮した。現在の範囲限定の MMR の分析は `docs/refactors/issue94/MMR_CURRENT_STATE.md` と Issue #94 |
 | `docs/` 直下の `ISSUE*.md` | Issue の調査・再現の記録 | historical | 固有の永続的な証拠か、有効な再現の契約が残っている間だけ保持する。そうでなければ要約して retire する |
 | `docs/refactors/issue*/**` | 範囲限定の設計・経緯 | historical/scoped | 個別に監査する。現在の範囲限定の契約は保持し、一時的な引き継ぎ・タスク管理の束は要約した後に retire する |
 | `docs/long-horizon-tasks/**` | 完了した Prompt/Plan/Log/Benchmarks のタスクの束 | retired | #25/#60/#70 の重要な結果はそれぞれの Issue のスレッドへ移した。有効に見えるタスク管理のコピーは削除した |
@@ -172,13 +172,13 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 
 ## 凍結された #274 のマイルストーンと現在の本番
 
-`docs/TWO_HOMR_MILESTONE.md` は、受け入れ済みの #274 / PR #279 の比較の契約を意図的に保存しています。その比較では、次にある Issue #44 / PR #57 の Iter 7 final-rescue の CNN 成果物を使いました。
+`docs/history/TWO_HOMR_MILESTONE.md` は、受け入れ済みの #274 / PR #279 の比較の契約を意図的に保存しています。その比較では、次にある Issue #44 / PR #57 の Iter 7 final-rescue の CNN 成果物を使いました。
 
 ```text
 logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
 ```
 
-`docs/ISSUE44_ITER7_FINAL_REPORT.md` は、**その過去の比較のチェックポイント**を再構成する手順として残っています。これは Iter 7 が現在の本番の CNN であることを意味しません。
+`docs/history/ISSUE44_ITER7_FINAL_REPORT.md` は、**その過去の比較のチェックポイント**を再構成する手順として残っています。これは Iter 7 が現在の本番の CNN であることを意味しません。
 
 検証済みの dense の本番ルートは、その後 Issue #296 / PR #310 で、current-producer の候補に整合した EfficientNet-B0 D27 のチェックポイントと、検証で選んだ閾値に更新されました。現在のモデルの契約については、現在の source/tests と `configs/dense_full_pipeline.yaml` が正本です。
 

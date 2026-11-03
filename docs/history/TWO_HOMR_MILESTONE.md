@@ -107,7 +107,7 @@ runtime, application/config revision and input/model identities against the orig
 That work is outside
 [#398's clarified acceptance](https://github.com/M763468/PDFScoreBar/issues/398#issuecomment-5969279832).
 #398 validates independent production/minimal builds and execution without historical bytes or historical preflight requirements. See
-[`ENVIRONMENTS.md`](ENVIRONMENTS.md) for the maintained and compatibility build paths.
+[`ENVIRONMENTS.md`](../ENVIRONMENTS.md) for the maintained and compatibility build paths.
 
 Do not use `--skip-existing` when a separately prepared historical run requires fresh output.
 
@@ -179,7 +179,7 @@ logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_bes
 ```
 
 This is the Issue #44 / PR #57 **Iter 7 final rescue** model. Its durable provenance and
-reconstruction procedure are already committed in `docs/ISSUE44_ITER7_FINAL_REPORT.md`:
+reconstruction procedure are already committed in `docs/history/ISSUE44_ITER7_FINAL_REPORT.md`:
 
 ```bash
 .venv_cnn_classifier/bin/python tools/cnn_classifier/build_iter7_hard_samples.py
@@ -324,7 +324,7 @@ Keep in Git:
 
 - this milestone document and `docs/PIPELINE_ARCHITECTURE.md`;
 - `configs/dense_full_pipeline.yaml`;
-- `docs/ISSUE44_ITER7_FINAL_REPORT.md` and the Iter 7 train config/scripts needed to
+- `docs/history/ISSUE44_ITER7_FINAL_REPORT.md` and the Iter 7 train config/scripts needed to
   reconstruct the CNN training contract;
 - `tools/issue120/eval_full68_from_intermediates.py` as the canonical 68-page selection;
 - the pinned HOMR profile JSON and its model hashes;

@@ -2,7 +2,7 @@
 
 This document records the Phase 1 and Phase 2 evidence and the current
 production disposition. The resolved numbering consumer remains
-[`MOVEMENT_BOUNDARY_CONTRACT.md`](MOVEMENT_BOUNDARY_CONTRACT.md).
+[`MOVEMENT_BOUNDARY_CONTRACT.md`](../MOVEMENT_BOUNDARY_CONTRACT.md).
 
 ## Evidence gap and corpus
 

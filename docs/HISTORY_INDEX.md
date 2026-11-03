@@ -25,7 +25,7 @@ A newer comment on an unrelated Issue does not supersede the current task's acce
 ## Canonical current entry points
 
 - [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) — current production architecture
-- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) — frozen accepted #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) comparison milestone
+- [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md) — frozen accepted #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) comparison milestone
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) — documentation classification
 - [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md) — maintained execution environments
 - [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md) — branch policy
@@ -53,8 +53,8 @@ Start with:
 - [Issue #142](https://github.com/M763468/PDFScoreBar/issues/142) for the accepted CNN-scoring NMS default-off decision and PR #154 evidence
 - [Issue #141](https://github.com/M763468/PDFScoreBar/issues/141) for the Stage-E full-pipeline validation record
 - [Issue #163](https://github.com/M763468/PDFScoreBar/issues/163) for the rejected HOMR/SR overlap experiment, evidence branch/commit, and fixed-subset reproduction details
-- [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md)
-- [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md)
+- [`docs/history/ISSUE120_EVALUATION_CONTRACT.md`](history/ISSUE120_EVALUATION_CONTRACT.md)
+- [`docs/history/ISSUE120_ARTIFACT_RETENTION.md`](history/ISSUE120_ARTIFACT_RETENTION.md)
 - [`docs/refactors/issue120/`](refactors/issue120/)
 
 Use Issue threads for forensic detail. Do not interpret the old rebuild branch model or old `next step` sections as current branch state.
@@ -86,7 +86,7 @@ Start with:
 - [Issue #94](https://github.com/M763468/PDFScoreBar/issues/94) for the distilled early numbering/MMR milestones and investigation history
 - [`docs/refactors/issue94/MMR_CURRENT_STATE.md`](refactors/issue94/MMR_CURRENT_STATE.md) for the maintained/scoped MMR current-state analysis and later 68-page evaluation
 - [`docs/refactors/issue414/MMR_STAFF_CONSENSUS.md`](refactors/issue414/MMR_STAFF_CONSENSUS.md) for staff-tie OCR aggregation, retained Full68 comparisons and preserved rejected candidates
-- [`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) only when a compact legacy milestone summary is useful; exact former diary prose is in Git history
+- [`docs/history/DEVLOG_MEASURE_NUMBERING.md`](history/DEVLOG_MEASURE_NUMBERING.md) only when a compact legacy milestone summary is useful; exact former diary prose is in Git history
 - [`docs/refactors/issue194/`](refactors/issue194/)
 - [`docs/refactors/issue201/`](refactors/issue201/)
 - [Issue #244](https://github.com/M763468/PDFScoreBar/issues/244) for the row-start numbering forensic investigation
@@ -105,7 +105,7 @@ Start with:
 
 - [`docs/MOVEMENT_BOUNDARY_CONTRACT.md`](MOVEMENT_BOUNDARY_CONTRACT.md) for the
   current resolved consumer and candidate/evidence contracts;
-- [`docs/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`](ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md)
+- [`docs/history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`](history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md)
   for the expanded seven-score corpus, holdout/model comparisons, review
   producer evidence, and automatic detection disposition;
 - current source/tests for numbering behavior.
@@ -123,7 +123,7 @@ Primary lineage:
 Start with:
 
 - [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md), including the current detector-input provenance contract
-- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md)
+- [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md)
 - [Issue #245](https://github.com/M763468/PDFScoreBar/issues/245) / [PR #251](https://github.com/M763468/PDFScoreBar/pull/251) for forensic detail behind `fresh_upstream` vs `precomputed_candidate_route`
 - #255 / #264 / #274 Issue records when further forensic detail is required
 
@@ -193,7 +193,7 @@ Start with:
 - [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md)
 - [`docs/ai-workflow/`](ai-workflow/)
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)
-- [`docs/DEVELOPMENT_LOG.md`](DEVELOPMENT_LOG.md) only for the compact pre-/early-Issue project-origin milestone ledger
+- [`docs/history/DEVELOPMENT_LOG.md`](history/DEVELOPMENT_LOG.md) only for the compact pre-/early-Issue project-origin milestone ledger
 
 Issue #45 / PR #184 and Issue #185 / PR #188 are the historical anchors for script-layout cleanup. Issue #63 retains the distilled environment/path follow-up that previously lived in a temporary task bundle. Issue #6 / PR #11 marks the transition to standardized Makefile/ruff development workflow.
 

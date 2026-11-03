@@ -31,6 +31,6 @@
 - [最終出力](corrected_final_output.ja.md)、[番号付けの幾何](NUMBERING_GEOMETRY_CONTRACT.ja.md)、[楽章境界](MOVEMENT_BOUNDARY_CONTRACT.ja.md)、[GT 準備](GT_PREPARATION_POLICY.ja.md)、[小節線マッチング](BARLINE_MATCHER.ja.md)は、より限定された出力や検証の振る舞いを説明します。
 - [モデル成果物契約](MODEL_ARTIFACT_CONTRACT.ja.md)は現在のモデル識別情報を定義し、[本番モデル成果物](MODEL_ARTIFACTS.ja.md)は公開とキャッシュのワークフローを扱います。[探索・比較用モデルの選択](dev/EXPERIMENT_MODEL_SELECTION.md)（日本語正本、[English](dev/EXPERIMENT_MODEL_SELECTION.en.md)）は、明示的な候補パス、固定比較、本番検証に関する開発者向けガイドです。
 - [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)、[回帰ワークフロー](REGRESSION_TEST_WORKFLOW.ja.md)、[スクリプト管理](SCRIPT_MANAGEMENT.md)（日本語正本、[English](SCRIPT_MANAGEMENT.en.md)）はリポジトリ開発のガイドです。
-- [将来のサービスアーキテクチャ（英語、未翻訳）](FUTURE_SERVICE_ARCHITECTURE.md)はロードマップであり、現在のランタイムの振る舞いではありません。[Two-HOMR マイルストーン（英語、未翻訳）](TWO_HOMR_MILESTONE.md)は固定された比較であり、現在の本番設定ではありません。
+- [将来のサービスアーキテクチャ（英語、未翻訳）](FUTURE_SERVICE_ARCHITECTURE.md)はロードマップであり、現在のランタイムの振る舞いではありません。[Two-HOMR マイルストーン（英語、未翻訳）](history/TWO_HOMR_MILESTONE.md)は固定された比較であり、現在の本番設定ではありません。
 
 過去の調査には[履歴索引](HISTORY_INDEX.ja.md)を使用し、該当する Issue または受け入れ済みの結果を探してください。現在の振る舞いはソース、テスト、使用中の設定、現在のアーキテクチャ文書で定義されます。振る舞いが変わった場合は該当する現在の契約を更新し、過去のメモを別の一般ガイドにコピーしないでください。

@@ -29,7 +29,7 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 ## 正規の現在の入口
 
 - [`docs/PIPELINE_ARCHITECTURE.ja.md`](PIPELINE_ARCHITECTURE.ja.md) — 現在の本番アーキテクチャ
-- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md)（英語） — 固定した、受け入れ済みの #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) の比較のマイルストーン
+- [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md)（英語） — 固定した、受け入れ済みの #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) の比較のマイルストーン
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)（英語） — 文書の分類
 - [`docs/ENVIRONMENTS.ja.md`](ENVIRONMENTS.ja.md) — 保守対象の実行環境
 - [`docs/BRANCH_POLICY.ja.md`](BRANCH_POLICY.ja.md) — ブランチ方針
@@ -57,8 +57,8 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 - [Issue #142](https://github.com/M763468/PDFScoreBar/issues/142)（CNN スコアリングの NMS を既定で無効にする受け入れた判断と、PR #154 の証拠）
 - [Issue #141](https://github.com/M763468/PDFScoreBar/issues/141)（Stage-E のパイプライン全体の検証の記録）
 - [Issue #163](https://github.com/M763468/PDFScoreBar/issues/163)（却下した HOMR/SR の重ね合わせの実験、証拠のブランチ・commit、固定したサブセットでの再現の詳細）
-- [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md)
-- [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md)
+- [`docs/history/ISSUE120_EVALUATION_CONTRACT.md`](history/ISSUE120_EVALUATION_CONTRACT.md)
+- [`docs/history/ISSUE120_ARTIFACT_RETENTION.md`](history/ISSUE120_ARTIFACT_RETENTION.md)
 - [`docs/refactors/issue120/`](refactors/issue120/)
 
 詳細な調査には Issue のスレッドを使います。古い再構築のブランチのモデルや、古い `next step` の節を、現在のブランチの状態として解釈しないでください。
@@ -90,7 +90,7 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 - [Issue #94](https://github.com/M763468/PDFScoreBar/issues/94)（初期の番号付け・MMR のマイルストーンと調査の履歴のまとめ）
 - [`docs/refactors/issue94/MMR_CURRENT_STATE.md`](refactors/issue94/MMR_CURRENT_STATE.md)（保守対象・範囲を限った MMR の現状の分析と、その後の68ページでの評価）
 - [`docs/refactors/issue414/MMR_STAFF_CONSENSUS.md`](refactors/issue414/MMR_STAFF_CONSENSUS.md)（五線の同点時の OCR の集約、保持している Full68 の比較、残している却下した候補）
-- [`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md)（簡潔な過去のマイルストーンの要約が役立つ場合だけ。以前の日誌の正確な文章は Git の履歴にあります）
+- [`docs/history/DEVLOG_MEASURE_NUMBERING.md`](history/DEVLOG_MEASURE_NUMBERING.md)（簡潔な過去のマイルストーンの要約が役立つ場合だけ。以前の日誌の正確な文章は Git の履歴にあります）
 - [`docs/refactors/issue194/`](refactors/issue194/)
 - [`docs/refactors/issue201/`](refactors/issue201/)
 - [Issue #244](https://github.com/M763468/PDFScoreBar/issues/244)（段の先頭の番号付けについての詳細な調査）
@@ -108,7 +108,7 @@ PDFScoreBar には長い調査の歴史があります。この索引は、古�
 最初に読むもの:
 
 - [`docs/MOVEMENT_BOUNDARY_CONTRACT.ja.md`](MOVEMENT_BOUNDARY_CONTRACT.ja.md)（現在の確定済み境界の利用側と、候補・根拠の契約）
-- [`docs/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`](ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md)（拡張した7曲のコーパス、ホールドアウト・モデルの比較、レビュー用生成器の証拠、自動検出の判定）
+- [`docs/history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`](history/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md)（拡張した7曲のコーパス、ホールドアウト・モデルの比較、レビュー用生成器の証拠、自動検出の判定）
 - 番号付けの挙動については現在のソース・テスト
 
 Issue #268 は利用とリセットの意味を所有します。Issue #333 は、小節レベルの楽章の開始の根拠を見つけられず、レビュー専用の幾何による候補の生成器を承認し、黙って動く自動の生成器は承認しませんでした。
@@ -122,7 +122,7 @@ Issue #268 は利用とリセットの意味を所有します。Issue #333 は�
 最初に読むもの:
 
 - [`docs/PIPELINE_ARCHITECTURE.ja.md`](PIPELINE_ARCHITECTURE.ja.md)（現在の検出器の入力の来歴の契約を含む）
-- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md)（英語）
+- [`docs/history/TWO_HOMR_MILESTONE.md`](history/TWO_HOMR_MILESTONE.md)（英語）
 - [Issue #245](https://github.com/M763468/PDFScoreBar/issues/245) / [PR #251](https://github.com/M763468/PDFScoreBar/pull/251)（`fresh_upstream` と `precomputed_candidate_route` の違いの背景にある詳細な調査）
 - さらに詳細な調査が必要な場合は #255 / #264 / #274 の Issue の記録
 
@@ -192,7 +192,7 @@ Issue #268 は利用とリセットの意味を所有します。Issue #333 は�
 - [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md)
 - [`docs/ai-workflow/`](ai-workflow/)
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)（英語）
-- [`docs/DEVELOPMENT_LOG.md`](DEVELOPMENT_LOG.md)（英語。Issue 以前・初期のプロジェクトの起源のマイルストーンを簡潔にまとめた台帳としてだけ）
+- [`docs/history/DEVELOPMENT_LOG.md`](history/DEVELOPMENT_LOG.md)（英語。Issue 以前・初期のプロジェクトの起源のマイルストーンを簡潔にまとめた台帳としてだけ）
 
 Issue #45 / PR #184 と Issue #185 / PR #188 は、スクリプトの配置の整理の過去の目印です。Issue #63 は、以前は一時的なタスクの一式にあった、環境・パスのフォローアップのまとめを保持しています。Issue #6 / PR #11 は、標準化した Makefile・ruff の開発ワークフローへの移行を示します。
 

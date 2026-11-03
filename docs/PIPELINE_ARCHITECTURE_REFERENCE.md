@@ -474,7 +474,7 @@ semantics, lifecycle/error/resource ownership, or caller-visible isolation assum
 [`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md). Update that document only when
 the long-term boundary materially changes; do not copy detailed pipeline internals into it.
 
-See `docs/TWO_HOMR_MILESTONE.md` for the accepted Issue #274 accuracy/performance milestone
+See `docs/history/TWO_HOMR_MILESTONE.md` for the accepted Issue #274 accuracy/performance milestone
 that precedes the Issue #284 SR scheduling/runtime optimization.
 
 ## Configurable source concurrency

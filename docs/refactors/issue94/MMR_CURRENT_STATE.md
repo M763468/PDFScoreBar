@@ -14,7 +14,7 @@ Out of scope for this pass:
 
 ## Historical context from `feature/measure_numbering`
 
-`docs/DEVLOG_MEASURE_NUMBERING.md` shows that multi-measure rests were initially treated as a measure-numbering rule question: a rest should increment by the number printed above the rest rather than by one printed measure.
+`docs/history/DEVLOG_MEASURE_NUMBERING.md` shows that multi-measure rests were initially treated as a measure-numbering rule question: a rest should increment by the number printed above the rest rather than by one printed measure.
 
 The old branch then introduced a manual override model:
 

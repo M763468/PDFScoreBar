@@ -463,7 +463,7 @@ final/review成果物、補正の意味、ライフサイクル/エラー/リソ
 長期的な境界が実質的に変わる場合にのみ同文書を更新し、詳細なパイプライン内部処理をコピーしない。
 
 Issue #284のSRスケジューリング/実行環境最適化に先立つ、採択済みIssue #274の精度/性能マイルストーンは
-`docs/TWO_HOMR_MILESTONE.md`を参照。
+`docs/history/TWO_HOMR_MILESTONE.md`を参照。
 
 ## source生成の並列数設定
 

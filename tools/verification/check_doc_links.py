@@ -16,7 +16,8 @@ from pathlib import Path
 from urllib.parse import unquote
 
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
-INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
+INLINE_CODE = re.compile(r"(`+)(?:(?!\1)(?!\n[ \t]*\n).)+?\1", re.DOTALL)
+SETEXT = re.compile(r"^ {0,3}(?:=+|-+)\s*$")
 HEADING = re.compile(r"^ {0,3}#{1,6}\s+(.*?)\s*#*\s*$")
 ANCHOR = re.compile(r"<a\s+(?:id|name)=\"([^\"]+)\"", re.IGNORECASE)
 REFERENCE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(<[^>]*>|\S+)")
@@ -52,11 +53,22 @@ def slugify(heading: str) -> str:
 def anchors(text: str) -> set[str]:
     found = set(ANCHOR.findall(text))
     seen: dict[str, int] = {}
-    for line in prose_lines(text):
+    lines = prose_lines(text)
+    for index, line in enumerate(lines):
         match = HEADING.match(line)
-        if not match:
+        if match:
+            heading = match.group(1)
+        elif (
+            index + 1 < len(lines)
+            and SETEXT.match(lines[index + 1])
+            and line.strip()
+            and not line.lstrip().startswith(("|", "-", "*", "+", ">"))
+            and not HEADING.match(line)
+        ):
+            heading = line
+        else:
             continue
-        slug = slugify(match.group(1))
+        slug = slugify(heading)
         count = seen.get(slug, 0)
         found.add(slug if count == 0 else f"{slug}-{count}")
         seen[slug] = count + 1
@@ -102,13 +114,15 @@ def destinations(line: str) -> list[str]:
 def links(text: str) -> list[str]:
     """Return inline and reference-definition destinations with Markdown escapes decoded."""
     targets: list[str] = []
-    for line in prose_lines(text):
+    prose = "\n".join(prose_lines(text))
+    prose = INLINE_CODE.sub(lambda match: "\n" * match.group(0).count("\n"), prose)
+    for line in prose.split("\n"):
         reference = REFERENCE.match(line)
         if reference:
             target = reference.group(1)
             targets.append(target[1:-1] if target.startswith("<") else target)
             continue
-        targets.extend(destinations(INLINE_CODE.sub("", line)))
+        targets.extend(destinations(line))
     return [ESCAPE.sub(r"\1", target) for target in targets]
 
 

@@ -66,6 +66,21 @@ class DocLinkChecks(unittest.TestCase):
         body = "[a][ok] [b][bad]\n\n[ok]: target.md#repeat\n[bad]: missing.md\n"
         self.assertEqual(self.run_check(body), ["missing target: source.md: missing.md"])
 
+    def test_setext_headings_are_anchors(self):
+        (self.root / "setext.md").write_text(
+            "Setext title\n============\n\nSecond part\n-----------\n", encoding="utf-8"
+        )
+        body = "[a](setext.md#setext-title) [b](setext.md#second-part)\n"
+        self.assertEqual(self.run_check(body), [])
+
+    def test_inline_code_spanning_lines_is_ignored(self):
+        body = "Example `code\n[a](missing.md)\nend` text [b](target.md)\n"
+        self.assertEqual(self.run_check(body), [])
+        self.assertEqual(
+            self.run_check("Unclosed `tick\n\n[c](missing.md)\n"),
+            ["missing target: source.md: missing.md"],
+        )
+
     def test_relative_paths_are_resolved_against_root(self):
         source = self.root / "source.md"
         source.write_text("[a](target.md)\n", encoding="utf-8")

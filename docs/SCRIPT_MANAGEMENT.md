@@ -21,6 +21,8 @@
 
 実験で採用が決まったロジックは、必要なtest/config/provenanceとともにproduction側へ明示的に昇格させます。
 
+既存の例外（#480で確認、このルール文書では挙動を変更しない）: 標準の `detection.detector_route: standard` が使う `src/pipeline/detection/hybrid.py` はOMR-DLNを `experiments/models/eval_omr_dln.py` のsubprocessとして起動し、Issue #120 の `src/pipeline/detector_routes/dense_probe_candidate.py` は `tools.issue120.eval_full68_from_intermediates` をimportします。現行のcanonical route（`dense_full_pipeline`）が使うsupport worker（`src/pipeline/detection/current_support_worker.py`）が `experiments/models/eval_omr_dln.py` を参照しないことは `MINIMAL_MAINLINE_SURFACE.json` のreference checkで確認しています。新しいコードでこの種の例外を増やさないでください。解消するかどうかは別の実装判断とします。
+
 ### `tools/`
 
 複数Issueや日常運用で再利用するCLI/utilityを置きます。特定ページ・特定run・特定デバッグ局面にハードコードされたone-off scriptは原則ここへ残しません。

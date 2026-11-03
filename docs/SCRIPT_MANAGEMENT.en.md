@@ -1,10 +1,10 @@
 # Script management and directory rules
 
-<!-- translation: {"original":"SCRIPT_MANAGEMENT.md","source":{"sha256":"6e48200c89a13e4ec4e620a3fc83dd257f05454075f61e26bd6f630b51821737"},"state":"reviewed"} -->
+<!-- translation: {"original":"SCRIPT_MANAGEMENT.md","source":{"sha256":"134f38cc9a2828f86d7db10763f6309b666e040a1a7d6560ea70a57ae125ce6e"},"state":"reviewed"} -->
 
 [日本語 / Original](SCRIPT_MANAGEMENT.md) (Japanese original)
 
-Translation source: same PR / SHA-256 `6e48200c89a13e4ec4e620a3fc83dd257f05454075f61e26bd6f630b51821737`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
+Translation source: same PR / SHA-256 `134f38cc9a2828f86d7db10763f6309b666e040a1a7d6560ea70a57ae125ce6e`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
 
 This document defines where scripts belong in the current repository and when they are promoted, retained or deleted. The historical per-file move list remains in Git history and Issue #45 / PR #184; this document covers only the current rules.
 
@@ -24,6 +24,8 @@ Place scripts by **responsibility and lifetime**, not by "where it happens to be
 Current production behavior belongs here. Production code must not import `tools/` CLIs for convenience, or search `experiments/` to implicitly determine runtime inputs.
 
 Logic adopted from an experiment is explicitly promoted to the production side together with the required tests, config and provenance.
+
+Existing exceptions (confirmed in #480; this rules document does not change the behavior): `src/pipeline/detection/hybrid.py`, used by the standard `detection.detector_route: standard`, launches OMR-DLN as an `experiments/models/eval_omr_dln.py` subprocess, and the Issue #120 module `src/pipeline/detector_routes/dense_probe_candidate.py` imports `tools.issue120.eval_full68_from_intermediates`. A reference check in `MINIMAL_MAINLINE_SURFACE.json` confirms that the support worker used by the current canonical route (`dense_full_pipeline`), `src/pipeline/detection/current_support_worker.py`, does not reference `experiments/models/eval_omr_dln.py`. Do not add more exceptions of this kind in new code. Whether to remove them is a separate implementation decision.
 
 ### `tools/`
 

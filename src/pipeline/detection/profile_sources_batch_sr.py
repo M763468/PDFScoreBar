@@ -418,6 +418,9 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             model_validation=model_validation_mode(self.det_cfg),
             dry_run=self.dry_run,
         )
+        route_record = baseline_output.parent / "source_page_workers" / "omr_route.json"
+        route_record.parent.mkdir(parents=True, exist_ok=True)
+        route_record.write_text(json.dumps(self._omr_route, indent=2) + "\n", encoding="utf-8")
         omr_binding = (
             omr_job.bind_sources(self.images)
             if self._omr_route["route"] == omr_job.ROUTE_JOB

@@ -13,7 +13,7 @@ failed/passed gate history live in PR #478 (`docs/performance/issue459/` on
 | production model selection, not dry run, at least `min_pages` (2) pages, process UID in `allowed_uids` (`[0]`) | `job_reuse`: one OMR process for all ordered pages |
 | anything else (single page, non-root UID, exploration/comparison models, `mode: off`) | `per_page`: the existing one-OMR-process-per-page route |
 
-The decision and its reason are recorded as `omr_route` in the detector result. A failure in
+The decision and its reason are written to `source_page_workers/omr_route.json` before SR starts and returned as `omr_route` in the detector result. A failure in
 the job route fails the job; it never falls back to the per-page route. Single-page and
 non-root jobs are excluded because the measurements did not show a benefit there
 (root single-page warm/cold -1.10/-0.89%; UID1000 single-page cold -6.77%).

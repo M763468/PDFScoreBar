@@ -194,6 +194,8 @@ def test_root_multi_page_job_runs_one_omr_phase_before_sources(tmp_path, monkeyp
     detector, events, seen, (_, _, commands) = _drive(tmp_path, monkeypatch, 3)
     assert events == ["sr", "omr_job", "source", "source", "source"]
     assert detector._omr_route["route"] == "job_reuse"
+    record = tmp_path / "hybrid/source_page_workers/omr_route.json"
+    assert json.loads(record.read_text())["route"] == "job_reuse"
     assert all(h is not None and h["run_id"] == seen[0]["run_id"] for h in seen)
     assert commands[:2] == [["sr"], ["omr-job"]]
 
@@ -211,6 +213,8 @@ def test_excluded_jobs_keep_the_per_page_route(tmp_path, monkeypatch, count, uid
     assert "omr_job" not in events
     assert seen == [None] * count
     assert (detector._omr_route["route"], detector._omr_route["reason"]) == ("per_page", reason)
+    record = json.loads((tmp_path / "hybrid/source_page_workers/omr_route.json").read_text())
+    assert (record["route"], record["reason"]) == ("per_page", reason)
 
 
 def test_job_failure_never_falls_back_to_per_page_sources(tmp_path, monkeypatch):

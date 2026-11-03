@@ -14,6 +14,14 @@ from pathlib import Path
 
 import yaml
 
+SCOPES = {
+    "single": ("data/evaluation2/images/Shostakovich-Sym5-Va", "page_013.png"),
+    "multi": ("data/evaluation2/images/Shostakovich-Sym5-Va", "page_01[234].png"),
+    # Issue #459 adoption-v2 lifetime inputs: whole 25-page document and copied mixed shapes.
+    "long": ("data/evaluation2/images/Shostakovich-Sym5-Va", "page_*.png"),
+    "mixed": ("logs/issue459/inputs/mixed-shape-v2", "page_*.png"),
+}
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -28,7 +36,12 @@ def main() -> int:
     parser.add_argument("--home", default="/tmp", help="Explicit container HOME policy")
     parser.add_argument("--label", required=True)
     parser.add_argument("--image", required=True, help="Verified immutable sha256 image ID")
-    parser.add_argument("--scope", choices=("single", "multi"), default="single")
+    parser.add_argument(
+        "--scope",
+        choices=tuple(SCOPES),
+        default="single",
+        help="single/multi: Sym5 page_013 or 012-014; long/mixed: Issue459 v2 inputs",
+    )
     parser.add_argument("--compile-mode", choices=("production", "off"), default="production")
     parser.add_argument("--trace", action="store_true")
     parser.add_argument(
@@ -122,10 +135,8 @@ def main() -> int:
     compile_cache_empty = not any(compile_cache.iterdir())
     config = yaml.safe_load((root / "configs/dense_full_pipeline.yaml").read_text())
     config["run"] = {"run_id": "pipeline", "output_root": str(rel)}
-    config["inputs"]["pdf_to_images"] = {
-        "output_dir": "data/evaluation2/images/Shostakovich-Sym5-Va",
-        "image_glob": "page_013.png" if args.scope == "single" else "page_01[234].png",
-    }
+    image_dir, image_glob = SCOPES[args.scope]
+    config["inputs"]["pdf_to_images"] = {"output_dir": image_dir, "image_glob": image_glob}
     config["detection"]["hybrid_output_root"] = str(rel / "pipeline/hybrid_output")
     if args.compile_mode == "off":
         config["detection"]["sr_compile_mode"] = None

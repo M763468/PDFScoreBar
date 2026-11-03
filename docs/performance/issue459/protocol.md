@@ -1,7 +1,8 @@
 # OMR job protocol candidate v1
 
-Status: research implementation in `tools/issue459/`; not wired into the maintained
-production route. Select only through the experiment launcher's `--job-protocol
+Status: implemented research candidate, **not adopted** after the original root
+warm >=3% gate failed (2.5652% observed improvement; see [results.md](results.md)).
+It is not wired into the maintained production route. Select only through the experiment launcher's `--job-protocol
 --source-workers 1 --omr-reuse`. This changes the candidate and requires its own
 performance/quality results; PoC timings do not establish v1 performance.
 

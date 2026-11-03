@@ -81,6 +81,10 @@ class DocLinkChecks(unittest.TestCase):
             ["missing target: source.md: missing.md"],
         )
 
+    def test_query_string_is_not_part_of_the_path(self):
+        body = "[a](target.md?plain=1) [b](target.md?plain=1#repeat) ![c](target.md?raw=true)\n"
+        self.assertEqual(self.run_check(body), [])
+
     def test_relative_paths_are_resolved_against_root(self):
         source = self.root / "source.md"
         source.write_text("[a](target.md)\n", encoding="utf-8")

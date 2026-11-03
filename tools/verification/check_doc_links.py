@@ -135,7 +135,8 @@ def check(root: Path, files: list[Path]) -> list[str]:
         for target in links(text):
             if SCHEME.match(target):
                 continue
-            raw_path, _, fragment = target.partition("#")
+            location, _, fragment = target.partition("#")
+            raw_path = location.partition("?")[0]
             destination = (path.parent / unquote(raw_path)).resolve() if raw_path else path
             label = f"{path.relative_to(root)}: {target}"
             if not destination.exists():

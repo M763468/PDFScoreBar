@@ -8,17 +8,40 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
 import yaml
 
+SCOPES = {
+    "single": ("data/evaluation2/images/Shostakovich-Sym5-Va", "page_013.png"),
+    "multi": ("data/evaluation2/images/Shostakovich-Sym5-Va", "page_01[234].png"),
+    # Issue #459 adoption-v2 lifetime inputs: whole 25-page document and copied mixed shapes.
+    "long": ("data/evaluation2/images/Shostakovich-Sym5-Va", "page_*.png"),
+    "mixed": ("logs/issue459/inputs/mixed-shape-v2", "page_*.png"),
+}
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--job-protocol",
+        action="store_true",
+        help="Issue459 attested OMR job candidate; requires --omr-reuse",
+    )
+    parser.add_argument("--issue-id", type=int, default=447)
+    parser.add_argument("--uid", type=int, default=os.getuid())
+    parser.add_argument("--gid", type=int, default=os.getgid())
+    parser.add_argument("--home", default="/tmp", help="Explicit container HOME policy")
     parser.add_argument("--label", required=True)
     parser.add_argument("--image", required=True, help="Verified immutable sha256 image ID")
-    parser.add_argument("--scope", choices=("single", "multi"), default="single")
+    parser.add_argument(
+        "--scope",
+        choices=tuple(SCOPES),
+        default="single",
+        help="single/multi: Sym5 page_013 or 012-014; long/mixed: Issue459 v2 inputs",
+    )
     parser.add_argument("--compile-mode", choices=("production", "off"), default="production")
     parser.add_argument("--trace", action="store_true")
     parser.add_argument(
@@ -59,6 +82,10 @@ def main() -> int:
     )
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
+    if args.job_protocol and not args.omr_reuse:
+        parser.error("job protocol requires OMR reuse")
+    if args.issue_id <= 0 or args.uid < 0 or args.gid < 0:
+        parser.error("issue-id must be positive; uid/gid must be nonnegative")
     if args.omr_reuse and (args.source_workers is None or args.component):
         parser.error("OMR reuse requires E2E with explicit source-workers")
     if args.component == "source-paired" and args.source_workers is None:
@@ -75,6 +102,21 @@ def main() -> int:
             ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=root, text=True
         ).strip()
     ).parent
+    # Resolve explicitly: never silently substitute a different benchmark runtime.
+    subprocess.run(
+        [
+            sys.executable,
+            str(root / "scripts/docker_image_resolver.py"),
+            "resolve",
+            "--repo-root",
+            str(root),
+            "--image-ref",
+            args.image,
+            "--explicit",
+        ],
+        cwd=root,
+        check=True,
+    )
     cache = Path(
         os.environ.get(
             "PDFSCOREBAR_MODEL_CACHE",
@@ -84,7 +126,7 @@ def main() -> int:
             ),
         )
     )
-    issue = root / "logs/issue447"
+    issue = root / f"logs/issue{args.issue_id}"
     dest = issue / "runs" / args.label
     dest.mkdir(parents=True, exist_ok=False)
     rel = dest.relative_to(root)
@@ -93,10 +135,8 @@ def main() -> int:
     compile_cache_empty = not any(compile_cache.iterdir())
     config = yaml.safe_load((root / "configs/dense_full_pipeline.yaml").read_text())
     config["run"] = {"run_id": "pipeline", "output_root": str(rel)}
-    config["inputs"]["pdf_to_images"] = {
-        "output_dir": "data/evaluation2/images/Shostakovich-Sym5-Va",
-        "image_glob": "page_013.png" if args.scope == "single" else "page_01[234].png",
-    }
+    image_dir, image_glob = SCOPES[args.scope]
+    config["inputs"]["pdf_to_images"] = {"output_dir": image_dir, "image_glob": image_glob}
     config["detection"]["hybrid_output_root"] = str(rel / "pipeline/hybrid_output")
     if args.compile_mode == "off":
         config["detection"]["sr_compile_mode"] = None
@@ -104,7 +144,7 @@ def main() -> int:
     config_path.write_text(yaml.safe_dump(config, sort_keys=False))
     omr_manifest = json.loads((root / "models/omr_dln/manifest.json").read_text())
     omr = omr_manifest["runtime_path"]
-    name = "pdfscore-issue447-" + args.label
+    name = f"pdfscore-issue{args.issue_id}-" + args.label
     command = [
         "docker",
         "run",
@@ -114,7 +154,7 @@ def main() -> int:
         "--gpus",
         "all",
         "--user",
-        f"{os.getuid()}:{os.getgid()}",
+        f"{args.uid}:{args.gid}",
         "-v",
         f"{root}:/workspace",
         "-w",
@@ -132,7 +172,7 @@ def main() -> int:
         "-e",
         "PDFSCOREBAR_MODEL_CACHE=/model-cache",
         "-e",
-        "HOME=/tmp",
+        f"HOME={args.home}",
         "-e",
         "TORCHINDUCTOR_CACHE_DIR=/compile-cache/inductor",
         "-e",
@@ -157,6 +197,8 @@ def main() -> int:
             "-e",
             "PYTHONPYCACHEPREFIX=/python-cache",
         ]
+    if args.job_protocol:
+        command += ["-e", "ISSUE459_JOB_PROTOCOL=1"]
     if args.omr_reuse:
         command += ["-e", "ISSUE447_OMR_REUSE=1"]
     if args.source_workers is not None:
@@ -167,7 +209,12 @@ def main() -> int:
             f"ISSUE447_SOURCE_EVENTS=/workspace/{rel}/source-schedule.jsonl",
         ]
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-    command += ["-e", f"PDFSCORE_HOST_SOURCE_COMMIT={commit}"]
+    command += [
+        "-e",
+        f"PDFSCORE_HOST_SOURCE_COMMIT={commit}",
+        "-e",
+        f"PDFSCORE_DOCKER_IMAGE_ID={args.image}",
+    ]
     if args.trace:
         command += [
             "-e",
@@ -231,6 +278,8 @@ def main() -> int:
     (dest / "containers-before.json").write_text(
         subprocess.check_output(["docker", "ps", "--format", "{{json .}}"], text=True)
     )
+    scripts = sorted((root / "tools/issue447").glob("*.py"))
+    scripts += sorted((root / "tools/issue459").glob("*.py"))
     provenance = {
         "command": command,
         "cwd": str(root),
@@ -242,15 +291,14 @@ def main() -> int:
         "experiment": {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         "compile_cache_empty_at_start": compile_cache_empty,
         "script_sha256": {
-            str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted((root / "tools/issue447").glob("*.py"))
+            str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in scripts
         },
         "cache_state": "fresh container/process; persistent Issue-local compile cache; OS cache not flushed",
     }
     (dest / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     snapshots = dest / "script-snapshots"
     snapshots.mkdir()
-    for script in sorted((root / "tools/issue447").glob("*.py")):
+    for script in scripts:
         (snapshots / script.name).write_bytes(script.read_bytes())
     streams = []
     monitors = []
@@ -295,7 +343,7 @@ def main() -> int:
                         "docker",
                         "exec",
                         "--user",
-                        f"{os.getuid()}:{os.getgid()}",
+                        f"{args.uid}:{args.gid}",
                         "-w",
                         "/workspace",
                         name,

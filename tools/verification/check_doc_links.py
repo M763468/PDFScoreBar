@@ -17,7 +17,6 @@ from urllib.parse import unquote
 
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
-LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\]]*\])*\]\(\s*(<[^>]*>|[^\s)]+)(?:\s+\"[^\"]*\")?\s*\)")
 HEADING = re.compile(r"^ {0,3}#{1,6}\s+(.*?)\s*#*\s*$")
 ANCHOR = re.compile(r"<a\s+(?:id|name)=\"([^\"]+)\"", re.IGNORECASE)
 SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:|^//")
@@ -62,11 +61,46 @@ def anchors(text: str) -> set[str]:
     return found
 
 
+def destinations(line: str) -> list[str]:
+    """Extract inline link destinations, allowing balanced parentheses inside them."""
+    targets: list[str] = []
+    start = line.find("](")
+    while start != -1:
+        index = start + 2
+        while index < len(line) and line[index] in " \t":
+            index += 1
+        if line.startswith("<", index):
+            end = line.find(">", index)
+            if end != -1:
+                targets.append(line[index + 1 : end])
+            start = line.find("](", index)
+            continue
+        depth = 0
+        begin = index
+        while index < len(line):
+            char = line[index]
+            if char == "\\" and index + 1 < len(line):
+                index += 2
+                continue
+            if char.isspace():
+                break
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                if depth == 0:
+                    break
+                depth -= 1
+            index += 1
+        if index > begin:
+            targets.append(line[begin:index])
+        start = line.find("](", index)
+    return targets
+
+
 def links(text: str) -> list[str]:
     targets: list[str] = []
     for line in prose_lines(text):
-        for target in LINK.findall(INLINE_CODE.sub("", line)):
-            targets.append(target[1:-1] if target.startswith("<") else target)
+        targets.extend(destinations(INLINE_CODE.sub("", line)))
     return targets
 
 
@@ -74,7 +108,7 @@ def check(root: Path, files: list[Path]) -> list[str]:
     errors: list[str] = []
     anchor_cache: dict[Path, set[str]] = {}
     root = root.resolve()
-    for path in files:
+    for path in (item.resolve() for item in files):
         text = path.read_text(encoding="utf-8", errors="replace")
         for target in links(text):
             if SCHEME.match(target):
@@ -111,8 +145,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
     args = parser.parse_args()
-    files = tracked_markdown(args.root)
-    errors = check(args.root, files)
+    root = args.root.resolve()
+    files = tracked_markdown(root)
+    errors = check(root, files)
     for error in errors:
         print(error)
     print(f"Checked local links in {len(files)} Markdown file(s); {len(errors)} problem(s)")

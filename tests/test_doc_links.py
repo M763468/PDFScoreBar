@@ -1,5 +1,6 @@
 """Dependency-free regression fixtures for the Markdown link checker."""
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -48,6 +49,20 @@ class DocLinkChecks(unittest.TestCase):
     def test_percent_encoded_target(self):
         (self.root / "main().md").write_text("# Main\n", encoding="utf-8")
         self.assertEqual(self.run_check("[m](main%28%29.md)\n"), [])
+
+    def test_balanced_parentheses_and_angle_destinations(self):
+        (self.root / "guide(v1).md").write_text("# Guide\n", encoding="utf-8")
+        body = '[a](guide(v1).md) [b](<guide(v1).md#guide>) [c](target.md "title")\n'
+        self.assertEqual(self.run_check(body), [])
+        self.assertEqual(
+            self.run_check("[d](guide(v2).md)\n"), ["missing target: source.md: guide(v2).md"]
+        )
+
+    def test_relative_paths_are_resolved_against_root(self):
+        source = self.root / "source.md"
+        source.write_text("[a](target.md)\n", encoding="utf-8")
+        relative = Path(os.path.relpath(source))
+        self.assertEqual(check(Path(os.path.relpath(self.root)), [relative]), [])
 
     def test_slugify_keeps_unicode_and_drops_punctuation(self):
         self.assertEqual(slugify("Phase A: staff, measures (v1)"), "phase-a-staff-measures-v1")

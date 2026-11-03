@@ -36,7 +36,8 @@ do not indicate full translation.
   and [telemetry](ENGINE_TELEMETRY.md) ([日本語](ENGINE_TELEMETRY.ja.md)) refine the one-job contract.
   [Service-readiness gates](ENGINE_SERVICE_READINESS.md) ([日本語](ENGINE_SERVICE_READINESS.ja.md))
   describe supported executor behavior and compatibility checks; future worker isolation remains separate.
-- [Final output](corrected_final_output.md) ([日本語](corrected_final_output.ja.md)), [numbering geometry](NUMBERING_GEOMETRY_CONTRACT.md),
+- [Final output](corrected_final_output.md) ([日本語](corrected_final_output.ja.md)), [numbering geometry](NUMBERING_GEOMETRY_CONTRACT.md) ([日本語](NUMBERING_GEOMETRY_CONTRACT.ja.md)),
+  [movement boundaries](MOVEMENT_BOUNDARY_CONTRACT.md) ([日本語](MOVEMENT_BOUNDARY_CONTRACT.ja.md)),
   [GT preparation](GT_PREPARATION_POLICY.md) ([日本語](GT_PREPARATION_POLICY.ja.md)), and [barline matching](BARLINE_MATCHER.md) ([日本語](BARLINE_MATCHER.ja.md))
   describe narrower output or validation behavior.
 - [Model artifact contract](MODEL_ARTIFACT_CONTRACT.md) ([日本語](MODEL_ARTIFACT_CONTRACT.ja.md)) defines current model identities;

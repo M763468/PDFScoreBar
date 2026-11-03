@@ -1,10 +1,10 @@
 # PR単位の軽量検証の手順
 
-<!-- translation: {"original":"PR_SLICE_VALIDATION.md","source":{"sha256":"9778e35c967b254678bcc5681a0d8a3644a797da5528d67497a31df9e8f2fb74"},"state":"reviewed"} -->
+<!-- translation: {"original":"PR_SLICE_VALIDATION.md","source":{"sha256":"6db4be072c19e00c086eb2526ba51e199d5f4b4390fbc2b5438c1cc3392a4d2b"},"state":"reviewed"} -->
 
 [English / 原文](PR_SLICE_VALIDATION.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `9778e35c967b254678bcc5681a0d8a3644a797da5528d67497a31df9e8f2fb74`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `6db4be072c19e00c086eb2526ba51e199d5f4b4390fbc2b5438c1cc3392a4d2b`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この文書は、範囲を絞ったPRのための、ローカルでの軽量な検証の手順を定めます。フォーマッタだけの追加コミットを防ぎ、範囲を絞った pytest のセットをレビューの繰り返しで再利用できるようにすることが目的です。
 
@@ -93,7 +93,7 @@ chmod +x .git/hooks/pre-push
 
 ## GitHub Actions での対象範囲
 
-`.github/workflows/pr-validation.yml` のPR検証ワークフローは、`develop` と `main` へのプルリクエストと、手動実行で動きます。その `make lint` ジョブは、文書の翻訳来歴（`tools/verification/check_doc_translations.py` とそのテスト）、Makefile のリポジトリ参照（`make check-makefile`）、`make lint` を確認します。`engine contract compatibility` ジョブは、少数の依存パッケージをインストールし、[設定リファレンス](CONFIGURATION_REFERENCE.ja.md)が正規の設定と一致することを確認（`tests/test_configuration_reference.py`）したうえで、固定したエンジン契約の pytest ファイル一覧を実行します。
+`.github/workflows/pr-validation.yml` のPR検証ワークフローは、`develop` と `main` へのプルリクエストと、手動実行で動きます。その `make lint` ジョブは、文書の翻訳来歴（`tools/verification/check_doc_translations.py` とそのテスト）、Markdown のローカルリンクとフラグメント（`tools/verification/check_doc_links.py` とそのテスト）、Makefile のリポジトリ参照（`make check-makefile`）、`make lint` を確認します。`engine contract compatibility` ジョブは、少数の依存パッケージをインストールし、[設定リファレンス](CONFIGURATION_REFERENCE.ja.md)が正規の設定と一致することを確認（`tests/test_configuration_reference.py`）したうえで、固定したエンジン契約の pytest ファイル一覧を実行します。
 
 `scripts/pr_validation_profiles/` にあるプロファイル単位の限定 pytest は、GitHub Actions では実行されません。選んだテストによっては、PyMuPDF、OpenCV、torch 関連のパッケージ、OCR のバックエンド、Docker、GPU、モデル成果物などの任意または重い依存関係が必要になります。プロファイルについて安定したCIの依存関係の層が定まるまでは、ローカルでの確認のままとします。
 

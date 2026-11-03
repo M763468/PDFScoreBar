@@ -1,12 +1,12 @@
 # 文書の言語・更新方針
 
-<!-- translation: {"original":"DOCUMENTATION_LANGUAGE_POLICY.md","source":{"sha256":"0722ffcb0693a9683168ff746edb584a64f2d7b958ffba2ec1e092b1bd897f16"},"state":"draft"} -->
+<!-- translation: {"original":"DOCUMENTATION_LANGUAGE_POLICY.md","source":{"sha256":"63817ec0cb88587c92fa5b5378769b0a23d1c27251a8220b33ad28ea8b38169b"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_LANGUAGE_POLICY.md)
 
 - 原文: [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md)（英語）。
-- 翻訳元: same PR。原文ファイルの SHA-256: `0722ffcb0693a9683168ff746edb584a64f2d7b958ffba2ec1e092b1bd897f16`。
-- 状態: `draft`。全文に対応する日本語版。意味・網羅性のレビューはPRで記録する。
+- 翻訳元: same PR。原文ファイルの SHA-256: `63817ec0cb88587c92fa5b5378769b0a23d1c27251a8220b33ad28ea8b38169b`。
+- 状態: `reviewed`。全文に対応する日本語版。原文との意味・制約・例外と日本語の可読性を確認済み（#489）。
 
 本方針はEpic #446に対応する。[文書台帳](DOCUMENTATION_INVENTORY.md)で適用範囲と
 未翻訳を管理し、[文書ガイド](README.md)を入口とする。将来設計や履歴資料を現行の
@@ -73,8 +73,8 @@ production動作を暗黙に変更したり、原文にない保証を翻訳に�
 
 ## 検証と配布
 
-docs-onlyの変更は`git diff --check`と、変更したローカルリンク、アンカー、
-コマンド参照の確認を実施する。実行動作にも影響する場合は
+docs-onlyの変更は`git diff --check`、`python3 tools/verification/check_doc_links.py`による
+ローカルリンクとアンカーの確認、変更したコマンド参照の確認を実施する。実行動作にも影響する場合は
 [検証方針](dev/VALIDATION_POLICY.md)に従う。翻訳だけならGPU実行やfull evaluationは
 不要。リンク確認はコマンド実行やruntimeの正しさを保証しない。
 
@@ -92,7 +92,7 @@ docs-onlyの変更は`git diff --check`と、変更したローカルリンク�
 各対応訳にJSONコメントをちょうど1件置く。パスはそのファイルからの相対パスとする。
 
 ```text
-<!-- translation: {"original":"guide.md","source":{"sha256":"<64 lowercase hex>"},"state":"draft"} -->
+<!-- translation: {"original":"guide.md","source":{"sha256":"<64 lowercase hex>"},"state":"reviewed"} -->
 ```
 
 `source.sha256`が`same PR`形式に相当する。代わりに
@@ -107,3 +107,8 @@ shallow checkoutのCIでは、履歴が利用可能になるまで由来不明�
 
 このツールは構文・参照・provenanceの確認用であり、翻訳の忠実性、自然さ、実装との
 技術的整合性を保証しない。一般のMarkdownアンカー検証は重複実装しない。
+
+`python3 tools/verification/check_doc_links.py`は、追跡しているすべてのMarkdownファイルの
+相対リンクと`#fragment`アンカーが、実在するファイルと見出しまたは明示的なアンカーに
+解決できることを確認する。PR検証workflowがこのチェックと追加依存のないテストを実行する。
+外部URLや、リンク先の内容が現行かどうかは確認しない。

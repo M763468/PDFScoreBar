@@ -75,8 +75,8 @@ sections. Missing counterparts remain explicit inventory backlog, not claimed co
 
 ## Validation and distribution
 
-For documentation-only work, run `git diff --check` and inspect changed local links,
-anchors and command references. Follow [validation policy](dev/VALIDATION_POLICY.md)
+For documentation-only work, run `git diff --check`, check local links and anchors with
+`python3 tools/verification/check_doc_links.py`, and inspect changed command references. Follow [validation policy](dev/VALIDATION_POLICY.md)
 when a change also affects executable behavior. Translation alone needs no GPU run or
 full evaluation. A link check does not establish command execution or runtime correctness.
 
@@ -110,3 +110,8 @@ A shallow CI checkout may therefore report unknown provenance until history is a
 
 This tool checks syntax, references and provenance, not translation fidelity, naturalness,
 or consistency with implementation. It does not duplicate general Markdown anchor checking.
+
+`python3 tools/verification/check_doc_links.py` checks that relative links and `#fragment`
+anchors in every tracked Markdown file resolve to an existing file and heading or explicit
+anchor. The PR validation workflow runs it and its dependency-free tests. It does not check
+external URLs or whether the linked content is current.

@@ -74,7 +74,6 @@ it does not inherit earlier acceptance results.
 | --- | --- | --- |
 | `steps.pdf_to_images` | `false` | Render `inputs.pdf_path` to page images before detection. |
 | `steps.detection` | `true` | Run barline detection. |
-| `steps.filter_pages` | `true` | **Not read by current source.** Page filters (`filters`) are always resolved. The key has no effect. |
 | `steps.apply_barline_overrides` | `false` | Apply `inputs.barline_overrides` during numbering. |
 | `steps.numbering_base` | `true` | Run the base measure-numbering phase. |
 | `steps.mmr_overrides` | `true` | Run multi-measure-rest recognition and its overrides. |
@@ -147,7 +146,6 @@ Page indices in these settings are 1-based.
 | Key | Canonical value | Meaning |
 | --- | --- | --- |
 | `mmr.model_path` | `models/mmr/mmr_classifier_best.pth` | Tracked production MMR classifier. |
-| `mmr.ocr_lang` | `eng` | **Not read by current source.** The key has no effect. |
 | `mmr.enable_rotation_tta` | `false` | Rotation test-time augmentation for MMR OCR. |
 
 ### `numbering`
@@ -155,6 +153,10 @@ Page indices in these settings are 1-based.
 | Key | Canonical value | Meaning |
 | --- | --- | --- |
 | `numbering.force_single_system` | `false` | Treat each staff as its own system (one staff per system). |
+
+## Legacy no-op keys
+
+`steps.filter_pages` and `mmr.ocr_lang` are not read by the current pipeline. They are omitted from the canonical configuration; existing configurations containing them remain accepted but the values have no effect. Page filtering is controlled by `filters`.
 
 ## Optional keys documented elsewhere
 

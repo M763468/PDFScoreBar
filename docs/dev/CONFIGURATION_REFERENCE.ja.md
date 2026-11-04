@@ -1,10 +1,10 @@
 # パイプラインの設定と実行入口のリファレンス
 
-<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"e95dd9fe237113686de44cf4fd9563c478b0d675cca18aaf346f5a9863b794aa"},"state":"reviewed"} -->
+<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"085ef04ad1268157e34828b596e214d8aa163bf04059599a82c57ce890dba261"},"state":"reviewed"} -->
 
 [English / 原文](CONFIGURATION_REFERENCE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `e95dd9fe237113686de44cf4fd9563c478b0d675cca18aaf346f5a9863b794aa`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `085ef04ad1268157e34828b596e214d8aa163bf04059599a82c57ce890dba261`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 このリファレンスは、開発用パイプラインの起動方法と、正規の本番設定 `configs/dense_full_pipeline.yaml` の各キーが何を制御するかをまとめたものです。現在のソースの挙動を説明するもので、既定値を変えたり新しい設定を定めたりはしません。PR検証ワークフローで実行する `tests/test_configuration_reference.py` は、正規の設定のキーが本書または英語の原文のキーの表にない場合、複数回記載されている場合、記載した値が正規の値と異なる場合に失敗します。意味の列は検査しません。
 
@@ -64,7 +64,6 @@
 | --- | --- | --- |
 | `steps.pdf_to_images` | `false` | 検出の前に `inputs.pdf_path` をページ画像にレンダリングします。 |
 | `steps.detection` | `true` | 小節線の検出を実行します。 |
-| `steps.filter_pages` | `true` | **現在のソースでは読まれていません。** ページのフィルタ（`filters`）は常に判定されます。このキーには効果がありません。 |
 | `steps.apply_barline_overrides` | `false` | 番号付けのときに `inputs.barline_overrides` を適用します。 |
 | `steps.numbering_base` | `true` | 基本の小節番号付けのフェーズを実行します。 |
 | `steps.mmr_overrides` | `true` | 複小節休符の認識とその上書きを実行します。 |
@@ -137,7 +136,6 @@
 | キー | 正規の値 | 意味 |
 | --- | --- | --- |
 | `mmr.model_path` | `models/mmr/mmr_classifier_best.pth` | 追跡している本番の MMR 分類器。 |
-| `mmr.ocr_lang` | `eng` | **現在のソースでは読まれていません。** このキーには効果がありません。 |
 | `mmr.enable_rotation_tta` | `false` | MMR OCR での回転によるテスト時拡張。 |
 
 ### `numbering`
@@ -145,6 +143,10 @@
 | キー | 正規の値 | 意味 |
 | --- | --- | --- |
 | `numbering.force_single_system` | `false` | 各五線をそれぞれ独立した段として扱います（1段に1五線）。 |
+
+## 効果のない旧設定キー
+
+`steps.filter_pages` と `mmr.ocr_lang` は現在のパイプラインでは読み取られません。正規設定からは削除しています。これらを含む既存設定も受け付けますが、値は動作に影響しません。ページのフィルタは `filters` で制御します。
 
 ## 他の文書で定めている任意のキー
 

@@ -1,57 +1,68 @@
 # Score
 
-> 20 nodes · cohesion 0.21
+> God node · 60 connections · `src/measure_numbering/types.py`
 
-## Key Concepts
+**Community:** [Community 8](Community_8.md)
 
-- **Score** (40 connections) — `src/measure_numbering/types.py`
-- **score_to_dict()** (17 connections) — `src/measure_numbering/serialization.py`
-- **TestIssue217EmptySystemOutputContract** (12 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **test_issue217_empty_system_output_contract.py** (11 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **serialization.py** (9 connections) — `src/measure_numbering/serialization.py`
-- **tools/add_measure_numbers.py** (9 connections) — `tools/add_measure_numbers.py`
-- **Measure** (8 connections) — `src/measure_numbering/types.py`
-- **.make_numbered_system()** (8 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **.make_empty_system()** (6 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **.test_score_to_dict_separates_empty_systems_from_numbered_systems()** (6 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **.test_serialized_system_ranges_do_not_include_empty_systems()** (6 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **main()** (6 connections) — `tools/add_measure_numbers.py`
-- **render_overlay()** (6 connections) — `tools/add_measure_numbers.py`
-- **_serialize_measure()** (2 connections) — `src/measure_numbering/serialization.py`
-- **_serialize_staves()** (2 connections) — `src/measure_numbering/serialization.py`
-- **normalize_barlines()** (2 connections) — `tools/add_measure_numbers.py`
-- **Serialization helpers for measure numbering results.** (1 connections) — `src/measure_numbering/serialization.py`
-- **Convert a Score object tree into the numbering JSON contract.** (1 connections) — `src/measure_numbering/serialization.py`
-- **Represents a musical measure.** (1 connections) — `src/measure_numbering/types.py`
-- **Path** (1 connections)
+## Connections by Relation
 
-## Relationships
+### calls
+- main() `EXTRACTED`
+- run() `EXTRACTED`
+- _number_route() `EXTRACTED`
+- run_final_numbering_and_overlays() `EXTRACTED`
+- test_empty_reviewed_output_removes_source_reset_from_corrected_numbering() `EXTRACTED`
+- run_verification() `EXTRACTED`
+- run_visualization() `EXTRACTED`
+- _final_numbering_from_retained_geometry() `EXTRACTED`
+- _rebuild_phase_a_numbering() `EXTRACTED`
+- run_base_numbering_and_barline_correction() `EXTRACTED`
+- test_actual_model_outputs_preserve_every_voice_and_shared_boundaries() `EXTRACTED`
+- test_visibility_uses_constructed_measures_not_barline_count_or_stale_measures() `EXTRACTED`
+- test_real_manual_precedence_then_numbering_with_empty_system_and_terminal_rest() `EXTRACTED`
+- .create_mock_score() `EXTRACTED`
+- test_issue268_numberer_boundary_reset_precedes_existing_set_number_override() `EXTRACTED`
+- test_empty_predictions_and_multiple_pages_preserve_continuity() `EXTRACTED`
+- test_overrides_address_same_physical_system_as_compact_json() `EXTRACTED`
+- test_real_manual_span_and_movement_reset_keep_page_identity() `EXTRACTED`
+- test_develop_numbering_overlay_and_cli_entrypoint_remain_available() `EXTRACTED`
+- _rebuild() `EXTRACTED`
 
-- [Staff](Staff.md) (35 shared connections)
-- [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (5 shared connections)
-- [diagnose_phase_b_layout_divergence.py](diagnose_phase_b_layout_divergence.py.md) (5 shared connections)
-- [.run](run.md) (5 shared connections)
-- [evaluate_barline_rules.py](evaluate_barline_rules.py.md) (4 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (4 shared connections)
-- [BBox](BBox.md) (4 shared connections)
-- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (3 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
-- [.number_system](number_system.md) (2 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
-- [StaffExtractor](StaffExtractor.md) (1 shared connections)
+### contains
+- measure_numbering/types.py `EXTRACTED`
 
-## Source Files
+### imports
+- apply_corrections.py `EXTRACTED`
+- test_issue415_numbering_audit.py `EXTRACTED`
+- pipeline.py `EXTRACTED`
+- run_grouped_final_numbering_comparison.py `EXTRACTED`
+- test_issue257_mmr_page_rebase.py `EXTRACTED`
+- test_issue218_multistaff_system_grouping.py `EXTRACTED`
+- test_probe_helpers.py `EXTRACTED`
+- evaluate_barline_rules.py `EXTRACTED`
+- test_reviewed_movement_apply.py `EXTRACTED`
+- phase_b_page001_acceptance.py `EXTRACTED`
+- test_issue413_system_identity.py `EXTRACTED`
+- measure_numbering/numbering.py `EXTRACTED`
+- diagnose_phase_b_layout_divergence.py `EXTRACTED`
+- run_numbering_count_replay.py `EXTRACTED`
+- test_numbering_geometry_scale.py `EXTRACTED`
+- numbering_phases.py `EXTRACTED`
+- test_numbering_overrides.py `EXTRACTED`
+- verify_measure_numbering_pipeline.py `EXTRACTED`
+- visualize_measure_numbering.py `EXTRACTED`
+- test_issue217_empty_system_output_contract.py `EXTRACTED`
 
-- `src/measure_numbering/serialization.py`
-- `src/measure_numbering/types.py`
-- `tests/test_issue217_empty_system_output_contract.py`
-- `tools/add_measure_numbers.py`
+### references
+- build_numbering() `EXTRACTED`
+- render_overlay() `EXTRACTED`
+- .number_score() `EXTRACTED`
+- .run_sequential() `EXTRACTED`
 
-## Audit Trail
-
-- EXTRACTED: 95 (83%)
-- INFERRED: 19 (17%)
-- AMBIGUOUS: 0 (0%)
+### uses
+- [MeasureNumberer](MeasureNumberer.md) `INFERRED`
+- MeasureNumberingPipeline `INFERRED`
+- StaffExtractor `INFERRED`
 
 ---
 

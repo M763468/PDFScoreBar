@@ -1,0 +1,31 @@
+# Community 297
+
+> 5 nodes · cohesion 0.40
+
+## Key Concepts
+
+- **JobExecutor** (4 connections) — `src/pipeline/engine_contract.py`
+- **.__call__()** (4 connections) — `src/pipeline/engine_contract.py`
+- **Protocol** (1 connections)
+- **ProgressCallback** (1 connections)
+- **Direct Python boundary for CLI and worker/service adapters.** (1 connections) — `src/pipeline/engine_contract.py`
+
+## Relationships
+
+- [Community 71](Community_71.md) (1 shared connections)
+- [Community 79](Community_79.md) (1 shared connections)
+- [Community 109](Community_109.md) (1 shared connections)
+
+## Source Files
+
+- `src/pipeline/engine_contract.py`
+
+## Audit Trail
+
+- EXTRACTED: 7 (100%)
+- INFERRED: 0 (0%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [index](index.md) to navigate.*

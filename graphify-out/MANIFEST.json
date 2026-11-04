@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-30T12:42:23.876043Z",
-  "source_base_commit": "6a318aede2b82417d98df7524e4875743cc68b4a",
-  "generation_input_state": "perf/issue284-realesrgan-hotpath at 6a318aed, before committing refreshed Graphify artifacts",
+  "generated_at": "2026-11-04T12:49:53Z",
+  "source_base_commit": "3ff2800b923739af8a192edb76c12566432e949f",
+  "generation_input_state": "clean detached worktree at origin/develop 3ff2800b923739af8a192edb76c12566432e949f; PYTHONHASHSEED=0 set before each Graphify process",
   "graphify_version": "graphify 0.9.41",
   "generation_mode": "code-only",
   "semantic_route": "none",
   "semantic_backend": null,
   "semantic_model": null,
   "semantic_scope": [],
-  "node_count": 5197,
-  "edge_count": 12445,
+  "node_count": 7418,
+  "edge_count": 18494,
   "staleness_check": {
     "method": "code-extension-diff-from-source-base",
-    "note": "The graph was generated from source revision 6a318aede2b82417d98df7524e4875743cc68b4a before committing the refreshed durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
+    "note": "The graph was generated from a clean detached checkout of source revision 3ff2800b923739af8a192edb76c12566432e949f, so graph.json built_at_commit and the GRAPH_REPORT.md 'Built from commit' line equal source_base_commit. The query wrapper warns only when later committed source-code files differ from source_base_commit."
   },
   "tracked_outputs": [
     "graphify-out/graph.json",

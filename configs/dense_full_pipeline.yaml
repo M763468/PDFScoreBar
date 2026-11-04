@@ -10,7 +10,6 @@ inputs:
 steps:
   pdf_to_images: false
   detection: true
-  filter_pages: true
   apply_barline_overrides: false
   numbering_base: true
   mmr_overrides: true
@@ -84,7 +83,6 @@ filters:
 
 mmr:
   model_path: models/mmr/mmr_classifier_best.pth
-  ocr_lang: eng
   enable_rotation_tta: false
 
 numbering:

@@ -19,7 +19,7 @@ Unknown mode values are rejected. The helper is `src/measure_numbering/rapidocr_
 
 ## Where the mode is selected
 
-- The main pipeline's MMR batch (`src/pipeline/steps/numbering_phases.py`) does not read a provider setting and always uses `auto`.
+- The main pipeline's MMR batch (`src/pipeline/steps/numbering_phases.py`) reads `mmr.rapidocr_provider`, defaulting to `auto`.
 - The selective MMR rerun used when applying corrections (`src/pipeline/review/apply_corrections.py`) reads `mmr.rapidocr_provider` from the source run's config, defaulting to `auto`.
 
 This is limited to MMR OCR construction. It does not change HOMR title detection, SR, CNN scoring, or barline detection. The relevant validation scope is therefore local MMR construction and numbering-step tests rather than a full detector contract run.

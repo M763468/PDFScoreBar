@@ -71,3 +71,46 @@ def test_run_mmr_batch_updates_default_engine_in_place(monkeypatch, tmp_path, ta
     assert cached_engine.ocr_engine is provider_ocr
     assert cached_engine._rapidocr_provider_mode == "cuda"
     assert json.loads(output_path.read_text(encoding="utf-8")) == result[0]
+
+
+@pytest.mark.parametrize("configured, expected", [(None, "auto"), ("cpu", "cpu"), ("cuda", "cuda")])
+def test_pipeline_phase_passes_configured_provider(monkeypatch, tmp_path, configured, expected):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from src.pipeline.steps.numbering_phases import run_mmr_batch_detection
+
+    config = {"steps": {"mmr_overrides": True}, "mmr": {"model_path": "model.pt"}}
+    if configured is not None:
+        config["mmr"]["rapidocr_provider"] = configured
+    owner = SimpleNamespace(
+        config=config,
+        validate_only=False,
+        skip_existing=False,
+        dry_run=False,
+        _mmr_persistence={},
+        _telemetry_progress=Mock(),
+    )
+    base = tmp_path / "base.json"
+    base.write_text("{}")
+    page = {
+        "numbering_base": base,
+        "intermediate_dir": tmp_path,
+        "image_path": tmp_path / "page.png",
+        "index": 1,
+    }
+    services = SimpleNamespace(
+        logger=Mock(),
+        load_json=lambda path: {},
+        run_mmr_batch=Mock(),
+        torch=SimpleNamespace(
+            cuda=SimpleNamespace(is_available=lambda: False),
+            device=lambda value: SimpleNamespace(type=value),
+        ),
+    )
+    monkeypatch.setattr("src.measure_numbering.mmr.MMRClassifier", Mock())
+    monkeypatch.setattr("src.measure_numbering.mmr.MMROCREngine", Mock())
+
+    run_mmr_batch_detection(owner, ["page"], set(), {"page": page}, services=services)
+
+    assert services.run_mmr_batch.call_args.kwargs["rapidocr_provider"] == expected

@@ -14,8 +14,8 @@
 製品統合に関する現状と未受入範囲はこの追記を優先する。
 
 **前段の対応:** [PR #445レビュー対応: 全段9pt・段への近接・安全な確定処理](ISSUE441_PR445_REFINEMENT.md)。
-[新しい実験集計](issue441/evidence/typography_revision_snapshot.json)と
-[11テストの出力](issue441/evidence/typography-focused-tests.txt)を追加した。
+[新しい実験集計](../dev/issue441/evidence/typography_revision_snapshot.json)と
+[11テストの出力](../dev/issue441/evidence/typography-focused-tests.txt)を追加した。
 以下の8〜10pt・5テストは初回実験の履歴であり、現在の既定値は文書全体9pt。
 
 GitHub上のこのページから、手法・結果・コード・テスト・未実装範囲を確認できる。
@@ -26,8 +26,8 @@ GitHub上のこのページから、手法・結果・コード・テスト・�
 
 1. 本ページの結論・検証表・レビュー論点。
 2. [具体手法・実データ実験・exact command](ISSUE441_ANNOTATED_RESUME.md)。
-3. [公開用の検証スナップショット](issue441/evidence/annotated_resume_snapshot.json)と
-   [5件のfocused test出力](issue441/evidence/focused-tests.txt)。
+3. [公開用の検証スナップショット](../dev/issue441/evidence/annotated_resume_snapshot.json)と
+   [5件のfocused test出力](../dev/issue441/evidence/focused-tests.txt)。
 4. [番号レイヤー](../../tools/issue441/crop_label_layer.py)、
    [修正再開実験](../../tools/issue441/annotated_resume_experiment.py)、
    [テスト](../../tests/test_issue441_annotated_layer.py)の差分。

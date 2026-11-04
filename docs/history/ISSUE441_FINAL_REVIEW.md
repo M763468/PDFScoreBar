@@ -8,7 +8,7 @@ CI分類エラーを修正し、旧jobの履歴をGUIから取り込む導線と
 事前に作ったcheckpointを使わず、実旧jobのattempt 1/12を選択するブラウザー受入、
 4種類の追加・保存・適用・取消、製品結果へのsynthetic注釈追加後の2回目再開を完了した。
 
-[公開スナップショット](issue441/evidence/final_review_snapshot.json)に入力固定条件・実行コードhash・
+[公開スナップショット](../dev/issue441/evidence/final_review_snapshot.json)に入力固定条件・実行コードhash・
 11出力のhash/集計・全ゲートを記録する。画像・注釈本文・correction JSONは含めない。
 
 ## 指摘への対応
@@ -62,9 +62,9 @@ imported checkpointには元attempt・元identity・consumed/handoff/manifestの
 
 | 確認 | 今回の状態 | 結果・証拠 |
 | --- | --- | --- |
-| 関連pytest + release | Passed | 228件。[標準出力](issue441/evidence/final-review-regression-tests.txt) |
-| maintained fast tests | Passed | 122件。[標準出力](issue441/evidence/final-review-fast-tests.txt) |
-| Actionsと同じengine contract gate | Passed | 101件。[標準出力](issue441/evidence/final-review-engine-contract.txt) |
+| 関連pytest + release | Passed | 228件。[標準出力](../dev/issue441/evidence/final-review-regression-tests.txt) |
+| maintained fast tests | Passed | 122件。[標準出力](../dev/issue441/evidence/final-review-fast-tests.txt) |
+| Actionsと同じengine contract gate | Passed | 101件。[標準出力](../dev/issue441/evidence/final-review-engine-contract.txt) |
 | 最終surface / release / distribution | Passed | surface成功、release/distribution 67件。新しいsourceを除外して通していない |
 | make lint / Makefile参照 | Passed | `make lint`と`make check-makefile`。初回uv cacheのread-only Blockedはsandbox外実行で解消 |
 | 旧履歴のGUI受入 | Passed | 12件を一覧。1/12を別々に取り込み、correction identity・全15ページの番号列が元の保持結果と一致。旧成功扱いを継承しない |

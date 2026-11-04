@@ -1,6 +1,6 @@
 # 現行パイプライン — 実装・技術契約リファレンス
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"8a0edd466d8c74ec29b2d084370fef7f827e687e05fd5483b80cc52c511d6471"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"d78e01ef1ec6f28374ae9b23cb05f39d5bf04bd50867d2521972055e98f63c1e"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE_REFERENCE.md) · [アーキテクチャ概要に戻る](PIPELINE_ARCHITECTURE.ja.md)
 
@@ -32,7 +32,7 @@ engineとともに、パッケージに紐付く`tools/review_correction`アプ�
 再開を繰り返す場合は、元のレビュー配下のフラットなセッションレジストリを使い、
 チェックポイント状態と番号付けの所有権をそれぞれ解決する。
 チェックポイントIDとセッションIDはローカルな成果物のidentityであり、公開service/job APIを追加するものではない。
-[Issue #441の製品統合](../dev/ISSUE441_PRODUCT_INTEGRATION.md)を参照。
+[Issue #441の製品統合](../history/ISSUE441_PRODUCT_INTEGRATION.md)を参照。
 正確な選択範囲とdevelop限定の境界は
 [最小mainline構成（英語・未翻訳）](../MINIMAL_MAINLINE_SURFACE.md)、ユーザーの操作方法は
 [ユーザーガイド（英語・未翻訳）](../USER_GUIDE.md)に記載する。

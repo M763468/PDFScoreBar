@@ -150,12 +150,12 @@ when translating. Historical and scoped records follow the exclusions below.
   `DEVELOPMENT_LOG.md`, `DEVLOG_MEASURE_NUMBERING.md`, `ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`,
   and `ISSUE363_RUNTIME_DEPENDENCY_REVIEW.md` are English historical/reference records;
   `ISSUE44_ITER7_FINAL_REPORT.md` is Japanese. No blanket translation is required.
-- **Issue designs and experiments:** `refactors/**`, `dev/ISSUE441_*.md`, and
+- **Issue designs and experiments:** `refactors/**`, `history/ISSUE441_*.md`, and
   `releases/issue410/**` need individual authority/lifecycle review, not automatic promotion
   to current design. The #441 and #410 records are Japanese-centered; `refactors/**`
   is predominantly English with mixed Japanese records (notably #94 and the rebuild plan).
   Read through the history index only when the active task needs that evidence.
-  Some of these records, notably `dev/ISSUE441_*.md`, contain machine-specific absolute
+  Some of these records, notably `history/ISSUE441_*.md`, contain machine-specific absolute
   paths as part of their recorded commands. They are historical evidence, not reusable
   instructions; #488 kept them unchanged instead of rewriting the evidence.
 - **Known review needs:** #226–#229 documents describe their own eventual migration into
@@ -233,10 +233,7 @@ until its next refresh under `ai-workflow/GRAPHIFY.md`. Past Issue/PR bodies and
 links to `blob/<branch>/docs/<name>` no longer resolve on `develop`; commit-pinned links
 still resolve. Use this table to find the new location; old bodies are not rewritten.
 
-**Deferred.** Issue-scoped records already under `dev/` (`dev/ISSUE441_*.md`,
-`dev/issue441/`, `dev/historical_stage_phase_naming_audit.md`) and the existing
-`performance/` and `refactors/` areas were outside the root reorganization. Move them to
-`history/` only through a separate decision under Epic #446.
+**Follow-up (#496).** The #441 Markdown records and #160 naming audit moved from `dev/` to `history/`; #441 evidence remains at `dev/issue441/evidence/` to preserve recorded output paths. See the [placement audit](history/ISSUE496_PLACEMENT_AUDIT.md). Existing `performance/` and `refactors/` retain their purpose-based roles.
 
 ## Historical navigation and retirement rule
 

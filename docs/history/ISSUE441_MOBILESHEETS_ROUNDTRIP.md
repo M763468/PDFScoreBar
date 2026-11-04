@@ -9,7 +9,7 @@
 ## 観測結果と固定した受入条件
 
 基点commitは `705a4a288b560f1da531f2394dcacfc2c96491f1`。今回の実行コードhashと
-結果は[公開スナップショット](issue441/evidence/mobilesheets_roundtrip_snapshot.json)に固定した。
+結果は[公開スナップショット](../dev/issue441/evidence/mobilesheets_roundtrip_snapshot.json)に固定した。
 元の共有ファイル、保持job、過去の生成結果は変更していない。
 
 | 項目 | 取り込み前のbaseline | 提供された再輸出PDF |
@@ -64,8 +64,8 @@ markerが付いているだけのPDF、stream変更、font resource変更（未�
 
 | チェック | 状態 | 結果 |
 | --- | --- | --- |
-| 回帰・API・配布・UI・番号レイヤー | Passed | 198件。[標準出力](issue441/evidence/roundtrip-regression-tests.txt) |
-| maintained fast tests | Passed | 122件。[標準出力](issue441/evidence/roundtrip-fast-tests.txt) |
+| 回帰・API・配布・UI・番号レイヤー | Passed | 198件。[標準出力](../dev/issue441/evidence/roundtrip-regression-tests.txt) |
+| maintained fast tests | Passed | 122件。[標準出力](../dev/issue441/evidence/roundtrip-fast-tests.txt) |
 | 新規8ケース | Passed | xref再配置後の交換、追加FreeText保持、content/marker/rotation/resource改変拒否、marker単独拒否、製品sessionと背景identity |
 | 実ブラウザー | Passed | 提供PDFをuploadし、古い履歴選択→再開→MMR追加修正→Save/Apply→PDF取得→取消→reload。mockなし |
 | 3出力 | Passed | 各15ページ・160番号・全9pt・全820注釈・CropBox・非所有の濃い画素を保持。activeな番号streamは160個で二重化なし |

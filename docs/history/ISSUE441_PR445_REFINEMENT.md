@@ -22,8 +22,8 @@
 線や音符への主観的な距離を自動的に合格とした指標ではない。
 同じglyph計測方法を旧配置と新配置に用い、160箇所を除外なしで比較した。
 
-[機械可読スナップショット](issue441/evidence/typography_revision_snapshot.json)と
-[11件のテスト標準出力](issue441/evidence/typography-focused-tests.txt)をGitHubから確認できる。
+[機械可読スナップショット](../dev/issue441/evidence/typography_revision_snapshot.json)と
+[11件のテスト標準出力](../dev/issue441/evidence/typography-focused-tests.txt)をGitHubから確認できる。
 旧8〜10ptの記録・5テストの出力は過去証拠として残す。
 
 ## サイズと距離の変更方法

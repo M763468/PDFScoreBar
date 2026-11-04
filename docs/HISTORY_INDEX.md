@@ -178,6 +178,12 @@ Start with:
 
 Use current source and current user-facing docs for present behavior.
 
+### Review resumption and historical naming (#441 / #160)
+
+- [Issue #441 review and evidence entry](history/ISSUE441_REVIEW.md) and [product integration record](history/ISSUE441_PRODUCT_INTEGRATION.md) document the #441 / PR #445 investigation; use current source and tests for current behavior.
+- [Issue #160 naming audit](history/historical_stage_phase_naming_audit.md) records the historical Stage/Phase boundary.
+- [Placement audit and old-to-new paths](history/ISSUE496_PLACEMENT_AUDIT.md) explains the relocation and retained evidence.
+
 ### Development operations / AI workflow
 
 Useful anchors:

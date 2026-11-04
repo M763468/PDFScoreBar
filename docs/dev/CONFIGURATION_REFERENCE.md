@@ -88,6 +88,10 @@ it does not inherit earlier acceptance results.
 | `detection.source_concurrency.workers` | `1` | Concurrent page-source workers after SR exits. Two workers are an opt-in for a validated environment only; see [source concurrency](../performance/issue458-source-concurrency.md). |
 | `detection.source_concurrency.timeout_sec` | `900` | Timeout for page-source work. |
 | `detection.source_concurrency.on_unavailable` | `error` | Behavior when the requested concurrency cannot be used; see the same document. |
+| `detection.omr_job_reuse.mode` | `auto` | `auto` runs OMR-DLN once per job (one model lifetime for all ordered pages) inside the measured envelope below; `off` keeps one OMR process per page. The route is fixed before the job starts; a failure never falls back to the other route. See [OMR job reuse](../performance/issue459-omr-job-reuse.md). |
+| `detection.omr_job_reuse.min_pages` | `2` | Minimum page count for the job route. Single-page jobs use the per-page route. |
+| `detection.omr_job_reuse.allowed_uids` | `[0]` | Process UIDs for the job route. The default deployment runs as root; other UIDs use the per-page route. |
+| `detection.omr_job_reuse.timeout_sec` | `900` | Timeout for the OMR job worker; on expiry its process group is killed and the job fails. |
 | `detection.enable_sr` | `true` | Run super-resolution before HOMR inference. |
 | `detection.sr_scale` | `4` | Super-resolution scale. |
 | `detection.sr_compile_mode` | `reduce-overhead` | Model compile mode for the batch SR worker. |

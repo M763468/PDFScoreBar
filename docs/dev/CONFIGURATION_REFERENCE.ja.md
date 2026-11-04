@@ -1,10 +1,10 @@
 # パイプラインの設定と実行入口のリファレンス
 
-<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"3177df0cb0285ea9347936b66150f9af185277d91e06577217fe535f36e2eff7"},"state":"reviewed"} -->
+<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"e95dd9fe237113686de44cf4fd9563c478b0d675cca18aaf346f5a9863b794aa"},"state":"reviewed"} -->
 
 [English / 原文](CONFIGURATION_REFERENCE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `3177df0cb0285ea9347936b66150f9af185277d91e06577217fe535f36e2eff7`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `e95dd9fe237113686de44cf4fd9563c478b0d675cca18aaf346f5a9863b794aa`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 このリファレンスは、開発用パイプラインの起動方法と、正規の本番設定 `configs/dense_full_pipeline.yaml` の各キーが何を制御するかをまとめたものです。現在のソースの挙動を説明するもので、既定値を変えたり新しい設定を定めたりはしません。PR検証ワークフローで実行する `tests/test_configuration_reference.py` は、正規の設定のキーが本書または英語の原文のキーの表にない場合、複数回記載されている場合、記載した値が正規の値と異なる場合に失敗します。意味の列は検査しません。
 
@@ -78,6 +78,10 @@
 | `detection.source_concurrency.workers` | `1` | SR の終了後に並行して動かすページソースの worker 数。2 worker は検証済みの環境でだけ選ぶ任意の設定です。[source の並行処理](../performance/issue458-source-concurrency.md)を参照してください。 |
 | `detection.source_concurrency.timeout_sec` | `900` | ページソースの処理のタイムアウト。 |
 | `detection.source_concurrency.on_unavailable` | `error` | 要求した並行数を使えない場合の挙動。同じ文書を参照してください。 |
+| `detection.omr_job_reuse.mode` | `auto` | `auto` は下記の実測済み範囲で OMR-DLN をジョブ単位で1回だけ起動します（順序付き全ページでモデルを1回ロード）。`off` はページごとに OMR プロセスを起動します。経路はジョブ開始前に確定し、失敗時にもう一方の経路へフォールバックしません。[OMR job reuse](../performance/issue459-omr-job-reuse.md) を参照。 |
+| `detection.omr_job_reuse.min_pages` | `2` | ジョブ経路を使う最小ページ数。1ページのジョブはページ単位の経路を使います。 |
+| `detection.omr_job_reuse.allowed_uids` | `[0]` | ジョブ経路を使うプロセス UID。標準 deployment は root です。それ以外の UID はページ単位の経路を使います。 |
+| `detection.omr_job_reuse.timeout_sec` | `900` | OMR job worker のタイムアウト。超過するとプロセスグループを kill し、ジョブは失敗します。 |
 | `detection.enable_sr` | `true` | HOMR の推論の前に超解像を実行します。 |
 | `detection.sr_scale` | `4` | 超解像の倍率。 |
 | `detection.sr_compile_mode` | `reduce-overhead` | バッチ SR worker のモデルのコンパイルモード。 |

@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"63c55ff61549fa800b4709d0638542b6a8b2fa94cc266ba5e67d39fcc46a43b7"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"1c75ee04aa05437bfe57695a068c85c111d61d2a825b9b2bb760315ac3f2d66a"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `63c55ff61549fa800b4709d0638542b6a8b2fa94cc266ba5e67d39fcc46a43b7`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `1c75ee04aa05437bfe57695a068c85c111d61d2a825b9b2bb760315ac3f2d66a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 
@@ -154,7 +154,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 
 ## ディレクトリ構成と #492 の再編
 
-#492 以前の `docs/` 直下には Markdown 66 件（と manifest の JSON）があり、入口、現在のアーキテクチャ、エンジン・モデルの契約、開発者向けの手順、凍結された Issue の記録、過去の台帳が混在していました。`docs/**` 全体の Markdown は、言語ごとに数えて 160 件でした。#492 では、直下の Markdown 53 件を `git mv` で役割別のディレクトリへ移動し、各原文を対応訳と同じ場所に置きました。現在の直下は Markdown 13 件と manifest の JSON で、`docs/**` 全体は 160 件のまま変わりません。ファイルを移動しても、上の分類は変わりません。将来のアーキテクチャはロードマップのままであり、`history/` の下の Issue 限定の契約も、その範囲での権威を保ちます。
+#492 以前の `docs/` 直下には Markdown 66 件（と manifest の JSON）があり、入口、現在のアーキテクチャ、エンジン・モデルの契約、開発者向けの手順、凍結された Issue の記録、過去の台帳が混在していました。`docs/**` 全体の Markdown は、言語ごとに数えて 160 件でした（`c70c5f6d` の時点の `develop`）。#492 では、直下の Markdown 53 件を `git mv` で役割別のディレクトリへ移動し、各原文を対応訳と同じ場所に置きました。現在の直下は Markdown 13 件と manifest の JSON です。移動によってファイルは増減していません。`docs/**` 全体が 165 件になったのは、#459 / PR #493 が `performance/` の下に記録を 5 件追加したためです。ファイルを移動しても、上の分類は変わりません。将来のアーキテクチャはロードマップのままであり、`history/` の下の Issue 限定の契約も、その範囲での権威を保ちます。
 
 | 場所 | 役割 | #492 で移動した、または残したファイル |
 | --- | --- | --- |
@@ -169,7 +169,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 
 **直下に残したもの。** `README` はドキュメントの入口です。`USER_GUIDE` と `MINIMAL_MAINLINE_SURFACE`（`tools/check_repository_surface.py`、配布ツールとそのテストが読む JSON を含む）は、配布の入口と契約です。`DOCUMENTATION_INVENTORY`、`DOCUMENTATION_LANGUAGE_POLICY`、`HISTORY_INDEX` は、`AGENTS.md` と索引が指す案内・保守の層です。`REPOSITORY_SURFACE_INVENTORY.md` は manifest の `reference_checks` が参照するリポジトリ全体の監査であり、一つの Issue の `docs/history/` の記録ではありません。
 
-**移動と同時に更新した参照。** すべての相対 Markdown リンクとフラグメント。追跡対象の Markdown、`AGENTS.md`、`.gemini/GEMINI.md`、PR テンプレート、Graphify の Skill、`data/README.md`、`scripts/docker_container_preflight.sh`、`tools/issue120/inventory_tracked_artifacts.py` にある `docs/...` のパスの記述。`MINIMAL_MAINLINE_SURFACE.json` のエンジン契約の `documentation_patterns` と `documentation_audiences`。移動したファイルを名前で指すテスト。この台帳、言語方針、ドキュメントガイドを除き、原文の変更はリンクのパスだけです。対応訳にも同じパスの変更を反映し、`same PR` の SHA-256 の識別情報を更新しました。ランタイム、配布の選択、翻訳の状態は変わっていません。
+**移動と同時に更新した参照。** すべての相対 Markdown リンクとフラグメント。追跡対象の Markdown、`AGENTS.md`、`.gemini/GEMINI.md`、PR テンプレート、Graphify の Skill、`data/README.md`、`scripts/docker_container_preflight.sh`、`tools/issue120/inventory_tracked_artifacts.py` にある `docs/...` のパスの記述。`MINIMAL_MAINLINE_SURFACE.json` の `documentation_patterns` のうちエンジン契約の項目と、参考扱いの `documentation_audiences`。移動したファイルを名前で指すテスト。この台帳、言語方針、ドキュメントガイドを除き、原文の変更はリンクのパスだけです。対応訳にも同じパスの変更を反映し、`same PR` の SHA-256 の識別情報を更新しました。ランタイム、配布の選択、翻訳の状態は変わっていません。
 
 **更新しなかったもの。** 追跡対象の `graphify-out/**` は生成物であり、`ai-workflow/GRAPHIFY.md` に従って次に更新されるまで旧パスを含みます。過去の Issue／PR の本文や外部からの `blob/<branch>/docs/<name>` へのリンクは、`develop` 上では解決できなくなります。コミットを固定したリンクは引き続き解決できます。新しい場所はこの表で探してください。古い本文は書き換えません。
 

@@ -32,6 +32,11 @@ detection:
     workers: 1
     timeout_sec: 900
     on_unavailable: error
+  omr_job_reuse:
+    mode: auto
+    min_pages: 2
+    allowed_uids: [0]
+    timeout_sec: 900
   enable_sr: true
   sr_scale: 4
   sr_compile_mode: reduce-overhead

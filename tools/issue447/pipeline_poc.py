@@ -188,7 +188,10 @@ if __name__ == "__main__":
         component_main()
     else:
         if os.environ.get("ISSUE447_OMR_REUSE") == "1":
-            from tools.issue447.omr_reuse_poc import install
+            if os.environ.get("ISSUE459_JOB_PROTOCOL") == "1":
+                from tools.issue459.omr_reuse_candidate import install
+            else:
+                from tools.issue447.omr_reuse_poc import install
 
             install()
         workers = int(os.environ["ISSUE447_SOURCE_WORKERS"])

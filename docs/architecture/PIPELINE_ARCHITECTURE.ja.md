@@ -1,11 +1,11 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"bd683f342fa80c3506134c64d5dedba5f57239a930c1296604a32ee1224e5ed1"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"579e5de7491724a3483f96534f15316f79d65df9c1e76d58f8f8ddc0df2dc941"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）
-- 翻訳元: same PR。原文SHA-256: `bd683f342fa80c3506134c64d5dedba5f57239a930c1296604a32ee1224e5ed1`
+- 翻訳元: same PR。原文SHA-256: `579e5de7491724a3483f96534f15316f79d65df9c1e76d58f8f8ddc0df2dc941`
 - 状態: `reviewed`。2026-10-29、利用者による読みやすさの確認と、実装照合・Argon独立レビューの結果を踏まえた概要版。
 
 2026-10-31、SR cacheと最小配布に関する追記をCodexが英語正本と対照し、意味・制約・日本語の読みやすさを確認した。
@@ -125,6 +125,7 @@ Phase Cは採択・補正済みの小節線、譜表マスク、利用可能な�
 | production検出処理の選択と実行 | `src/pipeline/detection/__init__.py`、`src/pipeline/detection/dense_orchestrator_batch_sr.py` | 設定に応じて処理を選び、4倍拡大・小節線候補生成・CNNを実行する |
 | ページ単位の認識結果の生成 | `src/pipeline/detection/maintained_source_page_worker.py`、`src/pipeline/detection/current_support_worker.py` | 元画像の基準結果と4倍画像の補助結果を生成する |
 | 4倍画像のバッチ準備 | `src/pipeline/detection/current_sr_batch_worker.py` | 拡大モデルを再利用し、ページの認識処理の前にSRを完了する |
+| 複数ページ・rootジョブのOMR-DLN一括実行 | `src/pipeline/detection/omr_job.py`、`src/pipeline/detection/omr_job_worker.py` | SR後に1つのOMRプロセスで順序付きの全ページを処理し、hashで結び付けた結果を引き渡す。1ページや非rootのジョブはページ単位のOMR経路を使う（[OMR job reuse](../performance/issue459-omr-job-reuse.md)） |
 | 複数小節休符の認識 | `src/pipeline/mmr_geometry_handoff.py`、`src/measure_numbering/mmr.py` | Phase Aの構造を使い、譜表の縦位置を対応付けて休符を認識する |
 | CNN向けの候補の調整 | `src/pipeline/steps/staff_strokes.py` | 複数譜表にまたがる縦線を必要に応じて分ける |
 | 段・小節の構築 | `src/measure_numbering/pipeline.py` | 譜表位置、小節線、接続情報から小節構造を作る |

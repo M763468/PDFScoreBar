@@ -191,11 +191,12 @@ kept as the decision at that time.
 Before #492 the `docs/` root held 66 Markdown files (plus the manifest JSON) that mixed
 entry points, current architecture, engine/model contracts, developer procedures, frozen
 Issue records and legacy ledgers; `docs/**` held 160 Markdown files counting each language
-separately. #492 moved 53 root Markdown files into role directories with `git mv`, keeping
-each original with its counterparts. The root now holds 13 Markdown files plus the manifest
-JSON; the `docs/**` total is unchanged at 160. Moving a file does not change its
-classification above: the future architecture stays a roadmap, and Issue-scoped contracts
-under `history/` keep their scoped authority.
+separately (`develop` at `c70c5f6d`). #492 moved 53 root Markdown files into role directories
+with `git mv`, keeping each original with its counterparts. The root now holds 13 Markdown
+files plus the manifest JSON. The moves neither added nor removed files; the `docs/**` total
+became 165 only because #459 / PR #493 added five records under `performance/`. Moving a
+file does not change its classification above: the future architecture stays a roadmap, and
+Issue-scoped contracts under `history/` keep their scoped authority.
 
 | Location | Role | Files moved or kept by #492 |
 | --- | --- | --- |
@@ -220,8 +221,8 @@ navigation and maintenance layer that `AGENTS.md` and the indexes point to.
 **References updated with the move.** All relative Markdown links and fragments; `docs/...`
 path mentions in tracked Markdown, `AGENTS.md`, `.gemini/GEMINI.md`, the PR template, the
 Graphify skill, `data/README.md`, `scripts/docker_container_preflight.sh`,
-`tools/issue120/inventory_tracked_artifacts.py`, the engine-contract
-`documentation_patterns` and `documentation_audiences` in `MINIMAL_MAINLINE_SURFACE.json`,
+`tools/issue120/inventory_tracked_artifacts.py`; the engine-contract entries in
+`documentation_patterns` and the advisory `documentation_audiences` in `MINIMAL_MAINLINE_SURFACE.json`;
 and the tests that name moved files. Apart from this inventory, the language policy and the
 documentation guide, originals changed only in link paths; their
 counterparts received the same path changes and refreshed `same PR` SHA-256 identities.

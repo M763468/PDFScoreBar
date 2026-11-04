@@ -1,51 +1,50 @@
 # Community 93
 
-> 27 nodes · cohesion 0.16
+> 27 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **phase_c_acceptance_integrity.py** (16 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **validate_resume_contract()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **compare_full68_variants.py** (20 connections) — `tools/issue284/compare_full68_variants.py`
+- **main()** (12 connections) — `tools/issue284/compare_full68_variants.py`
 - **Any** (10 connections)
-- **run_phase_c_mmr_regression_container.py** (10 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
+- **support_semantics()** (9 connections) — `tools/issue284/compare_full68_variants.py`
+- **load_json()** (8 connections) — `tools/issue284/compare_full68_variants.py`
 - **Path** (8 connections)
-- **stamp_source_report()** (8 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **require_source_non_index_gates()** (7 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **build_producer_contract()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_load_json()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **main()** (6 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
-- **_describe_file()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **source_non_index_gate_failures()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_verify_generated_artifacts()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_sha256_file()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_write_json()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **main()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **parse_args()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **phase_c_current_homr_isolated.py** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
-- **run()** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
-- **Namespace** (1 connections)
-- **Require all source gates unrelated to historical index-addressed scoring.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Bind a completed, augmented source report to this invocation and producer…** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Allow --resume only for a completed run produced by the exact current contract.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Describe the revision/config/input bytes allowed to produce resumed artifacts.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Return failed source gates that cannot be superseded by geometry rebasing.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **test_issue284_retained_artifact_paths.py** (7 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **resolve_retained_path()** (7 connections) — `tools/issue284/compare_full68_variants.py`
+- **boxes_from_payload()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **gt_boxes()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **hybrid_metrics()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **page_artifact()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **numbering_view()** (5 connections) — `tools/issue284/compare_full68_variants.py`
+- **Path** (4 connections)
+- **normalize_box()** (4 connections) — `tools/issue284/compare_full68_variants.py`
+- **normalize_overrides()** (4 connections) — `tools/issue284/compare_full68_variants.py`
+- **test_comparator_prefers_requested_variant_over_existing_recorded_path()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **test_comparator_resolves_relocated_variant_artifact()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **test_support_semantics_rejects_missing_declared_connector_artifact()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **test_support_semantics_rejects_missing_required_connector_field()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **aggregate_hybrid()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **bbox_differences()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **score_map()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **sha256()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **Compare fresh post-#285 control and Issue #284 candidate full-68 runs. The…** (1 connections) — `tools/issue284/compare_full68_variants.py`
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 144](Community_144.md) (10 shared connections)
-- [Community 156](Community_156.md) (5 shared connections)
-- [Community 137](Community_137.md) (2 shared connections)
+- [Community 0](Community_0.md) (4 shared connections)
+- [Community 31](Community_31.md) (4 shared connections)
+- [Community 127](Community_127.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue264/phase_c_acceptance_integrity.py`
-- `tools/issue264/phase_c_current_homr_isolated.py`
-- `tools/issue264/run_phase_c_mmr_regression_container.py`
+- `tests/test_issue284_retained_artifact_paths.py`
+- `tools/issue284/compare_full68_variants.py`
 
 ## Audit Trail
 
-- EXTRACTED: 74 (100%)
+- EXTRACTED: 79 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

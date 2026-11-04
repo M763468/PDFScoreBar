@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **validate_issue264_phase_c_mmr.sh** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
-- **validate_issue264_phase_c_mmr.sh script** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
+- **core/predictor.py** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
+- **Module alias preserving predictor monkeypatch and class identity for old…** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `scripts/validate_issue264_phase_c_mmr.sh`
+- `src/homr_eval_scripts/core/predictor.py`
 
 ## Audit Trail
 

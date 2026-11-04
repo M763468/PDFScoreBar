@@ -1,64 +1,64 @@
 # Community 3
 
-> 83 nodes · cohesion 0.06
+> 82 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **materialize_corrected_final_outputs()** (39 connections) — `src/pipeline/review/final_output.py`
-- **final_output.py** (28 connections) — `src/pipeline/review/final_output.py`
-- **replay_phase_c.py** (20 connections) — `tools/issue413/replay_phase_c.py`
-- **_sanitize_output_name()** (16 connections) — `src/pipeline/review/final_output.py`
-- **replay()** (16 connections) — `tools/issue413/replay_phase_c.py`
-- **test_issue413_replay_audit.py** (15 connections) — `tests/test_issue413_replay_audit.py`
-- **test_corrected_final_output.py** (14 connections) — `tests/test_corrected_final_output.py`
-- **CorrectedFinalOutputError** (13 connections) — `src/pipeline/review/final_output.py`
-- **Any** (13 connections)
-- **_render_final_page_image()** (13 connections) — `src/pipeline/review/final_output.py`
-- **_setup_final_output_fixture()** (12 connections) — `tests/test_corrected_final_output.py`
-- **test_final_pdf_page_size.py** (10 connections) — `tests/test_final_pdf_page_size.py`
-- **_row_label_records()** (9 connections) — `src/pipeline/review/final_output.py`
-- **records_from_run()** (9 connections) — `src/pipeline/review/number_layer.py`
-- **verify_pdf_images()** (9 connections) — `tools/issue413/replay_phase_c.py`
-- **canonical_input_hashes()** (8 connections) — `tools/issue413/replay_phase_c.py`
+- **test_distribution_surface.py** (37 connections) — `tests/test_distribution_surface.py`
+- **test_release_candidate.py** (23 connections) — `tests/test_release_candidate.py`
+- **check_candidate()** (19 connections) — `tools/release_candidate.py`
+- **check_tree()** (16 connections) — `tools/materialize_distribution.py`
+- **create_candidate()** (14 connections) — `tools/release_candidate.py`
+- **create()** (13 connections) — `tests/test_release_candidate.py`
+- **release_candidate.py** (13 connections) — `tools/release_candidate.py`
+- **source()** (12 connections) — `tests/test_release_candidate.py`
+- **git()** (11 connections) — `tests/test_release_candidate.py`
+- **_init_candidate_git()** (9 connections) — `tests/test_distribution_surface.py`
+- **check_repository_surface.py** (9 connections) — `tools/check_repository_surface.py`
+- **materialize_distribution.py** (9 connections) — `tools/materialize_distribution.py`
+- **materialize()** (9 connections) — `tools/materialize_distribution.py`
+- **selected_files()** (9 connections) — `tools/materialize_distribution.py`
+- **snapshot()** (9 connections) — `tools/release_candidate.py`
+- **git()** (8 connections) — `tools/release_candidate.py`
 - **Path** (8 connections)
-- **_draw_row_start_labels()** (7 connections) — `src/pipeline/review/final_output.py`
-- **_first_page_payload()** (7 connections) — `src/pipeline/review/final_output.py`
-- **Path** (7 connections)
-- **_resolve_package_path()** (7 connections) — `src/pipeline/review/final_output.py`
-- **verify_input_hashes()** (7 connections) — `tools/issue413/replay_phase_c.py`
-- **_derive_output_name()** (6 connections) — `src/pipeline/review/final_output.py`
-- **_load_json_object()** (6 connections) — `src/pipeline/review/final_output.py`
-- **_physical_page_size()** (6 connections) — `src/pipeline/review/final_output.py`
-- *... and 58 more nodes in this community*
+- **commit()** (7 connections) — `tests/test_release_candidate.py`
+- **test_different_executing_tools_reject_create_and_check()** (7 connections) — `tests/test_release_candidate.py`
+- **main()** (7 connections) — `tools/check_repository_surface.py`
+- **test_surface_checker_rejects_missing_review_and_engine_contract_files()** (6 connections) — `tests/test_issue100_runtime_surface.py`
+- **parametrize** (5 connections)
+- **test_issue100_runtime_surface.py** (5 connections) — `tests/test_issue100_runtime_surface.py`
+- **test_candidate_rejects_forged_committed_content_and_provenance()** (5 connections) — `tests/test_release_candidate.py`
+- **test_pinned_candidate_is_minimal_independent_and_reproducible()** (5 connections) — `tests/test_release_candidate.py`
+- *... and 57 more nodes in this community*
 
 ## Relationships
 
-- [Community 12](Community_12.md) (9 shared connections)
-- [Community 32](Community_32.md) (8 shared connections)
-- [Community 62](Community_62.md) (6 shared connections)
-- [Community 178](Community_178.md) (4 shared connections)
-- [Community 31](Community_31.md) (4 shared connections)
-- [Community 165](Community_165.md) (3 shared connections)
-- [Community 55](Community_55.md) (3 shared connections)
-- [Community 58](Community_58.md) (2 shared connections)
-- [Community 28](Community_28.md) (2 shared connections)
-- [Community 34](Community_34.md) (2 shared connections)
-- [Community 244](Community_244.md) (2 shared connections)
-- [Community 163](Community_163.md) (2 shared connections)
+- [Community 163](Community_163.md) (5 shared connections)
+- [Community 63](Community_63.md) (4 shared connections)
+- [Community 33](Community_33.md) (4 shared connections)
+- [Community 98](Community_98.md) (3 shared connections)
+- [Community 0](Community_0.md) (3 shared connections)
+- [Community 178](Community_178.md) (2 shared connections)
+- [Community 79](Community_79.md) (2 shared connections)
+- [Community 20](Community_20.md) (2 shared connections)
+- [Community 112](Community_112.md) (1 shared connections)
+- [Community 144](Community_144.md) (1 shared connections)
+- [Community 38](Community_38.md) (1 shared connections)
+- [Community 56](Community_56.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/final_output.py`
-- `src/pipeline/review/number_layer.py`
-- `tests/test_corrected_final_output.py`
-- `tests/test_final_pdf_page_size.py`
-- `tests/test_issue413_replay_audit.py`
-- `tools/issue413/replay_phase_c.py`
+- `tests/test_distribution_surface.py`
+- `tests/test_issue100_runtime_surface.py`
+- `tests/test_release_candidate.py`
+- `tools/check_repository_surface.py`
+- `tools/materialize_distribution.py`
+- `tools/release_candidate.py`
 
 ## Audit Trail
 
-- EXTRACTED: 263 (98%)
-- INFERRED: 5 (2%)
+- EXTRACTED: 214 (95%)
+- INFERRED: 11 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **cnn_classifier/__init__.py** (1 connections) — `tools/cnn_classifier/__init__.py`
-- **CNN classifier tooling package.** (1 connections) — `tools/cnn_classifier/__init__.py`
+- **visualize_crop_centers.py** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
+- **visualize_crop_centers()** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/__init__.py`
+- `tools/cnn_classifier/visualize_crop_centers.py`
 
 ## Audit Trail
 

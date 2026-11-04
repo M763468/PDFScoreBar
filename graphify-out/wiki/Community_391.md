@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_fps_enhanced.py** (1 connections) — `experiments/fp_reduction/analyze_fps_enhanced.py`
-- **enhanced_analysis()** (1 connections) — `experiments/fp_reduction/analyze_fps_enhanced.py`
+- **analyze_gaps.py** (1 connections) — `experiments/fp_reduction/analyze_gaps.py`
+- **analyze_gaps()** (1 connections) — `experiments/fp_reduction/analyze_gaps.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_fps_enhanced.py`
+- `experiments/fp_reduction/analyze_gaps.py`
 
 ## Audit Trail
 

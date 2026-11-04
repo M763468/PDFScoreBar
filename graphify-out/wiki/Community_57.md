@@ -1,52 +1,47 @@
 # Community 57
 
-> 36 nodes · cohesion 0.17
+> 37 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **compare_full68_x_domain.py** (31 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **Path** (19 connections)
-- **run()** (15 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **Any** (14 connections)
-- **_run_downstream_variant()** (11 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **test_issue43_full68_harness.py** (10 connections) — `tests/test_issue43_full68_harness.py`
-- **_generate_current_upstream_manifest()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_validate_inventory()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_validate_upstream_manifest()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_load_json()** (7 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_build_comparison()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_compare_box_roots()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_source_commit()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_box_set()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_group_images_by_score()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_load_canonical_config()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_resolve_production_cnn()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_sha256()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_write_json()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_evaluation_args()** (4 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **test_upstream_manifest_accepts_same_page_stem_in_separate_scores()** (4 connections) — `tests/test_issue43_full68_harness.py`
-- **_accuracy_not_worse()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_box_files()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_canonical_images()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_copy_tree()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- *... and 11 more nodes in this community*
+- **app_rest.js** (36 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **loadPage()** (9 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **draw()** (5 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **renderMeasureList()** (4 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **drawBox()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **drawLabel()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **fetchJSON()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **imgToCanvas()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **loadRestGT()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **save()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **setDirty()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **updateSelectedMeta()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **applyRestGT()** (2 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **collectOverrides()** (2 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **resetView()** (2 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **applyBtn** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **canvas** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **canvasToImg()** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **ctx** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **dirtyStatus** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **image** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **measureList** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **measures** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **nextBtn** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **pageMeta** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- *... and 12 more nodes in this community*
 
 ## Relationships
 
-- [Community 97](Community_97.md) (2 shared connections)
-- [Community 122](Community_122.md) (2 shared connections)
-- [Community 67](Community_67.md) (2 shared connections)
-- [Community 115](Community_115.md) (2 shared connections)
-- [Community 108](Community_108.md) (2 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `experiments/issue43/compare_full68_x_domain.py`
-- `tests/test_issue43_full68_harness.py`
+- `tools/gt_relabel_gui/app_rest.js`
 
 ## Audit Trail
 
-- EXTRACTED: 119 (100%)
+- EXTRACTED: 53 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,52 +1,42 @@
 # Community 145
 
-> 18 nodes · cohesion 0.21
+> 18 nodes · cohesion 0.27
 
 ## Key Concepts
 
-- **iter_manifest()** (30 connections) — `tools/issue120/eval_full68_from_intermediates.py`
-- **find_page_file()** (20 connections) — `tools/issue120/eval_full68_from_intermediates.py`
-- **compare_filter_candidate_deltas.py** (8 connections) — `tools/issue120/compare_filter_candidate_deltas.py`
-- **compare_candidate_coverage.py** (7 connections) — `tools/issue120/compare_candidate_coverage.py`
-- **main()** (7 connections) — `tools/issue120/compare_filter_candidate_deltas.py`
-- **main()** (6 connections) — `tools/issue120/compare_candidate_coverage.py`
-- **build_parser()** (4 connections) — `tools/issue120/compare_candidate_coverage.py`
-- **load_boxes()** (4 connections) — `tools/issue120/compare_filter_candidate_deltas.py`
-- **load_suggestion_summary()** (4 connections) — `tools/issue120/compare_filter_candidate_deltas.py`
-- **load_count()** (3 connections) — `tools/issue120/compare_candidate_coverage.py`
-- **build_parser()** (3 connections) — `tools/issue120/compare_filter_candidate_deltas.py`
-- **Path** (3 connections)
-- **suggestion_path()** (3 connections) — `tools/issue120/compare_filter_candidate_deltas.py`
-- **Path** (2 connections)
-- **safe_ratio()** (2 connections) — `tools/issue120/compare_candidate_coverage.py`
-- **ArgumentParser** (1 connections)
-- **Any** (1 connections)
-- **ArgumentParser** (1 connections)
+- **test_issue264_phase_c_acceptance_integrity.py** (18 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **Path** (12 connections)
+- **verify_source_report()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_source_report()** (8 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **_verify_source_acceptance()** (8 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_detail()** (5 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_artifact_path_accepts_bytes_matching_recorded_provenance()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_artifact_path_rejects_hash_change_with_same_size()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_artifact_path_rejects_size_change()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_resume_rejects_different_producer_contract()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_source_gate_allows_only_direct_index_score_failures()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_source_gate_rejects_non_index_failure()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_source_gate_rejects_stale_invocation()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_standalone_rescore_allows_direct_index_only_failures()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_standalone_rescore_rejects_non_index_source_failure()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **test_phase_c_wrapper_runs_integrity_rebase_and_final_lint()** (2 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
+- **Verify canonical non-index source gates and current-invocation identity.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Require standalone rescoring to preserve all non-index source gates.** (1 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
 
 ## Relationships
 
-- [Community 126](Community_126.md) (7 shared connections)
-- [Community 127](Community_127.md) (6 shared connections)
-- [Community 120](Community_120.md) (4 shared connections)
-- [Community 128](Community_128.md) (4 shared connections)
-- [Community 169](Community_169.md) (4 shared connections)
-- [Community 173](Community_173.md) (4 shared connections)
-- [Community 188](Community_188.md) (4 shared connections)
-- [Community 6](Community_6.md) (3 shared connections)
-- [Community 129](Community_129.md) (2 shared connections)
-- [Community 187](Community_187.md) (2 shared connections)
-- [Community 158](Community_158.md) (2 shared connections)
-- [Community 80](Community_80.md) (2 shared connections)
+- [Community 94](Community_94.md) (10 shared connections)
+- [Community 138](Community_138.md) (8 shared connections)
 
 ## Source Files
 
-- `tools/issue120/compare_candidate_coverage.py`
-- `tools/issue120/compare_filter_candidate_deltas.py`
-- `tools/issue120/eval_full68_from_intermediates.py`
+- `tests/test_issue264_phase_c_acceptance_integrity.py`
+- `tools/issue264/phase_c_acceptance_integrity.py`
+- `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
 
 ## Audit Trail
 
-- EXTRACTED: 77 (100%)
+- EXTRACTED: 60 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

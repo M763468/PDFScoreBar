@@ -1,54 +1,53 @@
 # Community 105
 
-> 25 nodes · cohesion 0.19
+> 22 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **mine_fn_cnn_hardpositives.py** (13 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
-- **main()** (11 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
-- **mine_hard_negatives.py** (11 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
-- **main()** (10 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
-- **re_evaluate_global.py** (10 connections) — `tools/re_evaluate_global.py`
-- **find_gt_file()** (8 connections) — `tools/re_evaluate_global.py`
-- **parse_scored_context()** (8 connections) — `tools/re_evaluate_global.py`
-- **main()** (7 connections) — `tools/re_evaluate_global.py`
-- **center_crop()** (6 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **crop_size_from_bbox()** (6 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **barline_iou()** (5 connections) — `tools/cnn_classifier/visualize_candidates.py`
-- **_best_recoverable_candidate()** (4 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
-- **_load_gt_boxes()** (4 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
-- **_load_gt_boxes()** (4 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
-- **Path** (4 connections)
-- **load_config_file()** (3 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
-- **Path** (3 connections)
-- **load_config_file()** (3 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
-- **Path** (3 connections)
-- **load_config_file()** (3 connections) — `tools/re_evaluate_global.py`
-- **HardPositiveRow** (2 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
-- **HardNegativeRow** (2 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
-- **visualize_candidates.py** (2 connections) — `tools/cnn_classifier/visualize_candidates.py`
-- **visualize_candidates()** (2 connections) — `tools/cnn_classifier/visualize_candidates.py`
-- **Parse score/page context from scored JSON path. Supported layouts: - nested:…** (1 connections) — `tools/re_evaluate_global.py`
+- **test_probe_helpers.py** (28 connections) — `tests/test_probe_helpers.py`
+- **measurements.py** (14 connections) — `src/pipeline/probe_detector/measurements.py`
+- **project_staff_band()** (12 connections) — `src/pipeline/probe_detector/measurements.py`
+- **measure_candidate_scan()** (10 connections) — `src/pipeline/probe_detector/measurements.py`
+- **CandidateScanConfig** (10 connections) — `src/pipeline/probe_detector/types.py`
+- **BandProjectionConfig** (9 connections) — `src/pipeline/probe_detector/types.py`
+- **select_signal_peaks()** (7 connections) — `src/pipeline/probe_detector/measurements.py`
+- **test_candidate_measurement_keeps_fallback_and_staff_peak_exclusion()** (6 connections) — `tests/test_probe_helpers.py`
+- **BandProjection** (5 connections) — `src/pipeline/probe_detector/measurements.py`
+- **_projection_config()** (5 connections) — `tests/test_probe_helpers.py`
+- **CandidateScanMeasurement** (4 connections) — `src/pipeline/probe_detector/measurements.py`
+- **ndarray** (3 connections)
+- **_candidate_scan_config()** (3 connections) — `tests/test_probe_helpers.py`
+- **test_band_projection_keeps_domain_halo_and_extension_ratios()** (3 connections) — `tests/test_probe_helpers.py`
+- **test_row_padding_ratio_precedes_staff_padding_and_clips_at_image_boundary()** (3 connections) — `tests/test_probe_helpers.py`
+- **test_develop_probe_debug_remains_opt_in_and_writes_artifacts()** (2 connections) — `tests/test_probe_helpers.py`
+- **test_peak_domain_and_limit_are_applied_before_returning_selection()** (2 connections) — `tests/test_probe_helpers.py`
+- **test_peak_ties_keep_leftmost_then_apply_distance_in_score_order()** (2 connections) — `tests/test_probe_helpers.py`
+- **Staff projections, peak selection and candidate measurements before acceptance.** (1 connections) — `src/pipeline/probe_detector/measurements.py`
+- **Existing options for candidate-local ink measurements; no new defaults.** (1 connections) — `src/pipeline/probe_detector/types.py`
+- **parametrize** (1 connections)
+- **test_develop_wide_split_opt_in_calls_existing_implementation()** (1 connections) — `tests/test_probe_helpers.py`
 
 ## Relationships
 
-- [Community 1](Community_1.md) (11 shared connections)
-- [Community 11](Community_11.md) (6 shared connections)
-- [Community 30](Community_30.md) (3 shared connections)
-- [Community 195](Community_195.md) (1 shared connections)
+- [Community 100](Community_100.md) (20 shared connections)
+- [Community 8](Community_8.md) (5 shared connections)
+- [Community 259](Community_259.md) (3 shared connections)
+- [Community 87](Community_87.md) (2 shared connections)
+- [Community 31](Community_31.md) (1 shared connections)
+- [Community 50](Community_50.md) (1 shared connections)
+- [Community 77](Community_77.md) (1 shared connections)
+- [Community 18](Community_18.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
-- `tools/cnn_classifier/mine_hard_negatives.py`
-- `tools/cnn_classifier/score_candidates_batch.py`
-- `tools/cnn_classifier/visualize_candidates.py`
-- `tools/re_evaluate_global.py`
+- `src/pipeline/probe_detector/measurements.py`
+- `src/pipeline/probe_detector/types.py`
+- `tests/test_probe_helpers.py`
 
 ## Audit Trail
 
-- EXTRACTED: 75 (96%)
-- INFERRED: 3 (4%)
+- EXTRACTED: 79 (95%)
+- INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

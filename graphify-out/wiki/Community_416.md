@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **homr_eval_scripts/segnet_cache.py** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
-- **Compatibility alias for the production-owned Segnet cache.** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
+- **test_numbering_preview.py** (1 connections) — `tests/test_numbering_preview.py`
+- **test_numbering_preview_uses_retained_artifact_consumer_without_mutating_package()** (1 connections) — `tests/test_numbering_preview.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `src/homr_eval_scripts/segnet_cache.py`
+- `tests/test_numbering_preview.py`
 
 ## Audit Trail
 

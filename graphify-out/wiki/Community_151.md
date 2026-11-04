@@ -1,39 +1,48 @@
 # Community 151
 
-> 17 nodes · cohesion 0.18
+> 17 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **Any** (12 connections)
-- **ResourceSampler** (11 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._sample_rusage()** (5 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_read_gpu_sample()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._run()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._sample_process_tree()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.summary()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_cpu_seconds()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_linux_maxrss_bytes()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._record_gpu_peaks()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.stop()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.__init__()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **struct_rusage** (1 connections)
-- **Convert Linux resource.ru_maxrss KiB units to bytes.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Return a best-effort nvidia-smi sample. Empty when NVIDIA tooling is…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Best-effort process/GPU resource sampler for long Stage E runs.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.start()** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **build_row_stats()** (19 connections) — `src/pipeline/probe_detector/bands.py`
+- **run_probe_detector_parity_check.py** (10 connections) — `tools/verification/run_probe_detector_parity_check.py`
+- **run_parity_check()** (9 connections) — `tools/verification/run_probe_detector_parity_check.py`
+- **regression_check_staff.py** (4 connections) — `tools/regression_check_staff.py`
+- **_load_json()** (4 connections) — `tools/verification/run_probe_detector_parity_check.py`
+- **check_improved_rule.py** (3 connections) — `tools/check_improved_rule.py`
+- **explain_rule_failure.py** (3 connections) — `tools/explain_rule_failure.py`
+- **main()** (3 connections) — `tools/verification/run_probe_detector_parity_check.py`
+- **_normalize_boxes()** (3 connections) — `tools/verification/run_probe_detector_parity_check.py`
+- **parse_args()** (3 connections) — `tools/verification/run_probe_detector_parity_check.py`
+- **Any** (3 connections)
+- **visualize_improved_staff_detection()** (2 connections) — `tools/check_improved_rule.py`
+- **visualize_staff_misdetection()** (2 connections) — `tools/explain_rule_failure.py`
+- **check_regression()** (2 connections) — `tools/regression_check_staff.py`
+- **visualize_staff()** (2 connections) — `tools/regression_check_staff.py`
+- **Path** (2 connections)
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- [Community 131](Community_131.md) (10 shared connections)
-- [Community 240](Community_240.md) (3 shared connections)
+- [Community 259](Community_259.md) (7 shared connections)
+- [Community 7](Community_7.md) (3 shared connections)
+- [Community 154](Community_154.md) (2 shared connections)
+- [Community 11](Community_11.md) (2 shared connections)
+- [Community 37](Community_37.md) (2 shared connections)
+- [Community 100](Community_100.md) (2 shared connections)
+- [Community 31](Community_31.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_stage_e_full_pipeline.py`
+- `src/pipeline/probe_detector/bands.py`
+- `tools/check_improved_rule.py`
+- `tools/explain_rule_failure.py`
+- `tools/regression_check_staff.py`
+- `tools/verification/run_probe_detector_parity_check.py`
 
 ## Audit Trail
 
-- EXTRACTED: 38 (100%)
+- EXTRACTED: 47 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

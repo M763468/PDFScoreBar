@@ -1,56 +1,49 @@
 # Community 65
 
-> 25 nodes · cohesion 0.22
+> 34 nodes · cohesion 0.11
 
 ## Key Concepts
 
-- **deepening_analyze.py** (20 connections) — `tools/issue447/deepening_analyze.py`
-- **proc_summary()** (19 connections) — `tools/issue447/analyze.py`
-- **issue447/analyze.py** (18 connections) — `tools/issue447/analyze.py`
-- **gpu_summary()** (17 connections) — `tools/issue447/analyze.py`
-- **load()** (14 connections) — `tools/issue447/analyze.py`
-- **issue454/analyze.py** (11 connections) — `tools/issue454/analyze.py`
-- **main()** (9 connections) — `tools/issue447/analyze.py`
-- **Path** (9 connections)
-- **compare_bundle()** (8 connections) — `tools/issue447/analyze.py`
-- **e2e_candidate_matrix.py** (8 connections) — `tools/issue447/e2e_candidate_matrix.py`
-- **main()** (7 connections) — `tools/issue447/e2e_candidate_matrix.py`
-- **main()** (7 connections) — `tools/issue454/analyze.py`
-- **source_semantics()** (6 connections) — `tools/issue447/analyze.py`
-- **main()** (6 connections) — `tools/issue447/deepening_analyze.py`
-- **parallel_semantics()** (5 connections) — `tools/issue447/analyze.py`
-- **Path** (5 connections)
-- **source_checks()** (5 connections) — `tools/issue447/deepening_analyze.py`
-- **compare_sr()** (4 connections) — `tools/issue454/analyze.py`
-- **sr_result()** (4 connections) — `tools/issue454/analyze.py`
-- **inventory()** (2 connections) — `tools/issue447/e2e_candidate_matrix.py`
-- **Re-score retained Issue #447 logs; this script never launches inference.** (1 connections) — `tools/issue447/analyze.py`
-- **Compare named semantic outputs and decoded masks, not counts/PNG bytes.** (1 connections) — `tools/issue447/analyze.py`
-- **Semantic gates and non-additive resource summaries for the continued…** (1 connections) — `tools/issue447/deepening_analyze.py`
-- **Serial, predeclared E2E matrix; never launches full68 or edits production.** (1 connections) — `tools/issue447/e2e_candidate_matrix.py`
-- **Offline strict gates for frozen cache E2E runs; never starts inference.** (1 connections) — `tools/issue454/analyze.py`
+- **DocLinkChecks** (18 connections) — `tests/test_doc_links.py`
+- **.run_check()** (14 connections) — `tests/test_doc_links.py`
+- **check_doc_links.py** (10 connections) — `tools/verification/check_doc_links.py`
+- **check()** (8 connections) — `tools/verification/check_doc_links.py`
+- **test_doc_links.py** (6 connections) — `tests/test_doc_links.py`
+- **prose_lines()** (6 connections) — `tools/verification/check_doc_links.py`
+- **links()** (5 connections) — `tools/verification/check_doc_links.py`
+- **slugify()** (5 connections) — `tools/verification/check_doc_links.py`
+- **anchors()** (4 connections) — `tools/verification/check_doc_links.py`
+- **main()** (4 connections) — `tools/verification/check_doc_links.py`
+- **.test_multi_line_indented_code_block_is_ignored()** (3 connections) — `tests/test_doc_links.py`
+- **destinations()** (3 connections) — `tools/verification/check_doc_links.py`
+- **Path** (3 connections)
+- **tracked_markdown()** (3 connections) — `tools/verification/check_doc_links.py`
+- **.test_balanced_parentheses_and_angle_destinations()** (2 connections) — `tests/test_doc_links.py`
+- **.test_code_examples_are_ignored()** (2 connections) — `tests/test_doc_links.py`
+- **.test_emphasis_is_removed_from_heading_slugs()** (2 connections) — `tests/test_doc_links.py`
+- **.test_escaped_destination_is_decoded()** (2 connections) — `tests/test_doc_links.py`
+- **.test_indented_code_block_is_ignored_but_list_continuation_is_checked()** (2 connections) — `tests/test_doc_links.py`
+- **.test_inline_code_spanning_lines_is_ignored()** (2 connections) — `tests/test_doc_links.py`
+- **.test_missing_target_and_fragment_are_reported()** (2 connections) — `tests/test_doc_links.py`
+- **.test_percent_encoded_target()** (2 connections) — `tests/test_doc_links.py`
+- **.test_query_string_is_not_part_of_the_path()** (2 connections) — `tests/test_doc_links.py`
+- **.test_reference_definitions_are_checked()** (2 connections) — `tests/test_doc_links.py`
+- **.test_relative_paths_are_resolved_against_root()** (2 connections) — `tests/test_doc_links.py`
+- *... and 9 more nodes in this community*
 
 ## Relationships
 
-- [Community 222](Community_222.md) (30 shared connections)
-- [Community 140](Community_140.md) (11 shared connections)
-- [Community 85](Community_85.md) (4 shared connections)
-- [Community 184](Community_184.md) (4 shared connections)
-- [Community 301](Community_301.md) (4 shared connections)
-- [Community 327](Community_327.md) (1 shared connections)
-- [Community 45](Community_45.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/issue447/analyze.py`
-- `tools/issue447/deepening_analyze.py`
-- `tools/issue447/e2e_candidate_matrix.py`
-- `tools/issue454/analyze.py`
+- `tests/test_doc_links.py`
+- `tools/verification/check_doc_links.py`
 
 ## Audit Trail
 
-- EXTRACTED: 120 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 63 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

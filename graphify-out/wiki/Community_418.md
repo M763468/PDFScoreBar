@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_divisi_logic.py** (1 connections) — `tools/analyze_divisi_logic.py`
-- **main()** (1 connections) — `tools/analyze_divisi_logic.py`
+- **check_gt_config.py** (1 connections) — `tools/check_gt_config.py`
+- **main()** (1 connections) — `tools/check_gt_config.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/analyze_divisi_logic.py`
+- `tools/check_gt_config.py`
 
 ## Audit Trail
 

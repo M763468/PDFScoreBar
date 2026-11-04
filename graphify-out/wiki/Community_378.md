@@ -1,12 +1,12 @@
 # Community 378
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **strings.js** (2 connections) — `tools/review_correction/strings.js`
-- **reviewEnglish** (1 connections) — `tools/review_correction/strings.js`
-- **reviewJapanese** (1 connections) — `tools/review_correction/strings.js`
+- **run_failure_analysis.py** (2 connections) — `tools/run_failure_analysis.py`
+- **main()** (2 connections) — `tools/run_failure_analysis.py`
+- **run_debug()** (2 connections) — `tools/run_failure_analysis.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/review_correction/strings.js`
+- `tools/run_failure_analysis.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **pdfscore-pipeline** (0 connections) — `pyproject.toml`
+- **conftest.py** (0 connections) — `tests/conftest.py`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `pyproject.toml`
+- `tests/conftest.py`
 
 ## Audit Trail
 

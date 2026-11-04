@@ -4,37 +4,36 @@
 
 ## Key Concepts
 
-- **draw()** (21 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **itemsForCurrentPage()** (13 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **renderMovementRows()** (11 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **drawMovementMarker()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementStateAt()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementSystemsOnPage()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **systemBounds()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementCandidateAt()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **drawBox()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **drawLabel()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **imgToCanvas()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **resolvedMovementAt()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **measureDisplayLabel()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementReviewAt()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementEvidenceText()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **test_issue296_cnn_dataset_matching.py** (15 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **_is_canonical_candidate_match()** (8 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **_verified_orchestrator()** (6 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **Path** (4 connections)
+- **_run_builder()** (4 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_dataset_builder_help_works_without_pythonpath()** (3 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_dataset_builder_rejects_obsolete_iou_threshold_option()** (3 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_candidate_outside_center_anchor_xdist_is_negative()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_candidate_requires_half_vertical_overlap()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_candidate_with_no_horizontal_iou_can_still_be_canonical_positive()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_verified_route_accepts_explicit_d27_scoring_contract_in_dry_run()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_verified_route_rejects_cnn_nms_enabled()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_verified_route_requires_explicit_cnn_apply_nms()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **test_verified_route_requires_explicit_cnn_threshold()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
+- **Match a generated candidate with the canonical production/evaluation contract.** (1 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
 
 ## Relationships
 
-- [Community 186](Community_186.md) (17 shared connections)
-- [Community 15](Community_15.md) (16 shared connections)
-- [Community 253](Community_253.md) (8 shared connections)
-- [Community 208](Community_208.md) (6 shared connections)
-- [Community 152](Community_152.md) (1 shared connections)
+- [Community 102](Community_102.md) (3 shared connections)
+- [Community 68](Community_68.md) (2 shared connections)
+- [Community 0](Community_0.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_manual.js`
+- `tests/test_issue296_cnn_dataset_matching.py`
+- `tools/cnn_classifier/build_cnn_dataset.py`
 
 ## Audit Trail
 
-- EXTRACTED: 74 (100%)
+- EXTRACTED: 32 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

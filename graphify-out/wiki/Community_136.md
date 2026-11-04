@@ -1,44 +1,43 @@
 # Community 136
 
-> 20 nodes · cohesion 0.28
+> 20 nodes · cohesion 0.29
 
 ## Key Concepts
 
-- **diagnose_stage_e_fns.py** (18 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **eval_stage_e_from_manifest.py** (13 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
-- **diagnose()** (12 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **main()** (9 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
-- **Path** (8 connections)
-- **safe_boxes()** (7 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **load_json()** (5 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **nearest_box()** (5 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **Any** (5 connections)
-- **stage_paths()** (5 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **boxes_from_candidates()** (5 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
-- **boxes_from_gt()** (5 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
-- **boxes_from_scored()** (5 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
-- **main()** (4 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **page_map_from_manifest()** (4 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **write_json()** (4 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **normalize_box()** (4 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
-- **first_existing()** (3 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **match_flags()** (3 connections) — `tools/issue120/diagnose_stage_e_fns.py`
-- **Namespace** (2 connections)
+- **audit_full68_candidate_changes.py** (19 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **audit()** (16 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_json()** (9 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **Any** (8 connections)
+- **Path** (6 connections)
+- **_audit_box()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_boxes_from_payload()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_host_path()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_existing_boxes()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_normalize_box()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_scored_map()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_gt()** (4 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_inventory_records()** (4 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_outside_staff_span_for_candidate_y()** (4 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_staff_units()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_matches_any_gt()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_parse_eval_run_dir()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_summarize()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **main()** (2 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_pad_px_from_existing()** (2 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
 
 ## Relationships
 
-- [Community 1](Community_1.md) (13 shared connections)
-- [Community 77](Community_77.md) (7 shared connections)
+- [Community 78](Community_78.md) (2 shared connections)
+- [Community 0](Community_0.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/issue120/diagnose_stage_e_fns.py`
-- `tools/issue120/eval_stage_e_from_manifest.py`
+- `experiments/issue43/audit_full68_candidate_changes.py`
 
 ## Audit Trail
 
-- EXTRACTED: 72 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 60 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

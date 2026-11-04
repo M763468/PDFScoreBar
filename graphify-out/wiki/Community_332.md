@@ -1,13 +1,13 @@
 # Community 332
 
-> 4 nodes · cohesion 0.83
+> 4 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **batch_verify_numbering.py** (3 connections) — `tools/batch_verify_numbering.py`
-- **process_page()** (3 connections) — `tools/batch_verify_numbering.py`
-- **main()** (2 connections) — `tools/batch_verify_numbering.py`
-- **run_command()** (2 connections) — `tools/batch_verify_numbering.py`
+- **recipe_references()** (3 connections) — `tools/check_makefile_references.py`
+- **check_makefile_references.py** (2 connections) — `tools/check_makefile_references.py`
+- **main()** (2 connections) — `tools/check_makefile_references.py`
+- **Path** (1 connections)
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/batch_verify_numbering.py`
+- `tools/check_makefile_references.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

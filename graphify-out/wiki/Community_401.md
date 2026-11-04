@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_gt_rebuild_eval.sh** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
-- **run_gt_rebuild_eval.sh script** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
+- **detect_hbar_test.py** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
+- **detect_hbar()** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
+- `experiments/legacy/tools_archive/detect_hbar_test.py`
 
 ## Audit Trail
 

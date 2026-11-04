@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **graphify_query.sh** (3 connections) — `scripts/graphify_query.sh`
-- **graphify_query.sh script** (3 connections) — `scripts/graphify_query.sh`
-- **rebuild_code_graph()** (2 connections) — `scripts/graphify_query.sh`
-- **warn_if_code_changed_since_shared_graph()** (2 connections) — `scripts/graphify_query.sh`
+- **validate_issue267_numbering_counts.sh** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **validate_issue267_numbering_counts.sh script** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **require_clean_tracked_worktree()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **usage()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `scripts/graphify_query.sh`
+- `scripts/validate_issue267_numbering_counts.sh`
 
 ## Audit Trail
 

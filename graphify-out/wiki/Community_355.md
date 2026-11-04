@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **docker_runtime_validation.sh** (2 connections) — `scripts/docker_runtime_validation.sh`
-- **docker_runtime_validation.sh script** (2 connections) — `scripts/docker_runtime_validation.sh`
-- **usage()** (2 connections) — `scripts/docker_runtime_validation.sh`
+- **gpu_smoke.sh** (2 connections) — `scripts/gpu_smoke.sh`
+- **gpu_smoke.sh script** (2 connections) — `scripts/gpu_smoke.sh`
+- **usage()** (2 connections) — `scripts/gpu_smoke.sh`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `scripts/docker_runtime_validation.sh`
+- `scripts/gpu_smoke.sh`
 
 ## Audit Trail
 

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **extract_final_hard_negatives.py** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
-- **extract_crop()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
-- **main()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
+- **convert_eval2_pdfs.py** (2 connections) — `tools/convert_eval2_pdfs.py`
+- **convert_pdf()** (2 connections) — `tools/convert_eval2_pdfs.py`
+- **main()** (2 connections) — `tools/convert_eval2_pdfs.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/extract_final_hard_negatives.py`
+- `tools/convert_eval2_pdfs.py`
 
 ## Audit Trail
 

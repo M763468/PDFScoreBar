@@ -1,38 +1,38 @@
 # Community 134
 
-> 21 nodes · cohesion 0.24
+> 21 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **draw()** (25 connections) — `tools/review_correction/app.js`
-- **pageValue()** (18 connections) — `tools/review_correction/app.js`
-- **deleteSelectedItem()** (14 connections) — `tools/review_correction/app.js`
-- **itemsForCurrentPage()** (13 connections) — `tools/review_correction/app.js`
-- **renderMovementRows()** (13 connections) — `tools/review_correction/app.js`
-- **renderMmrRows()** (11 connections) — `tools/review_correction/app.js`
-- **effectiveMmrState()** (10 connections) — `tools/review_correction/app.js`
-- **movementSystemsOnPage()** (8 connections) — `tools/review_correction/app.js`
-- **manualMmrMap()** (7 connections) — `tools/review_correction/app.js`
-- **measureKey()** (7 connections) — `tools/review_correction/app.js`
-- **movementStateAt()** (7 connections) — `tools/review_correction/app.js`
-- **baseMmrMap()** (6 connections) — `tools/review_correction/app.js`
-- **selectedMeasureKey()** (6 connections) — `tools/review_correction/app.js`
-- **updateActionButtons()** (6 connections) — `tools/review_correction/app.js`
-- **movementCandidateAt()** (5 connections) — `tools/review_correction/app.js`
-- **removeManualMmrForSelected()** (5 connections) — `tools/review_correction/app.js`
-- **replaceItemsForCurrentPage()** (4 connections) — `tools/review_correction/app.js`
-- **resolvedMovementAt()** (4 connections) — `tools/review_correction/app.js`
-- **movementReviewAt()** (3 connections) — `tools/review_correction/app.js`
-- **operationLabel()** (3 connections) — `tools/review_correction/app.js`
-- **movementEvidenceText()** (2 connections) — `tools/review_correction/app.js`
+- **reviewerCopy()** (20 connections) — `tools/review_correction/app.js`
+- **loadPage()** (19 connections) — `tools/review_correction/app.js`
+- **renderPageList()** (9 connections) — `tools/review_correction/app.js`
+- **switchPage()** (7 connections) — `tools/review_correction/app.js`
+- **fetchJSON()** (6 connections) — `tools/review_correction/app.js`
+- **loadMmr()** (6 connections) — `tools/review_correction/app.js`
+- **loadMovementEvidence()** (6 connections) — `tools/review_correction/app.js`
+- **saveCorrectionTypes()** (5 connections) — `tools/review_correction/app.js`
+- **updateMovementFinishButton()** (5 connections) — `tools/review_correction/app.js`
+- **loadCorrections()** (4 connections) — `tools/review_correction/app.js`
+- **loadNumbering()** (4 connections) — `tools/review_correction/app.js`
+- **measureDisplayLabel()** (4 connections) — `tools/review_correction/app.js`
+- **loadBarlines()** (3 connections) — `tools/review_correction/app.js`
+- **barlinePathFromPage()** (2 connections) — `tools/review_correction/app.js`
+- **mmrPathFromPage()** (2 connections) — `tools/review_correction/app.js`
+- **movementEvidenceCandidateId()** (2 connections) — `tools/review_correction/app.js`
+- **normalizeMmrRecords()** (2 connections) — `tools/review_correction/app.js`
+- **resetView()** (2 connections) — `tools/review_correction/app.js`
+- **saveDirtyTypes()** (2 connections) — `tools/review_correction/app.js`
+- **updatePageNavigation()** (2 connections) — `tools/review_correction/app.js`
+- **waitForMovementSaves()** (2 connections) — `tools/review_correction/app.js`
 
 ## Relationships
 
-- [Community 146](Community_146.md) (33 shared connections)
-- [Community 9](Community_9.md) (21 shared connections)
-- [Community 133](Community_133.md) (12 shared connections)
-- [Community 288](Community_288.md) (5 shared connections)
-- [Community 321](Community_321.md) (4 shared connections)
+- [Community 9](Community_9.md) (22 shared connections)
+- [Community 147](Community_147.md) (15 shared connections)
+- [Community 135](Community_135.md) (12 shared connections)
+- [Community 288](Community_288.md) (2 shared connections)
+- [Community 320](Community_320.md) (1 shared connections)
 
 ## Source Files
 
@@ -40,8 +40,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 125 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 83 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

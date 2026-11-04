@@ -1,55 +1,56 @@
 # Community 70
 
-> 30 nodes · cohesion 0.13
+> 32 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **DetectorOrchestrator** (21 connections) — `src/pipeline/detection/orchestrator.py`
-- **._run_probe_scan()** (13 connections) — `src/pipeline/detection/orchestrator.py`
-- **Path** (11 connections)
-- **._run_cnn_scoring()** (10 connections) — `src/pipeline/detection/orchestrator.py`
-- **.run_detection()** (7 connections) — `src/pipeline/detection/orchestrator.py`
-- **Any** (7 connections)
-- **run_detection_step()** (7 connections) — `src/pipeline/detection/orchestrator.py`
-- **_candidate_json_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
-- **._copy_precomputed_probe_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
-- **.__init__()** (6 connections) — `src/pipeline/detection/orchestrator.py`
-- **._get_effective_images_for_probe()** (5 connections) — `src/pipeline/detection/orchestrator.py`
-- **._record_input_contract()** (5 connections) — `src/pipeline/detection/orchestrator.py`
-- **._run_hybrid_detection()** (5 connections) — `src/pipeline/detection/orchestrator.py`
-- **_split_score_page_from_stem()** (4 connections) — `src/pipeline/detection/orchestrator.py`
-- **._get_effective_score_name()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_clef_mask_dir()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_cnn_bands_from()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_precomputed_probe_candidates_root()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_staff_mask_dir()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **_reject_removed_detector_route_keys()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **Persist which detector source is authoritative before executing stages.** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Executes the full detection pipeline.** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Step 2.1: Hybrid Detection (Subprocess or In-Process)** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Step 2.2: Probe Scan (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Step 2.3: CNN Scoring (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- *... and 5 more nodes in this community*
+- **MMRClassifier** (25 connections) — `src/measure_numbering/mmr.py`
+- **diagnose_ocr_frame_changed_pages.py** (22 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **run()** (15 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **run_h2_matrix()** (12 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **Any** (8 connections)
+- **run_mmr_batch()** (6 connections) — `src/measure_numbering/mmr.py`
+- **_preflight()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_semantic()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
+- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
+- **Path** (5 connections)
+- **_comparison()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **legacy_frame_dimensions()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_load_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_probe_matrix_condition()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_write_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **._load_model()** (4 connections) — `src/measure_numbering/mmr.py`
+- **test_issue274_ocr_frame_causal.py** (4 connections) — `tests/test_issue274_ocr_frame_causal.py`
+- **main()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_normalise()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **Path** (4 connections)
+- **_semantic_items()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **device** (3 connections)
+- **_legacy_frame_select()** (3 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **.__init__()** (2 connections) — `src/measure_numbering/mmr.py`
+- *... and 7 more nodes in this community*
 
 ## Relationships
 
-- [Community 108](Community_108.md) (10 shared connections)
-- [Community 122](Community_122.md) (4 shared connections)
-- [Community 59](Community_59.md) (2 shared connections)
-- [Community 201](Community_201.md) (2 shared connections)
-- [Community 90](Community_90.md) (2 shared connections)
-- [Community 67](Community_67.md) (2 shared connections)
-- [Community 20](Community_20.md) (1 shared connections)
-- [Community 91](Community_91.md) (1 shared connections)
-- [Community 36](Community_36.md) (1 shared connections)
+- [Community 12](Community_12.md) (11 shared connections)
+- [Community 14](Community_14.md) (8 shared connections)
+- [Community 6](Community_6.md) (7 shared connections)
+- [Community 51](Community_51.md) (4 shared connections)
+- [Community 50](Community_50.md) (3 shared connections)
+- [Community 13](Community_13.md) (3 shared connections)
+- [Community 126](Community_126.md) (2 shared connections)
+- [Community 82](Community_82.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/orchestrator.py`
+- `src/measure_numbering/mmr.py`
+- `tests/test_issue274_ocr_frame_causal.py`
+- `tools/issue274/diagnose_ocr_frame_changed_pages.py`
 
 ## Audit Trail
 
-- EXTRACTED: 81 (98%)
+- EXTRACTED: 110 (98%)
 - INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 

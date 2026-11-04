@@ -1,49 +1,57 @@
 # Community 82
 
-> 30 nodes · cohesion 0.15
+> 30 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **run_full68_variant.py** (15 connections) — `tools/issue284/run_full68_variant.py`
-- **Path** (11 connections)
-- **main()** (9 connections) — `tools/issue284/run_full68_variant.py`
-- **ResourceSampler** (9 connections) — `tools/issue284/run_full68_variant.py`
-- **run_score()** (9 connections) — `tools/issue284/run_full68_variant.py`
-- **test_issue284_full68_runner_provenance.py** (8 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **Any** (7 connections)
-- **write_variant_summary()** (6 connections) — `tools/issue284/run_full68_variant.py`
-- **load_json()** (5 connections) — `tools/issue284/run_full68_variant.py`
-- **page_artifacts()** (5 connections) — `tools/issue284/run_full68_variant.py`
-- **parse_source_commit()** (5 connections) — `tools/issue284/run_full68_variant.py`
-- **require_host_provenance()** (4 connections) — `tools/issue284/run_full68_variant.py`
-- **test_parse_source_commit_rejects_invalid_sha()** (3 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **derive_config()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **load_scores()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **require_canonical_runtime()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **._gpu()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **._process()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **._run()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **sha256()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **stage_score()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **test_host_provenance_requires_clean_verification()** (2 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **test_parse_source_commit_normalizes_full_sha()** (2 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **test_variant_summary_records_host_verified_provenance()** (2 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **.finish()** (2 connections) — `tools/issue284/run_full68_variant.py`
+- **run_phase_c_mmr_regression.py** (34 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **run()** (22 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **build_page_specs()** (18 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **score_overrides()** (12 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **Any** (11 connections)
+- **index_overrides()** (9 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **test_issue264_phase_c_mmr_regression.py** (8 connections) — `tests/test_issue264_phase_c_mmr_regression.py`
+- **override_skip()** (8 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **describe_file()** (7 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **physical_counts()** (7 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **Path** (7 connections)
+- **_runtime_provenance()** (7 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **_artifact_hashes()** (6 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **_load_expected()** (5 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **PageSpec** (5 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **_detector_provenance()** (4 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **main()** (4 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **parse_eval_image_stem()** (4 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **sha256_file()** (4 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **_canonical_paths()** (3 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **override_key()** (3 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **parse_args()** (3 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **validate_page_specs()** (3 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **test_parse_eval_image_stem_preserves_score_name_and_page()** (2 connections) — `tests/test_issue264_phase_c_mmr_regression.py`
+- **test_physical_counts_reads_one_page_system_lengths()** (2 connections) — `tests/test_issue264_phase_c_mmr_regression.py`
 - *... and 5 more nodes in this community*
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 12](Community_12.md) (28 shared connections)
+- [Community 126](Community_126.md) (6 shared connections)
+- [Community 220](Community_220.md) (3 shared connections)
+- [Community 112](Community_112.md) (3 shared connections)
+- [Community 51](Community_51.md) (3 shared connections)
+- [Community 98](Community_98.md) (2 shared connections)
+- [Community 70](Community_70.md) (2 shared connections)
+- [Community 157](Community_157.md) (2 shared connections)
+- [Community 21](Community_21.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue284_full68_runner_provenance.py`
-- `tools/issue284/run_full68_variant.py`
+- `tests/test_issue264_phase_c_mmr_regression.py`
+- `tools/issue264/run_phase_c_mmr_regression.py`
 
 ## Audit Trail
 
-- EXTRACTED: 66 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 128 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

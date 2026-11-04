@@ -1,12 +1,12 @@
 # Community 377
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **find_nearby.py** (2 connections) — `tools/repro_accuracy/find_nearby.py`
-- **load_json()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
-- **main()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
+- **strings.js** (2 connections) — `tools/review_correction/strings.js`
+- **reviewEnglish** (1 connections) — `tools/review_correction/strings.js`
+- **reviewJapanese** (1 connections) — `tools/review_correction/strings.js`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/find_nearby.py`
+- `tools/review_correction/strings.js`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

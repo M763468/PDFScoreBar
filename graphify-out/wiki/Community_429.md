@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **prepare_rebuild_eval2.py** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
-- **prepare_eval2_rebuild()** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
+- **tools/__init__.py** (1 connections) — `tools/__init__.py`
+- **Tooling scripts package.** (1 connections) — `tools/__init__.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
+- `tools/__init__.py`
 
 ## Audit Trail
 

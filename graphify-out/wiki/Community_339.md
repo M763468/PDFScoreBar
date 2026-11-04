@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **observe_processes.py** (3 connections) — `tools/issue447/observe_processes.py`
-- **main()** (2 connections) — `tools/issue447/observe_processes.py`
-- **snapshot()** (2 connections) — `tools/issue447/observe_processes.py`
-- **Read-only /proc and cgroup sampler for one dedicated benchmark container. Run…** (1 connections) — `tools/issue447/observe_processes.py`
+- **ensure_dir()** (3 connections) — `tools/mmr_training/extract_rest_rois.py`
+- **extract_rest_rois.py** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
+- **main()** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
+- **Path** (1 connections)
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `tools/issue447/observe_processes.py`
+- `tools/mmr_training/extract_rest_rois.py`
 
 ## Audit Trail
 

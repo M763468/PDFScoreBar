@@ -1,58 +1,52 @@
 # Community 74
 
-> 23 nodes · cohesion 0.13
+> 31 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **BatchSRVerifiedProfileHybridDetector** (17 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **maintained_profile_hybrid.py** (14 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **dense_orchestrator_batch_sr.py** (11 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **DetectorOrchestrator** (10 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **VerifiedProfileHybridDetector** (8 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **run_detection_step()** (7 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **test_issue255_detector_dispatch_contract.py** (5 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **_dense_config()** (4 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **._run_hybrid_detection()** (3 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **Path** (3 connections)
-- **test_dense_route_without_profile_reaches_dense_validation()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **test_exported_orchestrator_dispatches_dense_route()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **test_verified_route_rejects_duplicate_image_stems_before_outputs_collide()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **Any** (2 connections)
-- **Path** (2 connections)
-- **Any** (2 connections)
-- **BaseDetectorOrchestrator** (1 connections)
-- **Verified dense-route production orchestrator with dedicated batch SR.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **Keep the accepted dense route unchanged except for current-x4 SR scheduling.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **Run the verified dense production detector with a dedicated all-pages SR phase.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **Maintained original-page baseline and current-x4 support workflow.** (1 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
+- **test_issue459_job_phase.py** (20 connections) — `tests/test_issue459_job_phase.py`
+- **digest()** (12 connections) — `tools/issue459/job_phase.py`
+- **build()** (11 connections) — `tools/issue459/job_phase.py`
+- **job_phase.py** (10 connections) — `tools/issue459/job_phase.py`
+- **consume()** (8 connections) — `tools/issue459/job_phase.py`
+- **job_worker.py** (8 connections) — `tools/issue459/job_worker.py`
+- **run()** (8 connections) — `tools/issue459/job_worker.py`
+- **inputs()** (7 connections) — `tests/test_issue459_job_phase.py`
+- **prediction_bytes()** (7 connections) — `tools/issue459/job_phase.py`
+- **prepared()** (6 connections) — `tests/test_issue459_job_phase.py`
+- **test_sr_identity_must_bind_the_pre_sr_source_and_current_run()** (6 connections) — `tests/test_issue459_job_phase.py`
+- **atomic_publish()** (6 connections) — `tools/issue459/job_phase.py`
+- **execute_worker()** (6 connections) — `tools/issue459/job_phase.py`
+- **test_failed_directory_cannot_be_reused_but_fresh_job_recovers()** (5 connections) — `tests/test_issue459_job_phase.py`
+- **test_worker_fault_cannot_publish_complete_and_retains_diagnostics()** (5 connections) — `tests/test_issue459_job_phase.py`
+- **parametrize** (4 connections)
+- **test_adapter_captures_source_before_sr_and_rejects_foreign_outputs()** (4 connections) — `tests/test_issue459_job_phase.py`
+- **test_any_tampered_identity_rejects_even_when_consuming_another_page()** (4 connections) — `tests/test_issue459_job_phase.py`
+- **worker()** (4 connections) — `tests/test_issue459_job_phase.py`
+- **test_ordered_complete_handoff_copies_exact_bytes_without_overwrite()** (3 connections) — `tests/test_issue459_job_phase.py`
+- **test_zero_extent_clipped_edges_preserve_existing_strict_consensus_contract()** (3 connections) — `tests/test_issue459_job_phase.py`
+- **test_sigterm_cancellation_terminates_worker_and_restores_handler()** (2 connections) — `tests/test_issue459_job_phase.py`
+- **test_timeout_kills_and_reaps_a_worker_that_ignores_sigterm()** (2 connections) — `tests/test_issue459_job_phase.py`
+- **Handoff** (2 connections) — `tools/issue459/job_phase.py`
+- **main()** (2 connections) — `tools/issue459/job_worker.py`
+- *... and 6 more nodes in this community*
 
 ## Relationships
 
-- [Community 67](Community_67.md) (6 shared connections)
-- [Community 122](Community_122.md) (5 shared connections)
-- [Community 63](Community_63.md) (4 shared connections)
-- [Community 78](Community_78.md) (4 shared connections)
-- [Community 21](Community_21.md) (4 shared connections)
-- [Community 455](Community_455.md) (3 shared connections)
-- [Community 123](Community_123.md) (3 shared connections)
-- [Community 153](Community_153.md) (3 shared connections)
-- [Community 52](Community_52.md) (2 shared connections)
-- [Community 289](Community_289.md) (2 shared connections)
-- [Community 37](Community_37.md) (2 shared connections)
-- [Community 60](Community_60.md) (1 shared connections)
+- [Community 79](Community_79.md) (2 shared connections)
+- [Community 41](Community_41.md) (2 shared connections)
+- [Community 52](Community_52.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- `src/pipeline/detection/maintained_profile_hybrid.py`
-- `tests/test_issue255_detector_dispatch_contract.py`
+- `tests/test_issue459_job_phase.py`
+- `tools/issue459/job_phase.py`
+- `tools/issue459/job_worker.py`
 
 ## Audit Trail
 
-- EXTRACTED: 65 (88%)
-- INFERRED: 9 (12%)
+- EXTRACTED: 80 (96%)
+- INFERRED: 3 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

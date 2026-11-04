@@ -1,12 +1,12 @@
 # Community 348
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **visualize_ground_truth()** (2 connections) — `experiments/gemini/visualize_ground_truth.py`
-- **visualize_ground_truth.py** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
-- **Draws ground truth data on the image and saves it.** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
+- **run_full68_x_domain_ab.sh** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
+- **run_full68_x_domain_ab.sh script** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
+- **usage()** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/gemini/visualize_ground_truth.py`
+- `experiments/issue43/run_full68_x_domain_ab.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

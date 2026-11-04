@@ -1,54 +1,52 @@
 # Community 39
 
-> 43 nodes · cohesion 0.12
+> 43 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **homr_evaluator.py** (69 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **run_evaluation()** (41 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Path** (26 connections)
-- **ImageMetrics** (12 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **AggregateMetrics** (10 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **compute_candidate_stats()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_metrics_json()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_readme()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **compute_transform_info()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **ensure_dir()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **export_measure_grid_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **resolve_clusters_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **resolve_tight_duplicates_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **save_homr_results()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **compute_and_save_gap_stats()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Namespace** (5 connections)
-- **timestamp_jst()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_compare_md()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_metrics_csv()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_run_config()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **aggregate_metrics()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **choose_run_id()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **current_jst()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **load_ground_truth_mapping()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **parse_args()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **analyze_staff_consistency.py** (16 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **visualize_union_fp.py** (13 connections) — `experiments/phase5b_b2_phase4_filter_check/visualize_union_fp.py`
+- **main()** (12 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **apply_phase4_filters()** (9 connections) — `experiments/phase5b_b2_phase4_filter_check/visualize_union_fp.py`
+- **tolerance_sweep.py** (7 connections) — `experiments/fp_reduction/tolerance_sweep.py`
+- **evaluate_detections()** (7 connections) — `experiments/fp_reduction/unified_metric.py`
+- **_build_notehead_with_stems_mask()** (6 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **main()** (6 connections) — `experiments/fp_reduction/tolerance_sweep.py`
+- **main()** (6 connections) — `experiments/phase5b_b2_phase4_filter_check/visualize_union_fp.py`
+- **analyze_bbox_pixel_context()** (5 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **cluster_by_y_distance()** (5 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **estimate_staff_space()** (5 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **_load_binary_mask()** (5 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **_geom_filter_note_context()** (4 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **unified_metric.py** (4 connections) — `experiments/fp_reduction/unified_metric.py`
+- **draw_boxes()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/visualize_union_fp.py`
+- **load_gt()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/visualize_union_fp.py`
+- **load_preds()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/visualize_union_fp.py`
+- **_geom_filter_note_context_ratio()** (3 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
+- **apply_filter()** (3 connections) — `experiments/fp_reduction/tolerance_sweep.py`
+- **cluster_by_y_distance()** (3 connections) — `experiments/fp_reduction/tolerance_sweep.py`
+- **create_debug_overlay()** (3 connections) — `experiments/fp_reduction/tolerance_sweep.py`
+- **estimate_staff_space()** (3 connections) — `experiments/fp_reduction/tolerance_sweep.py`
+- **Path** (3 connections)
+- **get_iou()** (2 connections) — `experiments/fp_reduction/analyze_staff_consistency.py`
 - *... and 18 more nodes in this community*
 
 ## Relationships
 
-- [Community 107](Community_107.md) (41 shared connections)
-- [Community 142](Community_142.md) (25 shared connections)
-- [Community 96](Community_96.md) (7 shared connections)
-- [Community 1](Community_1.md) (3 shared connections)
-- [Community 83](Community_83.md) (3 shared connections)
-- [Community 2](Community_2.md) (2 shared connections)
-- [Community 28](Community_28.md) (1 shared connections)
+- [Community 0](Community_0.md) (5 shared connections)
+- [Community 31](Community_31.md) (4 shared connections)
 
 ## Source Files
 
-- `src/homr_eval_scripts/homr_evaluator.py`
+- `experiments/fp_reduction/analyze_staff_consistency.py`
+- `experiments/fp_reduction/tolerance_sweep.py`
+- `experiments/fp_reduction/unified_metric.py`
+- `experiments/phase5b_b2_phase4_filter_check/visualize_union_fp.py`
 
 ## Audit Trail
 
-- EXTRACTED: 181 (94%)
-- INFERRED: 12 (6%)
+- EXTRACTED: 86 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

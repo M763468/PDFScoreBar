@@ -1,45 +1,39 @@
 # Community 156
 
-> 16 nodes · cohesion 0.22
+> 16 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **phase_c_phase_a_support.py** (14 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **ensure_phase_a_semantic_support()** (9 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **augment_report()** (8 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **install_phase_a_support_replay()** (7 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **test_phase_a_support_replay_uses_retained_x4_without_mutating_canonical_staff()** (5 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
-- **test_issue264_phase_c_phase_a_support.py** (4 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
-- **_completed_current_homr_result()** (4 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Any** (4 connections)
+- **stage_e_dense_full_pipeline.py** (11 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **DenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **reconstruct_stage_e_dense_route()** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **StageEDenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 - **Path** (4 connections)
-- **_write_mask()** (3 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
-- **Path** (2 connections)
-- **MonkeyPatch** (1 connections)
-- **Fresh Phase-A connector-semantic replay for Issue #264 Phase C. The frozen…** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Patch the Phase-C runner's canonical path resolver for this process only.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Add replay and Phase-B fallback provenance without changing score semantics.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Return a Proxy/SR staff path backed by fresh current-HOMR semantics.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **regenerate_dense_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **regenerate_issue53_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **.from_dense()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **.issue53_root()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Freshly reconstructed dense route inputs.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Compatibility shim for the historical Stage E dense route module. New code…** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Historical Stage E artifact view with legacy field access.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Legacy name for Stage E Issue53-style probe-rescue candidates.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Compatibility wrapper for the historical Stage E route-root keyword.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Compatibility wrapper for the historical Issue53-style rescue name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Compatibility wrapper for the historical Stage E route name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 
 ## Relationships
 
-- [Community 93](Community_93.md) (5 shared connections)
-- [Community 181](Community_181.md) (3 shared connections)
-- [Community 12](Community_12.md) (2 shared connections)
-- [Community 81](Community_81.md) (2 shared connections)
-- [Community 219](Community_219.md) (2 shared connections)
-- [Community 97](Community_97.md) (2 shared connections)
-- [Community 44](Community_44.md) (1 shared connections)
+- [Community 116](Community_116.md) (10 shared connections)
 
 ## Source Files
 
-- `tests/test_issue264_phase_c_phase_a_support.py`
-- `tools/issue264/phase_c_phase_a_support.py`
+- `src/pipeline/detector_routes/dense_full_pipeline.py`
+- `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 30 (94%)
+- INFERRED: 2 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

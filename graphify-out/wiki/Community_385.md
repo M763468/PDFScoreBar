@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **debug_visualize_col.py** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
-- **main()** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
+- **analyze_bad_tps.py** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
+- **analyze_bad_tps()** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/debug_visualize_col.py`
+- `experiments/fp_reduction/analyze_bad_tps.py`
 
 ## Audit Trail
 

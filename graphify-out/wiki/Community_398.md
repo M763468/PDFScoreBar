@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_divisi.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
-- **analyze_divisi()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
+- **scripts/run_omr_dln_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
+- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/investigation_20260102/analyze_divisi.py`
+- `experiments/legacy/scripts/run_omr_dln_sweep.sh`
 
 ## Audit Trail
 

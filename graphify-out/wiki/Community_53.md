@@ -1,50 +1,55 @@
 # Community 53
 
-> 36 nodes · cohesion 0.13
+> 23 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **test_docker_runtime_contract.py** (37 connections) — `tests/test_docker_runtime_contract.py`
-- **Path** (22 connections)
-- **_load_image_resolver_module()** (12 connections) — `tests/test_docker_runtime_contract.py`
-- **_load_runtime_contract_module()** (10 connections) — `tests/test_docker_runtime_contract.py`
-- **_run_make_with_fake_docker()** (7 connections) — `tests/test_docker_runtime_contract.py`
-- **test_preflight_reports_non_object_distribution_metadata()** (4 connections) — `tests/test_docker_runtime_contract.py`
-- **parametrize** (3 connections)
-- **test_default_image_resolution_reuses_matching_local_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_docker_clean_full_removes_container_then_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_docker_clean_removes_only_the_canonical_container()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_explicit_image_override_is_not_substituted()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_full_cleanup_distinguishes_absence_from_docker_error()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_legacy_fingerprint_only_starts_recognized_contract_images()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_matching_source_still_requires_runtime_contract_match()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_omr_dln_model_accepts_explicit_external_asset()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_preflight_rejects_tampered_distribution_provenance()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_production_preflight_checks_maintained_provenance_without_historical_assets()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_runtime_contract_mismatch_defers_rebuild_classification()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_steps()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_runtime_fingerprint_normalizes_legacy_and_current_source_provenance_steps()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_source_fingerprint_detects_source_config_and_checkpoint_drift()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_source_only_mismatch_reuses_requested_runtime_compatible_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_stale_topic_base_does_not_reuse_older_matching_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_temporary_build_does_not_clean_or_retag_canonical()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **_write_fake_docker()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- *... and 11 more nodes in this community*
+- **BatchSRVerifiedProfileHybridDetector** (11 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **profile_hybrid_batch_sr.py** (10 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **VerifiedProfileHybridDetector** (10 connections) — `src/pipeline/detection/profile_hybrid.py`
+- **verified_source_page_worker.py** (7 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **test_issue255_page_local_source_generation.py** (7 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **_detector()** (7 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **run()** (6 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **_load_request()** (4 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **Path** (4 connections)
+- **test_verified_source_page_worker_records_process_boundary()** (4 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/profile_hybrid.py`
+- **test_one_page_source_worker_runs_two_homr_sources_in_order()** (3 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **test_verified_sources_launch_one_top_level_worker_per_page()** (3 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **._run_homr_profile()** (2 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **main()** (2 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **Path** (2 connections)
+- **Any** (1 connections)
+- **VerifiedProfileHybridDetector** (1 connections)
+- **Historical/compatibility hybrid workflow with dedicated batch SR.** (1 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **Any** (1 connections)
+- **Any** (1 connections)
+- **Generate one two-HOMR detector source page in a disposable Python process.** (1 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **VerifiedProfileHybridDetector** (1 connections)
 
 ## Relationships
 
-- [Community 162](Community_162.md) (3 shared connections)
-- [Community 40](Community_40.md) (2 shared connections)
-- [Community 10](Community_10.md) (1 shared connections)
+- [Community 64](Community_64.md) (4 shared connections)
+- [Community 22](Community_22.md) (3 shared connections)
+- [Community 174](Community_174.md) (3 shared connections)
+- [Community 75](Community_75.md) (2 shared connections)
+- [Community 46](Community_46.md) (2 shared connections)
+- [Community 68](Community_68.md) (2 shared connections)
+- [Community 163](Community_163.md) (1 shared connections)
+- [Community 79](Community_79.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_docker_runtime_contract.py`
+- `src/pipeline/detection/profile_hybrid.py`
+- `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- `src/pipeline/detection/verified_source_page_worker.py`
+- `tests/test_issue255_page_local_source_generation.py`
 
 ## Audit Trail
 
-- EXTRACTED: 88 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 50 (91%)
+- INFERRED: 5 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

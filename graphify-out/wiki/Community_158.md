@@ -1,40 +1,37 @@
 # Community 158
 
-> 16 nodes · cohesion 0.28
+> 16 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **summarize_stage_c_filter_ablation.py** (17 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **run()** (12 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **main()** (5 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **render_markdown()** (5 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **load_image_and_mask()** (4 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **load_inventory()** (4 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **Any** (4 connections)
-- **Path** (4 connections)
-- **write_csv()** (4 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **build_parser()** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **load_count()** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **PageAblationRow** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **ProfileSummaryRow** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **rules_for_profile()** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
-- **Namespace** (2 connections)
-- **ArgumentParser** (1 connections)
+- **generate_numbering_overrides_heuristic.py** (8 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **main()** (7 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **check_musical_elements()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **detect_hbar()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **draw_debug_info()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **extract_number_from_text()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **preprocess_image()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **visualize_masks()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **ensure_dir()** (2 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Path** (1 connections)
+- **Check if the measure contains musical elements (notes, stems) that contradict a…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Apply preprocessing for OCR: - Grayscale - Otsu Thresholding - Inversion (to…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Draw rectangle and text on debug image. Status: 'found' (Green), 'rejected'…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Overlay mask visualizations on the debug image. roi_rect: (x, y, w, h) absolute…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Detect if the ROI contains a rectangular horizontal bar (H-bar) characteristic…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Extract a valid multi-measure rest number from text.** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
 
 ## Relationships
 
-- [Community 80](Community_80.md) (3 shared connections)
-- [Community 78](Community_78.md) (3 shared connections)
-- [Community 145](Community_145.md) (2 shared connections)
-- [Community 126](Community_126.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/issue120/summarize_stage_c_filter_ablation.py`
+- `tools/generate_numbering_overrides_heuristic.py`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

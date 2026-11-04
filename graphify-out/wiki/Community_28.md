@@ -1,52 +1,50 @@
 # Community 28
 
-> 49 nodes · cohesion 0.17
+> 49 nodes · cohesion 0.04
 
 ## Key Concepts
 
-- **acceptance.py** (42 connections) — `tools/review_correction/acceptance.py`
-- **Any** (32 connections)
-- **Path** (28 connections)
-- **run_single_correction()** (16 connections) — `tools/review_correction/acceptance.py`
-- **run_acceptance()** (14 connections) — `tools/review_correction/acceptance.py`
-- **run_no_correction_apply()** (13 connections) — `tools/review_correction/acceptance.py`
-- **freeze_plan()** (12 connections) — `tools/review_correction/acceptance.py`
-- **load_json()** (12 connections) — `tools/review_correction/acceptance.py`
-- **prepare()** (12 connections) — `tools/review_correction/acceptance.py`
-- **_copy_package()** (10 connections) — `tools/review_correction/acceptance.py`
-- **_result()** (10 connections) — `tools/review_correction/acceptance.py`
-- **run_stale_gate()** (10 connections) — `tools/review_correction/acceptance.py`
-- **_state()** (10 connections) — `tools/review_correction/acceptance.py`
-- **_apply()** (9 connections) — `tools/review_correction/acceptance.py`
-- **numbering_page()** (9 connections) — `tools/review_correction/acceptance.py`
-- **_prepare_source_context()** (9 connections) — `tools/review_correction/acceptance.py`
-- **expect_http()** (8 connections) — `tools/review_correction/acceptance.py`
-- **_request()** (8 connections) — `tools/review_correction/acceptance.py`
-- **start_app_session()** (8 connections) — `tools/review_correction/acceptance.py`
-- **verify_pdf_content()** (8 connections) — `tools/review_correction/acceptance.py`
-- **AppSession** (7 connections) — `tools/review_correction/acceptance.py`
-- **file_identity()** (7 connections) — `tools/review_correction/acceptance.py`
-- **_save()** (7 connections) — `tools/review_correction/acceptance.py`
-- **sha256()** (7 connections) — `tools/review_correction/acceptance.py`
-- **write_json()** (7 connections) — `tools/review_correction/acceptance.py`
+- **app_gt.js** (78 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **canvas** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **canvasToImg()** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **ctx** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **dedupBtn** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **deleteBtn** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **dirtyStatus** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **dragStartMouse** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **editableBoxes** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **editableSources** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **image** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **initialBoxStates** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **layerList** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **legend** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **modeDrawBtn** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **modeSelectBtn** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **nextBtn** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **normalizeBox()** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **pageList** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **pageMeta** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **pages** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **panOrigin** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **panStart** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **prevBtn** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **probeCanvas** (1 connections) — `tools/gt_relabel_gui/app_gt.js`
 - *... and 24 more nodes in this community*
 
 ## Relationships
 
-- [Community 5](Community_5.md) (2 shared connections)
-- [Community 29](Community_29.md) (2 shared connections)
-- [Community 3](Community_3.md) (2 shared connections)
-- [Community 48](Community_48.md) (1 shared connections)
-- [Community 39](Community_39.md) (1 shared connections)
+- [Community 176](Community_176.md) (14 shared connections)
+- [Community 224](Community_224.md) (10 shared connections)
+- [Community 282](Community_282.md) (6 shared connections)
 
 ## Source Files
 
-- `tools/review_correction/acceptance.py`
+- `tools/gt_relabel_gui/app_gt.js`
 
 ## Audit Trail
 
-- EXTRACTED: 202 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 78 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

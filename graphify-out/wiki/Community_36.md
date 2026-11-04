@@ -1,63 +1,50 @@
 # Community 36
 
-> 51 nodes · cohesion 0.11
+> 45 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **trace_prokofiev_probe_boundary.py** (37 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
-- **probe_boundary.py** (20 connections) — `tools/issue252/probe_boundary.py`
-- **build_report()** (20 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
-- **test_issue252_prokofiev_probe_boundary.py** (18 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
-- **_run_variant()** (16 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
-- **_resolve_scale_aware_probe_kwargs()** (11 connections) — `src/pipeline/steps/probe_scan.py`
-- **stage_summary()** (11 connections) — `tools/issue252/probe_boundary.py`
-- **get_probe_kwargs()** (9 connections) — `src/pipeline/detection/config.py`
-- **classify_first_loss()** (9 connections) — `tools/issue252/probe_boundary.py`
-- **normalize_box()** (9 connections) — `tools/issue252/probe_boundary.py`
-- **Any** (9 connections)
-- **_apply_candidate_filter()** (9 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
-- **split_tall_existing_boxes()** (8 connections) — `tools/issue252/probe_boundary.py`
-- **target_metrics()** (7 connections) — `tools/issue252/probe_boundary.py`
-- **validate_fresh_contract_payload()** (7 connections) — `tools/issue252/probe_boundary.py`
-- **write_json()** (7 connections) — `tools/issue252/probe_boundary.py`
-- **_estimate_unit_size_from_existing_boxes()** (6 connections) — `src/pipeline/steps/probe_scan.py`
-- **artifact_record()** (6 connections) — `tools/issue252/probe_boundary.py`
-- **_debug_records()** (6 connections) — `tools/issue252/probe_boundary.py`
-- **load_json()** (6 connections) — `tools/issue252/probe_boundary.py`
-- **Path** (6 connections)
-- **_source_trace()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
-- **test_classifies_baseline_homr_when_target_absent_before_probe()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
-- **test_classifies_existing_box_suppression_when_off_variant_restores_raw_target()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
-- **test_classifies_first_unrecovered_probe_stage()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
-- *... and 26 more nodes in this community*
+- **audit_grouped_semantic_impact.py** (25 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **Any** (18 connections)
+- **_route_evidence()** (16 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **test_issue252_grouped_semantic_impact.py** (14 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **compare_grouped_final_numbering()** (12 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_route()** (10 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **normalize_isolated_mmr_overrides()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_target_component_memberships()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_bbox()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_system_signature()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_connector_evidence()** (6 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **main()** (6 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_grouped_payload()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **test_connector_supported_grouping_classifies_redundant_component_instance()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **test_grouped_audit_reports_connector_evidence_change_first()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **test_grouped_audit_reports_local_target_boundary_recovery()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **test_three_component_chain_is_supported_without_max_two_limit()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **_boundary_matches()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_compare_page_summaries()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_component_boxes()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **test_same_x_boundary_without_connector_support_is_not_grouping_evidence()** (4 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **_center_x()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_load()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_measure_signature()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_write()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [Community 108](Community_108.md) (13 shared connections)
-- [Community 30](Community_30.md) (10 shared connections)
-- [Community 80](Community_80.md) (9 shared connections)
-- [Community 78](Community_78.md) (5 shared connections)
-- [Community 86](Community_86.md) (4 shared connections)
-- [Community 67](Community_67.md) (3 shared connections)
-- [Community 1](Community_1.md) (3 shared connections)
-- [Community 192](Community_192.md) (2 shared connections)
-- [Community 97](Community_97.md) (2 shared connections)
-- [Community 99](Community_99.md) (2 shared connections)
-- [Community 150](Community_150.md) (2 shared connections)
-- [Community 70](Community_70.md) (1 shared connections)
+- [Community 31](Community_31.md) (10 shared connections)
+- [Community 13](Community_13.md) (7 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/config.py`
-- `src/pipeline/steps/probe_scan.py`
-- `tests/test_issue252_prokofiev_probe_boundary.py`
-- `tests/test_probe_x_domain.py`
-- `tools/issue252/probe_boundary.py`
-- `tools/issue252/trace_prokofiev_probe_boundary.py`
+- `tests/test_issue252_grouped_semantic_impact.py`
+- `tools/gui_helper/app.py`
+- `tools/issue252/audit_grouped_semantic_impact.py`
 
 ## Audit Trail
 
-- EXTRACTED: 197 (100%)
+- EXTRACTED: 132 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

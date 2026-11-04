@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_regression_template.sh** (1 connections) — `experiments/legacy/tools_archive/run_regression_template.sh`
-- **run_regression_template.sh script** (1 connections) — `experiments/legacy/tools_archive/run_regression_template.sh`
+- **test_morphological_closing.py** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
+- **test()** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_regression_template.sh`
+- `experiments/legacy/tools_archive/test_morphological_closing.py`
 
 ## Audit Trail
 

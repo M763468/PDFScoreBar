@@ -1,13 +1,13 @@
 # Community 334
 
-> 4 nodes · cohesion 0.83
+> 4 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **compare_hybrid_results.py** (3 connections) — `tools/compare_hybrid_results.py`
-- **main()** (3 connections) — `tools/compare_hybrid_results.py`
-- **compute_iou()** (2 connections) — `tools/compare_hybrid_results.py`
-- **load_predictions()** (2 connections) — `tools/compare_hybrid_results.py`
+- **find_top_windows()** (3 connections) — `tools/dense_region_crops.py`
+- **dense_region_crops.py** (2 connections) — `tools/dense_region_crops.py`
+- **main()** (2 connections) — `tools/dense_region_crops.py`
+- **ndarray** (1 connections)
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/compare_hybrid_results.py`
+- `tools/dense_region_crops.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

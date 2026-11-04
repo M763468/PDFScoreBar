@@ -1,26 +1,27 @@
 # Community 335
 
-> 4 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **find_top_windows()** (3 connections) — `tools/dense_region_crops.py`
-- **dense_region_crops.py** (2 connections) — `tools/dense_region_crops.py`
-- **main()** (2 connections) — `tools/dense_region_crops.py`
-- **ndarray** (1 connections)
+- **diagnose_false_negatives.py** (4 connections) — `tools/diagnose_false_negatives.py`
+- **find_matches_for_gt()** (3 connections) — `tools/diagnose_false_negatives.py`
+- **main()** (3 connections) — `tools/diagnose_false_negatives.py`
+- **load_json_boxes()** (2 connections) — `tools/diagnose_false_negatives.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 0](Community_0.md) (1 shared connections)
+- [Community 73](Community_73.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/dense_region_crops.py`
+- `tools/diagnose_false_negatives.py`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (86%)
+- INFERRED: 1 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

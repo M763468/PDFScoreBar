@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **conftest.py** (0 connections) — `tests/conftest.py`
+- **extract_fn_barlines.py** (0 connections) — `tools/extract_fn_barlines.py`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tests/conftest.py`
+- `tools/extract_fn_barlines.py`
 
 ## Audit Trail
 

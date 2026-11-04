@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_system_grouping.py** (1 connections) — `tools/visualize_system_grouping.py`
-- **main()** (1 connections) — `tools/visualize_system_grouping.py`
+- **vram_monitor.sh** (1 connections) — `tools/vram_monitor.sh`
+- **vram_monitor.sh script** (1 connections) — `tools/vram_monitor.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/visualize_system_grouping.py`
+- `tools/vram_monitor.sh`
 
 ## Audit Trail
 

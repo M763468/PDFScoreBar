@@ -1,63 +1,63 @@
 # Community 32
 
-> 46 nodes · cohesion 0.10
+> 46 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **write_number_layer()** (36 connections) — `src/pipeline/review/number_layer.py`
-- **fixture()** (31 connections) — `tests/test_issue441_annotated_layer.py`
-- **number_layer.py** (25 connections) — `src/pipeline/review/number_layer.py`
-- **AnnotatedNumberLayerTests** (15 connections) — `tests/test_issue441_annotated_layer.py`
-- **test_issue441_annotated_layer.py** (14 connections) — `tests/test_issue441_annotated_layer.py`
-- **crop_label_layer.py** (12 connections) — `tools/issue441/crop_label_layer.py`
-- **_validate_saved_output()** (11 connections) — `src/pipeline/review/number_layer.py`
-- **NumberLayerValidationError** (10 connections) — `src/pipeline/review/number_layer.py`
-- **refine_annotated_layout.py** (9 connections) — `tools/issue441/refine_annotated_layout.py`
-- **main()** (7 connections) — `tools/issue441/refine_annotated_layout.py`
-- **digit_ink_bounds()** (6 connections) — `src/pipeline/review/number_layer.py`
-- **find_placement()** (6 connections) — `src/pipeline/review/number_layer.py`
-- **pix_array()** (6 connections) — `src/pipeline/review/number_layer.py`
-- **distance_to_staff_start()** (5 connections) — `src/pipeline/review/number_layer.py`
-- **ValueError** (5 connections)
-- **compare_placement()** (5 connections) — `tools/issue441/refine_annotated_layout.py`
-- **remove_owned_layer()** (4 connections) — `src/pipeline/review/number_layer.py`
-- **.test_corrupt_stream_digest_is_rejected_before_deletion()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **.test_no_free_space_refuses_without_creating_output()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **.test_save_then_validation_failure_never_publishes_result()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **.test_update_removes_only_owned_numbers_and_preserves_cropped_score()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **test_four_and_ten_digit_numbers_are_inside_crop_and_do_not_touch_page_edges()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **test_post_save_validator_rejects_an_outside_number_bbox()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **_publish_validated_pair()** (3 connections) — `src/pipeline/review/number_layer.py`
-- **.test_concurrent_output_is_not_overwritten_or_deleted()** (3 connections) — `tests/test_issue441_annotated_layer.py`
+- **apply_corrections.py** (71 connections) — `src/pipeline/review/apply_corrections.py`
+- **_run_retained_artifact_correction()** (28 connections) — `src/pipeline/review/apply_corrections.py`
+- **Any** (24 connections)
+- **application.py** (23 connections) — `tools/review_correction/application.py`
+- **Path** (20 connections)
+- **_resolve_source_manifest_path()** (13 connections) — `src/pipeline/review/apply_corrections.py`
+- **preview_numbering()** (13 connections) — `tools/review_correction/application.py`
+- **_merge_existing_override_inputs()** (10 connections) — `src/pipeline/review/apply_corrections.py`
+- **test_issue236_selective_correction_rerun.py** (10 connections) — `tests/test_issue236_selective_correction_rerun.py`
+- **_final_numbering_from_retained_geometry()** (9 connections) — `src/pipeline/review/apply_corrections.py`
+- **_read_existing_override_inputs()** (9 connections) — `src/pipeline/review/apply_corrections.py`
+- **_rebuild_phase_a_numbering()** (9 connections) — `src/pipeline/review/apply_corrections.py`
+- **_remap_measure_key()** (9 connections) — `src/pipeline/review/apply_corrections.py`
+- **_read_json_object_if_exists()** (8 connections) — `src/pipeline/review/apply_corrections.py`
+- **_reuse_auto_mmr_overrides()** (8 connections) — `src/pipeline/review/apply_corrections.py`
+- **_current_barline_overrides()** (7 connections) — `src/pipeline/review/apply_corrections.py`
+- **_mmr_suppression_override_payload()** (7 connections) — `src/pipeline/review/apply_corrections.py`
+- **_read_staging_payloads()** (7 connections) — `src/pipeline/review/apply_corrections.py`
+- **apply_barline_overrides()** (7 connections) — `src/pipeline/steps/barlines.py`
+- **movement_boundaries_for_page()** (7 connections) — `src/pipeline/steps/numbering.py`
+- **_barline_neighborhood_keys()** (6 connections) — `src/pipeline/review/apply_corrections.py`
+- **_current_homr_staff_mask()** (6 connections) — `src/pipeline/review/apply_corrections.py`
+- **_resolve_package_artifact()** (6 connections) — `src/pipeline/review/apply_corrections.py`
+- **_source_numbering_base()** (6 connections) — `src/pipeline/review/apply_corrections.py`
+- **_first_numbering_page()** (5 connections) — `src/pipeline/review/apply_corrections.py`
 - *... and 21 more nodes in this community*
 
 ## Relationships
 
-- [Community 22](Community_22.md) (19 shared connections)
-- [Community 19](Community_19.md) (11 shared connections)
-- [Community 3](Community_3.md) (8 shared connections)
-- [Community 221](Community_221.md) (6 shared connections)
-- [Community 4](Community_4.md) (4 shared connections)
-- [Community 10](Community_10.md) (2 shared connections)
-- [Community 29](Community_29.md) (2 shared connections)
-- [Community 244](Community_244.md) (1 shared connections)
-- [Community 31](Community_31.md) (1 shared connections)
-- [Community 68](Community_68.md) (1 shared connections)
-- [Community 79](Community_79.md) (1 shared connections)
-- [Community 5](Community_5.md) (1 shared connections)
+- [Community 59](Community_59.md) (13 shared connections)
+- [Community 26](Community_26.md) (11 shared connections)
+- [Community 44](Community_44.md) (11 shared connections)
+- [Community 25](Community_25.md) (9 shared connections)
+- [Community 12](Community_12.md) (8 shared connections)
+- [Community 182](Community_182.md) (7 shared connections)
+- [Community 23](Community_23.md) (7 shared connections)
+- [Community 8](Community_8.md) (6 shared connections)
+- [Community 50](Community_50.md) (6 shared connections)
+- [Community 222](Community_222.md) (5 shared connections)
+- [Community 21](Community_21.md) (4 shared connections)
+- [Community 2](Community_2.md) (4 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/number_layer.py`
-- `tests/test_issue218_multistaff_system_grouping.py`
-- `tests/test_issue441_annotated_layer.py`
-- `tools/issue441/crop_label_layer.py`
-- `tools/issue441/refine_annotated_layout.py`
+- `src/pipeline/review/apply_corrections.py`
+- `src/pipeline/steps/barlines.py`
+- `src/pipeline/steps/numbering.py`
+- `tests/test_issue236_selective_correction_rerun.py`
+- `tools/review_correction/application.py`
 
 ## Audit Trail
 
-- EXTRACTED: 160 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 249 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,58 +1,56 @@
 # Community 71
 
-> 32 nodes · cohesion 0.22
+> 30 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **engine_contract.py** (42 connections) — `src/pipeline/engine_contract.py`
-- **ContractValidationError** (30 connections) — `src/pipeline/engine_contract.py`
-- **Any** (23 connections)
-- **_object()** (17 connections) — `src/pipeline/engine_contract.py`
-- **.from_dict()** (12 connections) — `src/pipeline/engine_contract.py`
-- **_require_string()** (12 connections) — `src/pipeline/engine_contract.py`
-- **.from_dict()** (10 connections) — `src/pipeline/engine_contract.py`
-- **_enum()** (9 connections) — `src/pipeline/engine_contract.py`
-- **.from_dict()** (9 connections) — `src/pipeline/engine_contract.py`
-- **_require_fields()** (9 connections) — `src/pipeline/engine_contract.py`
-- **_validate_correction_record()** (9 connections) — `src/pipeline/engine_contract.py`
-- **_coordinate_space()** (8 connections) — `src/pipeline/engine_contract.py`
-- **.from_dict()** (8 connections) — `src/pipeline/engine_contract.py`
-- **_envelope()** (8 connections) — `src/pipeline/engine_contract.py`
-- **.__post_init__()** (7 connections) — `src/pipeline/engine_contract.py`
-- **.__post_init__()** (7 connections) — `src/pipeline/engine_contract.py`
-- **.__post_init__()** (7 connections) — `src/pipeline/engine_contract.py`
-- **_sha256()** (7 connections) — `src/pipeline/engine_contract.py`
-- **test_required_wire_fields_and_malformed_scalar_types_are_rejected()** (7 connections) — `tests/test_engine_contract.py`
-- **.from_dict()** (6 connections) — `src/pipeline/engine_contract.py`
-- **_nonnegative_int()** (6 connections) — `src/pipeline/engine_contract.py`
-- **_positive_int()** (6 connections) — `src/pipeline/engine_contract.py`
-- **.__post_init__()** (6 connections) — `src/pipeline/engine_contract.py`
-- **.__post_init__()** (5 connections) — `src/pipeline/engine_contract.py`
-- **.__post_init__()** (5 connections) — `src/pipeline/engine_contract.py`
-- *... and 7 more nodes in this community*
+- **DetectorOrchestrator** (21 connections) — `src/pipeline/detection/orchestrator.py`
+- **._run_probe_scan()** (13 connections) — `src/pipeline/detection/orchestrator.py`
+- **Path** (11 connections)
+- **._run_cnn_scoring()** (10 connections) — `src/pipeline/detection/orchestrator.py`
+- **.run_detection()** (7 connections) — `src/pipeline/detection/orchestrator.py`
+- **Any** (7 connections)
+- **run_detection_step()** (7 connections) — `src/pipeline/detection/orchestrator.py`
+- **_candidate_json_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
+- **._copy_precomputed_probe_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
+- **.__init__()** (6 connections) — `src/pipeline/detection/orchestrator.py`
+- **._get_effective_images_for_probe()** (5 connections) — `src/pipeline/detection/orchestrator.py`
+- **._record_input_contract()** (5 connections) — `src/pipeline/detection/orchestrator.py`
+- **._run_hybrid_detection()** (5 connections) — `src/pipeline/detection/orchestrator.py`
+- **_split_score_page_from_stem()** (4 connections) — `src/pipeline/detection/orchestrator.py`
+- **._get_effective_score_name()** (3 connections) — `src/pipeline/detection/orchestrator.py`
+- **._resolve_clef_mask_dir()** (3 connections) — `src/pipeline/detection/orchestrator.py`
+- **._resolve_cnn_bands_from()** (3 connections) — `src/pipeline/detection/orchestrator.py`
+- **._resolve_precomputed_probe_candidates_root()** (3 connections) — `src/pipeline/detection/orchestrator.py`
+- **._resolve_staff_mask_dir()** (3 connections) — `src/pipeline/detection/orchestrator.py`
+- **_reject_removed_detector_route_keys()** (3 connections) — `src/pipeline/detection/orchestrator.py`
+- **Persist which detector source is authoritative before executing stages.** (1 connections) — `src/pipeline/detection/orchestrator.py`
+- **Executes the full detection pipeline.** (1 connections) — `src/pipeline/detection/orchestrator.py`
+- **Step 2.1: Hybrid Detection (Subprocess or In-Process)** (1 connections) — `src/pipeline/detection/orchestrator.py`
+- **Step 2.2: Probe Scan (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
+- **Step 2.3: CNN Scoring (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [Community 109](Community_109.md) (25 shared connections)
-- [Community 79](Community_79.md) (13 shared connections)
-- [Community 18](Community_18.md) (10 shared connections)
-- [Community 33](Community_33.md) (8 shared connections)
-- [Community 178](Community_178.md) (6 shared connections)
-- [Community 62](Community_62.md) (5 shared connections)
-- [Community 26](Community_26.md) (3 shared connections)
-- [Community 110](Community_110.md) (2 shared connections)
-- [Community 78](Community_78.md) (1 shared connections)
-- [Community 297](Community_297.md) (1 shared connections)
+- [Community 154](Community_154.md) (10 shared connections)
+- [Community 123](Community_123.md) (4 shared connections)
+- [Community 60](Community_60.md) (2 shared connections)
+- [Community 201](Community_201.md) (2 shared connections)
+- [Community 91](Community_91.md) (2 shared connections)
+- [Community 68](Community_68.md) (2 shared connections)
+- [Community 21](Community_21.md) (1 shared connections)
+- [Community 92](Community_92.md) (1 shared connections)
+- [Community 37](Community_37.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_contract.py`
-- `tests/test_engine_contract.py`
+- `src/pipeline/detection/orchestrator.py`
 
 ## Audit Trail
 
-- EXTRACTED: 181 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 81 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

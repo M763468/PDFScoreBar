@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **create_comprehensive_gt_config.py** (1 connections) — `tools/cnn_classifier/create_comprehensive_gt_config.py`
-- **main()** (1 connections) — `tools/cnn_classifier/create_comprehensive_gt_config.py`
+- **create_gt_gui_config.py** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
+- **main()** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/create_comprehensive_gt_config.py`
+- `tools/cnn_classifier/create_gt_gui_config.py`
 
 ## Audit Trail
 

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **analyze_no_peak.py** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
-- **analyze_no_peak()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
+- **investigate_double_bar.py** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
+- **analyze_box()** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/analyze_no_peak.py`
+- `experiments/cnn_classifier/investigate_double_bar.py`
 
 ## Audit Trail
 

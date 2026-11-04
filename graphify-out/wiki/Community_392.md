@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_gaps.py** (1 connections) — `experiments/fp_reduction/analyze_gaps.py`
-- **analyze_gaps()** (1 connections) — `experiments/fp_reduction/analyze_gaps.py`
+- **analyze_tight_duplicates.py** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
+- **analyze_tight_duplicates()** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_gaps.py`
+- `experiments/fp_reduction/analyze_tight_duplicates.py`
 
 ## Audit Trail
 

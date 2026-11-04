@@ -1,12 +1,12 @@
 # Community 361
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **test_issue447_e2e_matrix.py** (2 connections) — `tests/test_issue447_e2e_matrix.py`
-- **Exercise fresh-output matrix orchestration without Docker, models or inference.** (1 connections) — `tests/test_issue447_e2e_matrix.py`
-- **test_fresh_matrix_reaches_both_replays_and_conditional_combination()** (1 connections) — `tests/test_issue447_e2e_matrix.py`
+- **batch_rest_roi_test.py** (2 connections) — `tools/batch_rest_roi_test.py`
+- **main()** (2 connections) — `tools/batch_rest_roi_test.py`
+- **run_command()** (2 connections) — `tools/batch_rest_roi_test.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tests/test_issue447_e2e_matrix.py`
+- `tools/batch_rest_roi_test.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

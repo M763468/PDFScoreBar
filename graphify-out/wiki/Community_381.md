@@ -1,12 +1,11 @@
 # Community 381
 
-> 3 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **sort_measures.py** (2 connections) — `tools/sort_measures.py`
-- **group_and_sort_measures()** (2 connections) — `tools/sort_measures.py`
-- **main()** (2 connections) — `tools/sort_measures.py`
+- **issue-post-mortem/run.sh** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
+- **run.sh script** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
 
 ## Relationships
 
@@ -14,11 +13,11 @@
 
 ## Source Files
 
-- `tools/sort_measures.py`
+- `.agents/skills/issue-post-mortem/run.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

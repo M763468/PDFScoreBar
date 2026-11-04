@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **core/predictor.py** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
-- **Module alias preserving predictor monkeypatch and class identity for old…** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
+- **homr_eval_scripts/segnet_cache.py** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
+- **Compatibility alias for the production-owned Segnet cache.** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `src/homr_eval_scripts/core/predictor.py`
+- `src/homr_eval_scripts/segnet_cache.py`
 
 ## Audit Trail
 

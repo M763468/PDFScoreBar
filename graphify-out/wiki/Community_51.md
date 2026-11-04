@@ -1,58 +1,55 @@
 # Community 51
 
-> 41 nodes · cohesion 0.11
+> 39 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **test_omr_job.py** (20 connections) — `tests/test_omr_job.py`
-- **omr_job.py** (15 connections) — `src/pipeline/detection/omr_job.py`
-- **digest()** (14 connections) — `src/pipeline/detection/omr_job.py`
-- **consume()** (13 connections) — `src/pipeline/detection/omr_job.py`
-- **build()** (10 connections) — `src/pipeline/detection/omr_job.py`
-- **prediction_bytes()** (9 connections) — `src/pipeline/detection/omr_job.py`
-- **Path** (8 connections)
-- **omr_job_worker.py** (8 connections) — `src/pipeline/detection/omr_job_worker.py`
-- **run()** (8 connections) — `src/pipeline/detection/omr_job_worker.py`
-- **atomic_publish()** (7 connections) — `src/pipeline/detection/omr_job.py`
-- **bind_sources()** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **bind_sr()** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **execute_worker()** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **Handoff** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **build()** (6 connections) — `tests/test_omr_job.py`
-- **prepared()** (6 connections) — `tests/test_omr_job.py`
-- **Any** (5 connections)
-- **inputs()** (5 connections) — `tests/test_omr_job.py`
-- **test_failed_directory_cannot_be_reused_but_fresh_job_recovers()** (5 connections) — `tests/test_omr_job.py`
-- **test_worker_fault_cannot_publish_complete_and_retains_diagnostics()** (5 connections) — `tests/test_omr_job.py`
-- **.from_request()** (4 connections) — `src/pipeline/detection/omr_job.py`
-- **test_any_tampered_identity_rejects_even_when_consuming_another_page()** (4 connections) — `tests/test_omr_job.py`
-- **.cancelled()** (3 connections) — `src/pipeline/engine_lifecycle.py`
-- **test_ordered_complete_handoff_copies_exact_bytes_without_overwrite()** (3 connections) — `tests/test_omr_job.py`
-- **test_zero_extent_clipped_edges_preserve_existing_strict_consensus_contract()** (3 connections) — `tests/test_omr_job.py`
-- *... and 16 more nodes in this community*
+- **audit_positive_geometry_disagreements.py** (37 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **Any** (22 connections)
+- **run()** (20 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **run_legacy()** (20 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_RecordingRapidOCR** (12 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_build_rebased_gt()** (8 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_apply_projection()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_index()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_load_json()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_skip()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **slice_one_measure()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_counterfactual_probe()** (6 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **test_issue274_positive_geometry_audit.py** (5 connections) — `tests/test_issue274_positive_geometry_audit.py`
+- **_legacy_page_inputs()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_probe_view()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_production_exact_replay()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **Path** (5 connections)
+- **_write_json()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_classify_change()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_raw_candidates()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_score()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_state()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_view_differs()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
+- **_payload()** (3 connections) — `tests/test_issue274_positive_geometry_audit.py`
+- **test_slice_one_measure_does_not_mutate_inputs()** (3 connections) — `tests/test_issue274_positive_geometry_audit.py`
+- *... and 14 more nodes in this community*
 
 ## Relationships
 
-- [Community 123](Community_123.md) (7 shared connections)
-- [Community 45](Community_45.md) (4 shared connections)
-- [Community 40](Community_40.md) (2 shared connections)
-- [Community 78](Community_78.md) (2 shared connections)
-- [Community 21](Community_21.md) (1 shared connections)
-- [Community 33](Community_33.md) (1 shared connections)
-- [Community 73](Community_73.md) (1 shared connections)
-- [Community 5](Community_5.md) (1 shared connections)
+- [Community 12](Community_12.md) (9 shared connections)
+- [Community 70](Community_70.md) (4 shared connections)
+- [Community 6](Community_6.md) (4 shared connections)
+- [Community 14](Community_14.md) (4 shared connections)
+- [Community 138](Community_138.md) (3 shared connections)
+- [Community 113](Community_113.md) (3 shared connections)
+- [Community 82](Community_82.md) (3 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/omr_job.py`
-- `src/pipeline/detection/omr_job_worker.py`
-- `src/pipeline/engine_lifecycle.py`
-- `tests/test_omr_job.py`
+- `tests/test_issue274_positive_geometry_audit.py`
+- `tools/issue274/audit_positive_geometry_disagreements.py`
 
 ## Audit Trail
 
-- EXTRACTED: 108 (96%)
-- INFERRED: 5 (4%)
+- EXTRACTED: 136 (98%)
+- INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

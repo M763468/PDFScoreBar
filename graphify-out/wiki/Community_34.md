@@ -1,56 +1,60 @@
 # Community 34
 
-> 45 nodes · cohesion 0.13
+> 45 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **materialize_manual_correction_review_package()** (40 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **test_manual_correction_materializer.py** (25 connections) — `tests/test_manual_correction_materializer.py`
-- **manual_correction_materializer.py** (19 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_fake_run_root()** (17 connections) — `tests/test_manual_correction_materializer.py`
-- **ManualCorrectionMaterializerError** (12 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **Any** (11 connections)
-- **Path** (10 connections)
-- **_page_number_from_manifest()** (8 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_resolve_handoff_output_name()** (7 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_resolve_barlines_review_source()** (6 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_resolve_run_artifact()** (6 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **test_selected_pages_keep_physical_labels_and_correction_ordinals()** (6 connections) — `tests/test_manual_correction_materializer.py`
-- **_extract_review_barline_records()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_load_json_object()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_manifest_relative_base()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **test_materialized_handoff_validates_and_builds_page_local_gui_config()** (5 connections) — `tests/test_manual_correction_materializer.py`
-- **_write_json()** (5 connections) — `tests/test_manual_correction_materializer.py`
-- **_is_engine_staged_pdf_path()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_load_json()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_require_inside()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_select_pages()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **_write_json()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
-- **test_materializer_accepts_manifest_declared_shared_source_image()** (4 connections) — `tests/test_manual_correction_materializer.py`
-- **test_materializer_allows_missing_pre_rendered_overlay()** (4 connections) — `tests/test_manual_correction_materializer.py`
-- **test_materializer_rejects_run_root_external_barlines_artifact()** (4 connections) — `tests/test_manual_correction_materializer.py`
+- **EngineError** (25 connections) — `src/pipeline/engine_contract.py`
+- **JobStatus** (24 connections) — `src/pipeline/engine_contract.py`
+- **ErrorCategory** (22 connections) — `src/pipeline/engine_contract.py`
+- **test_job_lifecycle.py** (21 connections) — `tests/test_job_lifecycle.py`
+- **engine_lifecycle.py** (13 connections) — `src/pipeline/engine_lifecycle.py`
+- **CancellationToken** (13 connections) — `src/pipeline/engine_lifecycle.py`
+- **ExecutionControl** (12 connections) — `src/pipeline/engine_lifecycle.py`
+- **ExecutionDeadline** (12 connections) — `src/pipeline/engine_lifecycle.py`
+- **LifecycleControlError** (11 connections) — `src/pipeline/engine_lifecycle.py`
+- **classify_control_error()** (9 connections) — `src/pipeline/engine_lifecycle.py`
+- **JobCancelled** (9 connections) — `src/pipeline/engine_lifecycle.py`
+- **JobDeadlineExceeded** (9 connections) — `src/pipeline/engine_lifecycle.py`
+- **ValidatedPageMetadata** (4 connections) — `src/pipeline/engine_input_safety.py`
+- **.checkpoint()** (4 connections) — `src/pipeline/engine_lifecycle.py`
+- **.with_timeout()** (4 connections) — `src/pipeline/engine_lifecycle.py`
+- **.after()** (4 connections) — `src/pipeline/engine_lifecycle.py`
+- **test_explicit_cancellation_wins_when_deadline_is_also_expired()** (4 connections) — `tests/test_job_lifecycle.py`
+- **test_cancelled_maps_to_normative_v1_status_and_error()** (3 connections) — `tests/test_job_lifecycle.py`
+- **test_deadline_maps_to_failed_resource_error_and_retryable_hint()** (3 connections) — `tests/test_job_lifecycle.py`
+- **test_execution_control_raises_cancelled_with_stage_and_reason()** (3 connections) — `tests/test_job_lifecycle.py`
+- **test_execution_deadline_rejects_invalid_duration_and_clock_values()** (3 connections) — `tests/test_job_lifecycle.py`
+- **.cancel()** (2 connections) — `src/pipeline/engine_lifecycle.py`
+- **.remaining_timeout()** (2 connections) — `src/pipeline/engine_lifecycle.py`
+- **test_cancellation_token_is_idempotent_and_preserves_first_reason()** (2 connections) — `tests/test_job_lifecycle.py`
+- **test_classify_control_error_rejects_unknown_subclass()** (2 connections) — `tests/test_job_lifecycle.py`
 - *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [Community 25](Community_25.md) (7 shared connections)
-- [Community 20](Community_20.md) (3 shared connections)
-- [Community 165](Community_165.md) (3 shared connections)
-- [Community 3](Community_3.md) (2 shared connections)
-- [Community 58](Community_58.md) (2 shared connections)
-- [Community 31](Community_31.md) (2 shared connections)
-- [Community 29](Community_29.md) (2 shared connections)
-- [Community 62](Community_62.md) (2 shared connections)
+- [Community 27](Community_27.md) (13 shared connections)
+- [Community 63](Community_63.md) (10 shared connections)
+- [Community 72](Community_72.md) (8 shared connections)
+- [Community 19](Community_19.md) (5 shared connections)
+- [Community 110](Community_110.md) (4 shared connections)
+- [Community 80](Community_80.md) (3 shared connections)
+- [Community 178](Community_178.md) (3 shared connections)
+- [Community 111](Community_111.md) (1 shared connections)
+- [Community 79](Community_79.md) (1 shared connections)
+- [Community 52](Community_52.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/manual_correction_materializer.py`
-- `tests/test_manual_correction_materializer.py`
+- `src/pipeline/engine_contract.py`
+- `src/pipeline/engine_input_safety.py`
+- `src/pipeline/engine_lifecycle.py`
+- `tests/test_job_lifecycle.py`
 
 ## Audit Trail
 
-- EXTRACTED: 146 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 115 (79%)
+- INFERRED: 31 (21%)
 - AMBIGUOUS: 0 (0%)
 
 ---

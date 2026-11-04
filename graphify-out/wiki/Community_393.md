@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_tight_duplicates.py** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
-- **analyze_tight_duplicates()** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
+- **execute_phase5b_homr.sh** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
+- **execute_phase5b_homr.sh script** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_tight_duplicates.py`
+- `experiments/fp_reduction/execute_phase5b_homr.sh`
 
 ## Audit Trail
 

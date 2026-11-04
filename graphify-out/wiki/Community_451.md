@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **extract_fn_barlines.py** (0 connections) — `tools/extract_fn_barlines.py`
+- **gui_helper/config.py** (0 connections) — `tools/gui_helper/config.py`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tools/extract_fn_barlines.py`
+- `tools/gui_helper/config.py`
 
 ## Audit Trail
 

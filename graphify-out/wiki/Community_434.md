@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_rest_rois.py** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
-- **main()** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
+- **populate_missing_gt.py** (1 connections) — `tools/populate_missing_gt.py`
+- **main()** (1 connections) — `tools/populate_missing_gt.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/mmr_training/visualize_rest_rois.py`
+- `tools/populate_missing_gt.py`
 
 ## Audit Trail
 

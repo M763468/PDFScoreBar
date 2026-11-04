@@ -1,55 +1,61 @@
 # Community 6
 
-> 72 nodes · cohesion 0.09
+> 72 nodes · cohesion 0.05
 
 ## Key Concepts
 
-- **dense_probe_candidate.py** (52 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **DenseProbeCandidateConfig** (27 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **test_dense_probe_candidate_route.py** (25 connections) — `tests/test_dense_probe_candidate_route.py`
-- **run_dense_probe_candidate_route()** (20 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **Path** (17 connections)
-- **DenseProbeCandidatePaths** (16 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **config_from_yaml()** (14 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **resolve_paths()** (14 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **Any** (13 connections)
-- **build_route_provenance()** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **dense_probe_candidate_route.py** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate_route.py`
-- **run_issue36_generation_filter_compare()** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **attach_route_provenance()** (9 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **cleanup_targets()** (8 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **load_json()** (8 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **config_from_args()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **detector_summary()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **run_candidate_comparison()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **run_scoring_eval_and_coverage()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **CommandRunner** (6 connections)
-- **build_score_eval_command()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **make_logged_command_runner()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **main()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate_route.py`
-- **run_probe_rescue_candidate_generation()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **validate_inputs()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **MMROCREngine** (68 connections) — `src/measure_numbering/mmr.py`
+- **test_issue212_mmr_unmasked_fallback.py** (19 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **MaskedEmptyUnmaskedNumberOCR** (12 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **CurrentEmptyLeftWideNumberOCR** (11 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **_processor()** (11 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **MaskedNumberUnmaskedDifferentNumberOCR** (9 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **test_pipeline_numbering_mmr_provider.py** (9 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **RaisesOnEmptyCropOCR** (8 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **.collect_one_bar_evidence()** (7 connections) — `src/measure_numbering/mmr.py`
+- **ndarray** (6 connections)
+- **_box()** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **CurrentEmptyLeftWideLowScoreOCR** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **MaskedEmptyUnmaskedLowScoreOCR** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **._candidate_items()** (5 connections) — `src/measure_numbering/mmr.py`
+- **._hbar_mask_geometry()** (4 connections) — `src/measure_numbering/mmr.py`
+- **.mask_hbar_candidates_calibrated()** (4 connections) — `src/measure_numbering/mmr.py`
+- **._preprocess_geometry()** (4 connections) — `src/measure_numbering/mmr.py`
+- **.preprocess_variant()** (4 connections) — `src/measure_numbering/mmr.py`
+- **.select_best_candidate()** (4 connections) — `src/measure_numbering/mmr.py`
+- **test_run_mmr_batch_updates_default_engine_in_place()** (4 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **.predict()** (3 connections) — `src/measure_numbering/mmr.py`
+- **._extract_numeric_candidates()** (3 connections) — `src/measure_numbering/mmr.py`
+- **._has_blacklisted_text()** (3 connections) — `src/measure_numbering/mmr.py`
+- **.mask_hbar_candidates()** (3 connections) — `src/measure_numbering/mmr.py`
+- **.rotate_image()** (3 connections) — `src/measure_numbering/mmr.py`
 - *... and 47 more nodes in this community*
 
 ## Relationships
 
-- [Community 108](Community_108.md) (3 shared connections)
-- [Community 145](Community_145.md) (3 shared connections)
-- [Community 20](Community_20.md) (2 shared connections)
-- [Community 97](Community_97.md) (2 shared connections)
-- [Community 126](Community_126.md) (1 shared connections)
+- [Community 14](Community_14.md) (28 shared connections)
+- [Community 70](Community_70.md) (7 shared connections)
+- [Community 24](Community_24.md) (7 shared connections)
+- [Community 51](Community_51.md) (4 shared connections)
+- [Community 12](Community_12.md) (4 shared connections)
+- [Community 50](Community_50.md) (3 shared connections)
+- [Community 13](Community_13.md) (3 shared connections)
+- [Community 25](Community_25.md) (2 shared connections)
+- [Community 126](Community_126.md) (2 shared connections)
+- [Community 113](Community_113.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/dense_probe_candidate.py`
-- `src/pipeline/detector_routes/dense_probe_candidate_route.py`
-- `tests/test_dense_probe_candidate_route.py`
-- `tools/issue120/run_issue36_dense_bands_then_issue53_eval.py`
+- `src/measure_numbering/mmr.py`
+- `tests/test_issue212_mmr_unmasked_fallback.py`
+- `tests/test_mmr_ocr_heuristics.py`
+- `tests/test_pipeline_numbering_mmr_provider.py`
+- `tools/issue264/phase_c_fixture_rebase.py`
 
 ## Audit Trail
 
-- EXTRACTED: 243 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 158 (84%)
+- INFERRED: 31 (16%)
 - AMBIGUOUS: 0 (0%)
 
 ---

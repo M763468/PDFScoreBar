@@ -1,12 +1,12 @@
 # Community 349
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **run_full68_x_domain_ab.sh** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
-- **run_full68_x_domain_ab.sh script** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
-- **usage()** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
+- **add_measure_numbers()** (2 connections) — `experiments/legacy/archive/add_measure_numbers.py`
+- **add_measure_numbers.py** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
+- **Adds measure numbers to a score image based on a list of barline coordinates.…** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/issue43/run_full68_x_domain_ab.sh`
+- `experiments/legacy/archive/add_measure_numbers.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

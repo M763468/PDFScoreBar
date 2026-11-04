@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **safe_gh_post.sh** (1 connections) — `tools/utils/safe_gh_post.sh`
-- **safe_gh_post.sh script** (1 connections) — `tools/utils/safe_gh_post.sh`
+- **visualize_measures.py** (1 connections) — `tools/visualize_measures.py`
+- **visualize_measures()** (1 connections) — `tools/visualize_measures.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/utils/safe_gh_post.sh`
+- `tools/visualize_measures.py`
 
 ## Audit Trail
 

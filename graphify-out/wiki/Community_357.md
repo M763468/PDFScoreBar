@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **respond_to_pr_review.sh** (2 connections) — `scripts/respond_to_pr_review.sh`
-- **respond_to_pr_review.sh script** (2 connections) — `scripts/respond_to_pr_review.sh`
-- **usage()** (2 connections) — `scripts/respond_to_pr_review.sh`
+- **setup_local_worktree_links.sh** (2 connections) — `scripts/setup_local_worktree_links.sh`
+- **setup_local_worktree_links.sh script** (2 connections) — `scripts/setup_local_worktree_links.sh`
+- **usage()** (2 connections) — `scripts/setup_local_worktree_links.sh`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `scripts/respond_to_pr_review.sh`
+- `scripts/setup_local_worktree_links.sh`
 
 ## Audit Trail
 

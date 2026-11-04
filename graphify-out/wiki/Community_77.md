@@ -4,53 +4,59 @@
 
 ## Key Concepts
 
-- **PageStaffUnit** (19 connections) — `src/common/barline_units.py`
-- **load_page_staff_units()** (17 connections) — `src/common/barline_units.py`
-- **test_barline_units.py** (17 connections) — `tests/test_barline_units.py`
-- **barline_units.py** (15 connections) — `src/common/barline_units.py`
-- **require_page_staff_unit()** (11 connections) — `src/common/barline_units.py`
-- **validate_coordinate_dimensions()** (11 connections) — `src/common/barline_units.py`
-- **verify_source_hash()** (6 connections) — `src/common/barline_units.py`
-- **center_anchor_xdist_limit()** (5 connections) — `src/common/barline_evaluation.py`
-- **_parse_page_unit()** (5 connections) — `src/common/barline_units.py`
-- **test_manifest_dimensions_and_source_hash_are_verified()** (5 connections) — `tests/test_barline_units.py`
-- **test_staff_unit_manifest_preserves_page_provenance()** (5 connections) — `tests/test_barline_units.py`
-- **test_staff_unit_manifest_rejects_nonfinite_unit_size()** (5 connections) — `tests/test_barline_units.py`
-- **_require_mapping()** (4 connections) — `src/common/barline_units.py`
-- **_manifest()** (4 connections) — `tests/test_barline_units.py`
-- **Path** (4 connections)
-- **test_center_anchor_is_resolution_independent_with_staff_units()** (3 connections) — `tests/test_barline_units.py`
-- **page_key()** (2 connections) — `src/common/barline_units.py`
-- **Any** (2 connections)
-- **Path** (2 connections)
-- **test_center_anchor_requires_one_explicit_distance_contract()** (2 connections) — `tests/test_barline_units.py`
-- **test_normalized_matcher_rejects_nonfinite_values()** (2 connections) — `tests/test_barline_units.py`
-- **Return the strong-pair X tolerance in the boxes' coordinate frame.** (1 connections) — `src/common/barline_evaluation.py`
-- **Validated staff-unit metadata for normalized barline matching.** (1 connections) — `src/common/barline_units.py`
-- **Staff spacing and provenance in the exact box coordinate frame.** (1 connections) — `src/common/barline_units.py`
-- **Fail loudly when boxes and the page-unit manifest use different frames.** (1 connections) — `src/common/barline_units.py`
+- **BBox** (85 connections) — `src/measure_numbering/types.py`
+- **ClippedSystemEndDetector** (14 connections) — `src/measure_numbering/clipped_end.py`
+- **test_clipped_system_end.py** (14 connections) — `tests/test_clipped_system_end.py`
+- **.create_system()** (11 connections) — `tests/test_issue194_first_interval_guard.py`
+- **TestIssue194FirstIntervalGuard** (10 connections) — `tests/test_issue194_first_interval_guard.py`
+- **.apply()** (8 connections) — `src/measure_numbering/clipped_end.py`
+- **scan()** (8 connections) — `tests/test_clipped_system_end.py`
+- **test_issue194_first_interval_guard.py** (8 connections) — `tests/test_issue194_first_interval_guard.py`
+- **test_clipping_needs_source_lines_and_music_not_mask_extension()** (6 connections) — `tests/test_clipped_system_end.py`
+- **debug_end_bar_removal.py** (5 connections) — `experiments/legacy/tools_archive/debug_end_bar_removal.py`
+- **test_clipped_scan_counts_shared_last_interval_once_and_preserves_mmr()** (5 connections) — `tests/test_clipped_system_end.py`
+- **load_barlines()** (4 connections) — `experiments/legacy/tools_archive/debug_end_bar_removal.py`
+- **._five_lines()** (3 connections) — `src/measure_numbering/clipped_end.py`
+- **._has_symbol()** (3 connections) — `src/measure_numbering/clipped_end.py`
+- **ndarray** (3 connections)
+- **test_missing_image_does_not_infer_end_from_staff_bbox()** (3 connections) — `tests/test_clipped_system_end.py`
+- **.test_force_measure_override_preserves_short_ghost_interval()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
+- **.test_keeps_normal_width_first_interval_after_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
+- **.test_keeps_short_first_interval_without_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
+- **.test_median_uses_real_following_intervals_for_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
+- **.test_override_indices_follow_visible_measure_indices()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
+- **.test_skips_narrow_first_interval_after_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
+- **debug_end_bar_removal()** (2 connections) — `experiments/legacy/tools_archive/debug_end_bar_removal.py`
+- **parametrize** (2 connections)
+- **.setUp()** (2 connections) — `tests/test_issue194_first_interval_guard.py`
 - *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [Community 126](Community_126.md) (11 shared connections)
-- [Community 101](Community_101.md) (8 shared connections)
-- [Community 136](Community_136.md) (7 shared connections)
-- [Community 1](Community_1.md) (6 shared connections)
-- [Community 175](Community_175.md) (6 shared connections)
-- [Community 135](Community_135.md) (2 shared connections)
-- [Community 127](Community_127.md) (1 shared connections)
+- [Community 8](Community_8.md) (38 shared connections)
+- [Community 18](Community_18.md) (36 shared connections)
+- [Community 42](Community_42.md) (9 shared connections)
+- [Community 69](Community_69.md) (6 shared connections)
+- [Community 90](Community_90.md) (4 shared connections)
+- [Community 50](Community_50.md) (3 shared connections)
+- [Community 183](Community_183.md) (2 shared connections)
+- [Community 114](Community_114.md) (2 shared connections)
+- [Community 56](Community_56.md) (1 shared connections)
+- [Community 105](Community_105.md) (1 shared connections)
+- [Community 182](Community_182.md) (1 shared connections)
 
 ## Source Files
 
-- `src/common/barline_evaluation.py`
-- `src/common/barline_units.py`
-- `tests/test_barline_units.py`
+- `experiments/legacy/tools_archive/debug_end_bar_removal.py`
+- `src/measure_numbering/clipped_end.py`
+- `src/measure_numbering/types.py`
+- `tests/test_clipped_system_end.py`
+- `tests/test_issue194_first_interval_guard.py`
 
 ## Audit Trail
 
-- EXTRACTED: 94 (96%)
-- INFERRED: 4 (4%)
+- EXTRACTED: 152 (94%)
+- INFERRED: 9 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **populate_missing_gt.py** (1 connections) — `tools/populate_missing_gt.py`
-- **main()** (1 connections) — `tools/populate_missing_gt.py`
+- **populate_provisional_gt.py** (1 connections) — `tools/populate_provisional_gt.py`
+- **main()** (1 connections) — `tools/populate_provisional_gt.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/populate_missing_gt.py`
+- `tools/populate_provisional_gt.py`
 
 ## Audit Trail
 

@@ -1,14 +1,13 @@
 # Community 322
 
-> 5 nodes · cohesion 0.60
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **correction_state.js** (4 connections) — `tools/review_correction/correction_state.js`
-- **refresh()** (3 connections) — `tools/review_correction/correction_state.js`
-- **render()** (2 connections) — `tools/review_correction/correction_state.js`
-- **update()** (2 connections) — `tools/review_correction/correction_state.js`
-- **enqueue()** (1 connections) — `tools/review_correction/correction_state.js`
+- **audit_double_barline_overlaps.py** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **audit_file()** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **calculate_iou()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
 
 ## Relationships
 
@@ -16,11 +15,11 @@
 
 ## Source Files
 
-- `tools/review_correction/correction_state.js`
+- `experiments/cnn_classifier/audit_double_barline_overlaps.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

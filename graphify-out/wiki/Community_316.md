@@ -1,14 +1,14 @@
 # Community 316
 
-> 5 nodes · cohesion 0.50
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **augment_dataset()** (3 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
-- **overlay_text()** (3 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
-- **generate_text_noise.py** (2 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
-- **Reads Positive samples (train/1), generates augmented versions with text, and…** (1 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
-- **Overlays random text on the image, avoiding the exact center (where H-Bar…** (1 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **organize_mmr_errors.py** (4 connections) — `tools/organize_mmr_errors.py`
+- **organize_errors()** (4 connections) — `tools/organize_mmr_errors.py`
+- **load_model()** (2 connections) — `tools/organize_mmr_errors.py`
+- **map_global_index_to_coords()** (2 connections) — `tools/organize_mmr_errors.py`
+- **predict_crop()** (2 connections) — `tools/organize_mmr_errors.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/mmr_training/augmentation/generate_text_noise.py`
+- `tools/organize_mmr_errors.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,26 +1,26 @@
 # Community 314
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **visualize_mmr_errors.py** (4 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **main()** (3 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **draw_thick_rectangle()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **get_ttf_font()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **MMR Error Visualization and Inspection Tool (Local Diagnostics for Issue #94)…** (1 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **load_gt_boxes()** (4 connections) — `tools/make_evidence_sheet.py`
+- **main()** (4 connections) — `tools/make_evidence_sheet.py`
+- **make_evidence_sheet.py** (3 connections) — `tools/make_evidence_sheet.py`
+- **put_text_block()** (2 connections) — `tools/make_evidence_sheet.py`
+- **Path** (2 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 31](Community_31.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue94/visualize_mmr_errors.py`
+- `tools/make_evidence_sheet.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

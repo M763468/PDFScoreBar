@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **debug_rest_candidates.py** (1 connections) — `tools/debug_rest_candidates.py`
-- **main()** (1 connections) — `tools/debug_rest_candidates.py`
+- **extract_tp_crops.py** (1 connections) — `tools/extract_tp_crops.py`
+- **extract_crops()** (1 connections) — `tools/extract_tp_crops.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/debug_rest_candidates.py`
+- `tools/extract_tp_crops.py`
 
 ## Audit Trail
 

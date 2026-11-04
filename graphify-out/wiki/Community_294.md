@@ -1,36 +1,44 @@
 # Community 294
 
-> 13 nodes · cohesion 0.24
+> 14 nodes · cohesion 0.24
 
 ## Key Concepts
 
-- **compute_candidate_stats()** (6 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **export_measure_grid_candidates()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **BarlinePrediction** (5 connections)
-- **Path** (5 connections)
-- **resolve_clusters_dry_run()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **resolve_tight_duplicates_dry_run()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **compute_and_save_gap_stats()** (4 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **ndarray** (4 connections)
-- **Phase 12: Tight Duplicate Merging (Dry Run). Groups candidates on same staff…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **Dry-run implementation of Cluster Resolution Heuristic. Groups barline…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **Phase 13: Export data for Measure Grid Consistency (DP) validation. Saves…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **Computes and saves statistics for each candidate barline to a CSV file. Stats…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **Computes horizontal gaps between adjacent barlines on the same staff/system and…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **current_sr_batch_worker.py** (16 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **_run()** (13 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **validate_compiler_counters()** (7 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **_items()** (6 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **_load_request()** (4 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **Path** (4 connections)
+- **_sha256()** (3 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **test_compiled_cache_event_accepted()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **test_unknown_or_partial_compilation_rejected()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **Any** (2 connections)
+- **parametrize** (2 connections)
+- **main()** (1 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **Generate verified current-x4 SR images with one Real-ESRGAN model lifetime.** (1 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **Reject disabled compilation, graph breaks and unknown backend provenance.** (1 connections) — `src/pipeline/detection/sr_compiler_cache.py`
 
 ## Relationships
 
-- [Community 14](Community_14.md) (5 shared connections)
-- [Community 153](Community_153.md) (1 shared connections)
+- [Community 43](Community_43.md) (8 shared connections)
+- [Community 109](Community_109.md) (5 shared connections)
+- [Community 174](Community_174.md) (3 shared connections)
+- [Community 50](Community_50.md) (2 shared connections)
+- [Community 165](Community_165.md) (2 shared connections)
+- [Community 144](Community_144.md) (1 shared connections)
+- [Community 103](Community_103.md) (1 shared connections)
 
 ## Source Files
 
-- `src/homr_eval_scripts/core/diagnostics.py`
+- `src/pipeline/detection/current_sr_batch_worker.py`
+- `src/pipeline/detection/sr_compiler_cache.py`
+- `tests/test_sr_compiler_cache.py`
 
 ## Audit Trail
 
-- EXTRACTED: 25 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 43 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,51 +1,56 @@
 # Community 35
 
-> 45 nodes · cohesion 0.12
+> 45 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **audit_grouped_semantic_impact.py** (25 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **Any** (18 connections)
-- **_route_evidence()** (16 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **test_issue252_grouped_semantic_impact.py** (14 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **compare_grouped_final_numbering()** (12 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_route()** (10 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **normalize_isolated_mmr_overrides()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_target_component_memberships()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_bbox()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_system_signature()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_connector_evidence()** (6 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **main()** (6 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_grouped_payload()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_connector_supported_grouping_classifies_redundant_component_instance()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_grouped_audit_reports_connector_evidence_change_first()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_grouped_audit_reports_local_target_boundary_recovery()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_three_component_chain_is_supported_without_max_two_limit()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **_boundary_matches()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_compare_page_summaries()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_component_boxes()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **test_same_x_boundary_without_connector_support_is_not_grouping_evidence()** (4 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **_center_x()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_load()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_measure_signature()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_write()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **materialize_manual_correction_review_package()** (40 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **test_manual_correction_materializer.py** (25 connections) — `tests/test_manual_correction_materializer.py`
+- **manual_correction_materializer.py** (19 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_fake_run_root()** (17 connections) — `tests/test_manual_correction_materializer.py`
+- **ManualCorrectionMaterializerError** (12 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **Any** (11 connections)
+- **Path** (10 connections)
+- **_page_number_from_manifest()** (8 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_resolve_handoff_output_name()** (7 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_resolve_barlines_review_source()** (6 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_resolve_run_artifact()** (6 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **test_selected_pages_keep_physical_labels_and_correction_ordinals()** (6 connections) — `tests/test_manual_correction_materializer.py`
+- **_extract_review_barline_records()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_load_json_object()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_manifest_relative_base()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **test_materialized_handoff_validates_and_builds_page_local_gui_config()** (5 connections) — `tests/test_manual_correction_materializer.py`
+- **_write_json()** (5 connections) — `tests/test_manual_correction_materializer.py`
+- **_is_engine_staged_pdf_path()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_load_json()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_require_inside()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_select_pages()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_write_json()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **test_materializer_accepts_manifest_declared_shared_source_image()** (4 connections) — `tests/test_manual_correction_materializer.py`
+- **test_materializer_allows_missing_pre_rendered_overlay()** (4 connections) — `tests/test_manual_correction_materializer.py`
+- **test_materializer_rejects_run_root_external_barlines_artifact()** (4 connections) — `tests/test_manual_correction_materializer.py`
 - *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [Community 30](Community_30.md) (10 shared connections)
-- [Community 13](Community_13.md) (7 shared connections)
+- [Community 26](Community_26.md) (7 shared connections)
+- [Community 21](Community_21.md) (3 shared connections)
+- [Community 166](Community_166.md) (3 shared connections)
+- [Community 2](Community_2.md) (2 shared connections)
+- [Community 59](Community_59.md) (2 shared connections)
+- [Community 32](Community_32.md) (2 shared connections)
+- [Community 30](Community_30.md) (2 shared connections)
+- [Community 63](Community_63.md) (2 shared connections)
 
 ## Source Files
 
-- `tests/test_issue252_grouped_semantic_impact.py`
-- `tools/gui_helper/app.py`
-- `tools/issue252/audit_grouped_semantic_impact.py`
+- `src/pipeline/review/manual_correction_materializer.py`
+- `tests/test_manual_correction_materializer.py`
 
 ## Audit Trail
 
-- EXTRACTED: 132 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 146 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,51 +1,47 @@
 # Community 121
 
-> 21 nodes · cohesion 0.20
+> 22 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **pdf_to_images.py** (12 connections) — `src/pdf_to_images.py`
-- **render_pdf_to_memory()** (12 connections) — `src/pdf_to_images.py`
-- **._run_pdf_to_images()** (12 connections) — `src/pipeline/orchestrator.py`
-- **render_pdf()** (8 connections) — `src/pdf_to_images.py`
-- **save_image()** (7 connections) — `src/pdf_to_images.py`
-- **PdfConversionError** (6 connections) — `src/pdf_to_images.py`
-- **normalise_pages()** (5 connections) — `src/pdf_to_images.py`
-- **parse_args()** (5 connections) — `src/pdf_to_images.py`
-- **pixmap_to_array()** (5 connections) — `src/pdf_to_images.py`
-- **test_pdf_to_images_progress.py** (5 connections) — `tests/test_pdf_to_images_progress.py`
-- **main()** (4 connections) — `src/pdf_to_images.py`
-- **ndarray** (4 connections)
-- **Path** (3 connections)
-- **resize_image()** (3 connections) — `src/pdf_to_images.py`
-- **test_pdf_to_images_cli_requires_explicit_input_and_output_paths()** (2 connections) — `tests/test_pdf_to_images_progress.py`
-- **test_render_pdf_to_memory_reports_each_completed_page()** (2 connections) — `tests/test_pdf_to_images_progress.py`
-- **Pixmap** (1 connections)
-- **Namespace** (1 connections)
-- **RuntimeError** (1 connections)
-- **Raised when a page cannot be rendered or saved.** (1 connections) — `src/pdf_to_images.py`
-- **Step 1: Convert PDF to images in-process and retain exact source identity.** (1 connections) — `src/pipeline/orchestrator.py`
+- **compare_box_tree_stats.py** (21 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **compare()** (10 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **main()** (6 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **PageComparison** (6 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **Path** (5 connections)
+- **render_markdown()** (5 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **resolve_page_file()** (5 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **boxes_from_payload()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **build_parser()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **load_boxes()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **permission_error_message()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **stats()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **write_csv()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **BoxStats** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **count_loss_rank()** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **normalize_box()** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **percentile()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **Any** (2 connections)
+- **Namespace** (2 connections)
+- **safe_delta()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **safe_ratio()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 20](Community_20.md) (9 shared connections)
-- [Community 165](Community_165.md) (3 shared connections)
-- [Community 163](Community_163.md) (2 shared connections)
-- [Community 108](Community_108.md) (1 shared connections)
-- [Community 143](Community_143.md) (1 shared connections)
-- [Community 12](Community_12.md) (1 shared connections)
-- [Community 111](Community_111.md) (1 shared connections)
+- [Community 146](Community_146.md) (4 shared connections)
+- [Community 128](Community_128.md) (4 shared connections)
+- [Community 127](Community_127.md) (1 shared connections)
+- [Community 43](Community_43.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pdf_to_images.py`
-- `src/pipeline/orchestrator.py`
-- `tests/test_pdf_to_images_progress.py`
+- `tools/issue120/compare_box_tree_stats.py`
 
 ## Audit Trail
 
-- EXTRACTED: 59 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 53 (95%)
+- INFERRED: 3 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

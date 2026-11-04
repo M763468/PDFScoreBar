@@ -1,12 +1,12 @@
 # Community 368
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **debug_mask_alignment()** (2 connections) — `tools/debug_mask_alignment.py`
-- **debug_mask_alignment.py** (1 connections) — `tools/debug_mask_alignment.py`
-- **Visualizes the alignment between the original image and the mask. Draws the…** (1 connections) — `tools/debug_mask_alignment.py`
+- **export_failure_crops.py** (2 connections) — `tools/export_failure_crops.py`
+- **export_crops()** (2 connections) — `tools/export_failure_crops.py`
+- **main()** (2 connections) — `tools/export_failure_crops.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/debug_mask_alignment.py`
+- `tools/export_failure_crops.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

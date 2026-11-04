@@ -1,48 +1,48 @@
 # Community 150
 
-> 17 nodes · cohesion 0.21
+> 17 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **build_row_stats()** (19 connections) — `src/pipeline/probe_detector/bands.py`
-- **run_probe_detector_parity_check.py** (10 connections) — `tools/verification/run_probe_detector_parity_check.py`
-- **run_parity_check()** (9 connections) — `tools/verification/run_probe_detector_parity_check.py`
-- **regression_check_staff.py** (4 connections) — `tools/regression_check_staff.py`
-- **_load_json()** (4 connections) — `tools/verification/run_probe_detector_parity_check.py`
-- **check_improved_rule.py** (3 connections) — `tools/check_improved_rule.py`
-- **explain_rule_failure.py** (3 connections) — `tools/explain_rule_failure.py`
-- **main()** (3 connections) — `tools/verification/run_probe_detector_parity_check.py`
-- **_normalize_boxes()** (3 connections) — `tools/verification/run_probe_detector_parity_check.py`
-- **parse_args()** (3 connections) — `tools/verification/run_probe_detector_parity_check.py`
-- **Any** (3 connections)
-- **visualize_improved_staff_detection()** (2 connections) — `tools/check_improved_rule.py`
-- **visualize_staff_misdetection()** (2 connections) — `tools/explain_rule_failure.py`
-- **check_regression()** (2 connections) — `tools/regression_check_staff.py`
-- **visualize_staff()** (2 connections) — `tools/regression_check_staff.py`
-- **Path** (2 connections)
-- **Namespace** (1 connections)
+- **test_issue264_phase_a_connector_geometry.py** (18 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **resolve_paths_from_detection()** (14 connections) — `src/pipeline/detection/utils.py`
+- **detection/utils.py** (10 connections) — `src/pipeline/detection/utils.py`
+- **test_numbering_resolves_current_homr_semantics_without_replacing_staff_geometry()** (10 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **test_numbering_uses_semantic_staff_geometry_only_for_connector_rois()** (8 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **test_numbering_preserves_page_image_fallback_without_semantic_pair()** (7 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **Path** (6 connections)
+- **_write_mask()** (6 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **_probe_root()** (5 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **_discover_current_homr_staff_mask()** (4 connections) — `src/pipeline/detection/utils.py`
+- **_semantic_dir()** (4 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **Path** (3 connections)
+- **Any** (2 connections)
+- **Utility functions for path resolution and system monitoring in detection.** (1 connections) — `src/pipeline/detection/utils.py`
+- **Find one retained current-HOMR mask beside a replay connector artifact.** (1 connections) — `src/pipeline/detection/utils.py`
+- **Resolves output paths for barlines and staff masks after detection.** (1 connections) — `src/pipeline/detection/utils.py`
+- **ndarray** (1 connections)
 
 ## Relationships
 
-- [Community 259](Community_259.md) (7 shared connections)
-- [Community 7](Community_7.md) (3 shared connections)
-- [Community 108](Community_108.md) (2 shared connections)
-- [Community 11](Community_11.md) (2 shared connections)
-- [Community 36](Community_36.md) (2 shared connections)
-- [Community 99](Community_99.md) (2 shared connections)
-- [Community 30](Community_30.md) (1 shared connections)
+- [Community 21](Community_21.md) (8 shared connections)
+- [Community 45](Community_45.md) (6 shared connections)
+- [Community 114](Community_114.md) (3 shared connections)
+- [Community 181](Community_181.md) (3 shared connections)
+- [Community 164](Community_164.md) (3 shared connections)
+- [Community 219](Community_219.md) (3 shared connections)
+- [Community 123](Community_123.md) (2 shared connections)
+- [Community 91](Community_91.md) (2 shared connections)
+- [Community 50](Community_50.md) (2 shared connections)
+- [Community 42](Community_42.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/probe_detector/bands.py`
-- `tools/check_improved_rule.py`
-- `tools/explain_rule_failure.py`
-- `tools/regression_check_staff.py`
-- `tools/verification/run_probe_detector_parity_check.py`
+- `src/pipeline/detection/utils.py`
+- `tests/test_issue264_phase_a_connector_geometry.py`
 
 ## Audit Trail
 
-- EXTRACTED: 47 (100%)
+- EXTRACTED: 67 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

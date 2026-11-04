@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_phase5b_srcheck.sh** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
-- **run_phase5b_srcheck.sh script** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
+- **run_promiscuous_union_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
+- **run_promiscuous_union_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
+- `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
 
 ## Audit Trail
 

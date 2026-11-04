@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **eval_omr_dln_measures.py** (0 connections) — `experiments/models/omr_dln/eval_omr_dln_measures.py`
+- **pdfscore-pipeline** (0 connections) — `pyproject.toml`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `experiments/models/omr_dln/eval_omr_dln_measures.py`
+- `pyproject.toml`
 
 ## Audit Trail
 

@@ -1,61 +1,69 @@
 # Community 18
 
-> 54 nodes · cohesion 0.07
+> 59 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **TelemetryRecorder** (40 connections) — `src/pipeline/engine_telemetry.py`
-- **ProgressEvent** (27 connections) — `src/pipeline/engine_contract.py`
-- **test_engine_telemetry.py** (24 connections) — `tests/test_engine_telemetry.py`
-- **ResourceSampler** (19 connections) — `src/pipeline/engine_telemetry.py`
-- **ProgressKind** (16 connections) — `src/pipeline/engine_contract.py`
-- **engine_telemetry.py** (12 connections) — `src/pipeline/engine_telemetry.py`
-- **.emit()** (8 connections) — `src/pipeline/engine_telemetry.py`
-- **_SuccessfulOrchestrator** (7 connections) — `tests/test_pipeline_telemetry.py`
-- **.start_job()** (6 connections) — `src/pipeline/engine_telemetry.py`
-- **.terminal()** (6 connections) — `src/pipeline/engine_telemetry.py`
-- **_FailingOrchestrator** (6 connections) — `tests/test_pipeline_telemetry.py`
-- **._sample_once()** (5 connections) — `src/pipeline/engine_telemetry.py`
-- **_ConstructorFailingOrchestrator** (5 connections) — `tests/test_pipeline_telemetry.py`
-- **.progress()** (4 connections) — `src/pipeline/engine_telemetry.py`
-- **test_recorder_terminal_kind_matches_job_status()** (4 connections) — `tests/test_engine_telemetry.py`
-- **test_summary_resources_are_job_result_compatible_without_sampling()** (4 connections) — `tests/test_engine_telemetry.py`
-- **._dispatch()** (3 connections) — `src/pipeline/engine_telemetry.py`
-- **.__init__()** (3 connections) — `src/pipeline/engine_telemetry.py`
-- **.stage()** (3 connections) — `src/pipeline/engine_telemetry.py`
-- **.summary()** (3 connections) — `src/pipeline/engine_telemetry.py`
-- **parametrize** (3 connections)
-- **test_progress_event_rejects_invalid_additive_telemetry_fields()** (3 connections) — `tests/test_engine_telemetry.py`
-- **test_progress_event_telemetry_fields_round_trip_deterministically()** (3 connections) — `tests/test_engine_telemetry.py`
-- **test_resource_sampler_rejects_non_finite_or_non_positive_interval()** (3 connections) — `tests/test_engine_telemetry.py`
-- **._query_device_gpu_utilization()** (2 connections) — `src/pipeline/engine_telemetry.py`
-- *... and 29 more nodes in this community*
+- **Staff** (82 connections) — `src/measure_numbering/types.py`
+- **Barline** (68 connections) — `src/measure_numbering/types.py`
+- **measure_numbering/types.py** (47 connections) — `src/measure_numbering/types.py`
+- **SystemBuilder** (42 connections) — `src/measure_numbering/builder.py`
+- **test_numbering_geometry_scale.py** (16 connections) — `tests/test_numbering_geometry_scale.py`
+- **builder.py** (12 connections) — `src/measure_numbering/builder.py`
+- **verify_measure_numbering_pipeline.py** (12 connections) — `tools/verify_measure_numbering_pipeline.py`
+- **visualize_measure_numbering.py** (12 connections) — `tools/visualize_measure_numbering.py`
+- **._group_by_geometry()** (10 connections) — `src/measure_numbering/builder.py`
+- **run_verification()** (10 connections) — `tools/verify_measure_numbering_pipeline.py`
+- **run_visualization()** (10 connections) — `tools/visualize_measure_numbering.py`
+- **.build_systems()** (9 connections) — `src/measure_numbering/builder.py`
+- **connector_aware_builder.py** (9 connections) — `src/measure_numbering/connector_aware_builder.py`
+- **test_issue197_system_grouping_connector_evidence.py** (9 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **verify_divisi_batch.py** (9 connections) — `tools/verify_divisi_batch.py`
+- **clipped_end.py** (8 connections) — `src/measure_numbering/clipped_end.py`
+- **visualize_measure_systems.py** (8 connections) — `tools/visualize_measure_systems.py`
+- **_staff()** (7 connections) — `tests/test_numbering_geometry_scale.py`
+- **._check_aligned_connection()** (6 connections) — `src/measure_numbering/builder.py`
+- **test_measure_numbering_builder.py** (6 connections) — `tests/test_measure_numbering_builder.py`
+- **process_page()** (6 connections) — `tools/verify_divisi_batch.py`
+- **load_local_gt()** (6 connections) — `tools/visualize_measure_systems.py`
+- **Any** (5 connections)
+- **._assign_barlines_to_staves()** (5 connections) — `src/measure_numbering/builder.py`
+- **._find_aligned_pairs()** (5 connections) — `src/measure_numbering/builder.py`
+- *... and 34 more nodes in this community*
 
 ## Relationships
 
-- [Community 110](Community_110.md) (14 shared connections)
-- [Community 71](Community_71.md) (10 shared connections)
-- [Community 79](Community_79.md) (7 shared connections)
-- [Community 62](Community_62.md) (7 shared connections)
-- [Community 109](Community_109.md) (6 shared connections)
-- [Community 33](Community_33.md) (5 shared connections)
-- [Community 20](Community_20.md) (3 shared connections)
-- [Community 78](Community_78.md) (1 shared connections)
-- [Community 178](Community_178.md) (1 shared connections)
+- [Community 8](Community_8.md) (83 shared connections)
+- [Community 77](Community_77.md) (36 shared connections)
+- [Community 69](Community_69.md) (17 shared connections)
+- [Community 42](Community_42.md) (16 shared connections)
+- [Community 90](Community_90.md) (13 shared connections)
+- [Community 183](Community_183.md) (10 shared connections)
+- [Community 50](Community_50.md) (7 shared connections)
+- [Community 114](Community_114.md) (3 shared connections)
+- [Community 56](Community_56.md) (3 shared connections)
+- [Community 182](Community_182.md) (3 shared connections)
+- [Community 14](Community_14.md) (1 shared connections)
 - [Community 98](Community_98.md) (1 shared connections)
-- [Community 111](Community_111.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_contract.py`
-- `src/pipeline/engine_telemetry.py`
-- `tests/test_engine_telemetry.py`
-- `tests/test_pipeline_telemetry.py`
+- `src/measure_numbering/builder.py`
+- `src/measure_numbering/clipped_end.py`
+- `src/measure_numbering/connector_aware_builder.py`
+- `src/measure_numbering/types.py`
+- `tests/test_issue197_system_grouping_connector_evidence.py`
+- `tests/test_measure_numbering_builder.py`
+- `tests/test_numbering_geometry_scale.py`
+- `tools/verify_divisi_batch.py`
+- `tools/verify_measure_numbering_pipeline.py`
+- `tools/visualize_measure_numbering.py`
+- `tools/visualize_measure_systems.py`
 
 ## Audit Trail
 
-- EXTRACTED: 140 (89%)
-- INFERRED: 18 (11%)
+- EXTRACTED: 334 (94%)
+- INFERRED: 21 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

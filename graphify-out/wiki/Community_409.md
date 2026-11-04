@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **test_morphological_closing.py** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
-- **test()** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
+- **eval_omr_dln_barlines_from_measures.py** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
+- **calculate_iou()** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/test_morphological_closing.py`
+- `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
 
 ## Audit Trail
 

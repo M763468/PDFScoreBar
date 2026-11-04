@@ -1,61 +1,53 @@
 # Community 110
 
-> 25 nodes · cohesion 0.14
+> 24 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **run_pipeline()** (30 connections) — `src/pipeline/main.py`
-- **test_pipeline_telemetry.py** (22 connections) — `tests/test_pipeline_telemetry.py`
-- **main.py** (17 connections) — `src/pipeline/main.py`
-- **test_pipeline_integration.py** (6 connections) — `tests/test_pipeline_integration.py`
-- **_patch_minimal_pipeline()** (6 connections) — `tests/test_pipeline_telemetry.py`
-- **faults.py** (6 connections) — `tools/issue458/faults.py`
-- **_assert_input_validation_aborted()** (5 connections) — `tests/test_pipeline_telemetry.py`
-- **test_input_validation_does_not_complete_for_malformed_structured_input()** (5 connections) — `tests/test_pipeline_telemetry.py`
-- **test_input_validation_does_not_complete_when_external_images_are_missing()** (4 connections) — `tests/test_pipeline_telemetry.py`
-- **test_input_validation_does_not_complete_when_pdf_path_is_missing()** (4 connections) — `tests/test_pipeline_telemetry.py`
-- **main()** (3 connections) — `src/pipeline/main.py`
-- **test_resource_sampling_keeps_default_summary_in_run_directory()** (3 connections) — `tests/test_pipeline_telemetry.py`
-- **test_run_pipeline_default_path_does_not_construct_telemetry()** (3 connections) — `tests/test_pipeline_telemetry.py`
-- **test_run_pipeline_emits_terminal_failure_when_orchestrator_construction_fails()** (3 connections) — `tests/test_pipeline_telemetry.py`
-- **test_run_pipeline_emits_terminal_failure_without_swallowing_exception()** (3 connections) — `tests/test_pipeline_telemetry.py`
-- **test_run_pipeline_emits_terminal_success_and_summary()** (3 connections) — `tests/test_pipeline_telemetry.py`
-- **child()** (3 connections) — `tools/issue458/faults.py`
-- **main()** (2 connections) — `tools/issue458/faults.py`
-- **Path** (1 connections)
-- **ProgressCallback** (1 connections)
-- **End-to-end pipeline entrypoint (no CLI wrapper).** (1 connections) — `src/pipeline/main.py`
-- **CLI entry point for the pipeline.** (1 connections) — `src/pipeline/main.py`
-- **Entry point for running the full pipeline.** (1 connections) — `src/pipeline/main.py`
-- **parametrize** (1 connections)
-- **Real pipeline failure/publication checks using retained SR, without inference.** (1 connections) — `tools/issue458/faults.py`
+- **test_engine_contract.py** (27 connections) — `tests/test_engine_contract.py`
+- **JobResult** (18 connections) — `src/pipeline/engine_contract.py`
+- **ArtifactDescriptor** (14 connections) — `src/pipeline/engine_contract.py`
+- **canonical_json()** (11 connections) — `src/pipeline/engine_contract.py`
+- **test_success_warning_review_required_and_failure_results()** (7 connections) — `tests/test_engine_contract.py`
+- **test_invalid_result_shapes_are_rejected()** (6 connections) — `tests/test_engine_contract.py`
+- **.from_json()** (5 connections) — `src/pipeline/engine_contract.py`
+- **_review_artifact()** (5 connections) — `tests/test_engine_contract.py`
+- **.from_json()** (4 connections) — `src/pipeline/engine_contract.py`
+- **.to_dict()** (4 connections) — `src/pipeline/engine_contract.py`
+- **_provenance()** (4 connections) — `tests/test_engine_contract.py`
+- **test_job_request_round_trip_is_deterministic_and_forward_compatible()** (4 connections) — `tests/test_engine_contract.py`
+- **test_malformed_corrections_and_failure_payloads_are_rejected()** (4 connections) — `tests/test_engine_contract.py`
+- **.assert_source_matches()** (3 connections) — `src/pipeline/engine_contract.py`
+- **.to_json()** (3 connections) — `src/pipeline/engine_contract.py`
+- **.to_json()** (3 connections) — `src/pipeline/engine_contract.py`
+- **test_corrections_map_current_operations_and_reject_stale_source()** (3 connections) — `tests/test_engine_contract.py`
+- **.to_dict()** (2 connections) — `src/pipeline/engine_contract.py`
+- **.to_json()** (2 connections) — `src/pipeline/engine_contract.py`
+- **test_artifact_relative_path_cannot_escape_package()** (2 connections) — `tests/test_engine_contract.py`
+- **test_canonical_json_rejects_nan()** (2 connections) — `tests/test_engine_contract.py`
+- **test_job_request_rejects_oversized_raw_page_list_before_deduplication()** (2 connections) — `tests/test_engine_contract.py`
+- **test_unknown_contract_version_is_rejected()** (2 connections) — `tests/test_engine_contract.py`
+- **Serialize a contract value deterministically and reject NaN/Infinity.** (1 connections) — `src/pipeline/engine_contract.py`
 
 ## Relationships
 
-- [Community 18](Community_18.md) (14 shared connections)
-- [Community 97](Community_97.md) (6 shared connections)
-- [Community 111](Community_111.md) (6 shared connections)
-- [Community 20](Community_20.md) (4 shared connections)
-- [Community 131](Community_131.md) (3 shared connections)
-- [Community 108](Community_108.md) (2 shared connections)
-- [Community 109](Community_109.md) (2 shared connections)
-- [Community 222](Community_222.md) (2 shared connections)
-- [Community 71](Community_71.md) (2 shared connections)
-- [Community 60](Community_60.md) (2 shared connections)
-- [Community 37](Community_37.md) (2 shared connections)
-- [Community 62](Community_62.md) (2 shared connections)
+- [Community 72](Community_72.md) (25 shared connections)
+- [Community 63](Community_63.md) (10 shared connections)
+- [Community 80](Community_80.md) (10 shared connections)
+- [Community 19](Community_19.md) (6 shared connections)
+- [Community 34](Community_34.md) (4 shared connections)
+- [Community 111](Community_111.md) (2 shared connections)
+- [Community 297](Community_297.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/main.py`
-- `tests/test_pipeline_integration.py`
-- `tests/test_pipeline_telemetry.py`
-- `tools/issue458/faults.py`
+- `src/pipeline/engine_contract.py`
+- `tests/test_engine_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 92 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 96 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **generate_issue218.py** (2 connections) — `tests/fixtures/system_grouping/generate_issue218.py`
-- **generate()** (1 connections) — `tests/fixtures/system_grouping/generate_issue218.py`
-- **Generate the original, synthetic 3div./4div. score excerpts for Issue #218. Run…** (1 connections) — `tests/fixtures/system_grouping/generate_issue218.py`
+- **test_issue323_cli_wiring.py** (2 connections) — `tests/test_issue323_cli_wiring.py`
+- **test_make_targets_forward_canonical_contract_flags()** (1 connections) — `tests/test_issue323_cli_wiring.py`
+- **test_score_wrapper_contract_flags_reach_each_parser()** (1 connections) — `tests/test_issue323_cli_wiring.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tests/fixtures/system_grouping/generate_issue218.py`
+- `tests/test_issue323_cli_wiring.py`
 
 ## Audit Trail
 

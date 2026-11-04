@@ -1,13 +1,13 @@
 # Community 333
 
-> 4 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **recipe_references()** (3 connections) — `tools/check_makefile_references.py`
-- **check_makefile_references.py** (2 connections) — `tools/check_makefile_references.py`
-- **main()** (2 connections) — `tools/check_makefile_references.py`
-- **Path** (1 connections)
+- **compare_hybrid_results.py** (3 connections) — `tools/compare_hybrid_results.py`
+- **main()** (3 connections) — `tools/compare_hybrid_results.py`
+- **compute_iou()** (2 connections) — `tools/compare_hybrid_results.py`
+- **load_predictions()** (2 connections) — `tools/compare_hybrid_results.py`
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/check_makefile_references.py`
+- `tools/compare_hybrid_results.py`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

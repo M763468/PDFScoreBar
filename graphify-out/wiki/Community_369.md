@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **export_failure_crops.py** (2 connections) — `tools/export_failure_crops.py`
-- **export_crops()** (2 connections) — `tools/export_failure_crops.py`
-- **main()** (2 connections) — `tools/export_failure_crops.py`
+- **visualize_issue194.py** (2 connections) — `tools/issue194/visualize_issue194.py`
+- **draw_boxes()** (2 connections) — `tools/issue194/visualize_issue194.py`
+- **main()** (2 connections) — `tools/issue194/visualize_issue194.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/export_failure_crops.py`
+- `tools/issue194/visualize_issue194.py`
 
 ## Audit Trail
 

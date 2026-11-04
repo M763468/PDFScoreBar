@@ -1,12 +1,12 @@
 # Community 375
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **issue458/run_experiment.py** (2 connections) — `tools/issue458/run_experiment.py`
-- **main()** (1 connections) — `tools/issue458/run_experiment.py`
-- **Launch a frozen Issue #458 experiment without changing production configuration.** (1 connections) — `tools/issue458/run_experiment.py`
+- **render_staff_context_sheet.py** (2 connections) — `tools/render_staff_context_sheet.py`
+- **main()** (2 connections) — `tools/render_staff_context_sheet.py`
+- **put_text_block()** (2 connections) — `tools/render_staff_context_sheet.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/issue458/run_experiment.py`
+- `tools/render_staff_context_sheet.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

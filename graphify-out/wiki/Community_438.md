@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **reorganize_seeds.py** (1 connections) — `tools/repro_accuracy/reorganize_seeds.py`
-- **main()** (1 connections) — `tools/repro_accuracy/reorganize_seeds.py`
+- **run_eval2_bulletproof.sh** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
+- **run_eval2_bulletproof.sh script** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/reorganize_seeds.py`
+- `tools/repro_accuracy/run_eval2_bulletproof.sh`
 
 ## Audit Trail
 

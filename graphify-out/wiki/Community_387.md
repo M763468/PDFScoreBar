@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_clusters.py** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
-- **analyze_clusters()** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
+- **analyze_crossings.py** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
+- **analyze_crossings()** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_clusters.py`
+- `experiments/fp_reduction/analyze_crossings.py`
 
 ## Audit Trail
 

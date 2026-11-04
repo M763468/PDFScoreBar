@@ -1,12 +1,12 @@
 # Community 353
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **docker_build.sh** (2 connections) — `scripts/docker_build.sh`
-- **cleanup()** (1 connections) — `scripts/docker_build.sh`
-- **docker_build.sh script** (1 connections) — `scripts/docker_build.sh`
+- **docker_container_preflight.sh** (2 connections) — `scripts/docker_container_preflight.sh`
+- **docker_container_preflight.sh script** (2 connections) — `scripts/docker_container_preflight.sh`
+- **usage()** (2 connections) — `scripts/docker_container_preflight.sh`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `scripts/docker_build.sh`
+- `scripts/docker_container_preflight.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

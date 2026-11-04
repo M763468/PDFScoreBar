@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **test_numbering_preview.py** (1 connections) — `tests/test_numbering_preview.py`
-- **test_numbering_preview_uses_retained_artifact_consumer_without_mutating_package()** (1 connections) — `tests/test_numbering_preview.py`
+- **analyze_divisi_logic.py** (1 connections) — `tools/analyze_divisi_logic.py`
+- **main()** (1 connections) — `tools/analyze_divisi_logic.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tests/test_numbering_preview.py`
+- `tools/analyze_divisi_logic.py`
 
 ## Audit Trail
 

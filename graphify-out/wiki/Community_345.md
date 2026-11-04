@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **investigate_double_bar.py** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
-- **analyze_box()** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
+- **summarize_inference_stats.py** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
+- **summarize()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/investigate_double_bar.py`
+- `experiments/cnn_classifier/summarize_inference_stats.py`
 
 ## Audit Trail
 

@@ -1,58 +1,53 @@
 # Community 102
 
-> 26 nodes · cohesion 0.17
+> 26 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **ReviewPackage** (42 connections) — `tools/review_correction/server.py`
-- **Path** (12 connections)
-- **ReviewHandler** (12 connections) — `tools/review_correction/server.py`
-- **.record_correction()** (12 connections) — `tools/review_correction/server.py`
-- **.do_POST()** (10 connections) — `tools/review_correction/server.py`
-- **.do_GET()** (9 connections) — `tools/review_correction/server.py`
-- **.__init__()** (9 connections) — `tools/review_correction/server.py`
-- **._resolve()** (7 connections) — `tools/review_correction/server.py`
-- **._context()** (6 connections) — `tools/review_correction/server.py`
-- **.output()** (6 connections) — `tools/review_correction/server.py`
-- **._declare_output()** (5 connections) — `tools/review_correction/server.py`
-- **.writable()** (5 connections) — `tools/review_correction/server.py`
-- **_atomic_write()** (4 connections) — `tools/review_correction/server.py`
-- **_inside()** (4 connections) — `tools/review_correction/server.py`
-- **_load_items()** (4 connections) — `tools/review_correction/server.py`
-- **.readable()** (4 connections) — `tools/review_correction/server.py`
-- **_load_boxes()** (3 connections) — `tools/review_correction/server.py`
-- **_payload()** (3 connections) — `tools/review_correction/server.py`
-- **._file()** (3 connections) — `tools/review_correction/server.py`
-- **._json()** (3 connections) — `tools/review_correction/server.py`
-- **._trusted_host()** (3 connections) — `tools/review_correction/server.py`
-- **._trusted_write()** (3 connections) — `tools/review_correction/server.py`
-- **BaseHTTPRequestHandler** (1 connections)
-- **Save and publish its immutable checkpoint in one serialized transition.** (1 connections) — `tools/review_correction/server.py`
-- **Record any correction type through one package-bound atomic transition.…** (1 connections) — `tools/review_correction/server.py`
+- **build_cnn_dataset.py** (34 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **main()** (12 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_deepscores_probe_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_eval2_tp_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **Path** (8 connections)
+- **load_palette_index()** (7 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **center_crop()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_local_tp_fp()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **find_components()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_deepscores_tp_from_segmentation()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **_is_historical_candidate_match()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **crop_size_from_bbox()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_deepscores_negatives()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **load_eval2_pages()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **find_latest_gt()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **load_config_file()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **load_staff_boxes_by_filename()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **ndarray** (3 connections)
+- **write_outputs()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **assign_splits()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **build_samples()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **category_matches()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **expand_boxes_to_staff_boxes()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **link_or_copy()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **normalize_gt_boxes()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
 - *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 22](Community_22.md) (25 shared connections)
-- [Community 29](Community_29.md) (13 shared connections)
-- [Community 98](Community_98.md) (5 shared connections)
-- [Community 244](Community_244.md) (4 shared connections)
-- [Community 19](Community_19.md) (4 shared connections)
-- [Community 114](Community_114.md) (3 shared connections)
-- [Community 5](Community_5.md) (2 shared connections)
-- [Community 25](Community_25.md) (2 shared connections)
-- [Community 31](Community_31.md) (1 shared connections)
-- [Community 220](Community_220.md) (1 shared connections)
-- [Community 184](Community_184.md) (1 shared connections)
+- [Community 78](Community_78.md) (8 shared connections)
+- [Community 175](Community_175.md) (5 shared connections)
+- [Community 195](Community_195.md) (5 shared connections)
+- [Community 0](Community_0.md) (3 shared connections)
+- [Community 168](Community_168.md) (3 shared connections)
+- [Community 7](Community_7.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/review_correction/server.py`
+- `tools/cnn_classifier/build_cnn_dataset.py`
 
 ## Audit Trail
 
-- EXTRACTED: 108 (92%)
-- INFERRED: 9 (8%)
+- EXTRACTED: 86 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

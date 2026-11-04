@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **gui_helper/config.py** (0 connections) — `tools/gui_helper/config.py`
+- **history.js** (0 connections) — `tools/review_correction/history.js`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `tools/gui_helper/config.py`
+- `tools/review_correction/history.js`
 
 ## Audit Trail
 

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **summarize_inference_stats.py** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
-- **summarize()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
+- **upscale_lowres_gt.py** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
+- **upscale_page()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/summarize_inference_stats.py`
+- `experiments/cnn_classifier/upscale_lowres_gt.py`
 
 ## Audit Trail
 

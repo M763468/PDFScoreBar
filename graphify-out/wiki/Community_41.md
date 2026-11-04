@@ -1,63 +1,61 @@
 # Community 41
 
-> 41 nodes · cohesion 0.08
+> 42 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **StaffExtractor** (43 connections) — `src/measure_numbering/pipeline.py`
-- **pipeline.py** (35 connections) — `src/measure_numbering/pipeline.py`
-- **TestNumberingOverrides** (22 connections) — `tests/test_numbering_overrides.py`
-- **.create_mock_score()** (9 connections) — `tests/test_numbering_overrides.py`
-- **.extract()** (8 connections) — `src/measure_numbering/pipeline.py`
-- **ndarray** (6 connections)
-- **._is_short_line_fragment()** (5 connections) — `src/measure_numbering/pipeline.py`
-- **.test_distinct_x_dedup_keeps_earlier_x_even_if_later_barline_is_wider()** (5 connections) — `tests/test_numbering_overrides.py`
-- **._component_bounds()** (4 connections) — `src/measure_numbering/pipeline.py`
-- **._estimate_unit_size()** (4 connections) — `src/measure_numbering/pipeline.py`
-- **._has_opposing_line_trajectories()** (4 connections) — `src/measure_numbering/pipeline.py`
-- **benchmark_numpy_staff_spacing.py** (4 connections) — `tools/issue363/benchmark_numpy_staff_spacing.py`
-- **benchmark_staff_extractor.py** (4 connections) — `tools/issue363/benchmark_staff_extractor.py`
-- **experiment_gap_connection.py** (3 connections) — `experiments/legacy/tools_archive/experiment_gap_connection.py`
-- **.test_extraction_and_numbering_keep_reduced_line_percussion_in_mixed_page()** (3 connections) — `tests/test_numbering_overrides.py`
-- **main()** (3 connections) — `tools/issue363/benchmark_staff_extractor.py`
-- **main()** (2 connections) — `experiments/legacy/tools_archive/experiment_gap_connection.py`
-- **.setUp()** (2 connections) — `tests/test_numbering_overrides.py`
-- **.test_anacrusis_override()** (2 connections) — `tests/test_numbering_overrides.py`
-- **.test_equal_x_dedup_prefers_wider_independent_of_input_order()** (2 connections) — `tests/test_numbering_overrides.py`
-- **.test_equal_x_equal_width_uses_geometry_tiebreak_independent_of_input_order()** (2 connections) — `tests/test_numbering_overrides.py`
-- **.test_extraction_rejects_dilated_hairpin_but_keeps_broken_staff_at_two_scales()** (2 connections) — `tests/test_numbering_overrides.py`
-- **.test_fragment_filter_keeps_tilted_curved_and_incomplete_parallel_lines()** (2 connections) — `tests/test_numbering_overrides.py`
-- **.test_short_fragment_filter_keeps_uncertain_and_full_height_masks()** (2 connections) — `tests/test_numbering_overrides.py`
-- **.test_skip_override()** (2 connections) — `tests/test_numbering_overrides.py`
-- *... and 16 more nodes in this community*
+- **run()** (20 connections) — `src/pipeline/detection/omr_dln_worker.py`
+- **resolve_omr_dln_model_path()** (13 connections) — `src/common/model_artifacts.py`
+- **omr_dln_worker.py** (12 connections) — `src/pipeline/detection/omr_dln_worker.py`
+- **models/eval_omr_dln.py** (10 connections) — `experiments/models/eval_omr_dln.py`
+- **load_candidate()** (10 connections) — `src/pipeline/detection/omr_dln_worker.py`
+- **test_omr_dln_worker.py** (9 connections) — `tests/test_omr_dln_worker.py`
+- **omr_dln_model_missing_message()** (7 connections) — `src/common/model_artifacts.py`
+- **main()** (6 connections) — `experiments/models/eval_omr_dln.py`
+- **_Model** (6 connections) — `tests/test_omr_dln_worker.py`
+- **_TensorLike** (5 connections) — `tests/test_omr_dln_worker.py`
+- **resolve_precomputed_sr()** (4 connections) — `src/pipeline/detection/omr_dln_worker.py`
+- **test_runtime_worker_rejects_missing_precomputed_sr()** (4 connections) — `tests/test_omr_dln_worker.py`
+- **test_runtime_worker_resolves_model_from_repository_root()** (4 connections) — `tests/test_omr_dln_worker.py`
+- **test_runtime_worker_uses_precomputed_sr_and_returns_source_coordinates()** (4 connections) — `tests/test_omr_dln_worker.py`
+- **infer_barlines_from_measures()** (3 connections) — `experiments/models/eval_omr_dln.py`
+- **infer_barlines_from_measures()** (3 connections) — `src/pipeline/detection/omr_dln_worker.py`
+- **Path** (3 connections)
+- **Path** (3 connections)
+- **_Result** (3 connections) — `tests/test_omr_dln_worker.py`
+- **load_gt_boxes()** (2 connections) — `experiments/models/eval_omr_dln.py`
+- **parse_args()** (2 connections) — `experiments/models/eval_omr_dln.py`
+- **main()** (2 connections) — `src/pipeline/detection/omr_dln_worker.py`
+- **Any** (2 connections)
+- **_scale_to_source()** (2 connections) — `src/pipeline/detection/omr_dln_worker.py`
+- **test_omr_candidate_rejects_wrong_task()** (2 connections) — `tests/test_experiment_model_selection.py`
+- *... and 17 more nodes in this community*
 
 ## Relationships
 
-- [Community 8](Community_8.md) (17 shared connections)
-- [Community 17](Community_17.md) (16 shared connections)
-- [Community 76](Community_76.md) (9 shared connections)
-- [Community 49](Community_49.md) (8 shared connections)
-- [Community 59](Community_59.md) (5 shared connections)
-- [Community 68](Community_68.md) (4 shared connections)
-- [Community 13](Community_13.md) (4 shared connections)
-- [Community 89](Community_89.md) (3 shared connections)
-- [Community 12](Community_12.md) (3 shared connections)
-- [Community 44](Community_44.md) (2 shared connections)
-- [Community 163](Community_163.md) (1 shared connections)
+- [Community 10](Community_10.md) (6 shared connections)
+- [Community 76](Community_76.md) (4 shared connections)
+- [Community 61](Community_61.md) (4 shared connections)
+- [Community 84](Community_84.md) (3 shared connections)
+- [Community 31](Community_31.md) (3 shared connections)
+- [Community 54](Community_54.md) (2 shared connections)
+- [Community 38](Community_38.md) (2 shared connections)
+- [Community 52](Community_52.md) (2 shared connections)
+- [Community 74](Community_74.md) (2 shared connections)
 - [Community 149](Community_149.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/experiment_gap_connection.py`
-- `src/measure_numbering/pipeline.py`
-- `tests/test_numbering_overrides.py`
-- `tools/issue363/benchmark_numpy_staff_spacing.py`
-- `tools/issue363/benchmark_staff_extractor.py`
+- `experiments/models/eval_omr_dln.py`
+- `src/common/model_artifacts.py`
+- `src/pipeline/detection/omr_dln_worker.py`
+- `tests/test_experiment_model_selection.py`
+- `tests/test_omr_dln_worker.py`
 
 ## Audit Trail
 
-- EXTRACTED: 126 (91%)
-- INFERRED: 12 (9%)
+- EXTRACTED: 95 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

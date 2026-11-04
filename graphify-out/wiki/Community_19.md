@@ -1,59 +1,61 @@
 # Community 19
 
-> 53 nodes · cohesion 0.09
+> 54 nodes · cohesion 0.07
 
 ## Key Concepts
 
-- **method_comparison.py** (21 connections) — `tools/issue441/method_comparison.py`
-- **sha()** (20 connections) — `tools/issue441/phase0_probe.py`
-- **phase0_probe.py** (18 connections) — `tools/issue441/phase0_probe.py`
-- **annotated_resume_experiment.py** (17 connections) — `tools/issue441/annotated_resume_experiment.py`
-- **mobile_export_probe.py** (13 connections) — `tools/issue441/mobile_export_probe.py`
-- **main()** (10 connections) — `tools/issue441/annotated_resume_experiment.py`
-- **annotation_method()** (9 connections) — `tools/issue441/method_comparison.py`
-- **independent_numbers()** (9 connections) — `tools/issue441/method_comparison.py`
-- **clone_checkpoint()** (8 connections) — `tools/issue441/annotated_resume_experiment.py`
-- **main()** (8 connections) — `tools/issue441/mobile_export_probe.py`
-- **annotation_signature()** (8 connections) — `tools/issue441/phase0_probe.py`
-- **legacy_geometry()** (7 connections) — `tools/issue441/method_comparison.py`
-- **replace_backgrounds()** (7 connections) — `tools/issue441/phase0_probe.py`
-- **synthetic_probe()** (7 connections) — `tools/issue441/phase0_probe.py`
-- **real_probe()** (6 connections) — `tools/issue441/phase0_probe.py`
-- **expect_rejection()** (5 connections) — `tools/issue441/method_comparison.py`
-- **main()** (5 connections) — `tools/issue441/method_comparison.py`
-- **local_method()** (4 connections) — `tools/issue441/method_comparison.py`
-- **raster_pdf()** (4 connections) — `tools/issue441/method_comparison.py`
-- **render()** (4 connections) — `tools/issue441/method_comparison.py`
-- **vector_pdf()** (4 connections) — `tools/issue441/method_comparison.py`
-- **match_source()** (4 connections) — `tools/issue441/mobile_export_probe.py`
-- **verify_candidate()** (4 connections) — `tools/issue441/mobile_export_probe.py`
-- **audit()** (4 connections) — `tools/issue441/phase0_probe.py`
-- **main()** (4 connections) — `tools/issue441/phase0_probe.py`
-- *... and 28 more nodes in this community*
+- **TelemetryRecorder** (40 connections) — `src/pipeline/engine_telemetry.py`
+- **ProgressEvent** (27 connections) — `src/pipeline/engine_contract.py`
+- **test_engine_telemetry.py** (24 connections) — `tests/test_engine_telemetry.py`
+- **ResourceSampler** (19 connections) — `src/pipeline/engine_telemetry.py`
+- **ProgressKind** (16 connections) — `src/pipeline/engine_contract.py`
+- **engine_telemetry.py** (12 connections) — `src/pipeline/engine_telemetry.py`
+- **.emit()** (8 connections) — `src/pipeline/engine_telemetry.py`
+- **_SuccessfulOrchestrator** (7 connections) — `tests/test_pipeline_telemetry.py`
+- **.start_job()** (6 connections) — `src/pipeline/engine_telemetry.py`
+- **.terminal()** (6 connections) — `src/pipeline/engine_telemetry.py`
+- **_FailingOrchestrator** (6 connections) — `tests/test_pipeline_telemetry.py`
+- **._sample_once()** (5 connections) — `src/pipeline/engine_telemetry.py`
+- **_ConstructorFailingOrchestrator** (5 connections) — `tests/test_pipeline_telemetry.py`
+- **.progress()** (4 connections) — `src/pipeline/engine_telemetry.py`
+- **test_recorder_terminal_kind_matches_job_status()** (4 connections) — `tests/test_engine_telemetry.py`
+- **test_summary_resources_are_job_result_compatible_without_sampling()** (4 connections) — `tests/test_engine_telemetry.py`
+- **._dispatch()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **.__init__()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **.stage()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **.summary()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **parametrize** (3 connections)
+- **test_progress_event_rejects_invalid_additive_telemetry_fields()** (3 connections) — `tests/test_engine_telemetry.py`
+- **test_progress_event_telemetry_fields_round_trip_deterministically()** (3 connections) — `tests/test_engine_telemetry.py`
+- **test_resource_sampler_rejects_non_finite_or_non_positive_interval()** (3 connections) — `tests/test_engine_telemetry.py`
+- **._query_device_gpu_utilization()** (2 connections) — `src/pipeline/engine_telemetry.py`
+- *... and 29 more nodes in this community*
 
 ## Relationships
 
-- [Community 32](Community_32.md) (11 shared connections)
-- [Community 102](Community_102.md) (4 shared connections)
-- [Community 244](Community_244.md) (2 shared connections)
-- [Community 241](Community_241.md) (2 shared connections)
-- [Community 4](Community_4.md) (2 shared connections)
-- [Community 31](Community_31.md) (1 shared connections)
-- [Community 22](Community_22.md) (1 shared connections)
-- [Community 3](Community_3.md) (1 shared connections)
+- [Community 111](Community_111.md) (14 shared connections)
+- [Community 72](Community_72.md) (10 shared connections)
+- [Community 80](Community_80.md) (7 shared connections)
+- [Community 63](Community_63.md) (7 shared connections)
+- [Community 110](Community_110.md) (6 shared connections)
+- [Community 34](Community_34.md) (5 shared connections)
+- [Community 21](Community_21.md) (3 shared connections)
+- [Community 79](Community_79.md) (1 shared connections)
 - [Community 178](Community_178.md) (1 shared connections)
+- [Community 99](Community_99.md) (1 shared connections)
+- [Community 112](Community_112.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue441/annotated_resume_experiment.py`
-- `tools/issue441/method_comparison.py`
-- `tools/issue441/mobile_export_probe.py`
-- `tools/issue441/phase0_probe.py`
+- `src/pipeline/engine_contract.py`
+- `src/pipeline/engine_telemetry.py`
+- `tests/test_engine_telemetry.py`
+- `tests/test_pipeline_telemetry.py`
 
 ## Audit Trail
 
-- EXTRACTED: 144 (97%)
-- INFERRED: 5 (3%)
+- EXTRACTED: 140 (89%)
+- INFERRED: 18 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **benchmark_scipy_label.py** (2 connections) — `tools/issue363/benchmark_scipy_label.py`
-- **main()** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
-- **Compare scipy.ndimage.label on retained full-resolution binary masks.** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
+- **issue447/run_experiment.py** (2 connections) — `tools/issue447/run_experiment.py`
+- **main()** (1 connections) — `tools/issue447/run_experiment.py`
+- **Launch a frozen Issue #447 experiment without changing production configuration.** (1 connections) — `tools/issue447/run_experiment.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/issue363/benchmark_scipy_label.py`
+- `tools/issue447/run_experiment.py`
 
 ## Audit Trail
 

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **extract_tp_crops.py** (1 connections) — `tools/extract_tp_crops.py`
-- **extract_crops()** (1 connections) — `tools/extract_tp_crops.py`
+- **build_expansion_config.py** (1 connections) — `tools/gt_relabel_gui/build_expansion_config.py`
+- **main()** (1 connections) — `tools/gt_relabel_gui/build_expansion_config.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/extract_tp_crops.py`
+- `tools/gt_relabel_gui/build_expansion_config.py`
 
 ## Audit Trail
 

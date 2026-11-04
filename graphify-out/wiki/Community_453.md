@@ -1,22 +1,29 @@
 # Community 453
 
-> 1 nodes · cohesion 1.00
+> 8 nodes · cohesion 0.46
 
 ## Key Concepts
 
-- **history.js** (0 connections) — `tools/review_correction/history.js`
+- **generate_image_review.py** (6 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **main()** (6 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **iou()** (3 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **load_boxes()** (3 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **margin_class()** (3 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **apply_margin_bands()** (2 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **Path** (2 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 31](Community_31.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/review_correction/history.js`
+- `experiments/phase5b_notehead_geom/generate_image_review.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 16 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,53 +1,49 @@
 # Community 101
 
-> 26 nodes · cohesion 0.19
+> 26 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **build_cnn_dataset.py** (34 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **main()** (12 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_deepscores_probe_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_eval2_tp_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **Path** (8 connections)
-- **load_palette_index()** (7 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **center_crop()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_local_tp_fp()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **find_components()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_deepscores_tp_from_segmentation()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **_is_historical_candidate_match()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **crop_size_from_bbox()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_deepscores_negatives()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **load_eval2_pages()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **find_latest_gt()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **load_config_file()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **load_staff_boxes_by_filename()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **ndarray** (3 connections)
-- **write_outputs()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **assign_splits()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **build_samples()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **category_matches()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **expand_boxes_to_staff_boxes()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **link_or_copy()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **normalize_gt_boxes()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **check()** (17 connections) — `tools/verification/check_doc_translations.py`
+- **TranslationChecks** (15 connections) — `tests/test_doc_translations.py`
+- **.write_translation()** (8 connections) — `tests/test_doc_translations.py`
+- **check_doc_translations.py** (6 connections) — `tools/verification/check_doc_translations.py`
+- **.commit_source()** (5 connections) — `tests/test_doc_translations.py`
+- **prose()** (5 connections) — `tools/verification/check_doc_translations.py`
+- **test_doc_translations.py** (4 connections) — `tests/test_doc_translations.py`
+- **.test_changed_commit_source_requires_stale_marker()** (4 connections) — `tests/test_doc_translations.py`
+- **.test_unrelated_commit_does_not_invalidate_source()** (4 connections) — `tests/test_doc_translations.py`
+- **local_links()** (4 connections) — `tools/verification/check_doc_translations.py`
+- **Path** (4 connections)
+- **.git()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_invalid_state_and_identity()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_missing_links_in_either_direction()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_missing_original_and_path_escape()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_unavailable_commit_does_not_certify_sync()** (3 connections) — `tests/test_doc_translations.py`
+- **main()** (3 connections) — `tools/verification/check_doc_translations.py`
+- **.setUp()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_fenced_metadata_and_links_are_examples()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_missing_record()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_same_pr_stale_digest()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_valid_pair()** (2 connections) — `tests/test_doc_translations.py`
+- **Small, dependency-free regression fixtures for translation provenance checks.** (1 connections) — `tests/test_doc_translations.py`
+- **Check translation references and provenance using only the Python standard…** (1 connections) — `tools/verification/check_doc_translations.py`
+- **Exclude fenced examples so sample metadata is not treated as a real record.** (1 connections) — `tools/verification/check_doc_translations.py`
 - *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 77](Community_77.md) (8 shared connections)
-- [Community 175](Community_175.md) (5 shared connections)
-- [Community 195](Community_195.md) (5 shared connections)
-- [Community 1](Community_1.md) (3 shared connections)
-- [Community 167](Community_167.md) (3 shared connections)
-- [Community 7](Community_7.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/cnn_classifier/build_cnn_dataset.py`
+- `tests/test_doc_translations.py`
+- `tools/verification/check_doc_translations.py`
 
 ## Audit Trail
 
-- EXTRACTED: 86 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 54 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

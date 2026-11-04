@@ -1,60 +1,52 @@
 # Community 99
 
-> 24 nodes · cohesion 0.17
+> 26 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **detect_probe_scan()** (34 connections) — `src/pipeline/probe_detector/__init__.py`
-- **probe_detector/__init__.py** (24 connections) — `src/pipeline/probe_detector/__init__.py`
-- **probe_detector/types.py** (13 connections) — `src/pipeline/probe_detector/types.py`
-- **ExistingBarlines** (8 connections) — `src/pipeline/probe_detector/existing.py`
-- **apply_gap_rescue()** (8 connections) — `src/pipeline/probe_detector/rescue.py`
-- **build_divisi_map()** (7 connections) — `src/pipeline/probe_detector/bands.py`
-- **rescue.py** (7 connections) — `src/pipeline/probe_detector/rescue.py`
-- **apply_rightmost_rescue()** (7 connections) — `src/pipeline/probe_detector/rescue.py`
-- **existing.py** (5 connections) — `src/pipeline/probe_detector/existing.py`
-- **BandSelectionConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **DivisiRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **GapRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **RightmostRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **.closest_existing_band()** (3 connections) — `src/pipeline/probe_detector/existing.py`
-- **.has_existing_for_suppression()** (3 connections) — `src/pipeline/probe_detector/existing.py`
-- **Any** (2 connections)
-- **test_existing_suppression_requires_vertical_overlap_and_preserves_nearest_band()** (2 connections) — `tests/test_probe_helpers.py`
-- **Lookup and suppression against existing barlines in a staff band.** (1 connections) — `src/pipeline/probe_detector/existing.py`
-- **ndarray** (1 connections)
-- **Path** (1 connections)
-- **Core probe scan detection logic orchestrating submodules.** (1 connections) — `src/pipeline/probe_detector/__init__.py`
-- **Rescue logic for probe detection.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
-- **Rescue barlines in large gaps between detected barlines using relaxed threshold.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
-- **Shared types/config for probe detector modules.** (1 connections) — `src/pipeline/probe_detector/types.py`
+- **CheckpointStore** (18 connections) — `tools/review_correction/history.py`
+- **digest()** (15 connections) — `tools/review_correction/history.py`
+- **.capture()** (11 connections) — `tools/review_correction/history.py`
+- **history.py** (11 connections) — `tools/review_correction/history.py`
+- **ValueError** (11 connections)
+- **.get()** (9 connections) — `tools/review_correction/history.py`
+- **._prepare()** (8 connections) — `tools/review_correction/history.py`
+- **._source_context()** (7 connections) — `tools/review_correction/history.py`
+- **atomic_bytes()** (6 connections) — `tools/review_correction/history.py`
+- **.application_record()** (6 connections) — `tools/review_correction/history.py`
+- **.list_applications()** (6 connections) — `tools/review_correction/history.py`
+- **.transaction()** (6 connections) — `tools/review_correction/history.py`
+- **.validate_dependencies()** (6 connections) — `tools/review_correction/history.py`
+- **.blob()** (5 connections) — `tools/review_correction/history.py`
+- **.materialize()** (5 connections) — `tools/review_correction/history.py`
+- **.put()** (5 connections) — `tools/review_correction/history.py`
+- **relocate_manifest()** (4 connections) — `tools/review_correction/history.py`
+- **ReviewBusyError** (4 connections) — `tools/review_correction/history.py`
+- **.list()** (3 connections) — `tools/review_correction/history.py`
+- **.active()** (2 connections) — `src/pipeline/engine_telemetry.py`
+- **.__init__()** (1 connections) — `tools/review_correction/history.py`
+- **Package-bound, immutable correction checkpoints with content-addressed files.** (1 connections) — `tools/review_correction/history.py`
+- **Caller holds transaction. Publish one immutable manifest last.** (1 connections) — `tools/review_correction/history.py`
+- **Retain every failure; recover abandoned runs only under the save lock.** (1 connections) — `tools/review_correction/history.py`
+- **Only the retained engine-job layout permits a fixed-prefix relocation.** (1 connections) — `tools/review_correction/history.py`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 104](Community_104.md) (20 shared connections)
-- [Community 259](Community_259.md) (9 shared connections)
-- [Community 7](Community_7.md) (5 shared connections)
-- [Community 86](Community_86.md) (4 shared connections)
-- [Community 30](Community_30.md) (4 shared connections)
-- [Community 235](Community_235.md) (3 shared connections)
-- [Community 192](Community_192.md) (2 shared connections)
-- [Community 108](Community_108.md) (2 shared connections)
-- [Community 36](Community_36.md) (2 shared connections)
-- [Community 150](Community_150.md) (2 shared connections)
-- [Community 207](Community_207.md) (1 shared connections)
+- [Community 23](Community_23.md) (20 shared connections)
+- [Community 103](Community_103.md) (5 shared connections)
+- [Community 115](Community_115.md) (3 shared connections)
+- [Community 32](Community_32.md) (3 shared connections)
+- [Community 19](Community_19.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/probe_detector/__init__.py`
-- `src/pipeline/probe_detector/bands.py`
-- `src/pipeline/probe_detector/existing.py`
-- `src/pipeline/probe_detector/rescue.py`
-- `src/pipeline/probe_detector/types.py`
-- `tests/test_probe_helpers.py`
+- `src/pipeline/engine_telemetry.py`
+- `tools/review_correction/history.py`
 
 ## Audit Trail
 
-- EXTRACTED: 99 (97%)
+- EXTRACTED: 90 (97%)
 - INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 

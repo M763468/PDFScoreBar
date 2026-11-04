@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **omr_dln/eval_omr_dln.py** (0 connections) — `experiments/models/omr_dln/eval_omr_dln.py`
+- **eval_omr_dln_all.py** (0 connections) — `experiments/models/omr_dln/eval_omr_dln_all.py`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `experiments/models/omr_dln/eval_omr_dln.py`
+- `experiments/models/omr_dln/eval_omr_dln_all.py`
 
 ## Audit Trail
 

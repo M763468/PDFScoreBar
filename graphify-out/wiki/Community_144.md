@@ -1,42 +1,51 @@
 # Community 144
 
-> 18 nodes · cohesion 0.27
+> 18 nodes · cohesion 0.24
 
 ## Key Concepts
 
-- **test_issue264_phase_c_acceptance_integrity.py** (18 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **Path** (12 connections)
-- **verify_source_report()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_source_report()** (8 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **_verify_source_acceptance()** (8 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_detail()** (5 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_artifact_path_accepts_bytes_matching_recorded_provenance()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_artifact_path_rejects_hash_change_with_same_size()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_artifact_path_rejects_size_change()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_resume_rejects_different_producer_contract()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_source_gate_allows_only_direct_index_score_failures()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_source_gate_rejects_non_index_failure()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_source_gate_rejects_stale_invocation()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_standalone_rescore_allows_direct_index_only_failures()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_standalone_rescore_rejects_non_index_source_failure()** (4 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **test_phase_c_wrapper_runs_integrity_rebase_and_final_lint()** (2 connections) — `tests/test_issue264_phase_c_acceptance_integrity.py`
-- **Verify canonical non-index source gates and current-invocation identity.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Require standalone rescoring to preserve all non-index source gates.** (1 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **images.py** (22 connections) — `src/pipeline/utils/images.py`
+- **collect_images()** (15 connections) — `src/pipeline/utils/images.py`
+- **Path** (7 connections)
+- **test_issue236_review_package_source_images.py** (7 connections) — `tests/test_issue236_review_package_source_images.py`
+- **load_image_size()** (6 connections) — `src/pipeline/utils/images.py`
+- **get_image_cache()** (5 connections) — `src/pipeline/utils/images.py`
+- **_config()** (5 connections) — `tests/test_issue236_review_package_source_images.py`
+- **_write_text()** (5 connections) — `tests/test_issue236_review_package_source_images.py`
+- **Any** (4 connections)
+- **ndarray** (4 connections)
+- **_review_package_enabled()** (4 connections) — `src/pipeline/utils/images.py`
+- **_stage_external_review_images()** (4 connections) — `src/pipeline/utils/images.py`
+- **test_collect_images_keeps_external_source_images_without_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
+- **test_collect_images_keeps_run_dir_source_images_for_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
+- **test_collect_images_stages_external_source_images_for_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
+- **_path_is_inside()** (3 connections) — `src/pipeline/utils/images.py`
+- **Path** (2 connections)
+- **Image collection and page id helpers.** (1 connections) — `src/pipeline/utils/images.py`
 
 ## Relationships
 
-- [Community 93](Community_93.md) (10 shared connections)
-- [Community 137](Community_137.md) (8 shared connections)
+- [Community 21](Community_21.md) (11 shared connections)
+- [Community 50](Community_50.md) (5 shared connections)
+- [Community 166](Community_166.md) (4 shared connections)
+- [Community 25](Community_25.md) (3 shared connections)
+- [Community 222](Community_222.md) (2 shared connections)
+- [Community 8](Community_8.md) (1 shared connections)
+- [Community 294](Community_294.md) (1 shared connections)
+- [Community 109](Community_109.md) (1 shared connections)
+- [Community 454](Community_454.md) (1 shared connections)
+- [Community 98](Community_98.md) (1 shared connections)
+- [Community 3](Community_3.md) (1 shared connections)
+- [Community 122](Community_122.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue264_phase_c_acceptance_integrity.py`
-- `tools/issue264/phase_c_acceptance_integrity.py`
-- `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- `src/pipeline/utils/images.py`
+- `tests/test_issue236_review_package_source_images.py`
 
 ## Audit Trail
 
-- EXTRACTED: 60 (100%)
+- EXTRACTED: 69 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

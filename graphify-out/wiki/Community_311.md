@@ -1,14 +1,14 @@
 # Community 311
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **export_product_evidence.py** (4 connections) — `tools/issue441/export_product_evidence.py`
-- **main()** (3 connections) — `tools/issue441/export_product_evidence.py`
-- **require()** (2 connections) — `tools/issue441/export_product_evidence.py`
-- **sha()** (2 connections) — `tools/issue441/export_product_evidence.py`
-- **Export only hashes, counts and explicitly selected gates from private #441…** (1 connections) — `tools/issue441/export_product_evidence.py`
+- **verify_product_integration.py** (4 connections) — `tools/issue441/verify_product_integration.py`
+- **main()** (3 connections) — `tools/issue441/verify_product_integration.py`
+- **numbers()** (3 connections) — `tools/issue441/verify_product_integration.py`
+- **require()** (3 connections) — `tools/issue441/verify_product_integration.py`
+- **Rescore the fixed #441 browser run and retrieve its result after server…** (1 connections) — `tools/issue441/verify_product_integration.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue441/export_product_evidence.py`
+- `tools/issue441/verify_product_integration.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

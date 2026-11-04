@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **analyze_mmr_failures_v2.py** (3 connections) — `tools/analyze_mmr_failures_v2.py`
-- **main()** (3 connections) — `tools/analyze_mmr_failures_v2.py`
-- **detect_hbar_centroid()** (2 connections) — `tools/analyze_mmr_failures_v2.py`
-- **preprocess_image_ocr()** (2 connections) — `tools/analyze_mmr_failures_v2.py`
+- **batch_debug_ocr.py** (3 connections) — `tools/batch_debug_ocr.py`
+- **process_page()** (3 connections) — `tools/batch_debug_ocr.py`
+- **main()** (2 connections) — `tools/batch_debug_ocr.py`
+- **run_command()** (2 connections) — `tools/batch_debug_ocr.py`
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `tools/analyze_mmr_failures_v2.py`
+- `tools/batch_debug_ocr.py`
 
 ## Audit Trail
 

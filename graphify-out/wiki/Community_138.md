@@ -1,41 +1,47 @@
 # Community 138
 
-> 19 nodes · cohesion 0.25
+> 20 nodes · cohesion 0.28
 
 ## Key Concepts
 
-- **barline_gt_helper.py** (13 connections) — `tools/barline_gt_helper.py`
-- **AnnotatorState** (8 connections) — `tools/barline_gt_helper.py`
-- **prepare_state()** (7 connections) — `tools/barline_gt_helper.py`
-- **run_gui()** (7 connections) — `tools/barline_gt_helper.py`
-- **mouse_handler()** (5 connections) — `tools/barline_gt_helper.py`
-- **add_manual_box()** (4 connections) — `tools/barline_gt_helper.py`
-- **AnnotatedBox** (4 connections) — `tools/barline_gt_helper.py`
-- **draw()** (4 connections) — `tools/barline_gt_helper.py`
-- **load_detection_boxes()** (4 connections) — `tools/barline_gt_helper.py`
-- **load_existing_gt()** (4 connections) — `tools/barline_gt_helper.py`
-- **main()** (4 connections) — `tools/barline_gt_helper.py`
-- **Path** (4 connections)
-- **save_selected()** (4 connections) — `tools/barline_gt_helper.py`
-- **parse_args()** (3 connections) — `tools/barline_gt_helper.py`
-- **toggle_box()** (3 connections) — `tools/barline_gt_helper.py`
-- **BoxType** (2 connections)
-- **Namespace** (2 connections)
-- **.contains()** (1 connections) — `tools/barline_gt_helper.py`
-- **.reset_manual()** (1 connections) — `tools/barline_gt_helper.py`
+- **rescore_phase_c_mmr_geometry_rebased.py** (23 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **run()** (15 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **normalise_overrides()** (12 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **Any** (11 connections)
+- **_artifact_path()** (10 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **Path** (8 connections)
+- **_load_json()** (6 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_score_overrides()** (6 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_page_inputs()** (5 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_verify_artifact_detail()** (5 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **main()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_resolve_project_path()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_write_json()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_artifact_index()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_override_key()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_override_skip()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **parse_args()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_sha256_file()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_summary_totals()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 145](Community_145.md) (8 shared connections)
+- [Community 113](Community_113.md) (6 shared connections)
+- [Community 85](Community_85.md) (5 shared connections)
+- [Community 51](Community_51.md) (3 shared connections)
+- [Community 94](Community_94.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/barline_gt_helper.py`
+- `tools/issue264/phase_c_fixture_rebase.py`
+- `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
 
 ## Audit Trail
 
-- EXTRACTED: 41 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 78 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,62 +1,62 @@
 # Community 31
 
-> 46 nodes · cohesion 0.13
+> 39 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **apply_corrections.py** (71 connections) — `src/pipeline/review/apply_corrections.py`
-- **_run_retained_artifact_correction()** (28 connections) — `src/pipeline/review/apply_corrections.py`
-- **Any** (24 connections)
-- **application.py** (23 connections) — `tools/review_correction/application.py`
-- **Path** (20 connections)
-- **_resolve_source_manifest_path()** (13 connections) — `src/pipeline/review/apply_corrections.py`
-- **preview_numbering()** (13 connections) — `tools/review_correction/application.py`
-- **_merge_existing_override_inputs()** (10 connections) — `src/pipeline/review/apply_corrections.py`
-- **test_issue236_selective_correction_rerun.py** (10 connections) — `tests/test_issue236_selective_correction_rerun.py`
-- **_final_numbering_from_retained_geometry()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_read_existing_override_inputs()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_rebuild_phase_a_numbering()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_remap_measure_key()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_read_json_object_if_exists()** (8 connections) — `src/pipeline/review/apply_corrections.py`
-- **_reuse_auto_mmr_overrides()** (8 connections) — `src/pipeline/review/apply_corrections.py`
-- **_current_barline_overrides()** (7 connections) — `src/pipeline/review/apply_corrections.py`
-- **_mmr_suppression_override_payload()** (7 connections) — `src/pipeline/review/apply_corrections.py`
-- **_read_staging_payloads()** (7 connections) — `src/pipeline/review/apply_corrections.py`
-- **apply_barline_overrides()** (7 connections) — `src/pipeline/steps/barlines.py`
-- **movement_boundaries_for_page()** (7 connections) — `src/pipeline/steps/numbering.py`
-- **_barline_neighborhood_keys()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_current_homr_staff_mask()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_resolve_package_artifact()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_source_numbering_base()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_first_numbering_page()** (5 connections) — `src/pipeline/review/apply_corrections.py`
-- *... and 21 more nodes in this community*
+- **_Box** (294 connections) — `tests/test_omr_dln_worker.py`
+- **analysis_overlays.py** (14 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **main()** (12 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **hybrid_omr_dln_union.py** (9 connections) — `tools/hybrid_omr_dln_union.py`
+- **summarize_omr_union.py** (8 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **main()** (8 connections) — `tools/hybrid_omr_dln_union.py`
+- **main()** (6 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **compute_metrics()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **load_gt_boxes()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **load_homr_boxes()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **load_omr_boxes()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **build_union_inputs.py** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **load_homr_boxes()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **load_omr_boxes()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **main()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **cluster_by_y_distance()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **draw_boxes()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **geom_notehead_ratio_filter()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **load_notehead_mask()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **load_preds()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **ndarray** (4 connections)
+- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **choose_representative()** (4 connections) — `tools/hybrid_omr_dln_union.py`
+- **cluster_boxes()** (4 connections) — `tools/hybrid_omr_dln_union.py`
+- *... and 14 more nodes in this community*
 
 ## Relationships
 
-- [Community 58](Community_58.md) (13 shared connections)
-- [Community 25](Community_25.md) (11 shared connections)
-- [Community 43](Community_43.md) (11 shared connections)
-- [Community 24](Community_24.md) (9 shared connections)
-- [Community 12](Community_12.md) (8 shared connections)
-- [Community 182](Community_182.md) (7 shared connections)
-- [Community 22](Community_22.md) (7 shared connections)
-- [Community 8](Community_8.md) (6 shared connections)
-- [Community 49](Community_49.md) (6 shared connections)
-- [Community 222](Community_222.md) (5 shared connections)
-- [Community 20](Community_20.md) (4 shared connections)
-- [Community 3](Community_3.md) (4 shared connections)
+- [Community 7](Community_7.md) (37 shared connections)
+- [Community 0](Community_0.md) (23 shared connections)
+- [Community 73](Community_73.md) (14 shared connections)
+- [Community 107](Community_107.md) (10 shared connections)
+- [Community 36](Community_36.md) (10 shared connections)
+- [Community 37](Community_37.md) (10 shared connections)
+- [Community 120](Community_120.md) (9 shared connections)
+- [Community 13](Community_13.md) (9 shared connections)
+- [Community 289](Community_289.md) (8 shared connections)
+- [Community 97](Community_97.md) (8 shared connections)
+- [Community 172](Community_172.md) (7 shared connections)
+- [Community 104](Community_104.md) (7 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/apply_corrections.py`
-- `src/pipeline/steps/barlines.py`
-- `src/pipeline/steps/numbering.py`
-- `tests/test_issue236_selective_correction_rerun.py`
-- `tools/review_correction/application.py`
+- `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- `tests/test_omr_dln_worker.py`
+- `tools/hybrid_omr_dln_union.py`
 
 ## Audit Trail
 
-- EXTRACTED: 249 (99%)
+- EXTRACTED: 374 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

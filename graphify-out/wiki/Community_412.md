@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_image_classification.py** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
-- **main()** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
+- **validate_issue264_phase_b.sh** (1 connections) — `scripts/validate_issue264_phase_b.sh`
+- **validate_issue264_phase_b.sh script** (1 connections) — `scripts/validate_issue264_phase_b.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/analyze_image_classification.py`
+- `scripts/validate_issue264_phase_b.sh`
 
 ## Audit Trail
 

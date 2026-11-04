@@ -1,47 +1,44 @@
 # Community 120
 
-> 22 nodes · cohesion 0.20
+> 22 nodes · cohesion 0.26
 
 ## Key Concepts
 
-- **compare_box_tree_stats.py** (21 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **compare()** (10 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **main()** (6 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **PageComparison** (6 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **Path** (5 connections)
-- **render_markdown()** (5 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **resolve_page_file()** (5 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **boxes_from_payload()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **build_parser()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **load_boxes()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **permission_error_message()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **stats()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **write_csv()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **BoxStats** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **count_loss_rank()** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **normalize_box()** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **percentile()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **Any** (2 connections)
-- **Namespace** (2 connections)
-- **safe_delta()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **safe_ratio()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
-- **ArgumentParser** (1 connections)
+- **gt_relabel_support.py** (19 connections) — `tools/gt_relabel_support.py`
+- **apply_edits()** (11 connections) — `tools/gt_relabel_support.py`
+- **near_hit_check()** (9 connections) — `tools/gt_relabel_support.py`
+- **prepare()** (9 connections) — `tools/gt_relabel_support.py`
+- **Path** (9 connections)
+- **write_crop_and_template()** (9 connections) — `tools/gt_relabel_support.py`
+- **load_boxes()** (6 connections) — `tools/gt_relabel_support.py`
+- **load_candidates()** (6 connections) — `tools/gt_relabel_support.py`
+- **load_gt_entries()** (6 connections) — `tools/gt_relabel_support.py`
+- **load_page_config()** (6 connections) — `tools/gt_relabel_support.py`
+- **read_json()** (6 connections) — `tools/gt_relabel_support.py`
+- **near_hit()** (5 connections) — `tools/gt_relabel_support.py`
+- **main()** (4 connections) — `tools/gt_relabel_support.py`
+- **apply_delta()** (3 connections) — `tools/gt_relabel_support.py`
+- **bbox_center()** (3 connections) — `tools/gt_relabel_support.py`
+- **Candidate** (3 connections) — `tools/gt_relabel_support.py`
+- **clamp_box()** (3 connections) — `tools/gt_relabel_support.py`
+- **intersect()** (3 connections) — `tools/gt_relabel_support.py`
+- **Namespace** (3 connections)
+- **scale_box()** (3 connections) — `tools/gt_relabel_support.py`
+- **unscale_box()** (3 connections) — `tools/gt_relabel_support.py`
+- **CropMeta** (2 connections) — `tools/gt_relabel_support.py`
 
 ## Relationships
 
-- [Community 145](Community_145.md) (4 shared connections)
-- [Community 127](Community_127.md) (4 shared connections)
-- [Community 126](Community_126.md) (1 shared connections)
-- [Community 42](Community_42.md) (1 shared connections)
+- [Community 31](Community_31.md) (9 shared connections)
 
 ## Source Files
 
-- `tools/issue120/compare_box_tree_stats.py`
+- `tools/gt_relabel_support.py`
 
 ## Audit Trail
 
-- EXTRACTED: 53 (95%)
-- INFERRED: 3 (5%)
+- EXTRACTED: 67 (96%)
+- INFERRED: 3 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

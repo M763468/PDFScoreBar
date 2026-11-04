@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **eval_omr_dln_barlines_from_measures.py** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
-- **calculate_iou()** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
+- **phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
+- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
+- `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
 
 ## Audit Trail
 

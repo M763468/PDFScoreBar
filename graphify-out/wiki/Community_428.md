@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **build_expansion_config.py** (1 connections) — `tools/gt_relabel_gui/build_expansion_config.py`
-- **main()** (1 connections) — `tools/gt_relabel_gui/build_expansion_config.py`
+- **prepare_rebuild_eval2.py** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
+- **prepare_eval2_rebuild()** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/gt_relabel_gui/build_expansion_config.py`
+- `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
 
 ## Audit Trail
 

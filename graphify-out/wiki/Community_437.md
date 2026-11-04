@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **find_baseline_runs.py** (1 connections) — `tools/repro_accuracy/find_baseline_runs.py`
-- **find_mapping()** (1 connections) — `tools/repro_accuracy/find_baseline_runs.py`
+- **reorganize_seeds.py** (1 connections) — `tools/repro_accuracy/reorganize_seeds.py`
+- **main()** (1 connections) — `tools/repro_accuracy/reorganize_seeds.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/find_baseline_runs.py`
+- `tools/repro_accuracy/reorganize_seeds.py`
 
 ## Audit Trail
 

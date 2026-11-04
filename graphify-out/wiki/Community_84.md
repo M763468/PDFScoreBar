@@ -1,50 +1,49 @@
 # Community 84
 
-> 29 nodes · cohesion 0.19
+> 20 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **rescore_full68_mmr_reuse_geometry_rebased.py** (24 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **Any** (15 connections)
-- **run()** (15 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **classify_changed_event()** (8 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_compare_changed_page()** (8 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_index()** (7 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_skip()** (7 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **mapping_method_counts()** (6 connections) — `tools/issue264/phase_c_fixture_rebase.py`
-- **_load_json()** (6 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **test_issue274_full68_mmr_reuse_geometry_rebased.py** (5 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
-- **_event_state()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_page_inputs()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **Path** (5 connections)
-- **_score()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_semantic_index()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_json_item()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **main()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_semantic_items_differ()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_write_json()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_item()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
-- **test_changed_event_classification_uses_rebased_gt()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
-- **test_changed_event_without_rebased_gt_is_not_represented()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
-- **_key()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **parse_args()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- **_resolve_project_path()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
-- *... and 4 more nodes in this community*
+- **apply_advanced_sr()** (17 connections) — `src/common/preprocessing.py`
+- **preprocessing.py** (15 connections) — `src/common/preprocessing.py`
+- **_RealESRGANTileLogFilter** (7 connections) — `src/common/preprocessing.py`
+- **_perf_span()** (4 connections) — `src/common/preprocessing.py`
+- **_suppress_realesrgan_tile_logs()** (4 connections) — `src/common/preprocessing.py`
+- **apply_super_resolution()** (3 connections) — `src/common/preprocessing.py`
+- **apply_vertical_closing()** (3 connections) — `src/common/preprocessing.py`
+- **ndarray** (3 connections)
+- **._write_line()** (3 connections) — `src/common/preprocessing.py`
+- **_env_flag_enabled()** (2 connections) — `src/common/preprocessing.py`
+- **Any** (2 connections)
+- **.flush()** (2 connections) — `src/common/preprocessing.py`
+- **.__init__()** (2 connections) — `src/common/preprocessing.py`
+- **.write()** (2 connections) — `src/common/preprocessing.py`
+- **test_generic_sr_tolerant_import_contract_stays_explicit()** (2 connections) — `tests/test_issue409_failure_contracts.py`
+- **Applies super-resolution to an image using OpenCV's dnn_superres module.…** (1 connections) — `src/common/preprocessing.py`
+- **Applies advanced super-resolution using the installed Real-ESRGAN runtime.…** (1 connections) — `src/common/preprocessing.py`
+- **Use pipeline perf tracing only when the opt-in trace is enabled.** (1 connections) — `src/common/preprocessing.py`
+- **Drop Real-ESRGAN per-tile progress prints while forwarding other stdout.** (1 connections) — `src/common/preprocessing.py`
+- **Applies a vertical closing operation to an image to connect broken vertical…** (1 connections) — `src/common/preprocessing.py`
 
 ## Relationships
 
-- [Community 137](Community_137.md) (5 shared connections)
-- [Community 112](Community_112.md) (5 shared connections)
+- [Community 109](Community_109.md) (5 shared connections)
+- [Community 41](Community_41.md) (3 shared connections)
+- [Community 40](Community_40.md) (3 shared connections)
+- [Community 91](Community_91.md) (3 shared connections)
+- [Community 174](Community_174.md) (2 shared connections)
+- [Community 79](Community_79.md) (2 shared connections)
+- [Community 10](Community_10.md) (1 shared connections)
+- [Community 456](Community_456.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
-- `tools/issue264/phase_c_fixture_rebase.py`
-- `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- `src/common/preprocessing.py`
+- `tests/test_issue409_failure_contracts.py`
 
 ## Audit Trail
 
-- EXTRACTED: 89 (100%)
+- EXTRACTED: 48 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

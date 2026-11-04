@@ -1,53 +1,55 @@
 # Community 109
 
-> 24 nodes · cohesion 0.14
+> 24 nodes · cohesion 0.16
 
 ## Key Concepts
 
-- **test_engine_contract.py** (27 connections) — `tests/test_engine_contract.py`
-- **JobResult** (18 connections) — `src/pipeline/engine_contract.py`
-- **ArtifactDescriptor** (14 connections) — `src/pipeline/engine_contract.py`
-- **canonical_json()** (11 connections) — `src/pipeline/engine_contract.py`
-- **test_success_warning_review_required_and_failure_results()** (7 connections) — `tests/test_engine_contract.py`
-- **test_invalid_result_shapes_are_rejected()** (6 connections) — `tests/test_engine_contract.py`
-- **.from_json()** (5 connections) — `src/pipeline/engine_contract.py`
-- **_review_artifact()** (5 connections) — `tests/test_engine_contract.py`
-- **.from_json()** (4 connections) — `src/pipeline/engine_contract.py`
-- **.to_dict()** (4 connections) — `src/pipeline/engine_contract.py`
-- **_provenance()** (4 connections) — `tests/test_engine_contract.py`
-- **test_job_request_round_trip_is_deterministic_and_forward_compatible()** (4 connections) — `tests/test_engine_contract.py`
-- **test_malformed_corrections_and_failure_payloads_are_rejected()** (4 connections) — `tests/test_engine_contract.py`
-- **.assert_source_matches()** (3 connections) — `src/pipeline/engine_contract.py`
-- **.to_json()** (3 connections) — `src/pipeline/engine_contract.py`
-- **.to_json()** (3 connections) — `src/pipeline/engine_contract.py`
-- **test_corrections_map_current_operations_and_reject_stale_source()** (3 connections) — `tests/test_engine_contract.py`
-- **.to_dict()** (2 connections) — `src/pipeline/engine_contract.py`
-- **.to_json()** (2 connections) — `src/pipeline/engine_contract.py`
-- **test_artifact_relative_path_cannot_escape_package()** (2 connections) — `tests/test_engine_contract.py`
-- **test_canonical_json_rejects_nan()** (2 connections) — `tests/test_engine_contract.py`
-- **test_job_request_rejects_oversized_raw_page_list_before_deduplication()** (2 connections) — `tests/test_engine_contract.py`
-- **test_unknown_contract_version_is_rejected()** (2 connections) — `tests/test_engine_contract.py`
-- **Serialize a contract value deterministically and reject NaN/Infinity.** (1 connections) — `src/pipeline/engine_contract.py`
+- **span()** (18 connections) — `src/pipeline/perf_trace.py`
+- **current_sr_worker.py** (13 connections) — `src/pipeline/detection/current_sr_worker.py`
+- **perf_trace.py** (13 connections) — `src/pipeline/perf_trace.py`
+- **set_context()** (13 connections) — `src/pipeline/perf_trace.py`
+- **run()** (11 connections) — `src/pipeline/detection/current_sr_worker.py`
+- **record()** (6 connections) — `src/pipeline/perf_trace.py`
+- **_load_request()** (4 connections) — `src/pipeline/detection/current_sr_worker.py`
+- **Any** (4 connections)
+- **main()** (3 connections) — `src/pipeline/detection/current_sr_worker.py`
+- **Path** (3 connections)
+- **_sha256()** (3 connections) — `src/pipeline/detection/current_sr_worker.py`
+- **_cpu_seconds()** (3 connections) — `src/pipeline/perf_trace.py`
+- **enabled()** (3 connections) — `src/pipeline/perf_trace.py`
+- **reset_context()** (3 connections) — `src/pipeline/perf_trace.py`
+- **_sync_cuda()** (3 connections) — `src/pipeline/perf_trace.py`
+- **_trace_path()** (3 connections) — `src/pipeline/perf_trace.py`
+- **Token** (2 connections)
+- **Any** (1 connections)
+- **Generate one current x4 SR image without loading HOMR or CNN models.** (1 connections) — `src/pipeline/detection/current_sr_worker.py`
+- **Path** (1 connections)
+- **Opt-in, process-safe performance spans for dense pipeline attribution. The…** (1 connections) — `src/pipeline/perf_trace.py`
+- **Record a span and close it correctly on exceptions. CUDA spans synchronize…** (1 connections) — `src/pipeline/perf_trace.py`
+- **Synchronize CUDA when available and report whether it was used.** (1 connections) — `src/pipeline/perf_trace.py`
+- **Set run/page/role metadata for spans in the current execution context.** (1 connections) — `src/pipeline/perf_trace.py`
 
 ## Relationships
 
-- [Community 71](Community_71.md) (25 shared connections)
-- [Community 62](Community_62.md) (10 shared connections)
-- [Community 79](Community_79.md) (10 shared connections)
-- [Community 18](Community_18.md) (6 shared connections)
-- [Community 33](Community_33.md) (4 shared connections)
-- [Community 110](Community_110.md) (2 shared connections)
-- [Community 297](Community_297.md) (1 shared connections)
+- [Community 46](Community_46.md) (6 shared connections)
+- [Community 84](Community_84.md) (5 shared connections)
+- [Community 294](Community_294.md) (5 shared connections)
+- [Community 22](Community_22.md) (4 shared connections)
+- [Community 50](Community_50.md) (2 shared connections)
+- [Community 92](Community_92.md) (2 shared connections)
+- [Community 144](Community_144.md) (1 shared connections)
+- [Community 129](Community_129.md) (1 shared connections)
+- [Community 66](Community_66.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_contract.py`
-- `tests/test_engine_contract.py`
+- `src/pipeline/detection/current_sr_worker.py`
+- `src/pipeline/perf_trace.py`
 
 ## Audit Trail
 
-- EXTRACTED: 96 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 69 (97%)
+- INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

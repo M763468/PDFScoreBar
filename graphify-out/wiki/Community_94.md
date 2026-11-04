@@ -1,48 +1,52 @@
 # Community 94
 
-> 26 nodes · cohesion 0.20
+> 27 nodes · cohesion 0.16
 
 ## Key Concepts
 
-- **docker_image_resolver.py** (20 connections) — `scripts/docker_image_resolver.py`
-- **_resolve()** (13 connections) — `scripts/docker_image_resolver.py`
-- **_run()** (9 connections) — `scripts/docker_image_resolver.py`
-- **image_info()** (7 connections) — `scripts/docker_image_resolver.py`
-- **Path** (7 connections)
-- **list_runtime_images()** (6 connections) — `scripts/docker_image_resolver.py`
-- **_build_parser()** (5 connections) — `scripts/docker_image_resolver.py`
-- **git_ref_fingerprint()** (5 connections) — `scripts/docker_image_resolver.py`
-- **ImageInfo** (5 connections) — `scripts/docker_image_resolver.py`
-- **_list_images()** (5 connections) — `scripts/docker_image_resolver.py`
-- **_load_runtime_contract()** (5 connections) — `scripts/docker_image_resolver.py`
-- **_topic_has_runtime_diff()** (5 connections) — `scripts/docker_image_resolver.py`
-- **working_tree_fingerprint()** (5 connections) — `scripts/docker_image_resolver.py`
-- **_embedded_runtime_fingerprint()** (4 connections) — `scripts/docker_image_resolver.py`
-- **_find_develop_ref()** (4 connections) — `scripts/docker_image_resolver.py`
-- **_format_info()** (4 connections) — `scripts/docker_image_resolver.py`
-- **working_tree_source_fingerprint()** (4 connections) — `scripts/docker_image_resolver.py`
-- **_embedded_fingerprint()** (3 connections) — `scripts/docker_image_resolver.py`
-- **_inspect_image()** (3 connections) — `scripts/docker_image_resolver.py`
-- **classify_mismatch()** (2 connections) — `scripts/docker_image_resolver.py`
-- **_label()** (2 connections) — `scripts/docker_image_resolver.py`
-- **main()** (2 connections) — `scripts/docker_image_resolver.py`
-- **Namespace** (2 connections)
-- **CompletedProcess** (1 connections)
-- **ArgumentParser** (1 connections)
-- *... and 1 more nodes in this community*
+- **phase_c_acceptance_integrity.py** (16 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **validate_resume_contract()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Any** (10 connections)
+- **run_phase_c_mmr_regression_container.py** (10 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
+- **Path** (8 connections)
+- **stamp_source_report()** (8 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **require_source_non_index_gates()** (7 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **build_producer_contract()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_load_json()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **main()** (6 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
+- **_describe_file()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **source_non_index_gate_failures()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_verify_generated_artifacts()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_sha256_file()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_write_json()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **main()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **parse_args()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **phase_c_current_homr_isolated.py** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
+- **run()** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
+- **Namespace** (1 connections)
+- **Require all source gates unrelated to historical index-addressed scoring.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Bind a completed, augmented source report to this invocation and producer…** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Allow --resume only for a completed run produced by the exact current contract.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Describe the revision/config/input bytes allowed to produce resumed artifacts.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Return failed source gates that cannot be superseded by geometry rebasing.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- *... and 2 more nodes in this community*
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 145](Community_145.md) (10 shared connections)
+- [Community 157](Community_157.md) (5 shared connections)
+- [Community 138](Community_138.md) (2 shared connections)
 
 ## Source Files
 
-- `scripts/docker_image_resolver.py`
+- `tools/issue264/phase_c_acceptance_integrity.py`
+- `tools/issue264/phase_c_current_homr_isolated.py`
+- `tools/issue264/run_phase_c_mmr_regression_container.py`
 
 ## Audit Trail
 
-- EXTRACTED: 63 (97%)
-- INFERRED: 2 (3%)
+- EXTRACTED: 74 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

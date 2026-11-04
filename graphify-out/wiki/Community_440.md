@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_bypass_eval_subset.py** (1 connections) — `tools/run_bypass_eval_subset.py`
-- **run_eval()** (1 connections) — `tools/run_bypass_eval_subset.py`
+- **safe_gh_post.sh** (1 connections) — `tools/utils/safe_gh_post.sh`
+- **safe_gh_post.sh script** (1 connections) — `tools/utils/safe_gh_post.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/run_bypass_eval_subset.py`
+- `tools/utils/safe_gh_post.sh`
 
 ## Audit Trail
 

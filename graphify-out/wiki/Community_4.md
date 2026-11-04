@@ -1,64 +1,65 @@
 # Community 4
 
-> 82 nodes · cohesion 0.06
+> 79 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **test_distribution_surface.py** (37 connections) — `tests/test_distribution_surface.py`
-- **test_release_candidate.py** (23 connections) — `tests/test_release_candidate.py`
-- **check_candidate()** (19 connections) — `tools/release_candidate.py`
-- **check_tree()** (16 connections) — `tools/materialize_distribution.py`
-- **create_candidate()** (14 connections) — `tools/release_candidate.py`
-- **create()** (13 connections) — `tests/test_release_candidate.py`
-- **release_candidate.py** (13 connections) — `tools/release_candidate.py`
-- **source()** (12 connections) — `tests/test_release_candidate.py`
-- **git()** (11 connections) — `tests/test_release_candidate.py`
-- **_init_candidate_git()** (9 connections) — `tests/test_distribution_surface.py`
-- **check_repository_surface.py** (9 connections) — `tools/check_repository_surface.py`
-- **materialize_distribution.py** (9 connections) — `tools/materialize_distribution.py`
-- **materialize()** (9 connections) — `tools/materialize_distribution.py`
-- **selected_files()** (9 connections) — `tools/materialize_distribution.py`
-- **snapshot()** (9 connections) — `tools/release_candidate.py`
-- **git()** (8 connections) — `tools/release_candidate.py`
-- **Path** (8 connections)
-- **commit()** (7 connections) — `tests/test_release_candidate.py`
-- **test_different_executing_tools_reject_create_and_check()** (7 connections) — `tests/test_release_candidate.py`
-- **main()** (7 connections) — `tools/check_repository_surface.py`
-- **test_surface_checker_rejects_missing_review_and_engine_contract_files()** (6 connections) — `tests/test_issue100_runtime_surface.py`
-- **parametrize** (5 connections)
-- **test_issue100_runtime_surface.py** (5 connections) — `tests/test_issue100_runtime_surface.py`
-- **test_candidate_rejects_forged_committed_content_and_provenance()** (5 connections) — `tests/test_release_candidate.py`
-- **test_pinned_candidate_is_minimal_independent_and_reproducible()** (5 connections) — `tests/test_release_candidate.py`
-- *... and 57 more nodes in this community*
+- **test_movement_boundary_review.py** (17 connections) — `tests/test_movement_boundary_review.py`
+- **attach_movement_boundary_evidence()** (15 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **write_resolved_movement_boundaries()** (14 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **test_movement_boundary_candidates.py** (14 connections) — `tests/test_movement_boundary_candidates.py`
+- **review/movement_boundary_review.py** (12 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **test_movement_boundary_cli_provenance.py** (12 connections) — `tests/test_movement_boundary_cli_provenance.py`
+- **build_resolved_movement_boundaries()** (11 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **build_movement_boundary_evidence()** (10 connections) — `src/pipeline/movement_boundary_candidates.py`
+- **MovementBoundaryReviewError** (10 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **validate_movement_boundary_review()** (10 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **_build()** (10 connections) — `tests/test_movement_boundary_candidates.py`
+- **_evidence()** (9 connections) — `tests/test_movement_boundary_review.py`
+- **tools/movement_boundary_review.py** (9 connections) — `tools/movement_boundary_review.py`
+- **_export_from_handoff()** (9 connections) — `tools/movement_boundary_review.py`
+- **build_manual_movement_boundaries()** (8 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **Any** (8 connections)
+- **validate_movement_boundary_evidence()** (8 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **test_homr_barline_candidates.py** (8 connections) — `tests/test_homr_barline_candidates.py`
+- **_candidate()** (8 connections) — `tests/test_movement_boundary_review.py`
+- **test_export_covers_accepted_rejected_and_manual_boundary()** (7 connections) — `tests/test_movement_boundary_review.py`
+- **generate_movement_boundary_candidates.py** (7 connections) — `tools/generate_movement_boundary_candidates.py`
+- **movement_boundary_candidates.py** (6 connections) — `src/pipeline/movement_boundary_candidates.py`
+- **_load_json_object()** (6 connections) — `src/pipeline/review/movement_boundary_review.py`
+- **Path** (6 connections)
+- **test_export_rejects_unresolved_review_required_candidate()** (6 connections) — `tests/test_movement_boundary_review.py`
+- *... and 54 more nodes in this community*
 
 ## Relationships
 
-- [Community 153](Community_153.md) (5 shared connections)
-- [Community 62](Community_62.md) (4 shared connections)
-- [Community 32](Community_32.md) (4 shared connections)
-- [Community 97](Community_97.md) (3 shared connections)
-- [Community 1](Community_1.md) (3 shared connections)
-- [Community 178](Community_178.md) (2 shared connections)
-- [Community 78](Community_78.md) (2 shared connections)
-- [Community 19](Community_19.md) (2 shared connections)
-- [Community 111](Community_111.md) (1 shared connections)
-- [Community 143](Community_143.md) (1 shared connections)
-- [Community 37](Community_37.md) (1 shared connections)
-- [Community 55](Community_55.md) (1 shared connections)
+- [Community 25](Community_25.md) (6 shared connections)
+- [Community 26](Community_26.md) (3 shared connections)
+- [Community 29](Community_29.md) (2 shared connections)
+- [Community 182](Community_182.md) (2 shared connections)
+- [Community 103](Community_103.md) (2 shared connections)
+- [Community 32](Community_32.md) (2 shared connections)
+- [Community 23](Community_23.md) (2 shared connections)
+- [Community 17](Community_17.md) (2 shared connections)
+- [Community 12](Community_12.md) (2 shared connections)
+- [Community 33](Community_33.md) (1 shared connections)
+- [Community 52](Community_52.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_distribution_surface.py`
-- `tests/test_issue100_runtime_surface.py`
-- `tests/test_release_candidate.py`
-- `tools/check_repository_surface.py`
-- `tools/materialize_distribution.py`
-- `tools/release_candidate.py`
+- `src/pipeline/movement_boundary_candidates.py`
+- `src/pipeline/review/movement_boundary_review.py`
+- `tests/test_homr_barline_candidates.py`
+- `tests/test_movement_boundary_candidates.py`
+- `tests/test_movement_boundary_cli_provenance.py`
+- `tests/test_movement_boundary_review.py`
+- `tools/generate_movement_boundary_candidates.py`
+- `tools/movement_boundary_review.py`
 
 ## Audit Trail
 
-- EXTRACTED: 214 (95%)
-- INFERRED: 11 (5%)
+- EXTRACTED: 199 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

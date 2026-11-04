@@ -1,53 +1,50 @@
 # Community 104
 
-> 22 nodes · cohesion 0.21
+> 25 nodes · cohesion 0.23
 
 ## Key Concepts
 
-- **test_probe_helpers.py** (28 connections) — `tests/test_probe_helpers.py`
-- **measurements.py** (14 connections) — `src/pipeline/probe_detector/measurements.py`
-- **project_staff_band()** (12 connections) — `src/pipeline/probe_detector/measurements.py`
-- **measure_candidate_scan()** (10 connections) — `src/pipeline/probe_detector/measurements.py`
-- **CandidateScanConfig** (10 connections) — `src/pipeline/probe_detector/types.py`
-- **BandProjectionConfig** (9 connections) — `src/pipeline/probe_detector/types.py`
-- **select_signal_peaks()** (7 connections) — `src/pipeline/probe_detector/measurements.py`
-- **test_candidate_measurement_keeps_fallback_and_staff_peak_exclusion()** (6 connections) — `tests/test_probe_helpers.py`
-- **BandProjection** (5 connections) — `src/pipeline/probe_detector/measurements.py`
-- **_projection_config()** (5 connections) — `tests/test_probe_helpers.py`
-- **CandidateScanMeasurement** (4 connections) — `src/pipeline/probe_detector/measurements.py`
-- **ndarray** (3 connections)
-- **_candidate_scan_config()** (3 connections) — `tests/test_probe_helpers.py`
-- **test_band_projection_keeps_domain_halo_and_extension_ratios()** (3 connections) — `tests/test_probe_helpers.py`
-- **test_row_padding_ratio_precedes_staff_padding_and_clips_at_image_boundary()** (3 connections) — `tests/test_probe_helpers.py`
-- **test_develop_probe_debug_remains_opt_in_and_writes_artifacts()** (2 connections) — `tests/test_probe_helpers.py`
-- **test_peak_domain_and_limit_are_applied_before_returning_selection()** (2 connections) — `tests/test_probe_helpers.py`
-- **test_peak_ties_keep_leftmost_then_apply_distance_in_score_order()** (2 connections) — `tests/test_probe_helpers.py`
-- **Staff projections, peak selection and candidate measurements before acceptance.** (1 connections) — `src/pipeline/probe_detector/measurements.py`
-- **Existing options for candidate-local ink measurements; no new defaults.** (1 connections) — `src/pipeline/probe_detector/types.py`
-- **parametrize** (1 connections)
-- **test_develop_wide_split_opt_in_calls_existing_implementation()** (1 connections) — `tests/test_probe_helpers.py`
+- **render_residual_downstream_review.py** (22 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **render_case()** (17 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **Path** (10 connections)
+- **main()** (9 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **normalize_box()** (8 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **Any** (8 connections)
+- **load_json()** (6 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **boxes_from_gt()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **boxes_from_predictions()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **numbering_map_from_variant()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **prediction_map_from_manifest()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **relevant_system_indices()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **OSError** (4 connections)
+- **case_artifact_map_from_root()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **draw_box()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **numbering_map_from_root()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **one_page_numbering()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **prediction_map_from_root()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **resolve_recorded_path()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **system_measure_records()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **intersects()** (3 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **letterbox()** (3 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **union_crop()** (3 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **ndarray** (2 connections)
+- **ResidualCase** (2 connections) — `tools/issue291/render_residual_downstream_review.py`
 
 ## Relationships
 
-- [Community 99](Community_99.md) (20 shared connections)
-- [Community 8](Community_8.md) (5 shared connections)
-- [Community 259](Community_259.md) (3 shared connections)
-- [Community 86](Community_86.md) (2 shared connections)
-- [Community 30](Community_30.md) (1 shared connections)
-- [Community 49](Community_49.md) (1 shared connections)
-- [Community 76](Community_76.md) (1 shared connections)
-- [Community 17](Community_17.md) (1 shared connections)
+- [Community 31](Community_31.md) (7 shared connections)
+- [Community 0](Community_0.md) (3 shared connections)
+- [Community 27](Community_27.md) (1 shared connections)
+- [Community 13](Community_13.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/probe_detector/measurements.py`
-- `src/pipeline/probe_detector/types.py`
-- `tests/test_probe_helpers.py`
+- `tools/issue291/render_residual_downstream_review.py`
 
 ## Audit Trail
 
-- EXTRACTED: 79 (95%)
-- INFERRED: 4 (5%)
+- EXTRACTED: 78 (96%)
+- INFERRED: 3 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

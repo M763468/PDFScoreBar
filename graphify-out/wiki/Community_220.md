@@ -1,44 +1,38 @@
 # Community 220
 
-> 14 nodes · cohesion 0.24
+> 10 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **current_sr_batch_worker.py** (16 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **_run()** (13 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **validate_compiler_counters()** (7 connections) — `src/pipeline/detection/sr_compiler_cache.py`
-- **_items()** (6 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **Path** (4 connections)
-- **_sha256()** (3 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **test_compiled_cache_event_accepted()** (3 connections) — `tests/test_sr_compiler_cache.py`
-- **test_unknown_or_partial_compilation_rejected()** (3 connections) — `tests/test_sr_compiler_cache.py`
-- **Any** (2 connections)
-- **parametrize** (2 connections)
-- **main()** (1 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **Generate verified current-x4 SR images with one Real-ESRGAN model lifetime.** (1 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **Reject disabled compilation, graph breaks and unknown backend provenance.** (1 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **build_mmr_page_context()** (15 connections) — `src/pipeline/mmr_geometry_handoff.py`
+- **mmr_geometry_handoff.py** (8 connections) — `src/pipeline/mmr_geometry_handoff.py`
+- **test_issue264_phase_b_mmr_geometry.py** (5 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **test_mmr_handoff_reuses_current_x4_support_without_rebuilding_numbering()** (5 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **test_mmr_handoff_skips_excluded_or_missing_numbering_pages()** (5 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **test_mmr_handoff_requires_declared_current_homr_staff_mask()** (4 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **Path** (3 connections)
+- **MonkeyPatch** (2 connections)
+- **Any** (1 connections)
+- **Attach current-x4 MMR support without rebuilding Phase-A numbering.** (1 connections) — `src/pipeline/mmr_geometry_handoff.py`
 
 ## Relationships
 
-- [Community 42](Community_42.md) (8 shared connections)
-- [Community 45](Community_45.md) (5 shared connections)
-- [Community 162](Community_162.md) (3 shared connections)
-- [Community 49](Community_49.md) (2 shared connections)
-- [Community 164](Community_164.md) (2 shared connections)
-- [Community 143](Community_143.md) (1 shared connections)
-- [Community 102](Community_102.md) (1 shared connections)
+- [Community 12](Community_12.md) (3 shared connections)
+- [Community 114](Community_114.md) (3 shared connections)
+- [Community 50](Community_50.md) (3 shared connections)
+- [Community 82](Community_82.md) (3 shared connections)
+- [Community 14](Community_14.md) (3 shared connections)
+- [Community 21](Community_21.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/current_sr_batch_worker.py`
-- `src/pipeline/detection/sr_compiler_cache.py`
-- `tests/test_sr_compiler_cache.py`
+- `src/pipeline/mmr_geometry_handoff.py`
+- `tests/test_issue264_phase_b_mmr_geometry.py`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 30 (91%)
+- INFERRED: 3 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

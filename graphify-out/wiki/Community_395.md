@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **barline_detector.py** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
-- **detect_barlines()** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
+- **analyze_band_count.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_count.py`
+- **analyze_band_count()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_count.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/archive/opencv/barline_detector.py`
+- `experiments/legacy/investigation_20260102/analyze_band_count.py`
 
 ## Audit Trail
 

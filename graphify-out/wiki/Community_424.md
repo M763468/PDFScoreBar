@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **compare_batch_structure.py** (1 connections) — `tools/compare_batch_structure.py`
-- **compare_batches()** (1 connections) — `tools/compare_batch_structure.py`
+- **crop_debug_image.py** (1 connections) — `tools/crop_debug_image.py`
+- **main()** (1 connections) — `tools/crop_debug_image.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/compare_batch_structure.py`
+- `tools/crop_debug_image.py`
 
 ## Audit Trail
 

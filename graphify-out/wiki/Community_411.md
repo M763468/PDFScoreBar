@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
-- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
+- **analyze_image_classification.py** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
+- **main()** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
+- `experiments/phase5b_notehead_geom/analyze_image_classification.py`
 
 ## Audit Trail
 

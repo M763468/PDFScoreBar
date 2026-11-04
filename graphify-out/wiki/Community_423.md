@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_crop_centers.py** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
-- **visualize_crop_centers()** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
+- **compare_batch_structure.py** (1 connections) — `tools/compare_batch_structure.py`
+- **compare_batches()** (1 connections) — `tools/compare_batch_structure.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/visualize_crop_centers.py`
+- `tools/compare_batch_structure.py`
 
 ## Audit Trail
 

@@ -1,39 +1,43 @@
 # Community 155
 
-> 16 nodes · cohesion 0.18
+> 17 nodes · cohesion 0.32
 
 ## Key Concepts
 
-- **stage_e_dense_full_pipeline.py** (11 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **DenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **reconstruct_stage_e_dense_route()** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **StageEDenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Path** (4 connections)
-- **regenerate_dense_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **regenerate_issue53_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **.from_dense()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **.issue53_root()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Freshly reconstructed dense route inputs.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Compatibility shim for the historical Stage E dense route module. New code…** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Historical Stage E artifact view with legacy field access.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Legacy name for Stage E Issue53-style probe-rescue candidates.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Compatibility wrapper for the historical Stage E route-root keyword.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Compatibility wrapper for the historical Issue53-style rescue name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Compatibility wrapper for the historical Stage E route name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **diagnose_phase_b_layout_divergence.py** (20 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **run()** (13 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **Path** (8 connections)
+- **_rebuild()** (8 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **Any** (7 connections)
+- **_semantic_connector_paths()** (5 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_classify()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_layout_signature()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_load_json()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_page_image_ink_evidence()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_resolve_project_path()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_write_json()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_barlines_path()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **main()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **parse_args()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_staff_membership()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- [Community 115](Community_115.md) (10 shared connections)
+- [Community 8](Community_8.md) (4 shared connections)
+- [Community 50](Community_50.md) (3 shared connections)
+- [Community 222](Community_222.md) (3 shared connections)
+- [Community 42](Community_42.md) (1 shared connections)
+- [Community 18](Community_18.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/dense_full_pipeline.py`
-- `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- `tools/issue264/diagnose_phase_b_layout_divergence.py`
 
 ## Audit Trail
 
-- EXTRACTED: 30 (94%)
-- INFERRED: 2 (6%)
+- EXTRACTED: 55 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

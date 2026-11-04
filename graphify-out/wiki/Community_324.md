@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **evaluate_accuracy_batch.py** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
-- **main()** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
-- **compute_iou()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
-- **find_gt_file()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **visualize_errors_only.py** (3 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
+- **main()** (3 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
+- **compute_iou()** (2 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
+- **find_gt_file()** (2 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- `experiments/cnn_classifier/visualize_errors_only.py`
 
 ## Audit Trail
 

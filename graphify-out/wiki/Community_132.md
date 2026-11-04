@@ -1,43 +1,46 @@
 # Community 132
 
-> 21 nodes · cohesion 0.17
+> 21 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **test_prototype.py** (13 connections) — `tools/issue416/test_prototype.py`
-- **normalize_box()** (8 connections) — `tools/issue416/prototype.py`
-- **StaffRegion** (8 connections) — `tools/issue416/prototype.py`
-- **prototype.py** (6 connections) — `tools/issue416/prototype.py`
-- **split_double_stroke()** (6 connections) — `tools/issue416/prototype.py`
-- **deduplicate_accepted()** (5 connections) — `tools/issue416/prototype.py`
-- **test_connector_tail_is_clipped_but_ordinary_stroke_is_stable()** (4 connections) — `tools/issue416/test_prototype.py`
-- **test_double_stroke_split_does_not_split_a_single_wide_stroke()** (3 connections) — `tools/issue416/test_prototype.py`
-- **test_multistaff_pieces_keep_separate_staff_positions()** (3 connections) — `tools/issue416/test_prototype.py`
-- **test_rejected_single_tail_ablation_is_disabled_by_default()** (3 connections) — `tools/issue416/test_prototype.py`
-- **parametrize** (2 connections)
-- **test_dedup_preserves_separate_strokes_and_same_x_other_staff()** (2 connections) — `tools/issue416/test_prototype.py`
-- **test_geometry_representative_retains_its_own_actual_score()** (2 connections) — `tools/issue416/test_prototype.py`
-- **test_uncertain_unit_fails_explicitly()** (2 connections) — `tools/issue416/test_prototype.py`
-- **ndarray** (1 connections)
-- **Investigation-only geometry prototypes; production does not import this module.…** (1 connections) — `tools/issue416/prototype.py`
-- **Split multi-staff ink; opt-in single-tail clipping is a rejected ablation.** (1 connections) — `tools/issue416/prototype.py`
-- **Ablate near-identical stroke boxes after CNN; preserve distinct strokes. The…** (1 connections) — `tools/issue416/prototype.py`
-- **Positive-hypothesis ablation using vertical ink runs, independent of GT.** (1 connections) — `tools/issue416/prototype.py`
-- **.__post_init__()** (1 connections) — `tools/issue416/prototype.py`
-- **Semantic controls for experimental rules, without dataset/model dependencies.** (1 connections) — `tools/issue416/test_prototype.py`
+- **run_stage_e_full_pipeline.py** (24 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **main()** (13 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_suppress_low_value_external_raw_log()** (8 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_filter_default_console_log()** (7 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Path** (7 connections)
+- **_summarize_console_log()** (5 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_low_value_external_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_progress_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_warning_or_error_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_load_optional_json()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_redirect_stdout_stderr_to_file()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_real_esrgan_tile_line()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_low_value_marker_keys()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_strip_low_value_suffix_from_progress_line()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_temporary_env()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_env_flag_enabled()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Rewrite raw stdout/stderr with known low-value external chatter removed.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Write a bounded default console log while preserving raw stdout/stderr…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Redirect fd-level stdout/stderr so subprocess-heavy logs are kept in a file.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Temporarily set environment variables and restore their previous values.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Summarize captured stdout/stderr without loading the whole file into memory.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Relationships
 
-- [Community 30](Community_30.md) (2 shared connections)
+- [Community 152](Community_152.md) (10 shared connections)
+- [Community 240](Community_240.md) (5 shared connections)
+- [Community 116](Community_116.md) (3 shared connections)
+- [Community 111](Community_111.md) (3 shared connections)
+- [Community 98](Community_98.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/issue416/prototype.py`
-- `tools/issue416/test_prototype.py`
+- `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 38 (100%)
+- EXTRACTED: 63 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

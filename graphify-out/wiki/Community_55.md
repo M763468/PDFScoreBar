@@ -1,54 +1,49 @@
 # Community 55
 
-> 37 nodes · cohesion 0.15
+> 37 nodes · cohesion 0.16
 
 ## Key Concepts
 
-- **test_issue415_numbering_audit.py** (40 connections) — `tests/test_issue415_numbering_audit.py`
-- **audit_numbering.py** (14 connections) — `tools/issue415/audit_numbering.py`
-- **audit_pages()** (14 connections) — `tools/issue415/audit_numbering.py`
-- **materialized_path()** (10 connections) — `tools/issue415/audit_numbering.py`
-- **entry()** (9 connections) — `tests/test_issue415_numbering_audit.py`
-- **audit_retained()** (9 connections) — `tools/issue415/audit_numbering.py`
-- **audit_row_samples()** (9 connections) — `tools/issue415/audit_numbering.py`
-- **main()** (9 connections) — `tools/issue415/audit_numbering.py`
-- **verify_consumers()** (9 connections) — `tools/issue415/audit_numbering.py`
-- **Path** (8 connections)
-- **skip()** (6 connections) — `tests/test_issue415_numbering_audit.py`
-- **digest()** (6 connections) — `tools/issue415/audit_numbering.py`
-- **read()** (6 connections) — `tools/issue415/audit_numbering.py`
-- **test_zero_skip_recognition_false_positive_still_fails_quality_gate()** (5 connections) — `tests/test_issue415_numbering_audit.py`
-- **index_overrides()** (5 connections) — `tools/issue415/audit_numbering.py`
-- **page()** (4 connections) — `tests/test_issue415_numbering_audit.py`
-- **test_correct_recognition_wrong_application_and_empty_page_continuity()** (4 connections) — `tests/test_issue415_numbering_audit.py`
-- **test_reset_masks_difference_but_cannot_mask_wrong_reset_target_number()** (4 connections) — `tests/test_issue415_numbering_audit.py`
-- **test_terminal_rest_and_cross_page_application_separate_from_gt()** (4 connections) — `tests/test_issue415_numbering_audit.py`
-- **test_zero_fixture_false_positive_is_not_hidden_by_event_only_scoring()** (4 connections) — `tests/test_issue415_numbering_audit.py`
-- **correctness_failed()** (4 connections) — `tools/issue415/audit_numbering.py`
-- **integer()** (4 connections) — `tools/issue415/audit_numbering.py`
-- **resolve()** (4 connections) — `tools/issue415/audit_numbering.py`
-- **parametrize** (3 connections)
-- **test_audit_rejects_missing_duplicate_and_invalid_event_targets()** (3 connections) — `tests/test_issue415_numbering_audit.py`
+- **run_full68_pair_host.py** (28 connections) — `tools/issue284/run_full68_pair_host.py`
+- **main()** (16 connections) — `tools/issue284/run_full68_pair_host.py`
+- **Path** (16 connections)
+- **RuntimeError** (10 connections)
+- **checked()** (9 connections) — `tools/issue284/run_full68_pair_host.py`
+- **test_issue284_full68_pair_host.py** (8 connections) — `tests/test_issue284_full68_pair_host.py`
+- **checkout_exact()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **git_commit()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_docker_runtime()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **run_variant()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **capture()** (7 connections) — `tools/issue284/run_full68_pair_host.py`
+- **restore_checkout()** (7 connections) — `tools/issue284/run_full68_pair_host.py`
+- **parse_windows_free_bytes()** (6 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_clean()** (6 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_s_free_space()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_workspace_mount()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **restore_target()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **validate_run_tag()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_host_uid_write_access()** (4 connections) — `tools/issue284/run_full68_pair_host.py`
+- **s_free_gib()** (4 connections) — `tools/issue284/run_full68_pair_host.py`
+- **stage_candidate_runner()** (4 connections) — `tools/issue284/run_full68_pair_host.py`
+- **test_validate_run_tag_accepts_safe_values()** (3 connections) — `tests/test_issue284_full68_pair_host.py`
+- **test_validate_run_tag_rejects_unsafe_values()** (3 connections) — `tests/test_issue284_full68_pair_host.py`
+- **container_path()** (3 connections) — `tools/issue284/run_full68_pair_host.py`
+- **docker_container_info()** (3 connections) — `tools/issue284/run_full68_pair_host.py`
 - *... and 12 more nodes in this community*
 
 ## Relationships
 
-- [Community 8](Community_8.md) (10 shared connections)
-- [Community 17](Community_17.md) (3 shared connections)
-- [Community 3](Community_3.md) (3 shared connections)
-- [Community 43](Community_43.md) (2 shared connections)
-- [Community 76](Community_76.md) (1 shared connections)
-- [Community 4](Community_4.md) (1 shared connections)
+- [Community 241](Community_241.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue415_numbering_audit.py`
-- `tools/issue415/audit_numbering.py`
+- `tests/test_issue284_full68_pair_host.py`
+- `tools/issue284/run_full68_pair_host.py`
 
 ## Audit Trail
 
-- EXTRACTED: 119 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 107 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

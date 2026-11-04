@@ -1,14 +1,14 @@
 # Community 313
 
-> 5 nodes · cohesion 0.50
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **issue459/matrix.py** (3 connections) — `tools/issue459/matrix.py`
-- **validate_primary()** (3 connections) — `tools/issue459/matrix.py`
-- **main()** (2 connections) — `tools/issue459/matrix.py`
-- **Finish fixed performance cells after the root warm primary screen. Stop on the…** (1 connections) — `tools/issue459/matrix.py`
-- **Accept only a passed root/multi/warm screen under the original >=3% gate. Other…** (1 connections) — `tools/issue459/matrix.py`
+- **visualize_mmr_errors.py** (4 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **main()** (3 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **draw_thick_rectangle()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **get_ttf_font()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **MMR Error Visualization and Inspection Tool (Local Diagnostics for Issue #94)…** (1 connections) — `tools/issue94/visualize_mmr_errors.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue459/matrix.py`
+- `tools/issue94/visualize_mmr_errors.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

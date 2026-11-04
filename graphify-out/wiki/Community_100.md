@@ -1,49 +1,61 @@
 # Community 100
 
-> 26 nodes · cohesion 0.17
+> 24 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **check()** (17 connections) — `tools/verification/check_doc_translations.py`
-- **TranslationChecks** (15 connections) — `tests/test_doc_translations.py`
-- **.write_translation()** (8 connections) — `tests/test_doc_translations.py`
-- **check_doc_translations.py** (6 connections) — `tools/verification/check_doc_translations.py`
-- **.commit_source()** (5 connections) — `tests/test_doc_translations.py`
-- **prose()** (5 connections) — `tools/verification/check_doc_translations.py`
-- **test_doc_translations.py** (4 connections) — `tests/test_doc_translations.py`
-- **.test_changed_commit_source_requires_stale_marker()** (4 connections) — `tests/test_doc_translations.py`
-- **.test_unrelated_commit_does_not_invalidate_source()** (4 connections) — `tests/test_doc_translations.py`
-- **local_links()** (4 connections) — `tools/verification/check_doc_translations.py`
-- **Path** (4 connections)
-- **.git()** (3 connections) — `tests/test_doc_translations.py`
-- **.test_invalid_state_and_identity()** (3 connections) — `tests/test_doc_translations.py`
-- **.test_missing_links_in_either_direction()** (3 connections) — `tests/test_doc_translations.py`
-- **.test_missing_original_and_path_escape()** (3 connections) — `tests/test_doc_translations.py`
-- **.test_unavailable_commit_does_not_certify_sync()** (3 connections) — `tests/test_doc_translations.py`
-- **main()** (3 connections) — `tools/verification/check_doc_translations.py`
-- **.setUp()** (2 connections) — `tests/test_doc_translations.py`
-- **.test_fenced_metadata_and_links_are_examples()** (2 connections) — `tests/test_doc_translations.py`
-- **.test_missing_record()** (2 connections) — `tests/test_doc_translations.py`
-- **.test_same_pr_stale_digest()** (2 connections) — `tests/test_doc_translations.py`
-- **.test_valid_pair()** (2 connections) — `tests/test_doc_translations.py`
-- **Small, dependency-free regression fixtures for translation provenance checks.** (1 connections) — `tests/test_doc_translations.py`
-- **Check translation references and provenance using only the Python standard…** (1 connections) — `tools/verification/check_doc_translations.py`
-- **Exclude fenced examples so sample metadata is not treated as a real record.** (1 connections) — `tools/verification/check_doc_translations.py`
-- *... and 1 more nodes in this community*
+- **detect_probe_scan()** (34 connections) — `src/pipeline/probe_detector/__init__.py`
+- **probe_detector/__init__.py** (24 connections) — `src/pipeline/probe_detector/__init__.py`
+- **probe_detector/types.py** (13 connections) — `src/pipeline/probe_detector/types.py`
+- **ExistingBarlines** (8 connections) — `src/pipeline/probe_detector/existing.py`
+- **apply_gap_rescue()** (8 connections) — `src/pipeline/probe_detector/rescue.py`
+- **build_divisi_map()** (7 connections) — `src/pipeline/probe_detector/bands.py`
+- **rescue.py** (7 connections) — `src/pipeline/probe_detector/rescue.py`
+- **apply_rightmost_rescue()** (7 connections) — `src/pipeline/probe_detector/rescue.py`
+- **existing.py** (5 connections) — `src/pipeline/probe_detector/existing.py`
+- **BandSelectionConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **DivisiRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **GapRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **RightmostRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **.closest_existing_band()** (3 connections) — `src/pipeline/probe_detector/existing.py`
+- **.has_existing_for_suppression()** (3 connections) — `src/pipeline/probe_detector/existing.py`
+- **Any** (2 connections)
+- **test_existing_suppression_requires_vertical_overlap_and_preserves_nearest_band()** (2 connections) — `tests/test_probe_helpers.py`
+- **Lookup and suppression against existing barlines in a staff band.** (1 connections) — `src/pipeline/probe_detector/existing.py`
+- **ndarray** (1 connections)
+- **Path** (1 connections)
+- **Core probe scan detection logic orchestrating submodules.** (1 connections) — `src/pipeline/probe_detector/__init__.py`
+- **Rescue logic for probe detection.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
+- **Rescue barlines in large gaps between detected barlines using relaxed threshold.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
+- **Shared types/config for probe detector modules.** (1 connections) — `src/pipeline/probe_detector/types.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 105](Community_105.md) (20 shared connections)
+- [Community 259](Community_259.md) (9 shared connections)
+- [Community 7](Community_7.md) (5 shared connections)
+- [Community 87](Community_87.md) (4 shared connections)
+- [Community 31](Community_31.md) (4 shared connections)
+- [Community 235](Community_235.md) (3 shared connections)
+- [Community 192](Community_192.md) (2 shared connections)
+- [Community 154](Community_154.md) (2 shared connections)
+- [Community 37](Community_37.md) (2 shared connections)
+- [Community 151](Community_151.md) (2 shared connections)
+- [Community 207](Community_207.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_doc_translations.py`
-- `tools/verification/check_doc_translations.py`
+- `src/pipeline/probe_detector/__init__.py`
+- `src/pipeline/probe_detector/bands.py`
+- `src/pipeline/probe_detector/existing.py`
+- `src/pipeline/probe_detector/rescue.py`
+- `src/pipeline/probe_detector/types.py`
+- `tests/test_probe_helpers.py`
 
 ## Audit Trail
 
-- EXTRACTED: 54 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 99 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

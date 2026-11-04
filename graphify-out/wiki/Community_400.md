@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_parameter_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
-- **run_parameter_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
+- **run_gt_rebuild_eval.sh** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
+- **run_gt_rebuild_eval.sh script** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/scripts/run_parameter_sweep.sh`
+- `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
 
 ## Audit Trail
 

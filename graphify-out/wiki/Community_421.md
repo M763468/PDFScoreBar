@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **create_gt_gui_config.py** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
-- **main()** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
+- **cnn_classifier/__init__.py** (1 connections) — `tools/cnn_classifier/__init__.py`
+- **CNN classifier tooling package.** (1 connections) — `tools/cnn_classifier/__init__.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/create_gt_gui_config.py`
+- `tools/cnn_classifier/__init__.py`
 
 ## Audit Trail
 

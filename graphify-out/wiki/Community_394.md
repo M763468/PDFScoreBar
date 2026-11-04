@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **execute_phase5b_homr.sh** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
-- **execute_phase5b_homr.sh script** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
+- **barline_detector.py** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
+- **detect_barlines()** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/execute_phase5b_homr.sh`
+- `experiments/legacy/archive/opencv/barline_detector.py`
 
 ## Audit Trail
 

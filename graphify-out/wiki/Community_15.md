@@ -1,52 +1,64 @@
 # Community 15
 
-> 62 nodes · cohesion 0.03
+> 29 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **app_manual.js** (125 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **pointInImageBox()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **updateMovementFinishButton()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **pickSystem()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **unresolvedMovementSuggestionCount()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementReviewKey()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **pickBarline()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **pickMeasure()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **addItemBtn** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **allMovementEvidenceCandidates** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **barlines** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **baseMmrOverrides** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **blurActiveControl()** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **canvas** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **canvasToImg()** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **correctionsByType** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **ctx** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **deleteItemBtn** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **dirtyStatus** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **dirtyTypes** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **drawModeBtn** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **exportMovementBtn** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **helpBtn** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **helpPanel** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **image** (1 connections) — `tools/gt_relabel_gui/app_manual.js`
-- *... and 37 more nodes in this community*
+- **BarlinePrediction** (21 connections) — `src/homr_runtime/types.py`
+- **homr_runtime/types.py** (14 connections) — `src/homr_runtime/types.py`
+- **homr_runtime/predictor.py** (13 connections) — `src/homr_runtime/predictor.py`
+- **.predict()** (13 connections) — `src/homr_runtime/predictor.py`
+- **diagnostics.py** (11 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **homr_runtime/reporting.py** (10 connections) — `src/homr_runtime/reporting.py`
+- **HomrPredictor** (9 connections) — `src/homr_runtime/predictor.py`
+- **run_homr_on_image()** (9 connections) — `src/homr_runtime/predictor.py`
+- **transforms.py** (9 connections) — `src/homr_runtime/transforms.py`
+- **filtering.py** (8 connections) — `src/homr_runtime/filtering.py`
+- **compute_transform_info()** (7 connections) — `src/homr_runtime/transforms.py`
+- **map_pred_to_orig()** (5 connections) — `src/homr_runtime/transforms.py`
+- **autocrop_bounds()** (4 connections) — `src/homr_runtime/transforms.py`
+- **.__init__()** (3 connections) — `src/homr_runtime/predictor.py`
+- **BarlinePrediction** (2 connections)
+- **ndarray** (2 connections)
+- **Path** (2 connections)
+- **ProcessingConfig** (2 connections)
+- **XmlGeneratorArguments** (2 connections)
+- **TransformInfo** (2 connections)
+- **Evaluation-only cluster decisions, candidate statistics and diagnostic CSVs.** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Filter predicted barlines using notehead proximity and staff crossings.** (1 connections) — `src/homr_runtime/filtering.py`
+- **Runs the core homr staff and symbol detection pipeline for a single image with…** (1 connections) — `src/homr_runtime/predictor.py`
+- **Persistent Homr Predictor for batch processing.** (1 connections) — `src/homr_runtime/predictor.py`
+- **Persist HOMR predictions and optional debug masks.** (1 connections) — `src/homr_runtime/reporting.py`
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [Community 152](Community_152.md) (18 shared connections)
-- [Community 168](Community_168.md) (16 shared connections)
-- [Community 186](Community_186.md) (14 shared connections)
-- [Community 208](Community_208.md) (11 shared connections)
-- [Community 253](Community_253.md) (8 shared connections)
+- [Community 163](Community_163.md) (11 shared connections)
+- [Community 326](Community_326.md) (7 shared connections)
+- [Community 67](Community_67.md) (7 shared connections)
+- [Community 97](Community_97.md) (6 shared connections)
+- [Community 49](Community_49.md) (6 shared connections)
+- [Community 91](Community_91.md) (6 shared connections)
+- [Community 319](Community_319.md) (5 shared connections)
+- [Community 108](Community_108.md) (3 shared connections)
+- [Community 455](Community_455.md) (3 shared connections)
+- [Community 0](Community_0.md) (3 shared connections)
+- [Community 273](Community_273.md) (2 shared connections)
+- [Community 181](Community_181.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_manual.js`
+- `src/homr_eval_scripts/core/diagnostics.py`
+- `src/homr_runtime/filtering.py`
+- `src/homr_runtime/predictor.py`
+- `src/homr_runtime/reporting.py`
+- `src/homr_runtime/transforms.py`
+- `src/homr_runtime/types.py`
 
 ## Audit Trail
 
-- EXTRACTED: 132 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 102 (93%)
+- INFERRED: 8 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

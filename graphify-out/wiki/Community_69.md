@@ -1,57 +1,58 @@
 # Community 69
 
-> 34 nodes · cohesion 0.13
+> 32 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **MMRClassifier** (25 connections) — `src/measure_numbering/mmr.py`
-- **diagnose_ocr_frame_changed_pages.py** (22 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **run()** (15 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **run_h2_matrix()** (12 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **Any** (8 connections)
-- **run_mmr_batch()** (6 connections) — `src/measure_numbering/mmr.py`
-- **_preflight()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_semantic()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
-- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
-- **Path** (5 connections)
-- **_comparison()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **legacy_frame_dimensions()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_load_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_probe_matrix_condition()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_write_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **._load_model()** (4 connections) — `src/measure_numbering/mmr.py`
-- **test_issue274_ocr_frame_causal.py** (4 connections) — `tests/test_issue274_ocr_frame_causal.py`
-- **main()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_normalise()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **test_issue218_multistaff_system_grouping.py** (32 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **ConnectorAwareSystemBuilder** (18 connections) — `src/measure_numbering/connector_aware_builder.py`
+- **evaluate_issue218_measure_gt.py** (10 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- **build()** (8 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **test_multistaff_boundary_needs_staff_span_or_cross_staff_support()** (7 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **evaluate()** (7 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- **.__init__()** (6 connections) — `src/measure_numbering/pipeline.py`
+- **parametrize** (6 connections)
+- **test_barline_free_voice_requires_positive_multistaff_chain()** (6 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **test_transitive_divisi_merge_preserves_neighbor_and_measure_progression()** (6 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **align_intervals()** (6 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- **score_page()** (6 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- **._group_by_geometry()** (5 connections) — `src/measure_numbering/connector_aware_builder.py`
+- **test_guard_is_required_even_with_an_aligned_nonleft_ink_bridge()** (5 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **test_pipeline_extracts_pair_evidence_and_numbers_divisi_once()** (5 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **main()** (5 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- **digest()** (4 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
 - **Path** (4 connections)
-- **_semantic_items()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **.predict()** (3 connections) — `src/measure_numbering/mmr.py`
-- **device** (3 connections)
-- **_legacy_frame_select()** (3 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- *... and 9 more nodes in this community*
+- **resolve()** (4 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- **validate_gt()** (4 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- **test_absent_connector_breaks_each_link_without_transitive_bypass()** (3 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **test_manual_gt_does_not_shift_indices_to_hide_a_missing_measure()** (2 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **test_manual_gt_numbers_must_agree_with_rest_durations()** (2 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **test_manual_gt_shared_rest_and_page_index_follow_production_override_contract()** (2 connections) — `tests/test_issue218_multistaff_system_grouping.py`
+- **boundary_matches()** (2 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
+- *... and 7 more nodes in this community*
 
 ## Relationships
 
-- [Community 12](Community_12.md) (11 shared connections)
-- [Community 0](Community_0.md) (8 shared connections)
-- [Community 172](Community_172.md) (7 shared connections)
+- [Community 8](Community_8.md) (18 shared connections)
+- [Community 18](Community_18.md) (17 shared connections)
+- [Community 77](Community_77.md) (6 shared connections)
+- [Community 42](Community_42.md) (4 shared connections)
 - [Community 50](Community_50.md) (4 shared connections)
-- [Community 49](Community_49.md) (3 shared connections)
-- [Community 13](Community_13.md) (3 shared connections)
-- [Community 125](Community_125.md) (2 shared connections)
-- [Community 81](Community_81.md) (2 shared connections)
+- [Community 90](Community_90.md) (4 shared connections)
+- [Community 183](Community_183.md) (1 shared connections)
+- [Community 33](Community_33.md) (1 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/mmr.py`
-- `tests/test_issue274_ocr_frame_causal.py`
-- `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- `src/measure_numbering/connector_aware_builder.py`
+- `src/measure_numbering/pipeline.py`
+- `tests/test_issue218_multistaff_system_grouping.py`
+- `tools/verification/evaluate_issue218_measure_gt.py`
 
 ## Audit Trail
 
-- EXTRACTED: 112 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 108 (95%)
+- INFERRED: 6 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,14 +1,14 @@
 # Community 312
 
-> 5 nodes · cohesion 0.70
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **verify_product_integration.py** (4 connections) — `tools/issue441/verify_product_integration.py`
-- **main()** (3 connections) — `tools/issue441/verify_product_integration.py`
-- **numbers()** (3 connections) — `tools/issue441/verify_product_integration.py`
-- **require()** (3 connections) — `tools/issue441/verify_product_integration.py`
-- **Rescore the fixed #441 browser run and retrieve its result after server…** (1 connections) — `tools/issue441/verify_product_integration.py`
+- **issue459/matrix.py** (3 connections) — `tools/issue459/matrix.py`
+- **validate_primary()** (3 connections) — `tools/issue459/matrix.py`
+- **main()** (2 connections) — `tools/issue459/matrix.py`
+- **Finish fixed performance cells after the root warm primary screen. Stop on the…** (1 connections) — `tools/issue459/matrix.py`
+- **Accept only a passed root/multi/warm screen under the original >=3% gate. Other…** (1 connections) — `tools/issue459/matrix.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue441/verify_product_integration.py`
+- `tools/issue459/matrix.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

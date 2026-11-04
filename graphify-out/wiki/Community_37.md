@@ -1,59 +1,64 @@
 # Community 37
 
-> 31 nodes · cohesion 0.11
+> 51 nodes · cohesion 0.11
 
 ## Key Concepts
 
-- **OrderedJobs** (14 connections) — `tools/issue447/pipeline_poc.py`
-- **pipeline_poc.py** (11 connections) — `tools/issue447/pipeline_poc.py`
-- **omr_reuse_candidate.py** (9 connections) — `tools/issue459/omr_reuse_candidate.py`
-- **install_source_prefetch()** (8 connections) — `tools/issue447/pipeline_poc.py`
-- **SourceSchedulingTests** (6 connections) — `tests/test_issue447_source_scheduling.py`
-- **e2e_fault_integration.py** (6 connections) — `tools/issue447/e2e_fault_integration.py`
-- **test_issue447_source_scheduling.py** (5 connections) — `tests/test_issue447_source_scheduling.py`
-- **child()** (5 connections) — `tools/issue447/e2e_fault_integration.py`
-- **configure()** (5 connections) — `tools/issue459/omr_reuse_candidate.py`
-- **source_main()** (3 connections) — `tools/issue447/omr_reuse_poc.py`
-- **component_main()** (3 connections) — `tools/issue447/pipeline_poc.py`
-- **._write()** (3 connections) — `tools/issue447/pipeline_poc.py`
-- **Path** (3 connections)
-- **build_manifest()** (3 connections) — `tools/issue459/omr_reuse_candidate.py`
-- **install()** (3 connections) — `tools/issue459/omr_reuse_candidate.py`
-- **test_source_failure_cancels_queued_work_and_joins_running_children()** (2 connections) — `tests/test_issue447_omr_reuse.py`
-- **.test_completed_sr_boundary_is_required()** (2 connections) — `tests/test_issue447_source_scheduling.py`
-- **.test_parallel_completion_is_consumed_in_input_order()** (2 connections) — `tests/test_issue447_source_scheduling.py`
-- **.test_worker_bound_and_same_input_contract_in_both_modes()** (2 connections) — `tests/test_issue447_source_scheduling.py`
-- **.test_worker_failure_propagates_without_serial_fallback()** (2 connections) — `tests/test_issue447_source_scheduling.py`
-- **main()** (2 connections) — `tools/issue447/e2e_fault_integration.py`
-- **._execute()** (2 connections) — `tools/issue447/pipeline_poc.py`
-- **.__init__()** (2 connections) — `tools/issue447/pipeline_poc.py`
-- **.result()** (2 connections) — `tools/issue447/pipeline_poc.py`
-- **consume()** (2 connections) — `tools/issue459/omr_reuse_candidate.py`
-- *... and 6 more nodes in this community*
+- **trace_prokofiev_probe_boundary.py** (37 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
+- **probe_boundary.py** (20 connections) — `tools/issue252/probe_boundary.py`
+- **build_report()** (20 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
+- **test_issue252_prokofiev_probe_boundary.py** (18 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
+- **_run_variant()** (16 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
+- **_resolve_scale_aware_probe_kwargs()** (11 connections) — `src/pipeline/steps/probe_scan.py`
+- **stage_summary()** (11 connections) — `tools/issue252/probe_boundary.py`
+- **get_probe_kwargs()** (9 connections) — `src/pipeline/detection/config.py`
+- **classify_first_loss()** (9 connections) — `tools/issue252/probe_boundary.py`
+- **normalize_box()** (9 connections) — `tools/issue252/probe_boundary.py`
+- **Any** (9 connections)
+- **_apply_candidate_filter()** (9 connections) — `tools/issue252/trace_prokofiev_probe_boundary.py`
+- **split_tall_existing_boxes()** (8 connections) — `tools/issue252/probe_boundary.py`
+- **target_metrics()** (7 connections) — `tools/issue252/probe_boundary.py`
+- **validate_fresh_contract_payload()** (7 connections) — `tools/issue252/probe_boundary.py`
+- **write_json()** (7 connections) — `tools/issue252/probe_boundary.py`
+- **_estimate_unit_size_from_existing_boxes()** (6 connections) — `src/pipeline/steps/probe_scan.py`
+- **artifact_record()** (6 connections) — `tools/issue252/probe_boundary.py`
+- **_debug_records()** (6 connections) — `tools/issue252/probe_boundary.py`
+- **load_json()** (6 connections) — `tools/issue252/probe_boundary.py`
+- **Path** (6 connections)
+- **_source_trace()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
+- **test_classifies_baseline_homr_when_target_absent_before_probe()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
+- **test_classifies_existing_box_suppression_when_off_variant_restores_raw_target()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
+- **test_classifies_first_unrecovered_probe_stage()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [Community 289](Community_289.md) (6 shared connections)
-- [Community 74](Community_74.md) (2 shared connections)
-- [Community 110](Community_110.md) (2 shared connections)
-- [Community 21](Community_21.md) (2 shared connections)
-- [Community 40](Community_40.md) (2 shared connections)
-- [Community 455](Community_455.md) (1 shared connections)
-- [Community 4](Community_4.md) (1 shared connections)
+- [Community 154](Community_154.md) (13 shared connections)
+- [Community 31](Community_31.md) (10 shared connections)
+- [Community 81](Community_81.md) (9 shared connections)
+- [Community 79](Community_79.md) (5 shared connections)
+- [Community 87](Community_87.md) (4 shared connections)
+- [Community 68](Community_68.md) (3 shared connections)
+- [Community 0](Community_0.md) (3 shared connections)
+- [Community 192](Community_192.md) (2 shared connections)
+- [Community 98](Community_98.md) (2 shared connections)
+- [Community 100](Community_100.md) (2 shared connections)
+- [Community 151](Community_151.md) (2 shared connections)
+- [Community 71](Community_71.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue447_omr_reuse.py`
-- `tests/test_issue447_source_scheduling.py`
-- `tools/issue447/e2e_fault_integration.py`
-- `tools/issue447/omr_reuse_poc.py`
-- `tools/issue447/pipeline_poc.py`
-- `tools/issue459/omr_reuse_candidate.py`
+- `src/pipeline/detection/config.py`
+- `src/pipeline/steps/probe_scan.py`
+- `tests/test_issue252_prokofiev_probe_boundary.py`
+- `tests/test_probe_x_domain.py`
+- `tools/issue252/probe_boundary.py`
+- `tools/issue252/trace_prokofiev_probe_boundary.py`
 
 ## Audit Trail
 
-- EXTRACTED: 59 (91%)
-- INFERRED: 6 (9%)
+- EXTRACTED: 197 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

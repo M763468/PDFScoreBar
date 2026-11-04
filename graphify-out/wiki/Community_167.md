@@ -1,39 +1,36 @@
 # Community 167
 
-> 15 nodes · cohesion 0.25
+> 15 nodes · cohesion 0.31
 
 ## Key Concepts
 
-- **test_issue296_cnn_dataset_matching.py** (15 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **_is_canonical_candidate_match()** (8 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **_verified_orchestrator()** (6 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **Path** (4 connections)
-- **_run_builder()** (4 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_dataset_builder_help_works_without_pythonpath()** (3 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_dataset_builder_rejects_obsolete_iou_threshold_option()** (3 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_candidate_outside_center_anchor_xdist_is_negative()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_candidate_requires_half_vertical_overlap()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_candidate_with_no_horizontal_iou_can_still_be_canonical_positive()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_accepts_explicit_d27_scoring_contract_in_dry_run()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_rejects_cnn_nms_enabled()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_requires_explicit_cnn_apply_nms()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_requires_explicit_cnn_threshold()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **Match a generated candidate with the canonical production/evaluation contract.** (1 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **test_issue291_canonical_gt_contract.py** (12 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_load_rows()** (8 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_bbox()** (6 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_issue291_no_plain_same_ink_conflicts_and_p3_is_preserved()** (6 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_pair_metrics()** (5 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_barline_type()** (4 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_canonical_files()** (4 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **Any** (4 connections)
+- **test_issue291_prokofiev_assignment_case_is_not_deleted()** (4 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_issue291_canonical_gt_count()** (3 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_issue291_reviewed_p1_corrections_are_canonical()** (3 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_overlap()** (2 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **Path** (2 connections)
+- **test_issue291_changed_pages_are_sequentially_renumbered()** (2 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_stage_e_profile_keeps_issue291_gt_with_accepted_issue296_cnn_refresh()** (1 connections) — `tests/test_issue291_canonical_gt_contract.py`
 
 ## Relationships
 
-- [Community 101](Community_101.md) (3 shared connections)
-- [Community 67](Community_67.md) (2 shared connections)
-- [Community 1](Community_1.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tests/test_issue296_cnn_dataset_matching.py`
-- `tools/cnn_classifier/build_cnn_dataset.py`
+- `tests/test_issue291_canonical_gt_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
+- EXTRACTED: 33 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

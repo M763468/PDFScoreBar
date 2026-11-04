@@ -1,49 +1,45 @@
 # Community 149
 
-> 17 nodes · cohesion 0.25
+> 17 nodes · cohesion 0.23
 
 ## Key Concepts
 
-- **test_issue264_phase_a_connector_geometry.py** (18 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
-- **resolve_paths_from_detection()** (14 connections) — `src/pipeline/detection/utils.py`
-- **detection/utils.py** (10 connections) — `src/pipeline/detection/utils.py`
-- **test_numbering_resolves_current_homr_semantics_without_replacing_staff_geometry()** (10 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
-- **test_numbering_uses_semantic_staff_geometry_only_for_connector_rois()** (8 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
-- **test_numbering_preserves_page_image_fallback_without_semantic_pair()** (7 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **component_poc.py** (15 connections) — `tools/issue447/component_poc.py`
+- **sr_screen()** (7 connections) — `tools/issue447/component_poc.py`
+- **main()** (6 connections) — `tools/issue447/component_poc.py`
+- **pixel_difference()** (6 connections) — `tools/issue447/component_poc.py`
 - **Path** (6 connections)
-- **_write_mask()** (6 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
-- **_probe_root()** (5 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
-- **_discover_current_homr_staff_mask()** (4 connections) — `src/pipeline/detection/utils.py`
-- **_semantic_dir()** (4 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
-- **Path** (3 connections)
-- **Any** (2 connections)
-- **Utility functions for path resolution and system monitoring in detection.** (1 connections) — `src/pipeline/detection/utils.py`
-- **Find one retained current-HOMR mask beside a replay connector artifact.** (1 connections) — `src/pipeline/detection/utils.py`
-- **Resolves output paths for barlines and staff masks after detection.** (1 connections) — `src/pipeline/detection/utils.py`
-- **ndarray** (1 connections)
+- **write_profile()** (6 connections) — `tools/issue447/component_poc.py`
+- **batched_enhance()** (5 connections) — `tools/issue447/component_poc.py`
+- **homr_profile()** (5 connections) — `tools/issue447/component_poc.py`
+- **model_wall()** (5 connections) — `tools/issue447/component_poc.py`
+- **omr_profile()** (5 connections) — `tools/issue447/component_poc.py`
+- **source_parallel()** (4 connections) — `tools/issue447/component_poc.py`
+- **test_pixel_comparison_reports_channel_differences_and_shape_mismatch()** (2 connections) — `tests/test_issue447_profiling_tools.py`
+- **Profile** (1 connections)
+- **Isolated SR batching screen and retained-input HOMR CPU diagnostics for #447.** (1 connections) — `tools/issue447/component_poc.py`
+- **Monotonic call spans independent of cProfile's call graph accounting.** (1 connections) — `tools/issue447/component_poc.py`
+- **Same padding/FP16/uint8/CPU-stitch contract; batch only equal-shaped tiles.** (1 connections) — `tools/issue447/component_poc.py`
+- **Two disposable source workers only; retained SR, no shared model lifetime.** (1 connections) — `tools/issue447/component_poc.py`
 
 ## Relationships
 
-- [Community 20](Community_20.md) (8 shared connections)
-- [Community 44](Community_44.md) (6 shared connections)
-- [Community 113](Community_113.md) (3 shared connections)
-- [Community 181](Community_181.md) (3 shared connections)
-- [Community 163](Community_163.md) (3 shared connections)
-- [Community 219](Community_219.md) (3 shared connections)
-- [Community 122](Community_122.md) (2 shared connections)
-- [Community 90](Community_90.md) (2 shared connections)
-- [Community 49](Community_49.md) (2 shared connections)
+- [Community 141](Community_141.md) (5 shared connections)
+- [Community 165](Community_165.md) (4 shared connections)
+- [Community 222](Community_222.md) (3 shared connections)
+- [Community 181](Community_181.md) (1 shared connections)
 - [Community 41](Community_41.md) (1 shared connections)
+- [Community 15](Community_15.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/utils.py`
-- `tests/test_issue264_phase_a_connector_geometry.py`
+- `tests/test_issue447_profiling_tools.py`
+- `tools/issue447/component_poc.py`
 
 ## Audit Trail
 
-- EXTRACTED: 67 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 43 (93%)
+- INFERRED: 3 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

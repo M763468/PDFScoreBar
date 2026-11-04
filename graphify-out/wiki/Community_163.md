@@ -1,46 +1,55 @@
 # Community 163
 
-> 15 nodes · cohesion 0.30
+> 22 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **connector_mask_paths_for_numbering()** (19 connections) — `src/common/connector_artifacts.py`
-- **verify_issue218_divisi.py** (8 connections) — `tools/verification/verify_issue218_divisi.py`
-- **verify()** (7 connections) — `tools/verification/verify_issue218_divisi.py`
-- **test_issue274_connector_support_contract.py** (5 connections) — `tests/test_issue274_connector_support_contract.py`
-- **prepare()** (5 connections) — `tools/verification/verify_issue218_divisi.py`
-- **_staff_path()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
-- **test_numbering_fallback_remains_available_without_declared_current_support()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
-- **test_numbering_rejects_missing_pair_inside_declared_current_support()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
-- **main()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
-- **Path** (4 connections)
-- **resolve()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
-- **sha256()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
-- **Path** (3 connections)
-- **inspect_page()** (2 connections) — `tools/verification/verify_issue218_divisi.py`
-- **Resolve connector semantics for a numbering consumer. Numbering may…** (1 connections) — `src/common/connector_artifacts.py`
+- **test_issue115_runtime_boundaries.py** (24 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **count_staff_crossings()** (9 connections) — `src/homr_runtime/filtering.py`
+- **filter_detections_by_notehead_proximity()** (9 connections) — `src/homr_runtime/filtering.py`
+- **TransformInfo** (8 connections) — `src/homr_runtime/types.py`
+- **local_import_targets()** (7 connections) — `tools/check_repository_surface.py`
+- **AST** (4 connections)
+- **test_filtering_preserves_prediction_identity_and_partition()** (3 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **ndarray** (2 connections)
+- **test_dense_dispatch_preserves_explicit_historical_profile()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_maintained_batch_workflow_uses_its_own_worker_and_backend()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_staff_crossings_count_contiguous_lines_and_clamp_to_image()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_surface_check_finds_lazy_runtime_leaks_but_ignores_external_modules()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_surface_check_resolves_relative_imports_and_package_initializers()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_transform_record_preserves_anisotropic_total_scale()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **BarlinePrediction** (1 connections)
+- **Counts the number of staff line crossings for a vertical barline candidate. A…** (1 connections) — `src/homr_runtime/filtering.py`
+- **Filters barline detections that are horizontally close to noteheads, which are…** (1 connections) — `src/homr_runtime/filtering.py`
+- **.total_scale()** (1 connections) — `src/homr_runtime/types.py`
+- **parametrize** (1 connections)
+- **test_batch_workflows_preserve_profile_detector_subclass_contract()** (1 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_legacy_heuristics_adapter_preserves_actual_consumer_patch_points()** (1 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **Resolve source imports without importing modules or loading models.** (1 connections) — `tools/check_repository_surface.py`
 
 ## Relationships
 
-- [Community 44](Community_44.md) (5 shared connections)
-- [Community 149](Community_149.md) (3 shared connections)
-- [Community 3](Community_3.md) (2 shared connections)
-- [Community 121](Community_121.md) (2 shared connections)
-- [Community 181](Community_181.md) (1 shared connections)
-- [Community 219](Community_219.md) (1 shared connections)
+- [Community 15](Community_15.md) (11 shared connections)
+- [Community 3](Community_3.md) (5 shared connections)
+- [Community 75](Community_75.md) (3 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
+- [Community 67](Community_67.md) (2 shared connections)
+- [Community 319](Community_319.md) (1 shared connections)
+- [Community 326](Community_326.md) (1 shared connections)
 - [Community 49](Community_49.md) (1 shared connections)
-- [Community 41](Community_41.md) (1 shared connections)
+- [Community 53](Community_53.md) (1 shared connections)
 
 ## Source Files
 
-- `src/common/connector_artifacts.py`
-- `tests/test_issue274_connector_support_contract.py`
-- `tools/verification/verify_issue218_divisi.py`
+- `src/homr_runtime/filtering.py`
+- `src/homr_runtime/types.py`
+- `tests/test_issue115_runtime_boundaries.py`
+- `tools/check_repository_surface.py`
 
 ## Audit Trail
 
-- EXTRACTED: 47 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 56 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,47 +1,44 @@
 # Community 131
 
-> 21 nodes · cohesion 0.19
+> 21 nodes · cohesion 0.23
 
 ## Key Concepts
 
-- **run_stage_e_full_pipeline.py** (24 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **main()** (13 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_suppress_low_value_external_raw_log()** (8 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_filter_default_console_log()** (7 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Path** (7 connections)
-- **_summarize_console_log()** (5 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_is_low_value_external_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_is_progress_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_is_warning_or_error_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_load_optional_json()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_redirect_stdout_stderr_to_file()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_is_real_esrgan_tile_line()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_low_value_marker_keys()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_strip_low_value_suffix_from_progress_line()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_temporary_env()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_env_flag_enabled()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Rewrite raw stdout/stderr with known low-value external chatter removed.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Write a bounded default console log while preserving raw stdout/stderr…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Redirect fd-level stdout/stderr so subprocess-heavy logs are kept in a file.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Temporarily set environment variables and restore their previous values.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Summarize captured stdout/stderr without loading the whole file into memory.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **run_stage_d_upstream_regen.py** (18 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **run_hybrid_for_score()** (9 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **compose_bands_for_score()** (8 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **Path** (8 connections)
+- **run()** (7 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **build_det_cfg()** (5 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **Any** (5 connections)
+- **write_json()** (5 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **boxes_from_payload()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **build_parser()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **load_json_boxes()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **main()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **normalize_box()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **PageComposition** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **Namespace** (3 connections)
+- **score_images()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **ScoreRun** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **source_path_for()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **ordered_sources()** (2 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **slugify()** (2 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 151](Community_151.md) (10 shared connections)
-- [Community 240](Community_240.md) (5 shared connections)
-- [Community 115](Community_115.md) (3 shared connections)
-- [Community 110](Community_110.md) (3 shared connections)
-- [Community 97](Community_97.md) (2 shared connections)
+- [Community 91](Community_91.md) (4 shared connections)
+- [Community 127](Community_127.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_stage_e_full_pipeline.py`
+- `tools/issue120/run_stage_d_upstream_regen.py`
 
 ## Audit Trail
 
-- EXTRACTED: 63 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 52 (96%)
+- INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

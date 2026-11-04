@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **validate_issue264_phase_b.sh** (1 connections) — `scripts/validate_issue264_phase_b.sh`
-- **validate_issue264_phase_b.sh script** (1 connections) — `scripts/validate_issue264_phase_b.sh`
+- **validate_issue264_phase_c_mmr.sh** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
+- **validate_issue264_phase_c_mmr.sh script** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `scripts/validate_issue264_phase_b.sh`
+- `scripts/validate_issue264_phase_c_mmr.sh`
 
 ## Audit Trail
 

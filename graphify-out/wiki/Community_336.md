@@ -1,27 +1,26 @@
 # Community 336
 
-> 4 nodes · cohesion 0.83
+> 4 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **diagnose_false_negatives.py** (4 connections) — `tools/diagnose_false_negatives.py`
-- **find_matches_for_gt()** (3 connections) — `tools/diagnose_false_negatives.py`
-- **main()** (3 connections) — `tools/diagnose_false_negatives.py`
-- **load_json_boxes()** (2 connections) — `tools/diagnose_false_negatives.py`
+- **global_batch_mmr_eval.py** (3 connections) — `tools/global_batch_mmr_eval.py`
+- **main()** (3 connections) — `tools/global_batch_mmr_eval.py`
+- **process_page()** (3 connections) — `tools/global_batch_mmr_eval.py`
+- **run_command()** (3 connections) — `tools/global_batch_mmr_eval.py`
 
 ## Relationships
 
-- [Community 1](Community_1.md) (1 shared connections)
-- [Community 72](Community_72.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/diagnose_false_negatives.py`
+- `tools/global_batch_mmr_eval.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (86%)
-- INFERRED: 1 (14%)
+- EXTRACTED: 6 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

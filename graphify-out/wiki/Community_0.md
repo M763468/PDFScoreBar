@@ -1,64 +1,78 @@
 # Community 0
 
-> 65 nodes · cohesion 0.06
+> 113 nodes · cohesion 0.04
 
 ## Key Concepts
 
-- **MMRProcessor** (68 connections) — `src/measure_numbering/mmr.py`
-- **object** (33 connections)
-- **mmr.py** (14 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence()** (14 connections) — `src/measure_numbering/mmr.py`
-- **test_issue213_mmr_one_bar_veto.py** (11 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **OneEvidencePerVariantOCR** (11 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **._process_page_with_support()** (9 connections) — `src/measure_numbering/mmr.py`
-- **VariantOCR** (8 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **.process_pages()** (7 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence_once()** (6 connections) — `src/measure_numbering/mmr.py`
-- **._run_calibrated_shifted_staff_values()** (5 connections) — `src/measure_numbering/mmr.py`
-- **generate_numbering_overrides.py** (5 connections) — `tools/generate_numbering_overrides.py`
-- **._aggregate_targeted_staff_results()** (4 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence_j2()** (4 connections) — `src/measure_numbering/mmr.py`
-- **._should_veto_one_bar_rest()** (4 connections) — `src/measure_numbering/mmr.py`
-- **test_issue208_mmr_variant_aggregation.py** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **test_detect_number_uses_best_scored_variant_not_first_valid_variant()** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **_box()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_collect_one_bar_evidence_ignores_one_merged_into_multidigit()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_collect_one_bar_evidence_keeps_single_one_and_ignores_eleven()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_detect_number_preserves_three_value_contract()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_detect_number_uses_max_one_bar_evidence_across_variants_not_sum()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_one_bar_veto_targets_marginal_cnn_negative_ocr_score_only()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **main()** (4 connections) — `tools/generate_numbering_overrides.py`
-- **._count_high_confidence_one_bar_evidence()** (3 connections) — `src/measure_numbering/mmr.py`
-- *... and 40 more nodes in this community*
+- **greedy_barline_match()** (118 connections) — `src/common/barline_evaluation.py`
+- **barline_evaluation.py** (82 connections) — `src/common/barline_evaluation.py`
+- **is_barline_match()** (27 connections) — `src/common/barline_evaluation.py`
+- **metrics.py** (24 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **barline_iou()** (19 connections) — `src/common/barline_geometry.py`
+- **barline_vertical_overlap()** (16 connections) — `src/common/barline_geometry.py`
+- **center_distance_x()** (13 connections) — `src/common/barline_evaluation.py`
+- **barline_geometry.py** (12 connections) — `src/common/barline_geometry.py`
+- **load_ground_truth_boxes()** (11 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **apply_left_margin_exclusion()** (9 connections) — `src/common/barline_evaluation.py`
+- **expand_barline_box()** (9 connections) — `src/common/barline_geometry.py`
+- **visualize_remaining_fn_v2.py** (9 connections) — `tools/visualize_remaining_fn_v2.py`
+- **get_barline_match_rank()** (8 connections) — `src/common/barline_evaluation.py`
+- **ImageMetrics** (8 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **common/__init__.py** (6 connections) — `src/common/__init__.py`
+- **compute_metrics()** (6 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **verify_pipeline_accuracy.py** (6 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
+- **tune_hybrid_detector.py** (5 connections) — `experiments/fp_reduction/tune_hybrid_detector.py`
+- **main()** (5 connections) — `experiments/models/eval_grounding_dino.py`
+- **compare_sr_all.py** (5 connections) — `tools/compare_sr_all.py`
+- **debug_greedy_match.py** (5 connections) — `tools/debug_greedy_match.py`
+- **main()** (5 connections) — `tools/debug_greedy_match.py`
+- **evaluate_and_visualize.py** (5 connections) — `tools/evaluate_and_visualize.py`
+- **debug_matches.py** (5 connections) — `tools/repro_accuracy/debug_matches.py`
+- **verify_cnn_scored.py** (5 connections) — `tools/repro_accuracy/verify_cnn_scored.py`
+- *... and 88 more nodes in this community*
 
 ## Relationships
 
-- [Community 172](Community_172.md) (28 shared connections)
-- [Community 23](Community_23.md) (17 shared connections)
-- [Community 113](Community_113.md) (8 shared connections)
-- [Community 69](Community_69.md) (8 shared connections)
-- [Community 12](Community_12.md) (4 shared connections)
-- [Community 50](Community_50.md) (4 shared connections)
-- [Community 81](Community_81.md) (3 shared connections)
-- [Community 44](Community_44.md) (2 shared connections)
-- [Community 24](Community_24.md) (2 shared connections)
-- [Community 87](Community_87.md) (1 shared connections)
-- [Community 2](Community_2.md) (1 shared connections)
-- [Community 13](Community_13.md) (1 shared connections)
+- [Community 31](Community_31.md) (23 shared connections)
+- [Community 154](Community_154.md) (21 shared connections)
+- [Community 108](Community_108.md) (18 shared connections)
+- [Community 137](Community_137.md) (13 shared connections)
+- [Community 73](Community_73.md) (12 shared connections)
+- [Community 106](Community_106.md) (11 shared connections)
+- [Community 11](Community_11.md) (10 shared connections)
+- [Community 78](Community_78.md) (6 shared connections)
+- [Community 39](Community_39.md) (5 shared connections)
+- [Community 107](Community_107.md) (5 shared connections)
+- [Community 127](Community_127.md) (5 shared connections)
+- [Community 49](Community_49.md) (4 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/mmr.py`
-- `tests/test_issue197_system_grouping_connector_evidence.py`
-- `tests/test_issue208_mmr_variant_aggregation.py`
-- `tests/test_issue213_mmr_one_bar_veto.py`
-- `tests/test_mmr_ocr_heuristics.py`
-- `tools/generate_numbering_overrides.py`
+- `experiments/fp_reduction/tune_hybrid_detector.py`
+- `experiments/models/eval_grounding_dino.py`
+- `experiments/models/eval_yolo_world.py`
+- `src/common/__init__.py`
+- `src/common/barline_evaluation.py`
+- `src/common/barline_geometry.py`
+- `src/homr_eval_scripts/core/metrics.py`
+- `tests/test_distribution_surface.py`
+- `tools/analyze_fp_heights.py`
+- `tools/cnn_classifier/create_fp_dataset.py`
+- `tools/cnn_classifier/identify_iter6_hard_samples.py`
+- `tools/compare_sr_all.py`
+- `tools/debug_greedy_match.py`
+- `tools/diagnostics/visualize_error_crops.py`
+- `tools/eval_existing_json.py`
+- `tools/evaluate_and_visualize.py`
+- `tools/inspect_gt_dupes.py`
+- `tools/inspect_gt_image.py`
+- `tools/repro_accuracy/debug_matches.py`
+- `tools/repro_accuracy/verify_cnn_scored.py`
 
 ## Audit Trail
 
-- EXTRACTED: 152 (75%)
-- INFERRED: 50 (25%)
+- EXTRACTED: 417 (98%)
+- INFERRED: 10 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

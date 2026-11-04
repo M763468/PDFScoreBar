@@ -1,53 +1,57 @@
 # Community 26
 
-> 49 nodes · cohesion 0.10
+> 49 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **test_engine_input_safety.py** (24 connections) — `tests/test_engine_input_safety.py`
-- **engine_input_safety.py** (22 connections) — `src/pipeline/engine_input_safety.py`
-- **validate_local_pdf()** (22 connections) — `src/pipeline/engine_input_safety.py`
-- **JobSafetyPolicy** (16 connections) — `src/pipeline/engine_input_safety.py`
-- **_error()** (13 connections) — `src/pipeline/engine_input_safety.py`
-- **InputSafetyError** (13 connections) — `src/pipeline/engine_input_safety.py`
-- **resolve_local_input_path()** (13 connections) — `src/pipeline/engine_input_safety.py`
-- **Path** (11 connections)
-- **_write_pdf()** (10 connections) — `tests/test_engine_input_safety.py`
-- **validate_local_input_reference()** (8 connections) — `src/pipeline/engine_input_safety.py`
-- **validate_output_name()** (8 connections) — `src/pipeline/engine_input_safety.py`
-- **Path** (6 connections)
-- **_filesystem_unavailable()** (5 connections) — `src/pipeline/engine_input_safety.py`
-- **_read_bounded_file()** (5 connections) — `src/pipeline/engine_input_safety.py`
-- **ValidatedPdfMetadata** (5 connections) — `src/pipeline/engine_input_safety.py`
-- **test_page_and_render_amplification_are_rejected_before_rendering()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_path_resolution_oserror_is_normalized()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_pdf_byte_limit_is_enforced_before_parser_work()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_raw_page_selection_is_bounded_before_deduplication()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_read_oserror_is_normalized()** (5 connections) — `tests/test_engine_input_safety.py`
-- **_reject_symlink_components()** (4 connections) — `src/pipeline/engine_input_safety.py`
-- **_resolve_existing_input_path()** (4 connections) — `src/pipeline/engine_input_safety.py`
-- **_selected_pages()** (4 connections) — `src/pipeline/engine_input_safety.py`
-- **test_out_of_range_page_has_stable_code()** (4 connections) — `tests/test_engine_input_safety.py`
-- **test_output_name_is_a_stem_not_a_path()** (4 connections) — `tests/test_engine_input_safety.py`
+- **validate_manual_correction_handoff()** (31 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **manual_correction_handoff.py** (27 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **test_manual_correction_handoff.py** (23 connections) — `tests/test_manual_correction_handoff.py`
+- **build_manual_gui_config()** (22 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **canonicalize_manual_correction_outputs()** (17 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_review_package()** (15 connections) — `tests/test_manual_correction_handoff.py`
+- **load_manual_correction_handoff()** (14 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **Path** (13 connections)
+- **ManualCorrectionHandoffError** (11 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **Any** (11 connections)
+- **_manual_output_paths()** (8 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_resolve_package_path()** (8 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_write_json()** (8 connections) — `tests/test_manual_correction_handoff.py`
+- **write_manual_gui_config()** (7 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_is_missing()** (6 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_validate_existing_path()** (6 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_read_json_object_if_exists()** (5 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **test_handoff_rejects_distinct_movement_review_outputs()** (5 connections) — `tests/test_manual_correction_handoff.py`
+- **_as_page_number()** (4 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_relative_for_gui()** (4 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_write_json_object()** (4 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **test_handoff_exposes_attached_movement_evidence_to_existing_gui()** (4 connections) — `tests/test_manual_correction_handoff.py`
+- **HandoffMode** (3 connections)
+- **_package_root()** (3 connections) — `src/pipeline/review/manual_correction_handoff.py`
+- **_unique_existing_paths()** (3 connections) — `src/pipeline/review/manual_correction_handoff.py`
 - *... and 24 more nodes in this community*
 
 ## Relationships
 
-- [Community 33](Community_33.md) (13 shared connections)
-- [Community 62](Community_62.md) (13 shared connections)
-- [Community 71](Community_71.md) (3 shared connections)
-- [Community 79](Community_79.md) (3 shared connections)
-- [Community 103](Community_103.md) (1 shared connections)
+- [Community 32](Community_32.md) (11 shared connections)
+- [Community 35](Community_35.md) (7 shared connections)
+- [Community 44](Community_44.md) (5 shared connections)
+- [Community 17](Community_17.md) (4 shared connections)
+- [Community 112](Community_112.md) (3 shared connections)
+- [Community 4](Community_4.md) (3 shared connections)
+- [Community 23](Community_23.md) (3 shared connections)
+- [Community 59](Community_59.md) (3 shared connections)
+- [Community 103](Community_103.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_input_safety.py`
-- `tests/test_engine_input_safety.py`
+- `src/pipeline/review/manual_correction_handoff.py`
+- `tests/test_manual_correction_handoff.py`
 
 ## Audit Trail
 
-- EXTRACTED: 145 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 178 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

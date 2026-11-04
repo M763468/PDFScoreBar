@@ -1,64 +1,64 @@
 # Community 14
 
-> 29 nodes · cohesion 0.12
+> 65 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **BarlinePrediction** (21 connections) — `src/homr_runtime/types.py`
-- **homr_runtime/types.py** (14 connections) — `src/homr_runtime/types.py`
-- **homr_runtime/predictor.py** (13 connections) — `src/homr_runtime/predictor.py`
-- **.predict()** (13 connections) — `src/homr_runtime/predictor.py`
-- **diagnostics.py** (11 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **homr_runtime/reporting.py** (10 connections) — `src/homr_runtime/reporting.py`
-- **HomrPredictor** (9 connections) — `src/homr_runtime/predictor.py`
-- **run_homr_on_image()** (9 connections) — `src/homr_runtime/predictor.py`
-- **transforms.py** (9 connections) — `src/homr_runtime/transforms.py`
-- **filtering.py** (8 connections) — `src/homr_runtime/filtering.py`
-- **compute_transform_info()** (7 connections) — `src/homr_runtime/transforms.py`
-- **map_pred_to_orig()** (5 connections) — `src/homr_runtime/transforms.py`
-- **autocrop_bounds()** (4 connections) — `src/homr_runtime/transforms.py`
-- **.__init__()** (3 connections) — `src/homr_runtime/predictor.py`
-- **BarlinePrediction** (2 connections)
-- **ndarray** (2 connections)
-- **Path** (2 connections)
-- **ProcessingConfig** (2 connections)
-- **XmlGeneratorArguments** (2 connections)
-- **TransformInfo** (2 connections)
-- **Evaluation-only cluster decisions, candidate statistics and diagnostic CSVs.** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
-- **Filter predicted barlines using notehead proximity and staff crossings.** (1 connections) — `src/homr_runtime/filtering.py`
-- **Runs the core homr staff and symbol detection pipeline for a single image with…** (1 connections) — `src/homr_runtime/predictor.py`
-- **Persistent Homr Predictor for batch processing.** (1 connections) — `src/homr_runtime/predictor.py`
-- **Persist HOMR predictions and optional debug masks.** (1 connections) — `src/homr_runtime/reporting.py`
-- *... and 4 more nodes in this community*
+- **MMRProcessor** (68 connections) — `src/measure_numbering/mmr.py`
+- **object** (33 connections)
+- **mmr.py** (14 connections) — `src/measure_numbering/mmr.py`
+- **._detect_number_with_evidence()** (14 connections) — `src/measure_numbering/mmr.py`
+- **test_issue213_mmr_one_bar_veto.py** (11 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **OneEvidencePerVariantOCR** (11 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **._process_page_with_support()** (9 connections) — `src/measure_numbering/mmr.py`
+- **VariantOCR** (8 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
+- **.process_pages()** (7 connections) — `src/measure_numbering/mmr.py`
+- **._detect_number_with_evidence_once()** (6 connections) — `src/measure_numbering/mmr.py`
+- **._run_calibrated_shifted_staff_values()** (5 connections) — `src/measure_numbering/mmr.py`
+- **generate_numbering_overrides.py** (5 connections) — `tools/generate_numbering_overrides.py`
+- **._aggregate_targeted_staff_results()** (4 connections) — `src/measure_numbering/mmr.py`
+- **._detect_number_with_evidence_j2()** (4 connections) — `src/measure_numbering/mmr.py`
+- **._should_veto_one_bar_rest()** (4 connections) — `src/measure_numbering/mmr.py`
+- **test_issue208_mmr_variant_aggregation.py** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
+- **test_detect_number_uses_best_scored_variant_not_first_valid_variant()** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
+- **_box()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **test_collect_one_bar_evidence_ignores_one_merged_into_multidigit()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **test_collect_one_bar_evidence_keeps_single_one_and_ignores_eleven()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **test_detect_number_preserves_three_value_contract()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **test_detect_number_uses_max_one_bar_evidence_across_variants_not_sum()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **test_one_bar_veto_targets_marginal_cnn_negative_ocr_score_only()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **main()** (4 connections) — `tools/generate_numbering_overrides.py`
+- **._count_high_confidence_one_bar_evidence()** (3 connections) — `src/measure_numbering/mmr.py`
+- *... and 40 more nodes in this community*
 
 ## Relationships
 
-- [Community 153](Community_153.md) (11 shared connections)
-- [Community 320](Community_320.md) (7 shared connections)
-- [Community 66](Community_66.md) (7 shared connections)
-- [Community 96](Community_96.md) (6 shared connections)
-- [Community 48](Community_48.md) (6 shared connections)
-- [Community 90](Community_90.md) (6 shared connections)
-- [Community 294](Community_294.md) (5 shared connections)
-- [Community 107](Community_107.md) (3 shared connections)
-- [Community 454](Community_454.md) (3 shared connections)
-- [Community 1](Community_1.md) (3 shared connections)
-- [Community 273](Community_273.md) (2 shared connections)
-- [Community 181](Community_181.md) (2 shared connections)
+- [Community 6](Community_6.md) (28 shared connections)
+- [Community 24](Community_24.md) (17 shared connections)
+- [Community 114](Community_114.md) (8 shared connections)
+- [Community 70](Community_70.md) (8 shared connections)
+- [Community 12](Community_12.md) (4 shared connections)
+- [Community 51](Community_51.md) (4 shared connections)
+- [Community 220](Community_220.md) (3 shared connections)
+- [Community 45](Community_45.md) (2 shared connections)
+- [Community 25](Community_25.md) (2 shared connections)
+- [Community 88](Community_88.md) (1 shared connections)
+- [Community 1](Community_1.md) (1 shared connections)
+- [Community 13](Community_13.md) (1 shared connections)
 
 ## Source Files
 
-- `src/homr_eval_scripts/core/diagnostics.py`
-- `src/homr_runtime/filtering.py`
-- `src/homr_runtime/predictor.py`
-- `src/homr_runtime/reporting.py`
-- `src/homr_runtime/transforms.py`
-- `src/homr_runtime/types.py`
+- `src/measure_numbering/mmr.py`
+- `tests/test_issue197_system_grouping_connector_evidence.py`
+- `tests/test_issue208_mmr_variant_aggregation.py`
+- `tests/test_issue213_mmr_one_bar_veto.py`
+- `tests/test_mmr_ocr_heuristics.py`
+- `tools/generate_numbering_overrides.py`
 
 ## Audit Trail
 
-- EXTRACTED: 102 (93%)
-- INFERRED: 8 (7%)
+- EXTRACTED: 152 (75%)
+- INFERRED: 50 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

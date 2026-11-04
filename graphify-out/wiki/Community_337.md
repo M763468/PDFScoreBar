@@ -1,13 +1,13 @@
 # Community 337
 
-> 4 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **global_batch_mmr_eval.py** (3 connections) — `tools/global_batch_mmr_eval.py`
-- **main()** (3 connections) — `tools/global_batch_mmr_eval.py`
-- **process_page()** (3 connections) — `tools/global_batch_mmr_eval.py`
-- **run_command()** (3 connections) — `tools/global_batch_mmr_eval.py`
+- **find_numbering_file()** (3 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
+- **main()** (3 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
+- **build_rest_gt_config.py** (2 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
+- **Path** (2 connections)
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/global_batch_mmr_eval.py`
+- `tools/gt_relabel_gui/build_rest_gt_config.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

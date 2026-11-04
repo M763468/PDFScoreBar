@@ -1,26 +1,35 @@
 # Community 319
 
-> 5 nodes · cohesion 0.70
+> 13 nodes · cohesion 0.24
 
 ## Key Concepts
 
-- **main()** (4 connections) — `tools/render_pred_scatter_with_legend.py`
-- **render_pred_scatter_with_legend.py** (3 connections) — `tools/render_pred_scatter_with_legend.py`
-- **load_boxes()** (3 connections) — `tools/render_pred_scatter_with_legend.py`
-- **put_text_block()** (2 connections) — `tools/render_pred_scatter_with_legend.py`
-- **Path** (2 connections)
+- **compute_candidate_stats()** (6 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **export_measure_grid_candidates()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **BarlinePrediction** (5 connections)
+- **Path** (5 connections)
+- **resolve_clusters_dry_run()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **resolve_tight_duplicates_dry_run()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **compute_and_save_gap_stats()** (4 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **ndarray** (4 connections)
+- **Phase 12: Tight Duplicate Merging (Dry Run). Groups candidates on same staff…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Dry-run implementation of Cluster Resolution Heuristic. Groups barline…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Phase 13: Export data for Measure Grid Consistency (DP) validation. Saves…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Computes and saves statistics for each candidate barline to a CSV file. Stats…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Computes horizontal gaps between adjacent barlines on the same staff/system and…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 15](Community_15.md) (5 shared connections)
+- [Community 163](Community_163.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/render_pred_scatter_with_legend.py`
+- `src/homr_eval_scripts/core/diagnostics.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 25 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

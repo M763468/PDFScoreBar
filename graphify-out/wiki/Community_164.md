@@ -1,39 +1,45 @@
 # Community 164
 
-> 15 nodes · cohesion 0.21
+> 15 nodes · cohesion 0.30
 
 ## Key Concepts
 
-- **CurrentX4SRRuntime** (12 connections) — `src/pipeline/detection/current_sr_runtime.py`
-- **deepening_components.py** (7 connections) — `tools/issue447/deepening_components.py`
-- **compiled_tiles()** (5 connections) — `tools/issue447/deepening_components.py`
-- **.enhance()** (4 connections) — `src/pipeline/detection/current_sr_runtime.py`
-- **main()** (4 connections) — `tools/issue447/deepening_components.py`
-- **._effective_tile()** (3 connections) — `src/pipeline/detection/current_sr_runtime.py`
-- **imports()** (3 connections) — `tools/issue447/deepening_components.py`
-- **omr()** (3 connections) — `tools/issue447/deepening_components.py`
+- **connector_mask_paths_for_numbering()** (19 connections) — `src/common/connector_artifacts.py`
+- **verify_issue218_divisi.py** (8 connections) — `tools/verification/verify_issue218_divisi.py`
+- **verify()** (7 connections) — `tools/verification/verify_issue218_divisi.py`
+- **test_issue274_connector_support_contract.py** (5 connections) — `tests/test_issue274_connector_support_contract.py`
+- **prepare()** (5 connections) — `tools/verification/verify_issue218_divisi.py`
+- **_staff_path()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
+- **test_numbering_fallback_remains_available_without_declared_current_support()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
+- **test_numbering_rejects_missing_pair_inside_declared_current_support()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
+- **main()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
+- **Path** (4 connections)
+- **resolve()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
+- **sha256()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
 - **Path** (3 connections)
-- **.metadata()** (2 connections) — `src/pipeline/detection/current_sr_runtime.py`
-- **ndarray** (2 connections)
-- **Any** (1 connections)
-- **Return the x4 BGR uint8 image using tile-local CUDA output staging.** (1 connections) — `src/pipeline/detection/current_sr_runtime.py`
-- **Reusable RealESRGAN_x4plus CUDA runtime for the verified dense route.** (1 connections) — `src/pipeline/detection/current_sr_runtime.py`
-- **Bounded remaining hypotheses for #447; no production changes or full evaluation.** (1 connections) — `tools/issue447/deepening_components.py`
+- **inspect_page()** (2 connections) — `tools/verification/verify_issue218_divisi.py`
+- **Resolve connector semantics for a numbering consumer. Numbering may…** (1 connections) — `src/common/connector_artifacts.py`
 
 ## Relationships
 
-- [Community 148](Community_148.md) (4 shared connections)
-- [Community 220](Community_220.md) (2 shared connections)
-- [Community 162](Community_162.md) (2 shared connections)
+- [Community 45](Community_45.md) (5 shared connections)
+- [Community 150](Community_150.md) (3 shared connections)
+- [Community 2](Community_2.md) (2 shared connections)
+- [Community 122](Community_122.md) (2 shared connections)
+- [Community 181](Community_181.md) (1 shared connections)
+- [Community 219](Community_219.md) (1 shared connections)
+- [Community 50](Community_50.md) (1 shared connections)
+- [Community 42](Community_42.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/current_sr_runtime.py`
-- `tools/issue447/deepening_components.py`
+- `src/common/connector_artifacts.py`
+- `tests/test_issue274_connector_support_contract.py`
+- `tools/verification/verify_issue218_divisi.py`
 
 ## Audit Trail
 
-- EXTRACTED: 30 (100%)
+- EXTRACTED: 47 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,44 +1,46 @@
 # Community 129
 
-> 21 nodes · cohesion 0.28
+> 21 nodes · cohesion 0.22
 
 ## Key Concepts
 
-- **run_issue36_dense_candidates_then_eval.py** (19 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **main()** (16 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **Path** (11 connections)
-- **load_json()** (8 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **detector_summary()** (6 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **Any** (6 connections)
-- **comparison_summary()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **load_optional_json()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **validate_complete_contract()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_filter_command()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_generation_command()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **candidate_root_summary()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **validate_detector_target()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **write_json()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **add_param_args()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **assert_candidate_match()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_compare_command()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_score_command()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **inspect_stage_d_artifact_layout.py** (20 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **inspect_layout()** (8 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **shape()** (8 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **PageLayoutRow** (6 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **resolve_pair()** (6 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **write_reports()** (6 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **Path** (5 connections)
+- **resolve_filename()** (5 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **load_json()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **main()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **render_markdown()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **write_csv()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **build_parser()** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **FileShape** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **normalize_box()** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **payload_items()** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **Any** (3 connections)
 - **Namespace** (3 connections)
-- **require_under_logs()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **run()** (2 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **ResolvedPair** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **safe_delta()** (2 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 145](Community_145.md) (2 shared connections)
-- [Community 126](Community_126.md) (1 shared connections)
+- [Community 128](Community_128.md) (6 shared connections)
+- [Community 146](Community_146.md) (4 shared connections)
+- [Community 127](Community_127.md) (1 shared connections)
+- [Community 109](Community_109.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- `tools/issue120/inspect_stage_d_artifact_layout.py`
 
 ## Audit Trail
 
-- EXTRACTED: 62 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 54 (93%)
+- INFERRED: 4 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

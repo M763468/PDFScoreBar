@@ -1,48 +1,57 @@
 # Community 66
 
-> 22 nodes · cohesion 0.27
+> 30 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **homr_runtime/heuristics.py** (23 connections) — `src/homr_runtime/heuristics.py`
-- **detect_staffs_with_barlines()** (17 connections) — `src/homr_runtime/heuristics.py`
-- **barline_candidates.py** (13 connections) — `src/homr_runtime/barline_candidates.py`
-- **ndarray** (10 connections)
-- **_ensure_mask_shape()** (9 connections) — `src/homr_runtime/barline_candidates.py`
-- **Any** (9 connections)
-- **generate_sobel_vertical_candidates()** (7 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_vertical_run_candidates()** (7 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_column_sum_candidates()** (6 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_hough_vertical_candidates()** (6 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_sobel_vertical_candidates_weak()** (6 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_vertical_run_candidates_weak()** (6 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_barline_cc_dilated()** (5 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_barline_cc_relaxed()** (5 connections) — `src/homr_runtime/barline_candidates.py`
-- **generate_barline_cc_tiny()** (5 connections) — `src/homr_runtime/barline_candidates.py`
-- **Generate barline candidates from segmentation masks and image features.…** (1 connections) — `src/homr_runtime/barline_candidates.py`
-- **Any** (1 connections)
-- **Future** (1 connections)
-- **ndarray** (1 connections)
-- **ProcessingConfig** (1 connections)
-- **Assemble HOMR staffs and symbols; callable bindings remain compatibility patch…** (1 connections) — `src/homr_runtime/heuristics.py`
-- **Runs the core homr staff and symbol detection pipeline. Returns: A tuple…** (1 connections) — `src/homr_runtime/heuristics.py`
+- **deepening_analyze.py** (20 connections) — `tools/issue447/deepening_analyze.py`
+- **proc_summary()** (19 connections) — `tools/issue447/analyze.py`
+- **issue447/analyze.py** (18 connections) — `tools/issue447/analyze.py`
+- **gpu_summary()** (17 connections) — `tools/issue447/analyze.py`
+- **load()** (14 connections) — `tools/issue447/analyze.py`
+- **issue454/analyze.py** (11 connections) — `tools/issue454/analyze.py`
+- **main()** (9 connections) — `tools/issue447/analyze.py`
+- **Path** (9 connections)
+- **compare_bundle()** (8 connections) — `tools/issue447/analyze.py`
+- **numbering_payload()** (8 connections) — `tools/issue447/deepening_analyze.py`
+- **e2e_candidate_matrix.py** (8 connections) — `tools/issue447/e2e_candidate_matrix.py`
+- **main()** (7 connections) — `tools/issue447/e2e_candidate_matrix.py`
+- **main()** (7 connections) — `tools/issue454/analyze.py`
+- **source_semantics()** (6 connections) — `tools/issue447/analyze.py`
+- **main()** (6 connections) — `tools/issue447/deepening_analyze.py`
+- **parallel_semantics()** (5 connections) — `tools/issue447/analyze.py`
+- **Path** (5 connections)
+- **source_checks()** (5 connections) — `tools/issue447/deepening_analyze.py`
+- **test_issue454_analysis.py** (4 connections) — `tests/test_issue454_analysis.py`
+- **compare_sr()** (4 connections) — `tools/issue454/analyze.py`
+- **sr_result()** (4 connections) — `tools/issue454/analyze.py`
+- **test_missing_multi_page_combined_or_single_page_payload_is_error()** (2 connections) — `tests/test_issue454_analysis.py`
+- **test_single_page_uses_complete_per_page_payload()** (2 connections) — `tests/test_issue454_analysis.py`
+- **inventory()** (2 connections) — `tools/issue447/e2e_candidate_matrix.py`
+- **Re-score retained Issue #447 logs; this script never launches inference.** (1 connections) — `tools/issue447/analyze.py`
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [Community 14](Community_14.md) (7 shared connections)
-- [Community 320](Community_320.md) (5 shared connections)
-- [Community 153](Community_153.md) (2 shared connections)
-- [Community 48](Community_48.md) (1 shared connections)
+- [Community 222](Community_222.md) (31 shared connections)
+- [Community 141](Community_141.md) (11 shared connections)
+- [Community 86](Community_86.md) (4 shared connections)
+- [Community 184](Community_184.md) (4 shared connections)
+- [Community 454](Community_454.md) (1 shared connections)
+- [Community 109](Community_109.md) (1 shared connections)
 
 ## Source Files
 
-- `src/homr_runtime/barline_candidates.py`
-- `src/homr_runtime/heuristics.py`
+- `tests/test_issue454_analysis.py`
+- `tools/issue447/analyze.py`
+- `tools/issue447/deepening_analyze.py`
+- `tools/issue447/e2e_candidate_matrix.py`
+- `tools/issue454/analyze.py`
 
 ## Audit Trail
 
-- EXTRACTED: 78 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 127 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

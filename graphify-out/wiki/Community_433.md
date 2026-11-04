@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_matrix.sh** (1 connections) — `tools/issue454/run_matrix.sh`
-- **run_matrix.sh script** (1 connections) — `tools/issue454/run_matrix.sh`
+- **visualize_rest_rois.py** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
+- **main()** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/issue454/run_matrix.sh`
+- `tools/mmr_training/visualize_rest_rois.py`
 
 ## Audit Trail
 

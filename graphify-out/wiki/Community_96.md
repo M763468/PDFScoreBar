@@ -1,55 +1,48 @@
 # Community 96
 
-> 26 nodes · cohesion 0.18
+> 26 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **ThinBarlineConfig** (23 connections) — `src/common/thin_barline_finder.py`
-- **detect_thin_vertical_runs()** (22 connections) — `src/common/thin_barline_finder.py`
-- **thin_barline_finder.py** (15 connections) — `src/common/thin_barline_finder.py`
-- **_filter_candidates()** (11 connections) — `src/common/thin_barline_finder.py`
-- **test_issue283_thin_barline_stage2.py** (11 connections) — `tests/test_issue283_thin_barline_stage2.py`
-- **_centroid()** (7 connections) — `src/common/thin_barline_finder.py`
-- **_find_double_pairs()** (7 connections) — `src/common/thin_barline_finder.py`
-- **_is_close()** (7 connections) — `src/common/thin_barline_finder.py`
-- **_legacy_filter_candidates()** (7 connections) — `tests/test_issue283_thin_barline_stage2.py`
-- **test_issue283_thin_barline_preloaded_image.py** (5 connections) — `tests/test_issue283_thin_barline_preloaded_image.py`
-- **_legacy_find_double_pairs()** (5 connections) — `tests/test_issue283_thin_barline_stage2.py`
-- **test_batched_candidate_filter_matches_legacy()** (5 connections) — `tests/test_issue283_thin_barline_stage2.py`
-- **test_double_pair_sweep_matches_legacy()** (5 connections) — `tests/test_issue283_thin_barline_stage2.py`
-- **ndarray** (4 connections)
-- **test_preloaded_grayscale_bypasses_image_decode()** (4 connections) — `tests/test_issue283_thin_barline_preloaded_image.py`
-- **_rectangle_sums()** (3 connections) — `src/common/thin_barline_finder.py`
-- **_legacy_vertical_overlap_ratio()** (3 connections) — `tests/test_issue283_thin_barline_stage2.py`
-- **test_preloaded_grayscale_requires_two_dimensions()** (2 connections) — `tests/test_issue283_thin_barline_preloaded_image.py`
-- **parametrize** (2 connections)
-- **Path** (1 connections)
-- **Heuristics for recovering thin vertical barlines missed by primary detectors.** (1 connections) — `src/common/thin_barline_finder.py`
-- **Return exact double-barline membership with bounded vectorized chunks.** (1 connections) — `src/common/thin_barline_finder.py`
-- **Apply the legacy candidate filters using batched rectangle statistics.…** (1 connections) — `src/common/thin_barline_finder.py`
-- **Detect slender vertical runs likely corresponding to missed barlines. Callers…** (1 connections) — `src/common/thin_barline_finder.py`
-- **MonkeyPatch** (1 connections)
+- **barline_cnn/manifest.json** (10 connections) — `models/barline_cnn/manifest.json`
+- **provenance** (7 connections) — `models/barline_cnn/manifest.json`
+- **production_contract** (4 connections) — `models/barline_cnn/manifest.json`
+- **training_evaluation_matcher** (4 connections) — `models/barline_cnn/manifest.json`
+- **release** (4 connections) — `models/barline_cnn/manifest.json`
+- **architecture** (1 connections) — `models/barline_cnn/manifest.json`
+- **cache_path** (1 connections) — `models/barline_cnn/manifest.json`
+- **model_id** (1 connections) — `models/barline_cnn/manifest.json`
+- **cnn_apply_nms** (1 connections) — `models/barline_cnn/manifest.json`
+- **cnn_threshold** (1 connections) — `models/barline_cnn/manifest.json`
+- **accepted_experiment** (1 connections) — `models/barline_cnn/manifest.json`
+- **accepted_issue** (1 connections) — `models/barline_cnn/manifest.json`
+- **accepted_merge_commit** (1 connections) — `models/barline_cnn/manifest.json`
+- **accepted_pr** (1 connections) — `models/barline_cnn/manifest.json`
+- **publication_issue** (1 connections) — `models/barline_cnn/manifest.json`
+- **source_checkpoint** (1 connections) — `models/barline_cnn/manifest.json`
+- **asset** (1 connections) — `models/barline_cnn/manifest.json`
+- **repository** (1 connections) — `models/barline_cnn/manifest.json`
+- **tag** (1 connections) — `models/barline_cnn/manifest.json`
+- **schema_version** (1 connections) — `models/barline_cnn/manifest.json`
+- **sha256** (1 connections) — `models/barline_cnn/manifest.json`
+- **size_bytes** (1 connections) — `models/barline_cnn/manifest.json`
+- **name** (1 connections) — `models/barline_cnn/manifest.json`
+- **vov_threshold** (1 connections) — `models/barline_cnn/manifest.json`
+- **xdist_threshold** (1 connections) — `models/barline_cnn/manifest.json`
 - *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 30](Community_30.md) (8 shared connections)
-- [Community 39](Community_39.md) (7 shared connections)
-- [Community 14](Community_14.md) (6 shared connections)
-- [Community 251](Community_251.md) (5 shared connections)
-- [Community 107](Community_107.md) (5 shared connections)
-- [Community 234](Community_234.md) (4 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/common/thin_barline_finder.py`
-- `tests/test_issue283_thin_barline_preloaded_image.py`
-- `tests/test_issue283_thin_barline_stage2.py`
+- `models/barline_cnn/manifest.json`
 
 ## Audit Trail
 
-- EXTRACTED: 89 (94%)
-- INFERRED: 6 (6%)
+- EXTRACTED: 25 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

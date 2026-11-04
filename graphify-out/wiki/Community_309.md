@@ -1,14 +1,14 @@
 # Community 309
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **experiment_c.py** (3 connections) — `tools/issue194/experiment_c.py`
-- **analyze_page()** (3 connections) — `tools/issue194/experiment_c.py`
-- **check_aligned_connection_sim()** (3 connections) — `tools/issue194/experiment_c.py`
-- **main()** (2 connections) — `tools/issue194/experiment_c.py`
-- **Simulate the vertical connectivity check at aligned positions.** (1 connections) — `tools/issue194/experiment_c.py`
+- **benchmark_ccl_algorithms.py** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **boxes_for()** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **main()** (2 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **ndarray** (1 connections)
+- **Compare OpenCV connected-component algorithms on retained staff masks.** (1 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue194/experiment_c.py`
+- `tools/issue363/benchmark_ccl_algorithms.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

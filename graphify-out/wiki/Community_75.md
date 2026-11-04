@@ -1,54 +1,58 @@
 # Community 75
 
-> 30 nodes · cohesion 0.15
+> 23 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **runtime_contract.py** (28 connections) — `docker/runtime_contract.py`
-- **run_preflight()** (18 connections) — `docker/runtime_contract.py`
-- **Path** (11 connections)
-- **source_fingerprint()** (10 connections) — `docker/runtime_contract.py`
-- **distribution.py** (9 connections) — `docker/distribution.py`
-- **runtime_fingerprint()** (9 connections) — `docker/runtime_contract.py`
-- **main()** (6 connections) — `docker/distribution.py`
-- **validate_distribution_provenance()** (6 connections) — `docker/runtime_contract.py`
-- **main()** (5 connections) — `docker/runtime_contract.py`
-- **_validate_production_provenance()** (5 connections) — `docker/runtime_contract.py`
-- **source_identity()** (4 connections) — `docker/distribution.py`
-- **_build_parser()** (4 connections) — `docker/runtime_contract.py`
-- **_dockerfile_runtime_contract()** (4 connections) — `docker/runtime_contract.py`
-- **_require_file()** (4 connections) — `docker/runtime_contract.py`
-- **_runtime_contract_bytes()** (4 connections) — `docker/runtime_contract.py`
-- **runtime_fingerprint_entries()** (4 connections) — `docker/runtime_contract.py`
-- **_symlink_ancestor()** (4 connections) — `docker/runtime_contract.py`
-- **capture()** (3 connections) — `docker/distribution.py`
-- **_remove_exact_sequence()** (3 connections) — `docker/runtime_contract.py`
-- **_resolve_input_path()** (3 connections) — `docker/runtime_contract.py`
-- **_source_contract_files()** (3 connections) — `docker/runtime_contract.py`
-- **_host_provenance()** (2 connections) — `docker/runtime_contract.py`
-- **ArgumentParser** (1 connections)
-- **Build/runtime contract fingerprinting and fail-fast Docker validation.** (1 connections) — `docker/runtime_contract.py`
-- **Hash runtime-sensitive source independently of git/worktree metadata.** (1 connections) — `docker/runtime_contract.py`
-- *... and 5 more nodes in this community*
+- **BatchSRVerifiedProfileHybridDetector** (17 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
+- **maintained_profile_hybrid.py** (14 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
+- **dense_orchestrator_batch_sr.py** (11 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- **DetectorOrchestrator** (10 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- **VerifiedProfileHybridDetector** (8 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
+- **run_detection_step()** (7 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- **test_issue255_detector_dispatch_contract.py** (5 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **_dense_config()** (4 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **._run_hybrid_detection()** (3 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
+- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
+- **Path** (3 connections)
+- **test_dense_route_without_profile_reaches_dense_validation()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **test_exported_orchestrator_dispatches_dense_route()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **test_verified_route_rejects_duplicate_image_stems_before_outputs_collide()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **Any** (2 connections)
+- **Path** (2 connections)
+- **Any** (2 connections)
+- **BaseDetectorOrchestrator** (1 connections)
+- **Verified dense-route production orchestrator with dedicated batch SR.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- **Keep the accepted dense route unchanged except for current-x4 SR scheduling.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- **Run the verified dense production detector with a dedicated all-pages SR phase.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- **Maintained original-page baseline and current-x4 support workflow.** (1 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
 
 ## Relationships
 
-- [Community 60](Community_60.md) (8 shared connections)
-- [Community 10](Community_10.md) (5 shared connections)
-- [Community 63](Community_63.md) (4 shared connections)
-- [Community 40](Community_40.md) (4 shared connections)
-- [Community 67](Community_67.md) (4 shared connections)
-- [Community 162](Community_162.md) (2 shared connections)
+- [Community 68](Community_68.md) (6 shared connections)
+- [Community 123](Community_123.md) (5 shared connections)
+- [Community 64](Community_64.md) (4 shared connections)
+- [Community 79](Community_79.md) (4 shared connections)
+- [Community 22](Community_22.md) (4 shared connections)
+- [Community 46](Community_46.md) (3 shared connections)
+- [Community 124](Community_124.md) (3 shared connections)
+- [Community 163](Community_163.md) (3 shared connections)
+- [Community 53](Community_53.md) (2 shared connections)
+- [Community 301](Community_301.md) (2 shared connections)
+- [Community 38](Community_38.md) (2 shared connections)
+- [Community 61](Community_61.md) (1 shared connections)
 
 ## Source Files
 
-- `docker/distribution.py`
-- `docker/runtime_contract.py`
+- `src/pipeline/detection/dense_orchestrator_batch_sr.py`
+- `src/pipeline/detection/maintained_profile_hybrid.py`
+- `tests/test_issue255_detector_dispatch_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 92 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 65 (88%)
+- INFERRED: 9 (12%)
 - AMBIGUOUS: 0 (0%)
 
 ---

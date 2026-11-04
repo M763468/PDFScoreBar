@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **run_failure_analysis.py** (2 connections) — `tools/run_failure_analysis.py`
-- **main()** (2 connections) — `tools/run_failure_analysis.py`
-- **run_debug()** (2 connections) — `tools/run_failure_analysis.py`
+- **run_final_batch_comparison.py** (2 connections) — `tools/run_final_batch_comparison.py`
+- **main()** (2 connections) — `tools/run_final_batch_comparison.py`
+- **run_pipeline_for_all()** (2 connections) — `tools/run_final_batch_comparison.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/run_failure_analysis.py`
+- `tools/run_final_batch_comparison.py`
 
 ## Audit Trail
 

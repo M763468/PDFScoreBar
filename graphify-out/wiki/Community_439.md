@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_eval2_bulletproof.sh** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
-- **run_eval2_bulletproof.sh script** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
+- **run_bypass_eval_subset.py** (1 connections) — `tools/run_bypass_eval_subset.py`
+- **run_eval()** (1 connections) — `tools/run_bypass_eval_subset.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/run_eval2_bulletproof.sh`
+- `tools/run_bypass_eval_subset.py`
 
 ## Audit Trail
 

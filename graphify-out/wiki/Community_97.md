@@ -1,52 +1,55 @@
 # Community 97
 
-> 16 nodes · cohesion 0.21
+> 26 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **load_yaml()** (43 connections) — `src/pipeline/core/__init__.py`
-- **pipeline/core/__init__.py** (15 connections) — `src/pipeline/core/__init__.py`
-- **write_yaml()** (8 connections) — `src/pipeline/core/__init__.py`
-- **Path** (7 connections)
-- **Any** (6 connections)
-- **test_issue355_trusted_accuracy_smoke.py** (5 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
-- **.test_full_sequence()** (5 connections) — `tests/test_pipeline_integration.py`
-- **write_manifest()** (4 connections) — `src/pipeline/core/__init__.py`
-- **test_canonical_direct_run_discovers_established_external_images()** (4 connections) — `tests/test_distribution_surface.py`
-- **test_standard_smoke_uses_production_detector_contract()** (3 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
-- **TestPipelineIntegration** (3 connections) — `tests/test_pipeline_integration.py`
-- **.setUpClass()** (3 connections) — `tests/test_pipeline_integration.py`
-- **test_standard_smoke_uses_accepted_evaluation_input_contract()** (2 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
-- **_without()** (2 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
-- **Shared configuration, run identifiers, subprocess logging and output I/O.** (1 connections) — `src/pipeline/core/__init__.py`
-- **test_standard_smoke_runs_post_pipeline_accuracy_gate()** (1 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
+- **ThinBarlineConfig** (23 connections) — `src/common/thin_barline_finder.py`
+- **detect_thin_vertical_runs()** (22 connections) — `src/common/thin_barline_finder.py`
+- **thin_barline_finder.py** (15 connections) — `src/common/thin_barline_finder.py`
+- **_filter_candidates()** (11 connections) — `src/common/thin_barline_finder.py`
+- **test_issue283_thin_barline_stage2.py** (11 connections) — `tests/test_issue283_thin_barline_stage2.py`
+- **_centroid()** (7 connections) — `src/common/thin_barline_finder.py`
+- **_find_double_pairs()** (7 connections) — `src/common/thin_barline_finder.py`
+- **_is_close()** (7 connections) — `src/common/thin_barline_finder.py`
+- **_legacy_filter_candidates()** (7 connections) — `tests/test_issue283_thin_barline_stage2.py`
+- **test_issue283_thin_barline_preloaded_image.py** (5 connections) — `tests/test_issue283_thin_barline_preloaded_image.py`
+- **_legacy_find_double_pairs()** (5 connections) — `tests/test_issue283_thin_barline_stage2.py`
+- **test_batched_candidate_filter_matches_legacy()** (5 connections) — `tests/test_issue283_thin_barline_stage2.py`
+- **test_double_pair_sweep_matches_legacy()** (5 connections) — `tests/test_issue283_thin_barline_stage2.py`
+- **ndarray** (4 connections)
+- **test_preloaded_grayscale_bypasses_image_decode()** (4 connections) — `tests/test_issue283_thin_barline_preloaded_image.py`
+- **_rectangle_sums()** (3 connections) — `src/common/thin_barline_finder.py`
+- **_legacy_vertical_overlap_ratio()** (3 connections) — `tests/test_issue283_thin_barline_stage2.py`
+- **test_preloaded_grayscale_requires_two_dimensions()** (2 connections) — `tests/test_issue283_thin_barline_preloaded_image.py`
+- **parametrize** (2 connections)
+- **Path** (1 connections)
+- **Heuristics for recovering thin vertical barlines missed by primary detectors.** (1 connections) — `src/common/thin_barline_finder.py`
+- **Return exact double-barline membership with bounded vectorized chunks.** (1 connections) — `src/common/thin_barline_finder.py`
+- **Apply the legacy candidate filters using batched rectangle statistics.…** (1 connections) — `src/common/thin_barline_finder.py`
+- **Detect slender vertical runs likely corresponding to missed barlines. Callers…** (1 connections) — `src/common/thin_barline_finder.py`
+- **MonkeyPatch** (1 connections)
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 12](Community_12.md) (8 shared connections)
-- [Community 110](Community_110.md) (6 shared connections)
-- [Community 62](Community_62.md) (4 shared connections)
-- [Community 4](Community_4.md) (3 shared connections)
-- [Community 111](Community_111.md) (3 shared connections)
-- [Community 215](Community_215.md) (3 shared connections)
-- [Community 108](Community_108.md) (2 shared connections)
-- [Community 20](Community_20.md) (2 shared connections)
-- [Community 59](Community_59.md) (2 shared connections)
-- [Community 57](Community_57.md) (2 shared connections)
-- [Community 6](Community_6.md) (2 shared connections)
-- [Community 131](Community_131.md) (2 shared connections)
+- [Community 31](Community_31.md) (8 shared connections)
+- [Community 40](Community_40.md) (7 shared connections)
+- [Community 15](Community_15.md) (6 shared connections)
+- [Community 251](Community_251.md) (5 shared connections)
+- [Community 108](Community_108.md) (5 shared connections)
+- [Community 234](Community_234.md) (4 shared connections)
 
 ## Source Files
 
-- `src/pipeline/core/__init__.py`
-- `tests/test_distribution_surface.py`
-- `tests/test_issue355_trusted_accuracy_smoke.py`
-- `tests/test_pipeline_integration.py`
+- `src/common/thin_barline_finder.py`
+- `tests/test_issue283_thin_barline_preloaded_image.py`
+- `tests/test_issue283_thin_barline_stage2.py`
 
 ## Audit Trail
 
-- EXTRACTED: 87 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 89 (94%)
+- INFERRED: 6 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

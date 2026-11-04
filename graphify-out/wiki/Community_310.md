@@ -1,14 +1,14 @@
 # Community 310
 
-> 5 nodes · cohesion 0.50
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **benchmark_ccl_algorithms.py** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
-- **boxes_for()** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
-- **main()** (2 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
-- **ndarray** (1 connections)
-- **Compare OpenCV connected-component algorithms on retained staff masks.** (1 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **export_product_evidence.py** (4 connections) — `tools/issue441/export_product_evidence.py`
+- **main()** (3 connections) — `tools/issue441/export_product_evidence.py`
+- **require()** (2 connections) — `tools/issue441/export_product_evidence.py`
+- **sha()** (2 connections) — `tools/issue441/export_product_evidence.py`
+- **Export only hashes, counts and explicitly selected gates from private #441…** (1 connections) — `tools/issue441/export_product_evidence.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue363/benchmark_ccl_algorithms.py`
+- `tools/issue441/export_product_evidence.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

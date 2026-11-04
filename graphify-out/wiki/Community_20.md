@@ -1,65 +1,59 @@
 # Community 20
 
-> 52 nodes · cohesion 0.08
+> 53 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **pipeline/orchestrator.py** (59 connections) — `src/pipeline/orchestrator.py`
-- **get_nested()** (40 connections) — `src/pipeline/core/__init__.py`
-- **.run()** (29 connections) — `src/pipeline/orchestrator.py`
-- **filters.py** (11 connections) — `src/pipeline/steps/filters.py`
-- **._validate_input_prerequisites()** (10 connections) — `src/pipeline/orchestrator.py`
-- **resolve_barlines_and_masks_config()** (9 connections) — `src/pipeline/detection/utils.py`
-- **Path** (9 connections)
-- **Any** (8 connections)
-- **resolve_review_package_config()** (8 connections) — `src/pipeline/review/pipeline_review.py`
-- **resolve_page_filters()** (8 connections) — `src/pipeline/steps/filters.py`
-- **._load_cached_pdf_render_provenance()** (7 connections) — `src/pipeline/orchestrator.py`
-- **._review_package_config()** (7 connections) — `src/pipeline/orchestrator.py`
-- **pipeline_review.py** (7 connections) — `src/pipeline/review/pipeline_review.py`
-- **._materialize_review_package_if_requested()** (6 connections) — `src/pipeline/orchestrator.py`
-- **.run_base_numbering_and_barline_correction()** (6 connections) — `src/pipeline/orchestrator.py`
-- **.run_final_numbering_and_overlays()** (6 connections) — `src/pipeline/orchestrator.py`
-- **._should_persist_pdf_images()** (6 connections) — `src/pipeline/orchestrator.py`
-- **ReviewPackageConfig** (6 connections) — `src/pipeline/review/pipeline_review.py`
-- **validate_review_package_prerequisites()** (6 connections) — `src/pipeline/review/pipeline_review.py`
-- **is_blank_page()** (6 connections) — `src/pipeline/steps/filters.py`
-- **reject_movement_boundaries_on_excluded_pages()** (6 connections) — `src/pipeline/steps/numbering.py`
-- **resolve_page_ids()** (6 connections) — `src/pipeline/utils/images.py`
-- **.__init__()** (5 connections) — `src/pipeline/orchestrator.py`
-- **._resolved_for_manifest()** (5 connections) — `src/pipeline/orchestrator.py`
-- **.run_mmr_batch_detection()** (5 connections) — `src/pipeline/orchestrator.py`
-- *... and 27 more nodes in this community*
+- **method_comparison.py** (21 connections) — `tools/issue441/method_comparison.py`
+- **sha()** (20 connections) — `tools/issue441/phase0_probe.py`
+- **phase0_probe.py** (18 connections) — `tools/issue441/phase0_probe.py`
+- **annotated_resume_experiment.py** (17 connections) — `tools/issue441/annotated_resume_experiment.py`
+- **mobile_export_probe.py** (13 connections) — `tools/issue441/mobile_export_probe.py`
+- **main()** (10 connections) — `tools/issue441/annotated_resume_experiment.py`
+- **annotation_method()** (9 connections) — `tools/issue441/method_comparison.py`
+- **independent_numbers()** (9 connections) — `tools/issue441/method_comparison.py`
+- **clone_checkpoint()** (8 connections) — `tools/issue441/annotated_resume_experiment.py`
+- **main()** (8 connections) — `tools/issue441/mobile_export_probe.py`
+- **annotation_signature()** (8 connections) — `tools/issue441/phase0_probe.py`
+- **legacy_geometry()** (7 connections) — `tools/issue441/method_comparison.py`
+- **replace_backgrounds()** (7 connections) — `tools/issue441/phase0_probe.py`
+- **synthetic_probe()** (7 connections) — `tools/issue441/phase0_probe.py`
+- **real_probe()** (6 connections) — `tools/issue441/phase0_probe.py`
+- **expect_rejection()** (5 connections) — `tools/issue441/method_comparison.py`
+- **main()** (5 connections) — `tools/issue441/method_comparison.py`
+- **local_method()** (4 connections) — `tools/issue441/method_comparison.py`
+- **raster_pdf()** (4 connections) — `tools/issue441/method_comparison.py`
+- **render()** (4 connections) — `tools/issue441/method_comparison.py`
+- **vector_pdf()** (4 connections) — `tools/issue441/method_comparison.py`
+- **match_source()** (4 connections) — `tools/issue441/mobile_export_probe.py`
+- **verify_candidate()** (4 connections) — `tools/issue441/mobile_export_probe.py`
+- **audit()** (4 connections) — `tools/issue441/phase0_probe.py`
+- **main()** (4 connections) — `tools/issue441/phase0_probe.py`
+- *... and 28 more nodes in this community*
 
 ## Relationships
 
-- [Community 111](Community_111.md) (18 shared connections)
-- [Community 24](Community_24.md) (14 shared connections)
-- [Community 143](Community_143.md) (11 shared connections)
-- [Community 121](Community_121.md) (9 shared connections)
-- [Community 49](Community_49.md) (9 shared connections)
-- [Community 149](Community_149.md) (8 shared connections)
-- [Community 12](Community_12.md) (6 shared connections)
-- [Community 122](Community_122.md) (5 shared connections)
-- [Community 110](Community_110.md) (4 shared connections)
-- [Community 31](Community_31.md) (4 shared connections)
-- [Community 165](Community_165.md) (3 shared connections)
-- [Community 108](Community_108.md) (3 shared connections)
+- [Community 33](Community_33.md) (11 shared connections)
+- [Community 103](Community_103.md) (4 shared connections)
+- [Community 244](Community_244.md) (2 shared connections)
+- [Community 241](Community_241.md) (2 shared connections)
+- [Community 3](Community_3.md) (2 shared connections)
+- [Community 32](Community_32.md) (1 shared connections)
+- [Community 23](Community_23.md) (1 shared connections)
+- [Community 2](Community_2.md) (1 shared connections)
+- [Community 178](Community_178.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/core/__init__.py`
-- `src/pipeline/detection/utils.py`
-- `src/pipeline/orchestrator.py`
-- `src/pipeline/review/pipeline_review.py`
-- `src/pipeline/steps/filters.py`
-- `src/pipeline/steps/numbering.py`
-- `src/pipeline/utils/images.py`
+- `tools/issue441/annotated_resume_experiment.py`
+- `tools/issue441/method_comparison.py`
+- `tools/issue441/mobile_export_probe.py`
+- `tools/issue441/phase0_probe.py`
 
 ## Audit Trail
 
-- EXTRACTED: 231 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 144 (97%)
+- INFERRED: 5 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

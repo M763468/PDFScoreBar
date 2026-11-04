@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_measures.py** (1 connections) — `tools/visualize_measures.py`
-- **visualize_measures()** (1 connections) — `tools/visualize_measures.py`
+- **visualize_system_grouping.py** (1 connections) — `tools/visualize_system_grouping.py`
+- **main()** (1 connections) — `tools/visualize_system_grouping.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/visualize_measures.py`
+- `tools/visualize_system_grouping.py`
 
 ## Audit Trail
 

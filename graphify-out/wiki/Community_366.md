@@ -1,12 +1,12 @@
 # Community 366
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **convert_eval2_pdfs.py** (2 connections) — `tools/convert_eval2_pdfs.py`
-- **convert_pdf()** (2 connections) — `tools/convert_eval2_pdfs.py`
-- **main()** (2 connections) — `tools/convert_eval2_pdfs.py`
+- **create_synthetic_image()** (2 connections) — `tools/create_synthetic_image.py`
+- **create_synthetic_image.py** (1 connections) — `tools/create_synthetic_image.py`
+- **Creates a synthetic image with a white background, one long vertical black line…** (1 connections) — `tools/create_synthetic_image.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/convert_eval2_pdfs.py`
+- `tools/create_synthetic_image.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

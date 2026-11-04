@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **continuation_browser_acceptance.cjs** (3 connections) — `tools/review_correction/continuation_browser_acceptance.cjs`
-- **{chromium}** (1 connections) — `tools/review_correction/continuation_browser_acceptance.cjs`
-- **fs** (1 connections) — `tools/review_correction/continuation_browser_acceptance.cjs`
-- **path** (1 connections) — `tools/review_correction/continuation_browser_acceptance.cjs`
+- **resume_browser_acceptance.cjs** (3 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **{ chromium }** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **fs** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **path** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `tools/review_correction/continuation_browser_acceptance.cjs`
+- `tools/review_correction/resume_browser_acceptance.cjs`
 
 ## Audit Trail
 

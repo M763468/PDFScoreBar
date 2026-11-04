@@ -1,61 +1,54 @@
 # Community 40
 
-> 42 nodes · cohesion 0.08
+> 43 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **run()** (20 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **resolve_omr_dln_model_path()** (13 connections) — `src/common/model_artifacts.py`
-- **omr_dln_worker.py** (12 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **models/eval_omr_dln.py** (10 connections) — `experiments/models/eval_omr_dln.py`
-- **load_candidate()** (10 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **test_omr_dln_worker.py** (9 connections) — `tests/test_omr_dln_worker.py`
-- **omr_dln_model_missing_message()** (7 connections) — `src/common/model_artifacts.py`
-- **main()** (6 connections) — `experiments/models/eval_omr_dln.py`
-- **_Model** (6 connections) — `tests/test_omr_dln_worker.py`
-- **_TensorLike** (5 connections) — `tests/test_omr_dln_worker.py`
-- **resolve_precomputed_sr()** (4 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **test_runtime_worker_rejects_missing_precomputed_sr()** (4 connections) — `tests/test_omr_dln_worker.py`
-- **test_runtime_worker_resolves_model_from_repository_root()** (4 connections) — `tests/test_omr_dln_worker.py`
-- **test_runtime_worker_uses_precomputed_sr_and_returns_source_coordinates()** (4 connections) — `tests/test_omr_dln_worker.py`
-- **infer_barlines_from_measures()** (3 connections) — `experiments/models/eval_omr_dln.py`
-- **infer_barlines_from_measures()** (3 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **Path** (3 connections)
-- **Path** (3 connections)
-- **_Result** (3 connections) — `tests/test_omr_dln_worker.py`
-- **load_gt_boxes()** (2 connections) — `experiments/models/eval_omr_dln.py`
-- **parse_args()** (2 connections) — `experiments/models/eval_omr_dln.py`
-- **main()** (2 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **Any** (2 connections)
-- **_scale_to_source()** (2 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **test_omr_candidate_rejects_wrong_task()** (2 connections) — `tests/test_experiment_model_selection.py`
-- *... and 17 more nodes in this community*
+- **homr_evaluator.py** (69 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **run_evaluation()** (41 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Path** (26 connections)
+- **ImageMetrics** (12 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **AggregateMetrics** (10 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **compute_candidate_stats()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_metrics_json()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_readme()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **compute_transform_info()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **ensure_dir()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **export_measure_grid_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **resolve_clusters_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **resolve_tight_duplicates_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **save_homr_results()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **compute_and_save_gap_stats()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Namespace** (5 connections)
+- **timestamp_jst()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_compare_md()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_metrics_csv()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_run_config()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **aggregate_metrics()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **choose_run_id()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **current_jst()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **load_ground_truth_mapping()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **parse_args()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- *... and 18 more nodes in this community*
 
 ## Relationships
 
-- [Community 10](Community_10.md) (6 shared connections)
-- [Community 75](Community_75.md) (4 shared connections)
-- [Community 60](Community_60.md) (4 shared connections)
-- [Community 83](Community_83.md) (3 shared connections)
-- [Community 30](Community_30.md) (3 shared connections)
-- [Community 53](Community_53.md) (2 shared connections)
-- [Community 37](Community_37.md) (2 shared connections)
-- [Community 51](Community_51.md) (2 shared connections)
-- [Community 73](Community_73.md) (2 shared connections)
-- [Community 148](Community_148.md) (1 shared connections)
+- [Community 108](Community_108.md) (41 shared connections)
+- [Community 143](Community_143.md) (25 shared connections)
+- [Community 97](Community_97.md) (7 shared connections)
+- [Community 0](Community_0.md) (3 shared connections)
+- [Community 84](Community_84.md) (3 shared connections)
+- [Community 1](Community_1.md) (2 shared connections)
+- [Community 29](Community_29.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/models/eval_omr_dln.py`
-- `src/common/model_artifacts.py`
-- `src/pipeline/detection/omr_dln_worker.py`
-- `tests/test_experiment_model_selection.py`
-- `tests/test_omr_dln_worker.py`
+- `src/homr_eval_scripts/homr_evaluator.py`
 
 ## Audit Trail
 
-- EXTRACTED: 95 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 181 (94%)
+- INFERRED: 12 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

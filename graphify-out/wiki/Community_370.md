@@ -1,12 +1,12 @@
 # Community 370
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **visualize_issue194.py** (2 connections) — `tools/issue194/visualize_issue194.py`
-- **draw_boxes()** (2 connections) — `tools/issue194/visualize_issue194.py`
-- **main()** (2 connections) — `tools/issue194/visualize_issue194.py`
+- **benchmark_scipy_label.py** (2 connections) — `tools/issue363/benchmark_scipy_label.py`
+- **main()** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
+- **Compare scipy.ndimage.label on retained full-resolution binary masks.** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/issue194/visualize_issue194.py`
+- `tools/issue363/benchmark_scipy_label.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

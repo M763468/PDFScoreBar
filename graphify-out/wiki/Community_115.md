@@ -1,51 +1,53 @@
 # Community 115
 
-> 23 nodes · cohesion 0.20
+> 24 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **dense_full_pipeline.py** (20 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **reconstruct_dense_full_pipeline_route()** (19 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **regenerate_probe_rescue_candidates()** (13 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **regenerate_dense_candidates()** (11 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Path** (9 connections)
-- **load_route_image_paths()** (7 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Any** (7 connections)
-- **_run_command()** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_phase_summary()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_write_compact_log()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **CommandLogSummary** (4 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_write_execution_summary()** (4 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_compact_log_path()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_load_staff_mask_paths()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_stringify_params()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_add_params()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **.to_json()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Popen** (1 connections)
-- **Dense full-pipeline detector route support. This module reconstructs detector-…** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Load the detector-route image list from a benchmark inventory.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Regenerate the dense candidate/filter root inside this route run.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Regenerate probe-rescue candidates for the dense detector route.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Rebuild all dense full-pipeline detector inputs from current-run sources.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **CorrectionState** (27 connections) — `tools/review_correction/state.py`
+- **now()** (12 connections) — `tools/review_correction/history.py`
+- **.capture_identity()** (10 connections) — `tools/review_correction/state.py`
+- **.snapshot()** (7 connections) — `tools/review_correction/state.py`
+- **._sync_application()** (7 connections) — `tools/review_correction/state.py`
+- **.finish_apply()** (6 connections) — `tools/review_correction/state.py`
+- **._key()** (6 connections) — `tools/review_correction/state.py`
+- **.begin_apply()** (5 connections) — `tools/review_correction/state.py`
+- **._path_for()** (5 connections) — `tools/review_correction/state.py`
+- **._safe_write_metadata()** (5 connections) — `tools/review_correction/state.py`
+- **Path** (5 connections)
+- **.fail_apply()** (4 connections) — `tools/review_correction/state.py`
+- **.__init__()** (4 connections) — `tools/review_correction/state.py`
+- **._paths_for()** (4 connections) — `tools/review_correction/state.py`
+- **_file_identity()** (4 connections) — `tools/review_correction/state.py`
+- **._content_items()** (3 connections) — `tools/review_correction/state.py`
+- **._read_metadata()** (3 connections) — `tools/review_correction/state.py`
+- **.set_pending()** (3 connections) — `tools/review_correction/state.py`
+- **._source_identity()** (3 connections) — `tools/review_correction/state.py`
+- **test_state_metadata_rejects_symlink()** (2 connections) — `tests/test_review_correction_state.py`
+- **.clear_pending()** (2 connections) — `tools/review_correction/state.py`
+- **.note_record_error()** (2 connections) — `tools/review_correction/state.py`
+- **.note_record_success()** (2 connections) — `tools/review_correction/state.py`
+- **Track page/type edits and successful result provenance for one review package.** (1 connections) — `tools/review_correction/state.py`
 
 ## Relationships
 
-- [Community 155](Community_155.md) (10 shared connections)
-- [Community 59](Community_59.md) (4 shared connections)
-- [Community 108](Community_108.md) (3 shared connections)
-- [Community 192](Community_192.md) (3 shared connections)
-- [Community 131](Community_131.md) (3 shared connections)
-- [Community 57](Community_57.md) (2 shared connections)
-- [Community 67](Community_67.md) (2 shared connections)
+- [Community 23](Community_23.md) (10 shared connections)
+- [Community 194](Community_194.md) (3 shared connections)
+- [Community 244](Community_244.md) (3 shared connections)
+- [Community 99](Community_99.md) (3 shared connections)
+- [Community 103](Community_103.md) (3 shared connections)
+- [Community 32](Community_32.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/dense_full_pipeline.py`
+- `tests/test_review_correction_state.py`
+- `tools/review_correction/history.py`
+- `tools/review_correction/state.py`
 
 ## Audit Trail
 
-- EXTRACTED: 77 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 76 (97%)
+- INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

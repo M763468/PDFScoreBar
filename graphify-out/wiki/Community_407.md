@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_promiscuous_union_eval_page3.sh** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
-- **run_promiscuous_union_eval_page3.sh script** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
+- **run_regression_template.sh** (1 connections) — `experiments/legacy/tools_archive/run_regression_template.sh`
+- **run_regression_template.sh script** (1 connections) — `experiments/legacy/tools_archive/run_regression_template.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
+- `experiments/legacy/tools_archive/run_regression_template.sh`
 
 ## Audit Trail
 

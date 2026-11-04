@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **detect_hbar_test.py** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
-- **detect_hbar()** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
+- **run_confirmed_union_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
+- **run_confirmed_union_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/detect_hbar_test.py`
+- `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
 
 ## Audit Trail
 

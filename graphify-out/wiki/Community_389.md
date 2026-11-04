@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_diagnosis.py** (1 connections) — `experiments/fp_reduction/analyze_diagnosis.py`
-- **analyze()** (1 connections) — `experiments/fp_reduction/analyze_diagnosis.py`
+- **analyze_fps.py** (1 connections) — `experiments/fp_reduction/analyze_fps.py`
+- **analyze_fps()** (1 connections) — `experiments/fp_reduction/analyze_fps.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_diagnosis.py`
+- `experiments/fp_reduction/analyze_fps.py`
 
 ## Audit Trail
 

@@ -1,53 +1,48 @@
 # Community 89
 
-> 27 nodes · cohesion 0.15
+> 27 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **SystemConnectorEvidenceExtractor** (23 connections) — `src/measure_numbering/connector_evidence.py`
-- **TestIssue197SystemConnectorEvidenceExtractor** (9 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **.extract()** (8 connections) — `src/measure_numbering/connector_evidence.py`
-- **._mask_roi_stats()** (8 connections) — `src/measure_numbering/connector_evidence.py`
-- **ndarray** (7 connections)
-- **.extract_from_mask_maps()** (7 connections) — `src/measure_numbering/connector_evidence.py`
-- **connector_evidence.py** (6 connections) — `src/measure_numbering/connector_evidence.py`
-- **.extract_from_paths()** (6 connections) — `src/measure_numbering/connector_evidence.py`
-- **test_issue197_system_connector_evidence_extractor.py** (6 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **Any** (5 connections)
-- **Path** (5 connections)
-- **._load_mask()** (5 connections) — `src/measure_numbering/connector_evidence.py`
-- **._load_mask_from_map()** (5 connections) — `src/measure_numbering/connector_evidence.py`
-- **._roi_for_pair()** (4 connections) — `src/measure_numbering/connector_evidence.py`
-- **.setUp()** (4 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **._to_binary()** (3 connections) — `src/measure_numbering/connector_evidence.py`
-- **._vertical_open_pixels()** (3 connections) — `src/measure_numbering/connector_evidence.py`
-- **.write_json()** (3 connections) — `src/measure_numbering/connector_evidence.py`
-- **.test_connector_roi_width_scales_with_staff_height()** (3 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **.test_vertical_open_kernel_is_capped_for_small_gap_roi()** (3 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **._clip()** (2 connections) — `src/measure_numbering/connector_evidence.py`
-- **Builds staff-pair connector evidence from proxy symbol/brace masks.** (1 connections) — `src/measure_numbering/connector_evidence.py`
-- **Return structured left/system-start connector evidence. `image_size` is…** (1 connections) — `src/measure_numbering/connector_evidence.py`
-- **.test_extract_from_paths_and_write_json()** (1 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **.test_extracts_left_connector_from_brace_dot_mask()** (1 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
+- **review_tool/app.js** (26 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **loadPage()** (5 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **draw()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **populateBoxList()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **getFilteredBoxes()** (3 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **fetchJSON()** (2 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **updateCanvasSize()** (2 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **baseImg** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **boxes** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **boxList** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **canvas** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **categoryColors** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **categoryFilter** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **clearLabelBtn** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **ctx** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **initLabels()** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **labelButtons** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **labels** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **overlayImg** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **pageMeta** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **pageSelect** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **saveBtn** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **setStatus()** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **showBoxes** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **showOverlay** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 17](Community_17.md) (13 shared connections)
-- [Community 68](Community_68.md) (4 shared connections)
-- [Community 76](Community_76.md) (4 shared connections)
-- [Community 41](Community_41.md) (3 shared connections)
-- [Community 49](Community_49.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/measure_numbering/connector_evidence.py`
-- `tests/test_issue197_system_connector_evidence_extractor.py`
+- `experiments/phase5b_notehead_geom/review_tool/app.js`
 
 ## Audit Trail
 
-- EXTRACTED: 74 (95%)
-- INFERRED: 4 (5%)
+- EXTRACTED: 32 (97%)
+- INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

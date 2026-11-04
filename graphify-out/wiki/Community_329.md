@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **validate_issue267_numbering_counts.sh** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
-- **validate_issue267_numbering_counts.sh script** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
-- **require_clean_tracked_worktree()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
-- **usage()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **analyze_mmr_failures_v2.py** (3 connections) — `tools/analyze_mmr_failures_v2.py`
+- **main()** (3 connections) — `tools/analyze_mmr_failures_v2.py`
+- **detect_hbar_centroid()** (2 connections) — `tools/analyze_mmr_failures_v2.py`
+- **preprocess_image_ocr()** (2 connections) — `tools/analyze_mmr_failures_v2.py`
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `scripts/validate_issue267_numbering_counts.sh`
+- `tools/analyze_mmr_failures_v2.py`
 
 ## Audit Trail
 

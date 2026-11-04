@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **tools/__init__.py** (1 connections) — `tools/__init__.py`
-- **Tooling scripts package.** (1 connections) — `tools/__init__.py`
+- **experiment_b.py** (1 connections) — `tools/issue194/experiment_b.py`
+- **analyze_scores()** (1 connections) — `tools/issue194/experiment_b.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/__init__.py`
+- `tools/issue194/experiment_b.py`
 
 ## Audit Trail
 

@@ -1,65 +1,57 @@
 # Community 49
 
-> 39 nodes · cohesion 0.10
+> 30 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **MeasureNumberingPipeline** (54 connections) — `src/measure_numbering/pipeline.py`
-- **load_image()** (26 connections) — `src/pipeline/utils/images.py`
-- **phase_b_page001_acceptance.py** (23 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **numbering_phases.py** (14 connections) — `src/pipeline/steps/numbering_phases.py`
-- **run()** (14 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **.process_page()** (11 connections) — `src/measure_numbering/pipeline.py`
-- **NumberingPhaseServices** (10 connections) — `src/pipeline/steps/numbering_phases.py`
-- **run_final_numbering_and_overlays()** (10 connections) — `src/pipeline/steps/numbering_phases.py`
-- **build_numbering()** (10 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **run_base_numbering_and_barline_correction()** (9 connections) — `src/pipeline/steps/numbering_phases.py`
-- **cli.py** (8 connections) — `src/measure_numbering/cli.py`
-- **render_overlay()** (8 connections) — `src/measure_numbering/cli.py`
-- **run_mmr_batch_detection()** (8 connections) — `src/pipeline/steps/numbering_phases.py`
-- **main()** (6 connections) — `src/measure_numbering/cli.py`
-- **test_issue264_phase_b_manifest.py** (6 connections) — `tests/test_issue264_phase_b_manifest.py`
-- **target_manifest_entry()** (6 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **._connector_evidence_staves()** (5 connections) — `src/measure_numbering/pipeline.py`
-- **.run_sequential()** (4 connections) — `src/measure_numbering/pipeline.py`
-- **Path** (4 connections)
-- **Any** (4 connections)
-- **Path** (4 connections)
-- **._image_to_connector_mask()** (3 connections) — `src/measure_numbering/pipeline.py`
-- **Any** (3 connections)
+- **core/reporting.py** (20 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **core/utils.py** (15 connections) — `src/homr_eval_scripts/core/utils.py`
+- **homr_runtime/utils.py** (11 connections) — `src/homr_runtime/utils.py`
+- **ensure_dir()** (8 connections) — `src/homr_runtime/utils.py`
+- **Path** (7 connections)
+- **timestamp_jst()** (7 connections) — `src/homr_runtime/utils.py`
+- **draw_overlay()** (6 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **write_metrics_json()** (6 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **write_readme()** (6 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **current_jst()** (5 connections) — `src/homr_runtime/utils.py`
+- **AggregateMetrics** (4 connections)
+- **ImageMetrics** (4 connections)
+- **write_compare_md()** (4 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **write_metrics_csv()** (4 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **write_run_config()** (4 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **choose_run_id()** (3 connections) — `src/homr_eval_scripts/core/utils.py`
+- **load_ground_truth_mapping()** (3 connections) — `src/homr_eval_scripts/core/utils.py`
+- **prepare_working_image()** (3 connections) — `src/homr_eval_scripts/core/utils.py`
 - **Path** (3 connections)
-- **override_triples()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- *... and 14 more nodes in this community*
+- **Namespace** (2 connections)
+- **write_run_sh()** (2 connections) — `src/homr_eval_scripts/core/reporting.py`
+- **git_info()** (2 connections) — `src/homr_eval_scripts/core/utils.py`
+- **Namespace** (2 connections)
+- **sanitise_images()** (2 connections) — `src/homr_eval_scripts/core/utils.py`
+- **datetime** (2 connections)
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [Community 8](Community_8.md) (19 shared connections)
-- [Community 20](Community_20.md) (9 shared connections)
-- [Community 41](Community_41.md) (8 shared connections)
-- [Community 12](Community_12.md) (8 shared connections)
-- [Community 17](Community_17.md) (7 shared connections)
-- [Community 31](Community_31.md) (6 shared connections)
-- [Community 143](Community_143.md) (5 shared connections)
-- [Community 183](Community_183.md) (4 shared connections)
-- [Community 68](Community_68.md) (4 shared connections)
-- [Community 106](Community_106.md) (4 shared connections)
-- [Community 108](Community_108.md) (4 shared connections)
-- [Community 154](Community_154.md) (3 shared connections)
+- [Community 15](Community_15.md) (6 shared connections)
+- [Community 108](Community_108.md) (5 shared connections)
+- [Community 0](Community_0.md) (4 shared connections)
+- [Community 455](Community_455.md) (4 shared connections)
+- [Community 163](Community_163.md) (1 shared connections)
+- [Community 29](Community_29.md) (1 shared connections)
+- [Community 326](Community_326.md) (1 shared connections)
+- [Community 67](Community_67.md) (1 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/cli.py`
-- `src/measure_numbering/pipeline.py`
-- `src/pipeline/steps/numbering_phases.py`
-- `src/pipeline/utils/images.py`
-- `tests/test_issue197_system_grouping_connector_evidence.py`
-- `tests/test_issue264_phase_b_manifest.py`
-- `tools/issue264/phase_b_page001_acceptance.py`
+- `src/homr_eval_scripts/core/reporting.py`
+- `src/homr_eval_scripts/core/utils.py`
+- `src/homr_runtime/utils.py`
 
 ## Audit Trail
 
-- EXTRACTED: 182 (91%)
-- INFERRED: 18 (9%)
+- EXTRACTED: 80 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

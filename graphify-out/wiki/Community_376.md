@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **render_staff_context_sheet.py** (2 connections) — `tools/render_staff_context_sheet.py`
-- **main()** (2 connections) — `tools/render_staff_context_sheet.py`
-- **put_text_block()** (2 connections) — `tools/render_staff_context_sheet.py`
+- **find_nearby.py** (2 connections) — `tools/repro_accuracy/find_nearby.py`
+- **load_json()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
+- **main()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/render_staff_context_sheet.py`
+- `tools/repro_accuracy/find_nearby.py`
 
 ## Audit Trail
 

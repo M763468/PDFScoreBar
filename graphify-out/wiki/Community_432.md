@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_full68_mmr_reuse_logged.sh** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
-- **run_full68_mmr_reuse_logged.sh script** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
+- **run_matrix.sh** (1 connections) — `tools/issue454/run_matrix.sh`
+- **run_matrix.sh script** (1 connections) — `tools/issue454/run_matrix.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/issue274/run_full68_mmr_reuse_logged.sh`
+- `tools/issue454/run_matrix.sh`
 
 ## Audit Trail
 

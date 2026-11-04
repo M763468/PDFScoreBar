@@ -1,60 +1,53 @@
 # Community 90
 
-> 27 nodes · cohesion 0.13
+> 27 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **hybrid.py** (26 connections) — `src/pipeline/detection/hybrid.py`
-- **HybridDetector** (20 connections) — `src/pipeline/detection/hybrid.py`
-- **._run_homr_in_process()** (14 connections) — `src/pipeline/detection/hybrid.py`
-- **.run()** (13 connections) — `src/pipeline/detection/hybrid.py`
-- **_HomrInternalLogFilter** (9 connections) — `src/pipeline/detection/hybrid.py`
-- **Path** (6 connections)
-- **._write_line()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **._all_stems_exist()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **._get_python_cmd()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **_suppress_homr_low_value_internal_logs()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **log_vram_usage()** (4 connections) — `src/pipeline/detection/utils.py`
-- **.__init__()** (3 connections) — `src/pipeline/detection/hybrid.py`
-- **._omr_all_stems_exist()** (3 connections) — `src/pipeline/detection/hybrid.py`
-- **._rel()** (3 connections) — `src/pipeline/detection/hybrid.py`
-- **Any** (3 connections)
-- **_env_flag_enabled()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **.flush()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **.__init__()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **._should_suppress()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **.write()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **Hybrid detection engine using Homr and OMR-DLN.** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Encapsulates hybrid detection logic (Baseline, SR, OMR-DLN).** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Returns the appropriate python command, falling back to host if images are…** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Step 2.1: Hybrid Detection (Subprocess or In-Process)** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Runs Homr inference (baseline or SR) in-process for persistence.** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **SystemConnectorEvidenceExtractor** (23 connections) — `src/measure_numbering/connector_evidence.py`
+- **TestIssue197SystemConnectorEvidenceExtractor** (9 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
+- **.extract()** (8 connections) — `src/measure_numbering/connector_evidence.py`
+- **._mask_roi_stats()** (8 connections) — `src/measure_numbering/connector_evidence.py`
+- **ndarray** (7 connections)
+- **.extract_from_mask_maps()** (7 connections) — `src/measure_numbering/connector_evidence.py`
+- **connector_evidence.py** (6 connections) — `src/measure_numbering/connector_evidence.py`
+- **.extract_from_paths()** (6 connections) — `src/measure_numbering/connector_evidence.py`
+- **test_issue197_system_connector_evidence_extractor.py** (6 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
+- **Any** (5 connections)
+- **Path** (5 connections)
+- **._load_mask()** (5 connections) — `src/measure_numbering/connector_evidence.py`
+- **._load_mask_from_map()** (5 connections) — `src/measure_numbering/connector_evidence.py`
+- **._roi_for_pair()** (4 connections) — `src/measure_numbering/connector_evidence.py`
+- **.setUp()** (4 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
+- **._to_binary()** (3 connections) — `src/measure_numbering/connector_evidence.py`
+- **._vertical_open_pixels()** (3 connections) — `src/measure_numbering/connector_evidence.py`
+- **.write_json()** (3 connections) — `src/measure_numbering/connector_evidence.py`
+- **.test_connector_roi_width_scales_with_staff_height()** (3 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
+- **.test_vertical_open_kernel_is_capped_for_small_gap_roi()** (3 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
+- **._clip()** (2 connections) — `src/measure_numbering/connector_evidence.py`
+- **Builds staff-pair connector evidence from proxy symbol/brace masks.** (1 connections) — `src/measure_numbering/connector_evidence.py`
+- **Return structured left/system-start connector evidence. `image_size` is…** (1 connections) — `src/measure_numbering/connector_evidence.py`
+- **.test_extract_from_paths_and_write_json()** (1 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
+- **.test_extracts_left_connector_from_brace_dot_mask()** (1 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 14](Community_14.md) (6 shared connections)
-- [Community 2](Community_2.md) (5 shared connections)
-- [Community 108](Community_108.md) (5 shared connections)
-- [Community 78](Community_78.md) (5 shared connections)
-- [Community 130](Community_130.md) (4 shared connections)
-- [Community 305](Community_305.md) (3 shared connections)
-- [Community 83](Community_83.md) (3 shared connections)
-- [Community 122](Community_122.md) (3 shared connections)
-- [Community 63](Community_63.md) (2 shared connections)
-- [Community 454](Community_454.md) (2 shared connections)
-- [Community 49](Community_49.md) (2 shared connections)
-- [Community 149](Community_149.md) (2 shared connections)
+- [Community 18](Community_18.md) (13 shared connections)
+- [Community 69](Community_69.md) (4 shared connections)
+- [Community 77](Community_77.md) (4 shared connections)
+- [Community 42](Community_42.md) (3 shared connections)
+- [Community 50](Community_50.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/hybrid.py`
-- `src/pipeline/detection/utils.py`
+- `src/measure_numbering/connector_evidence.py`
+- `tests/test_issue197_system_connector_evidence_extractor.py`
 
 ## Audit Trail
 
-- EXTRACTED: 85 (93%)
-- INFERRED: 6 (7%)
+- EXTRACTED: 74 (95%)
+- INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

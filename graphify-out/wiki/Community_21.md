@@ -4,60 +4,62 @@
 
 ## Key Concepts
 
-- **profile_sources_batch_sr.py** (28 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **BatchSRProfileHybridDetector** (22 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **SourceJobs** (16 connections) — `src/pipeline/detection/source_concurrency.py`
-- **test_issue458_source_concurrency.py** (16 connections) — `tests/test_issue458_source_concurrency.py`
-- **._generate_page_sources()** (10 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **Path** (10 connections)
-- **._omr_job_phase()** (9 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **_bounded_worker_log_tail()** (8 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **select_workers()** (8 connections) — `src/pipeline/detection/source_concurrency.py`
-- **_retain_source_diagnostics()** (7 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **source_concurrency.py** (7 connections) — `src/pipeline/detection/source_concurrency.py`
-- **._batch_sr_worker()** (6 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **._generate_one_page_sources_in_process()** (6 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **Any** (6 connections)
-- **_retain_omr_job_diagnostics()** (6 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **._source_page_worker()** (5 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **._support_worker()** (5 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **available_resources()** (4 connections) — `src/pipeline/detection/source_concurrency.py`
-- **SourceCancelled** (4 connections) — `src/pipeline/detection/source_concurrency.py`
-- **._consume_source_jobs()** (3 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **.run()** (3 connections) — `src/pipeline/detection/source_concurrency.py`
-- **test_invalid_exact_shapes()** (3 connections) — `tests/test_issue458_source_concurrency.py`
-- **test_sr_result_identity_rejected()** (3 connections) — `tests/test_issue458_source_concurrency.py`
-- **.__init__()** (2 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
-- **.run()** (2 connections) — `src/pipeline/detection/profile_sources_batch_sr.py`
+- **pipeline/orchestrator.py** (59 connections) — `src/pipeline/orchestrator.py`
+- **get_nested()** (40 connections) — `src/pipeline/core/__init__.py`
+- **.run()** (29 connections) — `src/pipeline/orchestrator.py`
+- **filters.py** (11 connections) — `src/pipeline/steps/filters.py`
+- **._validate_input_prerequisites()** (10 connections) — `src/pipeline/orchestrator.py`
+- **resolve_barlines_and_masks_config()** (9 connections) — `src/pipeline/detection/utils.py`
+- **Path** (9 connections)
+- **Any** (8 connections)
+- **resolve_review_package_config()** (8 connections) — `src/pipeline/review/pipeline_review.py`
+- **resolve_page_filters()** (8 connections) — `src/pipeline/steps/filters.py`
+- **._load_cached_pdf_render_provenance()** (7 connections) — `src/pipeline/orchestrator.py`
+- **._review_package_config()** (7 connections) — `src/pipeline/orchestrator.py`
+- **pipeline_review.py** (7 connections) — `src/pipeline/review/pipeline_review.py`
+- **._materialize_review_package_if_requested()** (6 connections) — `src/pipeline/orchestrator.py`
+- **.run_base_numbering_and_barline_correction()** (6 connections) — `src/pipeline/orchestrator.py`
+- **.run_final_numbering_and_overlays()** (6 connections) — `src/pipeline/orchestrator.py`
+- **._should_persist_pdf_images()** (6 connections) — `src/pipeline/orchestrator.py`
+- **ReviewPackageConfig** (6 connections) — `src/pipeline/review/pipeline_review.py`
+- **validate_review_package_prerequisites()** (6 connections) — `src/pipeline/review/pipeline_review.py`
+- **is_blank_page()** (6 connections) — `src/pipeline/steps/filters.py`
+- **reject_movement_boundaries_on_excluded_pages()** (6 connections) — `src/pipeline/steps/numbering.py`
+- **resolve_page_ids()** (6 connections) — `src/pipeline/utils/images.py`
+- **.__init__()** (5 connections) — `src/pipeline/orchestrator.py`
+- **._resolved_for_manifest()** (5 connections) — `src/pipeline/orchestrator.py`
+- **.run_mmr_batch_detection()** (5 connections) — `src/pipeline/orchestrator.py`
 - *... and 27 more nodes in this community*
 
 ## Relationships
 
-- [Community 45](Community_45.md) (8 shared connections)
-- [Community 78](Community_78.md) (7 shared connections)
-- [Community 305](Community_305.md) (4 shared connections)
-- [Community 60](Community_60.md) (4 shared connections)
-- [Community 74](Community_74.md) (4 shared connections)
-- [Community 52](Community_52.md) (3 shared connections)
-- [Community 10](Community_10.md) (2 shared connections)
-- [Community 123](Community_123.md) (2 shared connections)
-- [Community 37](Community_37.md) (2 shared connections)
-- [Community 122](Community_122.md) (1 shared connections)
-- [Community 51](Community_51.md) (1 shared connections)
-- [Community 110](Community_110.md) (1 shared connections)
+- [Community 112](Community_112.md) (18 shared connections)
+- [Community 25](Community_25.md) (14 shared connections)
+- [Community 144](Community_144.md) (11 shared connections)
+- [Community 122](Community_122.md) (9 shared connections)
+- [Community 50](Community_50.md) (9 shared connections)
+- [Community 150](Community_150.md) (8 shared connections)
+- [Community 12](Community_12.md) (6 shared connections)
+- [Community 123](Community_123.md) (5 shared connections)
+- [Community 111](Community_111.md) (4 shared connections)
+- [Community 32](Community_32.md) (4 shared connections)
+- [Community 166](Community_166.md) (3 shared connections)
+- [Community 154](Community_154.md) (3 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/profile_sources_batch_sr.py`
-- `src/pipeline/detection/source_concurrency.py`
-- `tests/test_issue409_failure_contracts.py`
-- `tests/test_issue458_source_concurrency.py`
-- `tests/test_omr_job_route.py`
+- `src/pipeline/core/__init__.py`
+- `src/pipeline/detection/utils.py`
+- `src/pipeline/orchestrator.py`
+- `src/pipeline/review/pipeline_review.py`
+- `src/pipeline/steps/filters.py`
+- `src/pipeline/steps/numbering.py`
+- `src/pipeline/utils/images.py`
 
 ## Audit Trail
 
-- EXTRACTED: 134 (96%)
-- INFERRED: 6 (4%)
+- EXTRACTED: 231 (99%)
+- INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

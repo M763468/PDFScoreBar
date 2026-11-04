@@ -1,55 +1,51 @@
 # Community 122
 
-> 21 nodes · cohesion 0.19
+> 21 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **detection/__init__.py** (23 connections) — `src/pipeline/detection/__init__.py`
-- **run_detection_step()** (21 connections) — `src/pipeline/detection/__init__.py`
-- **TestPipelineDetection** (8 connections) — `tests/test_pipeline_detection.py`
-- **_detector_route()** (6 connections) — `src/pipeline/detection/__init__.py`
-- **.__new__()** (6 connections) — `src/pipeline/detection/__init__.py`
-- **._base_config()** (6 connections) — `tests/test_pipeline_detection.py`
-- **DetectorOrchestrator** (5 connections) — `src/pipeline/detection/__init__.py`
-- **_install_standard_detector_hooks()** (5 connections) — `src/pipeline/detection/__init__.py`
-- **_validate_verified_image_stems()** (5 connections) — `src/pipeline/detection/__init__.py`
-- **test_pipeline_detection.py** (4 connections) — `tests/test_pipeline_detection.py`
-- **Any** (3 connections)
+- **pdf_to_images.py** (12 connections) — `src/pdf_to_images.py`
+- **render_pdf_to_memory()** (12 connections) — `src/pdf_to_images.py`
+- **._run_pdf_to_images()** (12 connections) — `src/pipeline/orchestrator.py`
+- **render_pdf()** (8 connections) — `src/pdf_to_images.py`
+- **save_image()** (7 connections) — `src/pdf_to_images.py`
+- **PdfConversionError** (6 connections) — `src/pdf_to_images.py`
+- **normalise_pages()** (5 connections) — `src/pdf_to_images.py`
+- **parse_args()** (5 connections) — `src/pdf_to_images.py`
+- **pixmap_to_array()** (5 connections) — `src/pdf_to_images.py`
+- **test_pdf_to_images_progress.py** (5 connections) — `tests/test_pdf_to_images_progress.py`
+- **main()** (4 connections) — `src/pdf_to_images.py`
+- **ndarray** (4 connections)
 - **Path** (3 connections)
-- **.test_precomputed_probe_candidates_are_copied_and_scored_with_cnn_bands()** (3 connections) — `tests/test_pipeline_detection.py`
-- **.test_probe_score_name_is_forwarded_to_probe_and_cnn()** (3 connections) — `tests/test_pipeline_detection.py`
-- **.test_run_detection_step_allows_explicit_cnn_nms_opt_in()** (3 connections) — `tests/test_pipeline_detection.py`
-- **.test_run_detection_step_skips_probe_and_cnn_on_dry_run()** (3 connections) — `tests/test_pipeline_detection.py`
-- **.test_run_detection_step_uses_orchestrator()** (3 connections) — `tests/test_pipeline_detection.py`
-- **Detection package providing barline detection orchestration.** (1 connections) — `src/pipeline/detection/__init__.py`
-- **Dispatch standard or verified dense production detection.** (1 connections) — `src/pipeline/detection/__init__.py`
-- **Reject ambiguous verified-route calls before profile artifacts can collide.** (1 connections) — `src/pipeline/detection/__init__.py`
-- **Route the public orchestrator constructor by the configured detector route.** (1 connections) — `src/pipeline/detection/__init__.py`
+- **resize_image()** (3 connections) — `src/pdf_to_images.py`
+- **test_pdf_to_images_cli_requires_explicit_input_and_output_paths()** (2 connections) — `tests/test_pdf_to_images_progress.py`
+- **test_render_pdf_to_memory_reports_each_completed_page()** (2 connections) — `tests/test_pdf_to_images_progress.py`
+- **Pixmap** (1 connections)
+- **Namespace** (1 connections)
+- **RuntimeError** (1 connections)
+- **Raised when a page cannot be rendered or saved.** (1 connections) — `src/pdf_to_images.py`
+- **Step 1: Convert PDF to images in-process and retain exact source identity.** (1 connections) — `src/pipeline/orchestrator.py`
 
 ## Relationships
 
-- [Community 44](Community_44.md) (5 shared connections)
-- [Community 74](Community_74.md) (5 shared connections)
-- [Community 20](Community_20.md) (5 shared connections)
-- [Community 70](Community_70.md) (4 shared connections)
-- [Community 60](Community_60.md) (3 shared connections)
-- [Community 90](Community_90.md) (3 shared connections)
-- [Community 149](Community_149.md) (2 shared connections)
-- [Community 57](Community_57.md) (2 shared connections)
-- [Community 159](Community_159.md) (2 shared connections)
-- [Community 97](Community_97.md) (1 shared connections)
-- [Community 108](Community_108.md) (1 shared connections)
-- [Community 21](Community_21.md) (1 shared connections)
+- [Community 21](Community_21.md) (9 shared connections)
+- [Community 166](Community_166.md) (3 shared connections)
+- [Community 164](Community_164.md) (2 shared connections)
+- [Community 154](Community_154.md) (1 shared connections)
+- [Community 144](Community_144.md) (1 shared connections)
+- [Community 12](Community_12.md) (1 shared connections)
+- [Community 112](Community_112.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/__init__.py`
-- `tests/test_pipeline_detection.py`
+- `src/pdf_to_images.py`
+- `src/pipeline/orchestrator.py`
+- `tests/test_pdf_to_images_progress.py`
 
 ## Audit Trail
 
-- EXTRACTED: 71 (96%)
-- INFERRED: 3 (4%)
+- EXTRACTED: 59 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

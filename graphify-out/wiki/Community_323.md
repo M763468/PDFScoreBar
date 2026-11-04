@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **audit_double_barline_overlaps.py** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
-- **audit_file()** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
-- **calculate_iou()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **evaluate_accuracy_batch.py** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **main()** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **compute_iou()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **find_gt_file()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- `experiments/cnn_classifier/evaluate_accuracy_batch.py`
 
 ## Audit Trail
 

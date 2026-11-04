@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_band_y.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_y.py`
-- **analyze_band_y()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_y.py`
+- **analyze_divisi.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
+- **analyze_divisi()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/investigation_20260102/analyze_band_y.py`
+- `experiments/legacy/investigation_20260102/analyze_divisi.py`
 
 ## Audit Trail
 

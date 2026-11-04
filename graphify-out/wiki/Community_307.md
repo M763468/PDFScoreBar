@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **inspect_errors.py** (4 connections) — `tools/inspect_errors.py`
-- **draw_errors()** (4 connections) — `tools/inspect_errors.py`
-- **get_measure_coords()** (2 connections) — `tools/inspect_errors.py`
-- **load_json()** (2 connections) — `tools/inspect_errors.py`
-- **main()** (2 connections) — `tools/inspect_errors.py`
+- **experiment_a.py** (4 connections) — `tools/issue194/experiment_a.py`
+- **main()** (4 connections) — `tools/issue194/experiment_a.py`
+- **analyze_system_first_measure()** (2 connections) — `tools/issue194/experiment_a.py`
+- **load_numbering_base()** (2 connections) — `tools/issue194/experiment_a.py`
+- **simulate_guards()** (2 connections) — `tools/issue194/experiment_a.py`
 
 ## Relationships
 
@@ -16,7 +16,7 @@
 
 ## Source Files
 
-- `tools/inspect_errors.py`
+- `tools/issue194/experiment_a.py`
 
 ## Audit Trail
 

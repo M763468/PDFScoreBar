@@ -20,9 +20,9 @@
 
 ## Relationships
 
-- [Community 30](Community_30.md) (5 shared connections)
-- [Community 72](Community_72.md) (2 shared connections)
-- [Community 1](Community_1.md) (1 shared connections)
+- [Community 31](Community_31.md) (5 shared connections)
+- [Community 73](Community_73.md) (2 shared connections)
+- [Community 0](Community_0.md) (1 shared connections)
 
 ## Source Files
 

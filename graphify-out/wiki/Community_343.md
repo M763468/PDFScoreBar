@@ -1,13 +1,12 @@
 # Community 343
 
-> 4 nodes · cohesion 0.50
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **resume_browser_acceptance.cjs** (3 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
-- **{ chromium }** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
-- **fs** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
-- **path** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **analyze_no_peak.py** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
+- **analyze_no_peak()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
 
 ## Relationships
 
@@ -15,7 +14,7 @@
 
 ## Source Files
 
-- `tools/review_correction/resume_browser_acceptance.cjs`
+- `experiments/cnn_classifier/analyze_no_peak.py`
 
 ## Audit Trail
 

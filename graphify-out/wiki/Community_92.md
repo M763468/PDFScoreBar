@@ -1,50 +1,54 @@
 # Community 92
 
-> 27 nodes · cohesion 0.20
+> 27 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **compare_full68_variants.py** (20 connections) — `tools/issue284/compare_full68_variants.py`
-- **main()** (12 connections) — `tools/issue284/compare_full68_variants.py`
-- **Any** (10 connections)
-- **support_semantics()** (9 connections) — `tools/issue284/compare_full68_variants.py`
-- **load_json()** (8 connections) — `tools/issue284/compare_full68_variants.py`
-- **Path** (8 connections)
-- **test_issue284_retained_artifact_paths.py** (7 connections) — `tests/test_issue284_retained_artifact_paths.py`
-- **resolve_retained_path()** (7 connections) — `tools/issue284/compare_full68_variants.py`
-- **boxes_from_payload()** (6 connections) — `tools/issue284/compare_full68_variants.py`
-- **gt_boxes()** (6 connections) — `tools/issue284/compare_full68_variants.py`
-- **hybrid_metrics()** (6 connections) — `tools/issue284/compare_full68_variants.py`
-- **page_artifact()** (6 connections) — `tools/issue284/compare_full68_variants.py`
-- **numbering_view()** (5 connections) — `tools/issue284/compare_full68_variants.py`
-- **Path** (4 connections)
-- **normalize_box()** (4 connections) — `tools/issue284/compare_full68_variants.py`
-- **normalize_overrides()** (4 connections) — `tools/issue284/compare_full68_variants.py`
-- **test_comparator_prefers_requested_variant_over_existing_recorded_path()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
-- **test_comparator_resolves_relocated_variant_artifact()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
-- **test_support_semantics_rejects_missing_declared_connector_artifact()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
-- **test_support_semantics_rejects_missing_required_connector_field()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
-- **aggregate_hybrid()** (3 connections) — `tools/issue284/compare_full68_variants.py`
-- **bbox_differences()** (3 connections) — `tools/issue284/compare_full68_variants.py`
-- **score_map()** (3 connections) — `tools/issue284/compare_full68_variants.py`
-- **sha256()** (3 connections) — `tools/issue284/compare_full68_variants.py`
-- **Compare fresh post-#285 control and Issue #284 candidate full-68 runs. The…** (1 connections) — `tools/issue284/compare_full68_variants.py`
+- **build_detector_input_contract()** (17 connections) — `src/pipeline/detection/input_contract.py`
+- **test_issue255_production_detector_restoration.py** (14 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_detector_input_contract.py** (9 connections) — `tests/test_detector_input_contract.py`
+- **input_contract.py** (8 connections) — `src/pipeline/detection/input_contract.py`
+- **require_fresh_detector_input_contract()** (6 connections) — `src/pipeline/detection/input_contract.py`
+- **Path** (5 connections)
+- **_configured()** (4 connections) — `src/pipeline/detection/input_contract.py`
+- **_config()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_dense_inventory_uses_only_current_hybrid_and_profile_masks()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_dense_route_cnn_uses_manifest_original_coordinates_and_nms_false()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_verified_profile_is_selected_for_hybrid_detection()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **Any** (3 connections)
+- **test_falsey_override_values_are_unset()** (3 connections) — `tests/test_detector_input_contract.py`
+- **test_truthy_path_strings_select_precomputed_route()** (3 connections) — `tests/test_detector_input_contract.py`
+- **test_current_sr_worker_uses_verified_x4_settings()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_current_support_runs_sr_homr_omr_as_separate_phases()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **parametrize** (2 connections)
+- **test_cnn_bands_override_makes_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_empty_detection_config_is_fresh_upstream()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_fresh_guard_names_all_candidate_source_overrides()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_precomputed_probe_candidates_make_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_canonical_detector_config_uses_verified_restored_route()** (2 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **Classify whether detector candidates come from fresh upstream or overrides. A…** (1 connections) — `src/pipeline/detection/input_contract.py`
+- **Match the truthiness gate used by the detector path resolvers.** (1 connections) — `src/pipeline/detection/input_contract.py`
+- **Return the authoritative candidate-source contract for one detector run.** (1 connections) — `src/pipeline/detection/input_contract.py`
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 1](Community_1.md) (4 shared connections)
-- [Community 30](Community_30.md) (4 shared connections)
-- [Community 126](Community_126.md) (1 shared connections)
+- [Community 68](Community_68.md) (7 shared connections)
+- [Community 154](Community_154.md) (2 shared connections)
+- [Community 109](Community_109.md) (2 shared connections)
+- [Community 46](Community_46.md) (2 shared connections)
+- [Community 71](Community_71.md) (1 shared connections)
+- [Community 181](Community_181.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue284_retained_artifact_paths.py`
-- `tools/issue284/compare_full68_variants.py`
+- `src/pipeline/detection/input_contract.py`
+- `tests/test_detector_input_contract.py`
+- `tests/test_issue255_production_detector_restoration.py`
 
 ## Audit Trail
 
-- EXTRACTED: 79 (100%)
+- EXTRACTED: 63 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

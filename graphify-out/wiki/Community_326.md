@@ -1,30 +1,39 @@
 # Community 326
 
-> 8 nodes · cohesion 0.46
+> 11 nodes · cohesion 0.27
 
 ## Key Concepts
 
-- **generate_image_review.py** (6 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
-- **main()** (6 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
-- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
-- **iou()** (3 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
-- **load_boxes()** (3 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
-- **margin_class()** (3 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
-- **apply_margin_bands()** (2 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
-- **Path** (2 connections)
+- **end_barlines.py** (11 connections) — `src/homr_runtime/end_barlines.py`
+- **recover_end_barlines()** (10 connections) — `src/homr_runtime/end_barlines.py`
+- **core/heuristics.py** (9 connections) — `src/homr_eval_scripts/core/heuristics.py`
+- **_scan_vertical_line()** (5 connections) — `src/homr_runtime/end_barlines.py`
+- **_cluster_by_y_centers()** (3 connections) — `src/homr_runtime/end_barlines.py`
+- **ndarray** (2 connections)
+- **Alias runtime patch points while retaining historical diagnostic exports.** (1 connections) — `src/homr_eval_scripts/core/heuristics.py`
+- **homr_eval_scripts/core/__init__.py** (1 connections) — `src/homr_eval_scripts/core/__init__.py`
+- **BarlinePrediction** (1 connections)
+- **Path** (1 connections)
+- **Recover barlines at staff ends without changing existing geometry settings.** (1 connections) — `src/homr_runtime/end_barlines.py`
 
 ## Relationships
 
-- [Community 30](Community_30.md) (3 shared connections)
+- [Community 15](Community_15.md) (7 shared connections)
+- [Community 67](Community_67.md) (5 shared connections)
+- [Community 163](Community_163.md) (1 shared connections)
+- [Community 49](Community_49.md) (1 shared connections)
+- [Community 31](Community_31.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/generate_image_review.py`
+- `src/homr_eval_scripts/core/__init__.py`
+- `src/homr_eval_scripts/core/heuristics.py`
+- `src/homr_runtime/end_barlines.py`
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 27 (90%)
+- INFERRED: 3 (10%)
 - AMBIGUOUS: 0 (0%)
 
 ---

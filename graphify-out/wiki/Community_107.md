@@ -1,56 +1,53 @@
 # Community 107
 
-> 24 nodes · cohesion 0.14
+> 25 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **BarlinePrediction** (18 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **BarlineMatch** (14 connections) — `src/common/barline_evaluation.py`
-- **BarlineMatchResult** (14 connections) — `src/common/barline_evaluation.py`
-- **BarlineSoftMatch** (14 connections) — `src/common/barline_evaluation.py`
-- **.predict()** (13 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **HomrPredictor** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **run_homr_on_image()** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **TransformInfo** (8 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **AggregateMetrics** (7 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **compute_metrics()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **draw_overlay()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **filter_detections_by_notehead_proximity()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **enable_segnet_cache()** (6 connections) — `src/homr_runtime/segnet_cache.py`
-- **count_staff_crossings()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **map_pred_to_orig()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **ProcessingConfig** (4 connections)
-- **.__init__()** (3 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **XmlGeneratorArguments** (3 connections)
-- **Counts the number of staff line crossings for a vertical barline candidate. A…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Persistent Homr Predictor for batch processing.** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Runs the core homr staff and symbol detection pipeline for a single image with…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Filters barline detections that are horizontally close to noteheads, which are…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **.total_scale()** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Patch homr.segmentation.inference_segnet.Segnet with a cached variant.** (1 connections) — `src/homr_runtime/segnet_cache.py`
+- **evaluate_barline_rules.py** (28 connections) — `tools/evaluate_barline_rules.py`
+- **main()** (18 connections) — `tools/evaluate_barline_rules.py`
+- **_metrics()** (8 connections) — `tools/evaluate_barline_rules.py`
+- **Path** (8 connections)
+- **greedy_match_by_rule()** (7 connections) — `tools/evaluate_barline_rules.py`
+- **_measure_count_for_boxes()** (6 connections) — `tools/evaluate_barline_rules.py`
+- **barline_ioa()** (5 connections) — `tools/evaluate_barline_rules.py`
+- **_measure_iou_2d()** (5 connections) — `tools/evaluate_barline_rules.py`
+- **_measure_local_kpis()** (5 connections) — `tools/evaluate_barline_rules.py`
+- **_box_area()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **_intersection_area()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **load_gt_boxes()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **parse_scored_context()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **center_distance_x()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **find_gt_file()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_find_staff_mask_for_eval2_page()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **load_config_file()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **load_fn_det_classification()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_rule_accept()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **RuleResult** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_x_iou()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_extract_measures()** (2 connections) — `tools/evaluate_barline_rules.py`
+- **_rule_rank()** (2 connections) — `tools/evaluate_barline_rules.py`
+- **_rule_specs()** (2 connections) — `tools/evaluate_barline_rules.py`
+- **Parse score/page context from scored JSON path.** (1 connections) — `tools/evaluate_barline_rules.py`
 
 ## Relationships
 
-- [Community 39](Community_39.md) (41 shared connections)
-- [Community 1](Community_1.md) (18 shared connections)
-- [Community 142](Community_142.md) (8 shared connections)
-- [Community 48](Community_48.md) (5 shared connections)
-- [Community 96](Community_96.md) (5 shared connections)
-- [Community 14](Community_14.md) (3 shared connections)
-- [Community 273](Community_273.md) (1 shared connections)
-- [Community 2](Community_2.md) (1 shared connections)
+- [Community 31](Community_31.md) (10 shared connections)
+- [Community 0](Community_0.md) (5 shared connections)
+- [Community 50](Community_50.md) (4 shared connections)
+- [Community 8](Community_8.md) (3 shared connections)
+- [Community 42](Community_42.md) (1 shared connections)
+- [Community 18](Community_18.md) (1 shared connections)
+- [Community 73](Community_73.md) (1 shared connections)
 
 ## Source Files
 
-- `src/common/barline_evaluation.py`
-- `src/homr_eval_scripts/core/metrics.py`
-- `src/homr_eval_scripts/homr_evaluator.py`
-- `src/homr_runtime/segnet_cache.py`
+- `tools/evaluate_barline_rules.py`
 
 ## Audit Trail
 
-- EXTRACTED: 93 (78%)
-- INFERRED: 27 (22%)
+- EXTRACTED: 77 (95%)
+- INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

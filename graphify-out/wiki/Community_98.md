@@ -1,53 +1,52 @@
 # Community 98
 
-> 26 nodes · cohesion 0.19
+> 16 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **CheckpointStore** (18 connections) — `tools/review_correction/history.py`
-- **digest()** (15 connections) — `tools/review_correction/history.py`
-- **.capture()** (11 connections) — `tools/review_correction/history.py`
-- **history.py** (11 connections) — `tools/review_correction/history.py`
-- **ValueError** (11 connections)
-- **.get()** (9 connections) — `tools/review_correction/history.py`
-- **._prepare()** (8 connections) — `tools/review_correction/history.py`
-- **._source_context()** (7 connections) — `tools/review_correction/history.py`
-- **atomic_bytes()** (6 connections) — `tools/review_correction/history.py`
-- **.application_record()** (6 connections) — `tools/review_correction/history.py`
-- **.list_applications()** (6 connections) — `tools/review_correction/history.py`
-- **.transaction()** (6 connections) — `tools/review_correction/history.py`
-- **.validate_dependencies()** (6 connections) — `tools/review_correction/history.py`
-- **.blob()** (5 connections) — `tools/review_correction/history.py`
-- **.materialize()** (5 connections) — `tools/review_correction/history.py`
-- **.put()** (5 connections) — `tools/review_correction/history.py`
-- **relocate_manifest()** (4 connections) — `tools/review_correction/history.py`
-- **ReviewBusyError** (4 connections) — `tools/review_correction/history.py`
-- **.list()** (3 connections) — `tools/review_correction/history.py`
-- **.active()** (2 connections) — `src/pipeline/engine_telemetry.py`
-- **.__init__()** (1 connections) — `tools/review_correction/history.py`
-- **Package-bound, immutable correction checkpoints with content-addressed files.** (1 connections) — `tools/review_correction/history.py`
-- **Caller holds transaction. Publish one immutable manifest last.** (1 connections) — `tools/review_correction/history.py`
-- **Retain every failure; recover abandoned runs only under the save lock.** (1 connections) — `tools/review_correction/history.py`
-- **Only the retained engine-job layout permits a fixed-prefix relocation.** (1 connections) — `tools/review_correction/history.py`
-- *... and 1 more nodes in this community*
+- **load_yaml()** (43 connections) — `src/pipeline/core/__init__.py`
+- **pipeline/core/__init__.py** (15 connections) — `src/pipeline/core/__init__.py`
+- **write_yaml()** (8 connections) — `src/pipeline/core/__init__.py`
+- **Path** (7 connections)
+- **Any** (6 connections)
+- **test_issue355_trusted_accuracy_smoke.py** (5 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
+- **.test_full_sequence()** (5 connections) — `tests/test_pipeline_integration.py`
+- **write_manifest()** (4 connections) — `src/pipeline/core/__init__.py`
+- **test_canonical_direct_run_discovers_established_external_images()** (4 connections) — `tests/test_distribution_surface.py`
+- **test_standard_smoke_uses_production_detector_contract()** (3 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
+- **TestPipelineIntegration** (3 connections) — `tests/test_pipeline_integration.py`
+- **.setUpClass()** (3 connections) — `tests/test_pipeline_integration.py`
+- **test_standard_smoke_uses_accepted_evaluation_input_contract()** (2 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
+- **_without()** (2 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
+- **Shared configuration, run identifiers, subprocess logging and output I/O.** (1 connections) — `src/pipeline/core/__init__.py`
+- **test_standard_smoke_runs_post_pipeline_accuracy_gate()** (1 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
 
 ## Relationships
 
-- [Community 22](Community_22.md) (20 shared connections)
-- [Community 102](Community_102.md) (5 shared connections)
-- [Community 114](Community_114.md) (3 shared connections)
-- [Community 31](Community_31.md) (3 shared connections)
-- [Community 18](Community_18.md) (1 shared connections)
+- [Community 12](Community_12.md) (8 shared connections)
+- [Community 111](Community_111.md) (6 shared connections)
+- [Community 63](Community_63.md) (4 shared connections)
+- [Community 3](Community_3.md) (3 shared connections)
+- [Community 112](Community_112.md) (3 shared connections)
+- [Community 215](Community_215.md) (3 shared connections)
+- [Community 154](Community_154.md) (2 shared connections)
+- [Community 21](Community_21.md) (2 shared connections)
+- [Community 60](Community_60.md) (2 shared connections)
+- [Community 58](Community_58.md) (2 shared connections)
+- [Community 5](Community_5.md) (2 shared connections)
+- [Community 132](Community_132.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_telemetry.py`
-- `tools/review_correction/history.py`
+- `src/pipeline/core/__init__.py`
+- `tests/test_distribution_surface.py`
+- `tests/test_issue355_trusted_accuracy_smoke.py`
+- `tests/test_pipeline_integration.py`
 
 ## Audit Trail
 
-- EXTRACTED: 90 (97%)
-- INFERRED: 3 (3%)
+- EXTRACTED: 87 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

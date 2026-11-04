@@ -1,12 +1,12 @@
 # Community 350
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **add_measure_numbers()** (2 connections) — `experiments/legacy/archive/add_measure_numbers.py`
-- **add_measure_numbers.py** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
-- **Adds measure numbers to a score image based on a list of barline coordinates.…** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
+- **analyze_fp_cause.py** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
+- **analyze_fp()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
+- **center_dist()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/legacy/archive/add_measure_numbers.py`
+- `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

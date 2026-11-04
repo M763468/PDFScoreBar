@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **run_final_batch_comparison.py** (2 connections) — `tools/run_final_batch_comparison.py`
-- **main()** (2 connections) — `tools/run_final_batch_comparison.py`
-- **run_pipeline_for_all()** (2 connections) — `tools/run_final_batch_comparison.py`
+- **sort_measures.py** (2 connections) — `tools/sort_measures.py`
+- **group_and_sort_measures()** (2 connections) — `tools/sort_measures.py`
+- **main()** (2 connections) — `tools/sort_measures.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/run_final_batch_comparison.py`
+- `tools/sort_measures.py`
 
 ## Audit Trail
 

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **docker_negative.py** (2 connections) — `tools/issue454/docker_negative.py`
-- **main()** (1 connections) — `tools/issue454/docker_negative.py`
-- **CPU-only Docker ownership, integrity, crash and cross-container flock checks.** (1 connections) — `tools/issue454/docker_negative.py`
+- **issue454/run_experiment.py** (2 connections) — `tools/issue454/run_experiment.py`
+- **main()** (1 connections) — `tools/issue454/run_experiment.py`
+- **Launch a frozen Issue #447 experiment without changing production configuration.** (1 connections) — `tools/issue454/run_experiment.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/issue454/docker_negative.py`
+- `tools/issue454/run_experiment.py`
 
 ## Audit Trail
 

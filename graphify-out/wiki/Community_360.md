@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **test_issue323_cli_wiring.py** (2 connections) — `tests/test_issue323_cli_wiring.py`
-- **test_make_targets_forward_canonical_contract_flags()** (1 connections) — `tests/test_issue323_cli_wiring.py`
-- **test_score_wrapper_contract_flags_reach_each_parser()** (1 connections) — `tests/test_issue323_cli_wiring.py`
+- **test_issue447_e2e_matrix.py** (2 connections) — `tests/test_issue447_e2e_matrix.py`
+- **Exercise fresh-output matrix orchestration without Docker, models or inference.** (1 connections) — `tests/test_issue447_e2e_matrix.py`
+- **test_fresh_matrix_reaches_both_replays_and_conditional_combination()** (1 connections) — `tests/test_issue447_e2e_matrix.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tests/test_issue323_cli_wiring.py`
+- `tests/test_issue447_e2e_matrix.py`
 
 ## Audit Trail
 

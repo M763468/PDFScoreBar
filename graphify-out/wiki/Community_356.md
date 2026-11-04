@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **gpu_smoke.sh** (2 connections) — `scripts/gpu_smoke.sh`
-- **gpu_smoke.sh script** (2 connections) — `scripts/gpu_smoke.sh`
-- **usage()** (2 connections) — `scripts/gpu_smoke.sh`
+- **respond_to_pr_review.sh** (2 connections) — `scripts/respond_to_pr_review.sh`
+- **respond_to_pr_review.sh script** (2 connections) — `scripts/respond_to_pr_review.sh`
+- **usage()** (2 connections) — `scripts/respond_to_pr_review.sh`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `scripts/gpu_smoke.sh`
+- `scripts/respond_to_pr_review.sh`
 
 ## Audit Trail
 

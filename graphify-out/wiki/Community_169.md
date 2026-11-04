@@ -1,37 +1,40 @@
 # Community 169
 
-> 15 nodes · cohesion 0.32
+> 15 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **run_stage_c_seed_regen_then_eval.py** (13 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **main()** (9 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **validate_candidate_coverage()** (8 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **Namespace** (5 connections)
-- **write_json()** (5 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **assert_candidate_coverage()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **build_parser()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **load_json()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **Any** (4 connections)
-- **run_regeneration()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **build_stage_b_cmd()** (3 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **Path** (3 connections)
-- **run_command()** (3 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **validate_inputs()** (3 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **ArgumentParser** (1 connections)
+- **draw()** (21 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **itemsForCurrentPage()** (13 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **renderMovementRows()** (11 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **drawMovementMarker()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementStateAt()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementSystemsOnPage()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **systemBounds()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementCandidateAt()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **drawBox()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **drawLabel()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **imgToCanvas()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **resolvedMovementAt()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **measureDisplayLabel()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementReviewAt()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementEvidenceText()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
 
 ## Relationships
 
-- [Community 145](Community_145.md) (4 shared connections)
-- [Community 126](Community_126.md) (1 shared connections)
+- [Community 186](Community_186.md) (17 shared connections)
+- [Community 16](Community_16.md) (16 shared connections)
+- [Community 253](Community_253.md) (8 shared connections)
+- [Community 208](Community_208.md) (6 shared connections)
+- [Community 153](Community_153.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_stage_c_seed_regen_then_eval.py`
+- `tools/gt_relabel_gui/app_manual.js`
 
 ## Audit Trail
 
-- EXTRACTED: 39 (100%)
+- EXTRACTED: 74 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **docker_container_preflight.sh** (2 connections) — `scripts/docker_container_preflight.sh`
-- **docker_container_preflight.sh script** (2 connections) — `scripts/docker_container_preflight.sh`
-- **usage()** (2 connections) — `scripts/docker_container_preflight.sh`
+- **docker_runtime_validation.sh** (2 connections) — `scripts/docker_runtime_validation.sh`
+- **docker_runtime_validation.sh script** (2 connections) — `scripts/docker_runtime_validation.sh`
+- **usage()** (2 connections) — `scripts/docker_runtime_validation.sh`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `scripts/docker_container_preflight.sh`
+- `scripts/docker_runtime_validation.sh`
 
 ## Audit Trail
 

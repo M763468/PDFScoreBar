@@ -1,38 +1,26 @@
 # Community 305
 
-> 13 nodes · cohesion 0.24
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **get_pipeline_python()** (16 connections) — `src/pipeline/core/python_env.py`
-- **python_env.py** (9 connections) — `src/pipeline/core/python_env.py`
-- **get_docker_exec_prefix()** (6 connections) — `src/pipeline/core/python_env.py`
-- **test_python_env.py** (5 connections) — `tests/test_python_env.py`
-- **is_in_container()** (4 connections) — `src/pipeline/core/python_env.py`
-- **test_get_docker_exec_prefix_does_not_probe_another_container()** (2 connections) — `tests/test_python_env.py`
-- **test_get_docker_exec_prefix_uses_canonical_container()** (2 connections) — `tests/test_python_env.py`
-- **test_get_pipeline_python_uses_explicit_override_without_managed_environment()** (2 connections) — `tests/test_python_env.py`
-- **test_get_pipeline_python_uses_pipeline_venv_in_container()** (2 connections) — `tests/test_python_env.py`
-- **Python interpreter selection for pipeline sub-processes.** (1 connections) — `src/pipeline/core/python_env.py`
-- **Checks if the current process is running inside a project Docker container.** (1 connections) — `src/pipeline/core/python_env.py`
-- **Returns the canonical pipeline docker exec prefix when available from the host.** (1 connections) — `src/pipeline/core/python_env.py`
-- **Returns the appropriate Python interpreter command (possibly with docker exec).…** (1 connections) — `src/pipeline/core/python_env.py`
+- **main.js** (4 connections) — `tools/gui_helper/static/js/main.js`
+- **createOverlayBox()** (2 connections) — `tools/gui_helper/static/js/main.js`
+- **renderOverlays()** (2 connections) — `tools/gui_helper/static/js/main.js`
+- **saveDecisions()** (2 connections) — `tools/gui_helper/static/js/main.js`
+- **setupSaveButton()** (2 connections) — `tools/gui_helper/static/js/main.js`
 
 ## Relationships
 
-- [Community 45](Community_45.md) (4 shared connections)
-- [Community 21](Community_21.md) (4 shared connections)
-- [Community 90](Community_90.md) (3 shared connections)
-- [Community 24](Community_24.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/pipeline/core/python_env.py`
-- `tests/test_python_env.py`
+- `tools/gui_helper/static/js/main.js`
 
 ## Audit Trail
 
-- EXTRACTED: 33 (100%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

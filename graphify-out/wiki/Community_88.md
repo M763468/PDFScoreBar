@@ -1,48 +1,48 @@
 # Community 88
 
-> 27 nodes · cohesion 0.09
+> 27 nodes · cohesion 0.11
 
 ## Key Concepts
 
-- **review_tool/app.js** (26 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **loadPage()** (5 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **draw()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **populateBoxList()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **getFilteredBoxes()** (3 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **fetchJSON()** (2 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **updateCanvasSize()** (2 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **baseImg** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **boxes** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **boxList** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **canvas** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **categoryColors** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **categoryFilter** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **clearLabelBtn** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **ctx** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **initLabels()** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **labelButtons** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **labels** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **overlayImg** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **pageMeta** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **pageSelect** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **saveBtn** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **setStatus()** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **showBoxes** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
-- **showOverlay** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **train.py** (12 connections) — `experiments/cnn_classifier/train.py`
+- **train()** (9 connections) — `experiments/cnn_classifier/train.py`
+- **GaussianBlur** (7 connections) — `experiments/cnn_classifier/train.py`
+- **BarlineDataset** (6 connections) — `experiments/cnn_classifier/train.py`
+- **get_gpu_transforms()** (4 connections) — `experiments/cnn_classifier/train.py`
+- **GPUNormalize** (4 connections) — `experiments/cnn_classifier/train.py`
+- **GPUSaltPepperNoise** (4 connections) — `experiments/cnn_classifier/train.py`
+- **load_model_weights()** (4 connections) — `experiments/cnn_classifier/train.py`
+- **.__init__()** (3 connections) — `experiments/cnn_classifier/train.py`
+- **get_cpu_transforms()** (3 connections) — `experiments/cnn_classifier/train.py`
+- **calculate_metrics()** (2 connections) — `experiments/cnn_classifier/train.py`
+- **find_optimal_threshold()** (2 connections) — `experiments/cnn_classifier/train.py`
+- **get_model()** (2 connections) — `experiments/cnn_classifier/train.py`
+- **.__init__()** (2 connections) — `experiments/cnn_classifier/train.py`
+- **.__init__()** (2 connections) — `experiments/cnn_classifier/train.py`
+- **Path** (2 connections)
+- **.__getitem__()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **.__len__()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **.__call__()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **.__init__()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **.__repr__()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **get_args()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **.forward()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **.forward()** (1 connections) — `experiments/cnn_classifier/train.py`
+- **Dataset** (1 connections)
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 14](Community_14.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/review_tool/app.js`
+- `experiments/cnn_classifier/train.py`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (97%)
-- INFERRED: 1 (3%)
+- EXTRACTED: 40 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_gt_rebuild_hybrid_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
-- **run_gt_rebuild_hybrid_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
+- **run_phase5b_srcheck.sh** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
+- **run_phase5b_srcheck.sh script** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
+- `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
 
 ## Audit Trail
 

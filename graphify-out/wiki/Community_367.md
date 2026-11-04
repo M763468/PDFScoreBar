@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **create_synthetic_image()** (2 connections) — `tools/create_synthetic_image.py`
-- **create_synthetic_image.py** (1 connections) — `tools/create_synthetic_image.py`
-- **Creates a synthetic image with a white background, one long vertical black line…** (1 connections) — `tools/create_synthetic_image.py`
+- **debug_mask_alignment()** (2 connections) — `tools/debug_mask_alignment.py`
+- **debug_mask_alignment.py** (1 connections) — `tools/debug_mask_alignment.py`
+- **Visualizes the alignment between the original image and the mask. Draws the…** (1 connections) — `tools/debug_mask_alignment.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/create_synthetic_image.py`
+- `tools/debug_mask_alignment.py`
 
 ## Audit Trail
 

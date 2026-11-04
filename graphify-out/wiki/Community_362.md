@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **batch_rest_roi_test.py** (2 connections) — `tools/batch_rest_roi_test.py`
-- **main()** (2 connections) — `tools/batch_rest_roi_test.py`
-- **run_command()** (2 connections) — `tools/batch_rest_roi_test.py`
+- **build_iter6_hard_samples.py** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
+- **extract_crop()** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
+- **main()** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/batch_rest_roi_test.py`
+- `tools/cnn_classifier/build_iter6_hard_samples.py`
 
 ## Audit Trail
 

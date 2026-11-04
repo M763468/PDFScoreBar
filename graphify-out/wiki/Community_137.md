@@ -4,44 +4,41 @@
 
 ## Key Concepts
 
-- **rescore_phase_c_mmr_geometry_rebased.py** (23 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **run()** (15 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **normalise_overrides()** (12 connections) — `tools/issue264/phase_c_fixture_rebase.py`
-- **Any** (11 connections)
-- **_artifact_path()** (10 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **diagnose_stage_e_fns.py** (18 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **eval_stage_e_from_manifest.py** (13 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
+- **diagnose()** (12 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **main()** (9 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
 - **Path** (8 connections)
-- **_load_json()** (6 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_score_overrides()** (6 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_page_inputs()** (5 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_verify_artifact_detail()** (5 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **main()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_resolve_project_path()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_write_json()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_artifact_index()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_override_key()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_override_skip()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **parse_args()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_sha256_file()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **_summary_totals()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
-- **Namespace** (1 connections)
+- **safe_boxes()** (7 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **load_json()** (5 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **nearest_box()** (5 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **Any** (5 connections)
+- **stage_paths()** (5 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **boxes_from_candidates()** (5 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
+- **boxes_from_gt()** (5 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
+- **boxes_from_scored()** (5 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
+- **main()** (4 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **page_map_from_manifest()** (4 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **write_json()** (4 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **normalize_box()** (4 connections) — `tools/issue120/eval_stage_e_from_manifest.py`
+- **first_existing()** (3 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **match_flags()** (3 connections) — `tools/issue120/diagnose_stage_e_fns.py`
+- **Namespace** (2 connections)
 
 ## Relationships
 
-- [Community 144](Community_144.md) (8 shared connections)
-- [Community 112](Community_112.md) (6 shared connections)
-- [Community 84](Community_84.md) (5 shared connections)
-- [Community 50](Community_50.md) (3 shared connections)
-- [Community 93](Community_93.md) (2 shared connections)
+- [Community 0](Community_0.md) (13 shared connections)
+- [Community 78](Community_78.md) (7 shared connections)
 
 ## Source Files
 
-- `tools/issue264/phase_c_fixture_rebase.py`
-- `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- `tools/issue120/diagnose_stage_e_fns.py`
+- `tools/issue120/eval_stage_e_from_manifest.py`
 
 ## Audit Trail
 
-- EXTRACTED: 78 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 72 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

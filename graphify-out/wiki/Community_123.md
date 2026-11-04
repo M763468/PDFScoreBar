@@ -1,46 +1,55 @@
 # Community 123
 
-> 20 nodes · cohesion 0.17
+> 21 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **test_omr_job_route.py** (21 connections) — `tests/test_omr_job_route.py`
-- **_drive()** (6 connections) — `tests/test_omr_job_route.py`
-- **select_route()** (5 connections) — `src/pipeline/detection/omr_job.py`
-- **test_bind_sr_rejects_changed_source_and_foreign_sr()** (5 connections) — `tests/test_omr_job_route.py`
-- **_detector()** (4 connections) — `tests/test_omr_job_route.py`
-- **_pages()** (4 connections) — `tests/test_omr_job_route.py`
-- **_sr()** (4 connections) — `tests/test_omr_job_route.py`
-- **test_support_worker_consumes_job_prediction_without_running_omr()** (4 connections) — `tests/test_omr_job_route.py`
-- **parametrize** (3 connections)
-- **_support_request()** (3 connections) — `tests/test_omr_job_route.py`
-- **test_coordinator_rejects_result_from_the_other_route()** (3 connections) — `tests/test_omr_job_route.py`
-- **test_excluded_jobs_keep_the_per_page_route()** (3 connections) — `tests/test_omr_job_route.py`
-- **test_invalid_policy_is_rejected()** (3 connections) — `tests/test_omr_job_route.py`
-- **test_route_is_selected_from_explicit_envelope()** (3 connections) — `tests/test_omr_job_route.py`
-- **test_support_worker_rejects_incomplete_job_without_publishing()** (3 connections) — `tests/test_omr_job_route.py`
-- **test_job_failure_never_falls_back_to_per_page_sources()** (2 connections) — `tests/test_omr_job_route.py`
-- **test_root_multi_page_job_runs_one_omr_phase_before_sources()** (2 connections) — `tests/test_omr_job_route.py`
-- **Decide the OMR route before the job starts; never changes after a failure.…** (1 connections) — `src/pipeline/detection/omr_job.py`
-- **Route selection and production wiring of the per-job OMR route (Issue #459).** (1 connections) — `tests/test_omr_job_route.py`
-- **Write this job's SR request plus fresh outputs inside the support directory.** (1 connections) — `tests/test_omr_job_route.py`
+- **detection/__init__.py** (23 connections) — `src/pipeline/detection/__init__.py`
+- **run_detection_step()** (21 connections) — `src/pipeline/detection/__init__.py`
+- **TestPipelineDetection** (8 connections) — `tests/test_pipeline_detection.py`
+- **_detector_route()** (6 connections) — `src/pipeline/detection/__init__.py`
+- **.__new__()** (6 connections) — `src/pipeline/detection/__init__.py`
+- **._base_config()** (6 connections) — `tests/test_pipeline_detection.py`
+- **DetectorOrchestrator** (5 connections) — `src/pipeline/detection/__init__.py`
+- **_install_standard_detector_hooks()** (5 connections) — `src/pipeline/detection/__init__.py`
+- **_validate_verified_image_stems()** (5 connections) — `src/pipeline/detection/__init__.py`
+- **test_pipeline_detection.py** (4 connections) — `tests/test_pipeline_detection.py`
+- **Any** (3 connections)
+- **Path** (3 connections)
+- **.test_precomputed_probe_candidates_are_copied_and_scored_with_cnn_bands()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_probe_score_name_is_forwarded_to_probe_and_cnn()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_run_detection_step_allows_explicit_cnn_nms_opt_in()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_run_detection_step_skips_probe_and_cnn_on_dry_run()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_run_detection_step_uses_orchestrator()** (3 connections) — `tests/test_pipeline_detection.py`
+- **Detection package providing barline detection orchestration.** (1 connections) — `src/pipeline/detection/__init__.py`
+- **Dispatch standard or verified dense production detection.** (1 connections) — `src/pipeline/detection/__init__.py`
+- **Reject ambiguous verified-route calls before profile artifacts can collide.** (1 connections) — `src/pipeline/detection/__init__.py`
+- **Route the public orchestrator constructor by the configured detector route.** (1 connections) — `src/pipeline/detection/__init__.py`
 
 ## Relationships
 
-- [Community 51](Community_51.md) (7 shared connections)
-- [Community 74](Community_74.md) (3 shared connections)
-- [Community 45](Community_45.md) (3 shared connections)
-- [Community 21](Community_21.md) (2 shared connections)
+- [Community 45](Community_45.md) (5 shared connections)
+- [Community 75](Community_75.md) (5 shared connections)
+- [Community 21](Community_21.md) (5 shared connections)
+- [Community 71](Community_71.md) (4 shared connections)
+- [Community 61](Community_61.md) (3 shared connections)
+- [Community 91](Community_91.md) (3 shared connections)
+- [Community 150](Community_150.md) (2 shared connections)
+- [Community 58](Community_58.md) (2 shared connections)
+- [Community 160](Community_160.md) (2 shared connections)
+- [Community 98](Community_98.md) (1 shared connections)
+- [Community 154](Community_154.md) (1 shared connections)
+- [Community 22](Community_22.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/omr_job.py`
-- `tests/test_omr_job_route.py`
+- `src/pipeline/detection/__init__.py`
+- `tests/test_pipeline_detection.py`
 
 ## Audit Trail
 
-- EXTRACTED: 47 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 71 (96%)
+- INFERRED: 3 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

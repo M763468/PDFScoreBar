@@ -4,50 +4,51 @@
 
 ## Key Concepts
 
-- **evaluate_barline_rules.py** (28 connections) — `tools/evaluate_barline_rules.py`
-- **main()** (18 connections) — `tools/evaluate_barline_rules.py`
-- **_metrics()** (8 connections) — `tools/evaluate_barline_rules.py`
-- **Path** (8 connections)
-- **greedy_match_by_rule()** (7 connections) — `tools/evaluate_barline_rules.py`
-- **_measure_count_for_boxes()** (6 connections) — `tools/evaluate_barline_rules.py`
-- **barline_ioa()** (5 connections) — `tools/evaluate_barline_rules.py`
-- **_measure_iou_2d()** (5 connections) — `tools/evaluate_barline_rules.py`
-- **_measure_local_kpis()** (5 connections) — `tools/evaluate_barline_rules.py`
-- **_box_area()** (4 connections) — `tools/evaluate_barline_rules.py`
-- **_intersection_area()** (4 connections) — `tools/evaluate_barline_rules.py`
-- **load_gt_boxes()** (4 connections) — `tools/evaluate_barline_rules.py`
-- **parse_scored_context()** (4 connections) — `tools/evaluate_barline_rules.py`
-- **center_distance_x()** (3 connections) — `tools/evaluate_barline_rules.py`
-- **find_gt_file()** (3 connections) — `tools/evaluate_barline_rules.py`
-- **_find_staff_mask_for_eval2_page()** (3 connections) — `tools/evaluate_barline_rules.py`
-- **load_config_file()** (3 connections) — `tools/evaluate_barline_rules.py`
-- **load_fn_det_classification()** (3 connections) — `tools/evaluate_barline_rules.py`
-- **_rule_accept()** (3 connections) — `tools/evaluate_barline_rules.py`
-- **RuleResult** (3 connections) — `tools/evaluate_barline_rules.py`
-- **_x_iou()** (3 connections) — `tools/evaluate_barline_rules.py`
-- **_extract_measures()** (2 connections) — `tools/evaluate_barline_rules.py`
-- **_rule_rank()** (2 connections) — `tools/evaluate_barline_rules.py`
-- **_rule_specs()** (2 connections) — `tools/evaluate_barline_rules.py`
-- **Parse score/page context from scored JSON path.** (1 connections) — `tools/evaluate_barline_rules.py`
+- **mine_fn_cnn_hardpositives.py** (13 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
+- **main()** (11 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
+- **mine_hard_negatives.py** (11 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
+- **main()** (10 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
+- **re_evaluate_global.py** (10 connections) — `tools/re_evaluate_global.py`
+- **find_gt_file()** (8 connections) — `tools/re_evaluate_global.py`
+- **parse_scored_context()** (8 connections) — `tools/re_evaluate_global.py`
+- **main()** (7 connections) — `tools/re_evaluate_global.py`
+- **center_crop()** (6 connections) — `tools/cnn_classifier/score_candidates_batch.py`
+- **crop_size_from_bbox()** (6 connections) — `tools/cnn_classifier/score_candidates_batch.py`
+- **barline_iou()** (5 connections) — `tools/cnn_classifier/visualize_candidates.py`
+- **_best_recoverable_candidate()** (4 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
+- **_load_gt_boxes()** (4 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
+- **_load_gt_boxes()** (4 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
+- **Path** (4 connections)
+- **load_config_file()** (3 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
+- **Path** (3 connections)
+- **load_config_file()** (3 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
+- **Path** (3 connections)
+- **load_config_file()** (3 connections) — `tools/re_evaluate_global.py`
+- **HardPositiveRow** (2 connections) — `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
+- **HardNegativeRow** (2 connections) — `tools/cnn_classifier/mine_hard_negatives.py`
+- **visualize_candidates.py** (2 connections) — `tools/cnn_classifier/visualize_candidates.py`
+- **visualize_candidates()** (2 connections) — `tools/cnn_classifier/visualize_candidates.py`
+- **Parse score/page context from scored JSON path. Supported layouts: - nested:…** (1 connections) — `tools/re_evaluate_global.py`
 
 ## Relationships
 
-- [Community 30](Community_30.md) (10 shared connections)
-- [Community 1](Community_1.md) (5 shared connections)
-- [Community 49](Community_49.md) (4 shared connections)
-- [Community 8](Community_8.md) (3 shared connections)
-- [Community 41](Community_41.md) (1 shared connections)
-- [Community 17](Community_17.md) (1 shared connections)
-- [Community 72](Community_72.md) (1 shared connections)
+- [Community 0](Community_0.md) (11 shared connections)
+- [Community 11](Community_11.md) (6 shared connections)
+- [Community 31](Community_31.md) (3 shared connections)
+- [Community 195](Community_195.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/evaluate_barline_rules.py`
+- `tools/cnn_classifier/mine_fn_cnn_hardpositives.py`
+- `tools/cnn_classifier/mine_hard_negatives.py`
+- `tools/cnn_classifier/score_candidates_batch.py`
+- `tools/cnn_classifier/visualize_candidates.py`
+- `tools/re_evaluate_global.py`
 
 ## Audit Trail
 
-- EXTRACTED: 77 (95%)
-- INFERRED: 4 (5%)
+- EXTRACTED: 75 (96%)
+- INFERRED: 3 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

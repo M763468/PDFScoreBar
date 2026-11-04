@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_crossings.py** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
-- **analyze_crossings()** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
+- **analyze_diagnosis.py** (1 connections) — `experiments/fp_reduction/analyze_diagnosis.py`
+- **analyze()** (1 connections) — `experiments/fp_reduction/analyze_diagnosis.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_crossings.py`
+- `experiments/fp_reduction/analyze_diagnosis.py`
 
 ## Audit Trail
 

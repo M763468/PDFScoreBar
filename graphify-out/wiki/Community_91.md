@@ -1,55 +1,60 @@
 # Community 91
 
-> 27 nodes · cohesion 0.14
+> 27 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **build_detector_input_contract()** (17 connections) — `src/pipeline/detection/input_contract.py`
-- **test_issue255_production_detector_restoration.py** (14 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_detector_input_contract.py** (9 connections) — `tests/test_detector_input_contract.py`
-- **input_contract.py** (8 connections) — `src/pipeline/detection/input_contract.py`
-- **require_fresh_detector_input_contract()** (6 connections) — `src/pipeline/detection/input_contract.py`
-- **Path** (5 connections)
-- **_configured()** (4 connections) — `src/pipeline/detection/input_contract.py`
-- **_config()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_dense_inventory_uses_only_current_hybrid_and_profile_masks()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_dense_route_cnn_uses_manifest_original_coordinates_and_nms_false()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_verified_profile_is_selected_for_hybrid_detection()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **hybrid.py** (26 connections) — `src/pipeline/detection/hybrid.py`
+- **HybridDetector** (20 connections) — `src/pipeline/detection/hybrid.py`
+- **._run_homr_in_process()** (14 connections) — `src/pipeline/detection/hybrid.py`
+- **.run()** (13 connections) — `src/pipeline/detection/hybrid.py`
+- **_HomrInternalLogFilter** (9 connections) — `src/pipeline/detection/hybrid.py`
+- **Path** (6 connections)
+- **._write_line()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **._all_stems_exist()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **._get_python_cmd()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **_suppress_homr_low_value_internal_logs()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **log_vram_usage()** (4 connections) — `src/pipeline/detection/utils.py`
+- **.__init__()** (3 connections) — `src/pipeline/detection/hybrid.py`
+- **._omr_all_stems_exist()** (3 connections) — `src/pipeline/detection/hybrid.py`
+- **._rel()** (3 connections) — `src/pipeline/detection/hybrid.py`
 - **Any** (3 connections)
-- **test_falsey_override_values_are_unset()** (3 connections) — `tests/test_detector_input_contract.py`
-- **test_truthy_path_strings_select_precomputed_route()** (3 connections) — `tests/test_detector_input_contract.py`
-- **test_current_sr_worker_uses_verified_x4_settings()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_current_support_runs_sr_homr_omr_as_separate_phases()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **parametrize** (2 connections)
-- **test_cnn_bands_override_makes_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_empty_detection_config_is_fresh_upstream()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_fresh_guard_names_all_candidate_source_overrides()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_precomputed_probe_candidates_make_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_canonical_detector_config_uses_verified_restored_route()** (2 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **Classify whether detector candidates come from fresh upstream or overrides. A…** (1 connections) — `src/pipeline/detection/input_contract.py`
-- **Match the truthiness gate used by the detector path resolvers.** (1 connections) — `src/pipeline/detection/input_contract.py`
-- **Return the authoritative candidate-source contract for one detector run.** (1 connections) — `src/pipeline/detection/input_contract.py`
+- **_env_flag_enabled()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **.flush()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **.__init__()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **._should_suppress()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **.write()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **Hybrid detection engine using Homr and OMR-DLN.** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Encapsulates hybrid detection logic (Baseline, SR, OMR-DLN).** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Returns the appropriate python command, falling back to host if images are…** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Step 2.1: Hybrid Detection (Subprocess or In-Process)** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Runs Homr inference (baseline or SR) in-process for persistence.** (1 connections) — `src/pipeline/detection/hybrid.py`
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 67](Community_67.md) (7 shared connections)
-- [Community 108](Community_108.md) (2 shared connections)
-- [Community 83](Community_83.md) (2 shared connections)
-- [Community 45](Community_45.md) (2 shared connections)
-- [Community 70](Community_70.md) (1 shared connections)
-- [Community 181](Community_181.md) (1 shared connections)
+- [Community 15](Community_15.md) (6 shared connections)
+- [Community 1](Community_1.md) (5 shared connections)
+- [Community 154](Community_154.md) (5 shared connections)
+- [Community 79](Community_79.md) (5 shared connections)
+- [Community 131](Community_131.md) (4 shared connections)
+- [Community 325](Community_325.md) (3 shared connections)
+- [Community 84](Community_84.md) (3 shared connections)
+- [Community 123](Community_123.md) (3 shared connections)
+- [Community 64](Community_64.md) (2 shared connections)
+- [Community 455](Community_455.md) (2 shared connections)
+- [Community 50](Community_50.md) (2 shared connections)
+- [Community 150](Community_150.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/input_contract.py`
-- `tests/test_detector_input_contract.py`
-- `tests/test_issue255_production_detector_restoration.py`
+- `src/pipeline/detection/hybrid.py`
+- `src/pipeline/detection/utils.py`
 
 ## Audit Trail
 
-- EXTRACTED: 63 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 85 (93%)
+- INFERRED: 6 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **scripts/run_omr_dln_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
-- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
+- **run_parameter_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
+- **run_parameter_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/scripts/run_omr_dln_sweep.sh`
+- `experiments/legacy/scripts/run_parameter_sweep.sh`
 
 ## Audit Trail
 

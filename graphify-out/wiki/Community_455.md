@@ -1,32 +1,32 @@
 # Community 455
 
-> 7 nodes · cohesion 0.43
+> 7 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **maintained_source_page_worker.py** (10 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **run()** (6 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **main()** (4 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **Path** (2 connections)
-- **Any** (1 connections)
-- **Generate one two-HOMR detector source page in a disposable Python process.** (1 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
+- **save_homr_results()** (13 connections) — `src/homr_runtime/reporting.py`
+- **save_debug_mask_overlay()** (4 connections) — `src/homr_runtime/reporting.py`
+- **save_debug_staff_overlay()** (4 connections) — `src/homr_runtime/reporting.py`
+- **ndarray** (3 connections)
+- **Path** (3 connections)
+- **BarlinePrediction** (1 connections)
+- **Saves Homr detection results (JSON and masks) to the specified directory.** (1 connections) — `src/homr_runtime/reporting.py`
 
 ## Relationships
 
-- [Community 45](Community_45.md) (3 shared connections)
-- [Community 74](Community_74.md) (3 shared connections)
-- [Community 78](Community_78.md) (2 shared connections)
-- [Community 37](Community_37.md) (1 shared connections)
-- [Community 289](Community_289.md) (1 shared connections)
+- [Community 49](Community_49.md) (4 shared connections)
+- [Community 15](Community_15.md) (3 shared connections)
+- [Community 181](Community_181.md) (2 shared connections)
+- [Community 91](Community_91.md) (2 shared connections)
+- [Community 1](Community_1.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/maintained_source_page_worker.py`
+- `src/homr_runtime/reporting.py`
 
 ## Audit Trail
 
-- EXTRACTED: 19 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

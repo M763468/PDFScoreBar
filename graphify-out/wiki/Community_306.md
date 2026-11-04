@@ -1,14 +1,14 @@
 # Community 306
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **main.js** (4 connections) — `tools/gui_helper/static/js/main.js`
-- **createOverlayBox()** (2 connections) — `tools/gui_helper/static/js/main.js`
-- **renderOverlays()** (2 connections) — `tools/gui_helper/static/js/main.js`
-- **saveDecisions()** (2 connections) — `tools/gui_helper/static/js/main.js`
-- **setupSaveButton()** (2 connections) — `tools/gui_helper/static/js/main.js`
+- **inspect_errors.py** (4 connections) — `tools/inspect_errors.py`
+- **draw_errors()** (4 connections) — `tools/inspect_errors.py`
+- **get_measure_coords()** (2 connections) — `tools/inspect_errors.py`
+- **load_json()** (2 connections) — `tools/inspect_errors.py`
+- **main()** (2 connections) — `tools/inspect_errors.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/gui_helper/static/js/main.js`
+- `tools/inspect_errors.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

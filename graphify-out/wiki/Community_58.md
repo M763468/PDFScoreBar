@@ -1,60 +1,52 @@
 # Community 58
 
-> 36 nodes · cohesion 0.11
+> 36 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **apply_corrections_and_rerun()** (43 connections) — `src/pipeline/review/apply_corrections.py`
-- **test_apply_corrections.py** (11 connections) — `tests/test_apply_corrections.py`
-- **_patch()** (11 connections) — `tools/smoke_test_run_omerer_env.py`
-- **test_apply_corrections_final_output.py** (5 connections) — `tests/test_apply_corrections_final_output.py`
-- **test_apply_corrections_mmr_suppressions.py** (5 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
-- **run_smoke()** (5 connections) — `tools/smoke_test_run_omerer_env.py`
-- **test_apply_corrections_existing_overrides.py** (4 connections) — `tests/test_apply_corrections_existing_overrides.py`
-- **_setup_review_package()** (4 connections) — `tests/test_apply_corrections_final_output.py`
-- **test_apply_corrections_can_generate_corrected_final_pdf()** (4 connections) — `tests/test_apply_corrections_final_output.py`
-- **test_apply_corrections_dry_run_does_not_generate_final_pdf()** (4 connections) — `tests/test_apply_corrections_final_output.py`
-- **test_apply_corrections_keeps_mmr_enabled_without_suppressions()** (4 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
-- **test_apply_corrections_preserves_mmr_suppressions_in_corrected_rerun()** (4 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
-- **_write_base_handoff()** (4 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
-- **_setup_review_package()** (4 connections) — `tests/test_apply_corrections.py`
-- **test_apply_corrections_and_rerun()** (4 connections) — `tests/test_apply_corrections.py`
-- **test_apply_corrections_dry_run()** (4 connections) — `tests/test_apply_corrections.py`
-- **smoke_test_run_omerer_env.py** (4 connections) — `tools/smoke_test_run_omerer_env.py`
-- **test_apply_corrections_carries_forward_existing_override_inputs()** (3 connections) — `tests/test_apply_corrections_existing_overrides.py`
-- **test_apply_corrections_carries_forward_same_path_existing_override_inputs()** (3 connections) — `tests/test_apply_corrections_existing_overrides.py`
-- **Path** (3 connections)
-- **test_custom_correction_outputs()** (3 connections) — `tests/test_apply_corrections.py`
-- **test_custom_per_page_correction_outputs_merged_correctly()** (3 connections) — `tests/test_apply_corrections.py`
-- **test_external_review_root_resolves_source_manifest()** (3 connections) — `tests/test_apply_corrections.py`
-- **test_rerun_config_sections_null()** (3 connections) — `tests/test_apply_corrections.py`
-- **test_shared_correction_outputs_not_duplicated_per_page()** (3 connections) — `tests/test_apply_corrections.py`
+- **compare_full68_x_domain.py** (31 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **Path** (19 connections)
+- **run()** (15 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **Any** (14 connections)
+- **_run_downstream_variant()** (11 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **test_issue43_full68_harness.py** (10 connections) — `tests/test_issue43_full68_harness.py`
+- **_generate_current_upstream_manifest()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_validate_inventory()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_validate_upstream_manifest()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_load_json()** (7 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_build_comparison()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_compare_box_roots()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_source_commit()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_box_set()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_group_images_by_score()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_load_canonical_config()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_resolve_production_cnn()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_sha256()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_write_json()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_evaluation_args()** (4 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **test_upstream_manifest_accepts_same_page_stem_in_separate_scores()** (4 connections) — `tests/test_issue43_full68_harness.py`
+- **_accuracy_not_worse()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_box_files()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_canonical_images()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
+- **_copy_tree()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
 - *... and 11 more nodes in this community*
 
 ## Relationships
 
-- [Community 31](Community_31.md) (13 shared connections)
-- [Community 182](Community_182.md) (5 shared connections)
-- [Community 25](Community_25.md) (3 shared connections)
-- [Community 34](Community_34.md) (2 shared connections)
-- [Community 3](Community_3.md) (2 shared connections)
-- [Community 97](Community_97.md) (1 shared connections)
-- [Community 20](Community_20.md) (1 shared connections)
-- [Community 244](Community_244.md) (1 shared connections)
+- [Community 98](Community_98.md) (2 shared connections)
+- [Community 123](Community_123.md) (2 shared connections)
+- [Community 68](Community_68.md) (2 shared connections)
+- [Community 116](Community_116.md) (2 shared connections)
+- [Community 154](Community_154.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/apply_corrections.py`
-- `tests/test_apply_corrections.py`
-- `tests/test_apply_corrections_existing_overrides.py`
-- `tests/test_apply_corrections_final_output.py`
-- `tests/test_apply_corrections_mmr_suppressions.py`
-- `tests/test_reviewed_movement_apply.py`
-- `tools/smoke_test_run_omerer_env.py`
+- `experiments/issue43/compare_full68_x_domain.py`
+- `tests/test_issue43_full68_harness.py`
 
 ## Audit Trail
 
-- EXTRACTED: 98 (100%)
+- EXTRACTED: 119 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

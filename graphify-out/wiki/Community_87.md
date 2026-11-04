@@ -1,47 +1,41 @@
 # Community 87
 
-> 27 nodes · cohesion 0.11
+> 12 nodes · cohesion 0.24
 
 ## Key Concepts
 
-- **train.py** (12 connections) — `experiments/cnn_classifier/train.py`
-- **train()** (9 connections) — `experiments/cnn_classifier/train.py`
-- **GaussianBlur** (7 connections) — `experiments/cnn_classifier/train.py`
-- **BarlineDataset** (6 connections) — `experiments/cnn_classifier/train.py`
-- **get_gpu_transforms()** (4 connections) — `experiments/cnn_classifier/train.py`
-- **GPUNormalize** (4 connections) — `experiments/cnn_classifier/train.py`
-- **GPUSaltPepperNoise** (4 connections) — `experiments/cnn_classifier/train.py`
-- **load_model_weights()** (4 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (3 connections) — `experiments/cnn_classifier/train.py`
-- **get_cpu_transforms()** (3 connections) — `experiments/cnn_classifier/train.py`
-- **calculate_metrics()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **find_optimal_threshold()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **get_model()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **Path** (2 connections)
-- **.__getitem__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__len__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__call__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__repr__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **get_args()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.forward()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.forward()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **Dataset** (1 connections)
-- *... and 2 more nodes in this community*
+- **resolve_x_domains()** (11 connections) — `src/pipeline/probe_detector/bands.py`
+- **test_probe_x_domain.py** (11 connections) — `tests/test_probe_x_domain.py`
+- **TestProbeXDomains** (9 connections) — `tests/test_probe_x_domain.py`
+- **compute_domain_ratios()** (8 connections) — `src/pipeline/probe_detector/bands.py`
+- **.test_domain_local_projection_matches_full_width_values_inside_domain()** (2 connections) — `tests/test_probe_x_domain.py`
+- **.test_existing_boxes_mode_uses_boxes_in_same_band()** (2 connections) — `tests/test_probe_x_domain.py`
+- **.test_full_width_mode_preserves_entire_image()** (2 connections) — `tests/test_probe_x_domain.py`
+- **.test_scale_aware_padding_is_resolved_from_existing_box_height()** (2 connections) — `tests/test_probe_x_domain.py`
+- **.test_staff_mask_mode_fails_open_when_span_is_missing()** (2 connections) — `tests/test_probe_x_domain.py`
+- **.test_staff_mask_mode_uses_band_local_span_and_padding()** (2 connections) — `tests/test_probe_x_domain.py`
+- **Resolve a fail-open horizontal probe domain for each staff/row band.** (1 connections) — `src/pipeline/probe_detector/bands.py`
+- **Compute global-indexed probe ratios while projecting only the X domain plus…** (1 connections) — `src/pipeline/probe_detector/bands.py`
 
 ## Relationships
 
-- [Community 0](Community_0.md) (1 shared connections)
+- [Community 259](Community_259.md) (5 shared connections)
+- [Community 100](Community_100.md) (4 shared connections)
+- [Community 37](Community_37.md) (4 shared connections)
+- [Community 68](Community_68.md) (3 shared connections)
+- [Community 105](Community_105.md) (2 shared connections)
+- [Community 31](Community_31.md) (1 shared connections)
+- [Community 154](Community_154.md) (1 shared connections)
+- [Community 207](Community_207.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/cnn_classifier/train.py`
+- `src/pipeline/probe_detector/bands.py`
+- `tests/test_probe_x_domain.py`
 
 ## Audit Trail
 
-- EXTRACTED: 40 (100%)
+- EXTRACTED: 37 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **build_iter7_hard_samples.py** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
-- **extract_crop()** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
-- **main()** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
+- **extract_final_hard_negatives.py** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
+- **extract_crop()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
+- **main()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/build_iter7_hard_samples.py`
+- `tools/cnn_classifier/extract_final_hard_negatives.py`
 
 ## Audit Trail
 

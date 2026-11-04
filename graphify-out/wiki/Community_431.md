@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **experiment_b.py** (1 connections) — `tools/issue194/experiment_b.py`
-- **analyze_scores()** (1 connections) — `tools/issue194/experiment_b.py`
+- **run_full68_mmr_reuse_logged.sh** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
+- **run_full68_mmr_reuse_logged.sh script** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/issue194/experiment_b.py`
+- `tools/issue274/run_full68_mmr_reuse_logged.sh`
 
 ## Audit Trail
 

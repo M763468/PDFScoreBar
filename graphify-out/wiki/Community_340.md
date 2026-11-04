@@ -1,13 +1,13 @@
 # Community 340
 
-> 4 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **ensure_dir()** (3 connections) — `tools/mmr_training/extract_rest_rois.py`
-- **extract_rest_rois.py** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
-- **main()** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
-- **Path** (1 connections)
+- **browser_acceptance.cjs** (3 connections) — `tools/review_correction/browser_acceptance.cjs`
+- **{ chromium }** (1 connections) — `tools/review_correction/browser_acceptance.cjs`
+- **fs** (1 connections) — `tools/review_correction/browser_acceptance.cjs`
+- **path** (1 connections) — `tools/review_correction/browser_acceptance.cjs`
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/mmr_training/extract_rest_rois.py`
+- `tools/review_correction/browser_acceptance.cjs`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

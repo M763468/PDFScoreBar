@@ -1,60 +1,60 @@
 # Community 59
 
-> 35 nodes · cohesion 0.13
+> 36 nodes · cohesion 0.11
 
 ## Key Concepts
 
-- **test_staff_strokes.py** (29 connections) — `tests/test_staff_strokes.py`
-- **build_probe_run_id()** (21 connections) — `src/pipeline/core/__init__.py`
-- **prepare_staff_stroke_candidates()** (21 connections) — `src/pipeline/steps/staff_strokes.py`
-- **staff_strokes.py** (13 connections) — `src/pipeline/steps/staff_strokes.py`
-- **fixture_inputs()** (10 connections) — `tests/test_staff_strokes.py`
-- **barline_strokes.py** (9 connections) — `src/common/barline_strokes.py`
-- **deduplicate_staff_strokes()** (9 connections) — `src/common/barline_strokes.py`
-- **normalize_staff_stroke()** (8 connections) — `src/common/barline_strokes.py`
-- **parametrize** (7 connections)
-- **test_composite_image_probe_adapter_cnn_connection()** (7 connections) — `tests/test_staff_strokes.py`
-- **StaffRegion** (6 connections) — `src/common/barline_strokes.py`
-- **test_symlink_support_requires_one_physical_verified_result()** (5 connections) — `tests/test_staff_strokes.py`
-- **test_real_one_line_percussion_mask_does_not_abort()** (4 connections) — `tests/test_staff_strokes.py`
-- **test_unknown_staff_unit_preserves_whole_page_and_records_reason()** (4 connections) — `tests/test_staff_strokes.py`
-- **_support_result_path()** (3 connections) — `src/pipeline/steps/staff_strokes.py`
-- **test_adapter_restores_only_consensus_supported_staff_piece()** (3 connections) — `tests/test_staff_strokes.py`
-- **test_adapter_wiring_is_limited_to_maintained_dense_route()** (3 connections) — `tests/test_staff_strokes.py`
-- **test_batch_scoring_resolves_units_and_writes_dedup_audit()** (3 connections) — `tests/test_staff_strokes.py`
-- **test_blank_page_preserves_candidates_without_inventing_units()** (3 connections) — `tests/test_staff_strokes.py`
-- **test_empty_scoring_replaces_or_clears_previous_dedup_audit()** (3 connections) — `tests/test_staff_strokes.py`
-- **test_invalid_unit_fails_explicitly()** (3 connections) — `tests/test_staff_strokes.py`
-- **test_seed_without_either_consensus_source_is_not_restored()** (3 connections) — `tests/test_staff_strokes.py`
-- **test_wrong_support_identity_fails_without_replacing_candidates()** (3 connections) — `tests/test_staff_strokes.py`
-- **Path** (2 connections)
-- **test_dedup_keeps_canonical_geometry_own_score_and_other_voice()** (2 connections) — `tests/test_staff_strokes.py`
-- *... and 10 more nodes in this community*
+- **apply_corrections_and_rerun()** (43 connections) — `src/pipeline/review/apply_corrections.py`
+- **test_apply_corrections.py** (11 connections) — `tests/test_apply_corrections.py`
+- **_patch()** (11 connections) — `tools/smoke_test_run_omerer_env.py`
+- **test_apply_corrections_final_output.py** (5 connections) — `tests/test_apply_corrections_final_output.py`
+- **test_apply_corrections_mmr_suppressions.py** (5 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
+- **run_smoke()** (5 connections) — `tools/smoke_test_run_omerer_env.py`
+- **test_apply_corrections_existing_overrides.py** (4 connections) — `tests/test_apply_corrections_existing_overrides.py`
+- **_setup_review_package()** (4 connections) — `tests/test_apply_corrections_final_output.py`
+- **test_apply_corrections_can_generate_corrected_final_pdf()** (4 connections) — `tests/test_apply_corrections_final_output.py`
+- **test_apply_corrections_dry_run_does_not_generate_final_pdf()** (4 connections) — `tests/test_apply_corrections_final_output.py`
+- **test_apply_corrections_keeps_mmr_enabled_without_suppressions()** (4 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
+- **test_apply_corrections_preserves_mmr_suppressions_in_corrected_rerun()** (4 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
+- **_write_base_handoff()** (4 connections) — `tests/test_apply_corrections_mmr_suppressions.py`
+- **_setup_review_package()** (4 connections) — `tests/test_apply_corrections.py`
+- **test_apply_corrections_and_rerun()** (4 connections) — `tests/test_apply_corrections.py`
+- **test_apply_corrections_dry_run()** (4 connections) — `tests/test_apply_corrections.py`
+- **smoke_test_run_omerer_env.py** (4 connections) — `tools/smoke_test_run_omerer_env.py`
+- **test_apply_corrections_carries_forward_existing_override_inputs()** (3 connections) — `tests/test_apply_corrections_existing_overrides.py`
+- **test_apply_corrections_carries_forward_same_path_existing_override_inputs()** (3 connections) — `tests/test_apply_corrections_existing_overrides.py`
+- **Path** (3 connections)
+- **test_custom_correction_outputs()** (3 connections) — `tests/test_apply_corrections.py`
+- **test_custom_per_page_correction_outputs_merged_correctly()** (3 connections) — `tests/test_apply_corrections.py`
+- **test_external_review_root_resolves_source_manifest()** (3 connections) — `tests/test_apply_corrections.py`
+- **test_rerun_config_sections_null()** (3 connections) — `tests/test_apply_corrections.py`
+- **test_shared_correction_outputs_not_duplicated_per_page()** (3 connections) — `tests/test_apply_corrections.py`
+- *... and 11 more nodes in this community*
 
 ## Relationships
 
-- [Community 108](Community_108.md) (13 shared connections)
-- [Community 41](Community_41.md) (5 shared connections)
-- [Community 78](Community_78.md) (5 shared connections)
-- [Community 67](Community_67.md) (5 shared connections)
-- [Community 115](Community_115.md) (4 shared connections)
-- [Community 1](Community_1.md) (3 shared connections)
-- [Community 70](Community_70.md) (2 shared connections)
-- [Community 159](Community_159.md) (2 shared connections)
-- [Community 97](Community_97.md) (2 shared connections)
-- [Community 30](Community_30.md) (1 shared connections)
-- [Community 173](Community_173.md) (1 shared connections)
+- [Community 32](Community_32.md) (13 shared connections)
+- [Community 182](Community_182.md) (5 shared connections)
+- [Community 26](Community_26.md) (3 shared connections)
+- [Community 35](Community_35.md) (2 shared connections)
+- [Community 2](Community_2.md) (2 shared connections)
+- [Community 98](Community_98.md) (1 shared connections)
+- [Community 21](Community_21.md) (1 shared connections)
+- [Community 244](Community_244.md) (1 shared connections)
 
 ## Source Files
 
-- `src/common/barline_strokes.py`
-- `src/pipeline/core/__init__.py`
-- `src/pipeline/steps/staff_strokes.py`
-- `tests/test_staff_strokes.py`
+- `src/pipeline/review/apply_corrections.py`
+- `tests/test_apply_corrections.py`
+- `tests/test_apply_corrections_existing_overrides.py`
+- `tests/test_apply_corrections_final_output.py`
+- `tests/test_apply_corrections_mmr_suppressions.py`
+- `tests/test_reviewed_movement_apply.py`
+- `tools/smoke_test_run_omerer_env.py`
 
 ## Audit Trail
 
-- EXTRACTED: 119 (100%)
+- EXTRACTED: 98 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

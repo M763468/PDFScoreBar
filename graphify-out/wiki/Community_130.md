@@ -1,44 +1,44 @@
 # Community 130
 
-> 21 nodes · cohesion 0.23
+> 21 nodes · cohesion 0.28
 
 ## Key Concepts
 
-- **run_stage_d_upstream_regen.py** (18 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **run_hybrid_for_score()** (9 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **compose_bands_for_score()** (8 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **Path** (8 connections)
-- **run()** (7 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **build_det_cfg()** (5 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **Any** (5 connections)
-- **write_json()** (5 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **boxes_from_payload()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **build_parser()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **load_json_boxes()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **main()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **normalize_box()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **PageComposition** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **run_issue36_dense_candidates_then_eval.py** (19 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **main()** (16 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **Path** (11 connections)
+- **load_json()** (8 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **detector_summary()** (6 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **Any** (6 connections)
+- **comparison_summary()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **load_optional_json()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **validate_complete_contract()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **build_filter_command()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **build_generation_command()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **candidate_root_summary()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **validate_detector_target()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **write_json()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **add_param_args()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **assert_candidate_match()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **build_compare_command()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **build_score_command()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
 - **Namespace** (3 connections)
-- **score_images()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **ScoreRun** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **source_path_for()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **ordered_sources()** (2 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **slugify()** (2 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
-- **ArgumentParser** (1 connections)
+- **require_under_logs()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **run()** (2 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
 
 ## Relationships
 
-- [Community 90](Community_90.md) (4 shared connections)
-- [Community 126](Community_126.md) (1 shared connections)
+- [Community 146](Community_146.md) (2 shared connections)
+- [Community 127](Community_127.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_stage_d_upstream_regen.py`
+- `tools/issue120/run_issue36_dense_candidates_then_eval.py`
 
 ## Audit Trail
 
-- EXTRACTED: 52 (96%)
-- INFERRED: 2 (4%)
+- EXTRACTED: 62 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

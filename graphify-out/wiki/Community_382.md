@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **issue-post-mortem/run.sh** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
-- **run.sh script** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
+- **pr-refinement/run.sh** (1 connections) — `.agents/skills/pr-refinement/run.sh`
+- **run.sh script** (1 connections) — `.agents/skills/pr-refinement/run.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `.agents/skills/issue-post-mortem/run.sh`
+- `.agents/skills/pr-refinement/run.sh`
 
 ## Audit Trail
 

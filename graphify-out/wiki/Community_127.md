@@ -1,50 +1,54 @@
 # Community 127
 
-> 21 nodes · cohesion 0.25
+> 21 nodes · cohesion 0.23
 
 ## Key Concepts
 
-- **PageRecord** (26 connections) — `tools/issue120/eval_full68_from_intermediates.py`
-- **inspect_stage_d_payload_schema.py** (19 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **inspect_one()** (12 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **Path** (7 connections)
-- **SchemaRow** (7 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **write_reports()** (6 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **build_parser()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **main()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **missing_row()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **resolve()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **load_json()** (4 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **Any** (4 connections)
-- **render_markdown()** (4 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **write_csv()** (4 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **box_field()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **normalize_box()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **parse_root()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **payload_items()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
-- **Namespace** (2 connections)
-- **summarize_keys()** (2 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **eval_full68_from_intermediates.py** (43 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **evaluate()** (21 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **Any** (6 connections)
+- **Path** (6 connections)
+- **write_outputs()** (6 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **EvaluationContract** (5 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **load_json()** (5 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **normalize_box()** (5 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **read_measure_summary()** (5 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **boxes_from_candidates()** (4 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **boxes_from_gt()** (4 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **boxes_from_scored()** (4 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **build_parser()** (4 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **DetectorSummary** (4 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **main()** (4 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **PageMetric** (4 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **has_candidate_for_gt()** (3 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **format_metric()** (2 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **safe_div()** (2 connections) — `tools/issue120/eval_full68_from_intermediates.py`
 - **ArgumentParser** (1 connections)
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- [Community 145](Community_145.md) (6 shared connections)
-- [Community 128](Community_128.md) (6 shared connections)
-- [Community 120](Community_120.md) (4 shared connections)
-- [Community 126](Community_126.md) (3 shared connections)
-- [Community 116](Community_116.md) (3 shared connections)
-- [Community 173](Community_173.md) (3 shared connections)
-- [Community 77](Community_77.md) (1 shared connections)
+- [Community 78](Community_78.md) (11 shared connections)
+- [Community 146](Community_146.md) (7 shared connections)
+- [Community 0](Community_0.md) (5 shared connections)
+- [Community 117](Community_117.md) (3 shared connections)
+- [Community 128](Community_128.md) (3 shared connections)
+- [Community 5](Community_5.md) (1 shared connections)
+- [Community 121](Community_121.md) (1 shared connections)
+- [Community 129](Community_129.md) (1 shared connections)
+- [Community 130](Community_130.md) (1 shared connections)
+- [Community 187](Community_187.md) (1 shared connections)
+- [Community 170](Community_170.md) (1 shared connections)
+- [Community 131](Community_131.md) (1 shared connections)
 
 ## Source Files
 
 - `tools/issue120/eval_full68_from_intermediates.py`
-- `tools/issue120/inspect_stage_d_payload_schema.py`
 
 ## Audit Trail
 
-- EXTRACTED: 70 (90%)
-- INFERRED: 8 (10%)
+- EXTRACTED: 87 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

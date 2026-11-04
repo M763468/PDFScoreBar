@@ -1,28 +1,28 @@
 # Community 139
 
-> 19 nodes · cohesion 0.28
+> 19 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **summarize_nms_policy_evidence.py** (12 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **load_case()** (11 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **Path** (8 connections)
-- **test_issue142_nms_policy_evidence.py** (7 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **write_markdown()** (7 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **load_json()** (6 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **write_json()** (6 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **build_parser()** (5 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **main()** (5 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **_measure_count_summary()** (5 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **test_write_outputs_preserve_missing_measure_count_status()** (4 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **_nms_from_provenance()** (4 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **NmsEvidenceCase** (4 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **parse_case_arg()** (3 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **test_load_case_reports_detector_and_measure_count_separately()** (2 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **test_load_case_tolerates_missing_detector_metrics()** (2 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **format_nullable()** (2 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **Any** (2 connections)
-- **ArgumentParser** (1 connections)
+- **barline_gt_helper.py** (13 connections) — `tools/barline_gt_helper.py`
+- **AnnotatorState** (8 connections) — `tools/barline_gt_helper.py`
+- **prepare_state()** (7 connections) — `tools/barline_gt_helper.py`
+- **run_gui()** (7 connections) — `tools/barline_gt_helper.py`
+- **mouse_handler()** (5 connections) — `tools/barline_gt_helper.py`
+- **add_manual_box()** (4 connections) — `tools/barline_gt_helper.py`
+- **AnnotatedBox** (4 connections) — `tools/barline_gt_helper.py`
+- **draw()** (4 connections) — `tools/barline_gt_helper.py`
+- **load_detection_boxes()** (4 connections) — `tools/barline_gt_helper.py`
+- **load_existing_gt()** (4 connections) — `tools/barline_gt_helper.py`
+- **main()** (4 connections) — `tools/barline_gt_helper.py`
+- **Path** (4 connections)
+- **save_selected()** (4 connections) — `tools/barline_gt_helper.py`
+- **parse_args()** (3 connections) — `tools/barline_gt_helper.py`
+- **toggle_box()** (3 connections) — `tools/barline_gt_helper.py`
+- **BoxType** (2 connections)
+- **Namespace** (2 connections)
+- **.contains()** (1 connections) — `tools/barline_gt_helper.py`
+- **.reset_manual()** (1 connections) — `tools/barline_gt_helper.py`
 
 ## Relationships
 
@@ -30,12 +30,11 @@
 
 ## Source Files
 
-- `tests/test_issue142_nms_policy_evidence.py`
-- `tools/issue120/summarize_nms_policy_evidence.py`
+- `tools/barline_gt_helper.py`
 
 ## Audit Trail
 
-- EXTRACTED: 47 (98%)
+- EXTRACTED: 41 (98%)
 - INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 

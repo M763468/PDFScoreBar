@@ -1,39 +1,40 @@
 # Community 159
 
-> 16 nodes · cohesion 0.32
+> 16 nodes · cohesion 0.28
 
 ## Key Concepts
 
-- **verify_detector_full68.py** (15 connections) — `tools/verification/verify_detector_full68.py`
-- **run()** (12 connections) — `tools/verification/verify_detector_full68.py`
-- **Path** (8 connections)
-- **_run_production_groups()** (8 connections) — `tools/verification/verify_detector_full68.py`
-- **_copy_probe_pages()** (4 connections) — `tools/verification/verify_detector_full68.py`
-- **_evaluation_args()** (4 connections) — `tools/verification/verify_detector_full68.py`
-- **_page_selector()** (4 connections) — `tools/verification/verify_detector_full68.py`
+- **summarize_stage_c_filter_ablation.py** (17 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **run()** (12 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **main()** (5 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **render_markdown()** (5 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **load_image_and_mask()** (4 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **load_inventory()** (4 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
 - **Any** (4 connections)
-- **_select_images()** (4 connections) — `tools/verification/verify_detector_full68.py`
-- **_canonical_images()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_expected_metrics()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_group_images_by_score()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_metric_mismatches()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_validate_detector_result()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **main()** (2 connections) — `tools/verification/verify_detector_full68.py`
+- **Path** (4 connections)
+- **write_csv()** (4 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **build_parser()** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **load_count()** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **PageAblationRow** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **ProfileSummaryRow** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
+- **rules_for_profile()** (3 connections) — `tools/issue120/summarize_stage_c_filter_ablation.py`
 - **Namespace** (2 connections)
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 59](Community_59.md) (2 shared connections)
-- [Community 97](Community_97.md) (2 shared connections)
-- [Community 122](Community_122.md) (2 shared connections)
+- [Community 81](Community_81.md) (3 shared connections)
+- [Community 79](Community_79.md) (3 shared connections)
+- [Community 146](Community_146.md) (2 shared connections)
+- [Community 127](Community_127.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/verification/verify_detector_full68.py`
+- `tools/issue120/summarize_stage_c_filter_ablation.py`
 
 ## Audit Trail
 
-- EXTRACTED: 44 (100%)
+- EXTRACTED: 43 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

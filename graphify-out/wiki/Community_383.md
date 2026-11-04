@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **pr-refinement/run.sh** (1 connections) — `.agents/skills/pr-refinement/run.sh`
-- **run.sh script** (1 connections) — `.agents/skills/pr-refinement/run.sh`
+- **visual-diff-viewer/run.sh** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
+- **run.sh script** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `.agents/skills/pr-refinement/run.sh`
+- `.agents/skills/visual-diff-viewer/run.sh`
 
 ## Audit Trail
 

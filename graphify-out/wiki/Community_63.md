@@ -1,63 +1,59 @@
 # Community 63
 
-> 34 nodes · cohesion 0.12
+> 34 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **homr_profile.py** (13 connections) — `src/pipeline/detection/homr_profile.py`
-- **run_homr_profile()** (12 connections) — `src/pipeline/detection/maintained_profile.py`
-- **run_with_logging()** (11 connections) — `src/pipeline/core/__init__.py`
-- **run_homr_profile()** (11 connections) — `src/pipeline/detection/homr_profile.py`
-- **load_homr_profile()** (10 connections) — `src/pipeline/detection/homr_profile.py`
-- **validate_profile_runtime()** (10 connections) — `src/pipeline/detection/profile_contract.py`
-- **profile_hybrid.py** (10 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **maintained_profile.py** (9 connections) — `src/pipeline/detection/maintained_profile.py`
-- **load_profile_manifest()** (9 connections) — `src/pipeline/detection/profile_contract.py`
-- **test_homr_profile.py** (9 connections) — `tests/test_homr_profile.py`
-- **build_profile_command()** (7 connections) — `src/pipeline/detection/homr_profile.py`
-- **profile_contract.py** (6 connections) — `src/pipeline/detection/profile_contract.py`
-- **build_profile_environment()** (5 connections) — `src/pipeline/detection/homr_profile.py`
-- **Any** (4 connections)
-- **Any** (3 connections)
-- **_required_commit()** (3 connections) — `src/pipeline/detection/profile_contract.py`
-- **test_profile_command_rejects_one_sr_path_for_multiple_images()** (3 connections) — `tests/test_homr_profile.py`
-- **test_profile_command_uses_isolated_python_and_precomputed_sr()** (3 connections) — `tests/test_homr_profile.py`
-- **test_profile_environment_prioritizes_pinned_sources()** (3 connections) — `tests/test_homr_profile.py`
-- **test_subprocess_utils.py** (3 connections) — `tests/test_subprocess_utils.py`
-- **Path** (2 connections)
-- **Path** (2 connections)
-- **test_maintained_original_profile_is_immutable_and_original_space()** (2 connections) — `tests/test_homr_profile.py`
-- **test_stage_e_verified_profile_is_pinned_and_artifact_free()** (2 connections) — `tests/test_homr_profile.py`
-- **test_maintained_backend_rejects_historical_execution_without_loading_it()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **PipelineJobExecutor** (46 connections) — `src/pipeline/engine_executor.py`
+- **engine_executor.py** (35 connections) — `src/pipeline/engine_executor.py`
+- **._execute()** (30 connections) — `src/pipeline/engine_executor.py`
+- **.execute_payload()** (11 connections) — `src/pipeline/engine_executor.py`
+- **Path** (11 connections)
+- **._early_failure()** (8 connections) — `src/pipeline/engine_executor.py`
+- **_error()** (7 connections) — `src/pipeline/engine_executor.py`
+- **Any** (7 connections)
+- **._artifacts()** (6 connections) — `src/pipeline/engine_executor.py`
+- **.__call__()** (6 connections) — `src/pipeline/engine_executor.py`
+- **._copy_review()** (6 connections) — `src/pipeline/engine_executor.py`
+- **._write_config()** (6 connections) — `src/pipeline/engine_executor.py`
+- **_map_error()** (5 connections) — `src/pipeline/engine_executor.py`
+- **.__init__()** (5 connections) — `src/pipeline/engine_executor.py`
+- **._dpi()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._ensure_handoff_output_name()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._final_builder()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._input_reference()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._load_config()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._provenance()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._review_builder()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._runner()** (4 connections) — `src/pipeline/engine_executor.py`
+- **ProgressCallback** (4 connections)
+- **._clear_public()** (3 connections) — `src/pipeline/engine_executor.py`
+- **._new_job_id()** (3 connections) — `src/pipeline/engine_executor.py`
 - *... and 9 more nodes in this community*
 
 ## Relationships
 
-- [Community 52](Community_52.md) (4 shared connections)
-- [Community 74](Community_74.md) (4 shared connections)
-- [Community 75](Community_75.md) (4 shared connections)
-- [Community 45](Community_45.md) (3 shared connections)
-- [Community 153](Community_153.md) (3 shared connections)
-- [Community 90](Community_90.md) (2 shared connections)
-- [Community 2](Community_2.md) (2 shared connections)
-- [Community 78](Community_78.md) (2 shared connections)
-- [Community 97](Community_97.md) (1 shared connections)
+- [Community 27](Community_27.md) (13 shared connections)
+- [Community 110](Community_110.md) (10 shared connections)
+- [Community 34](Community_34.md) (10 shared connections)
+- [Community 80](Community_80.md) (10 shared connections)
+- [Community 19](Community_19.md) (7 shared connections)
+- [Community 178](Community_178.md) (6 shared connections)
+- [Community 2](Community_2.md) (6 shared connections)
+- [Community 72](Community_72.md) (5 shared connections)
+- [Community 98](Community_98.md) (4 shared connections)
+- [Community 3](Community_3.md) (4 shared connections)
+- [Community 79](Community_79.md) (3 shared connections)
+- [Community 166](Community_166.md) (3 shared connections)
 
 ## Source Files
 
-- `src/pipeline/core/__init__.py`
-- `src/pipeline/detection/homr_profile.py`
-- `src/pipeline/detection/maintained_profile.py`
-- `src/pipeline/detection/profile_contract.py`
-- `src/pipeline/detection/profile_hybrid.py`
-- `tests/test_homr_profile.py`
-- `tests/test_issue115_runtime_boundaries.py`
-- `tests/test_subprocess_utils.py`
+- `src/pipeline/engine_executor.py`
 
 ## Audit Trail
 
-- EXTRACTED: 95 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 152 (91%)
+- INFERRED: 15 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

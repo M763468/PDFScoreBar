@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **crop_debug_image.py** (1 connections) — `tools/crop_debug_image.py`
-- **main()** (1 connections) — `tools/crop_debug_image.py`
+- **debug_rest_candidates.py** (1 connections) — `tools/debug_rest_candidates.py`
+- **main()** (1 connections) — `tools/debug_rest_candidates.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/crop_debug_image.py`
+- `tools/debug_rest_candidates.py`
 
 ## Audit Trail
 

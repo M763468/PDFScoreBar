@@ -1,78 +1,62 @@
 # Community 1
 
-> 113 nodes · cohesion 0.04
+> 90 nodes · cohesion 0.05
 
 ## Key Concepts
 
-- **greedy_barline_match()** (118 connections) — `src/common/barline_evaluation.py`
-- **barline_evaluation.py** (82 connections) — `src/common/barline_evaluation.py`
-- **is_barline_match()** (27 connections) — `src/common/barline_evaluation.py`
-- **metrics.py** (24 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **barline_iou()** (19 connections) — `src/common/barline_geometry.py`
-- **barline_vertical_overlap()** (16 connections) — `src/common/barline_geometry.py`
-- **center_distance_x()** (13 connections) — `src/common/barline_evaluation.py`
-- **barline_geometry.py** (12 connections) — `src/common/barline_geometry.py`
-- **load_ground_truth_boxes()** (11 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **apply_left_margin_exclusion()** (9 connections) — `src/common/barline_evaluation.py`
-- **expand_barline_box()** (9 connections) — `src/common/barline_geometry.py`
-- **visualize_remaining_fn_v2.py** (9 connections) — `tools/visualize_remaining_fn_v2.py`
-- **get_barline_match_rank()** (8 connections) — `src/common/barline_evaluation.py`
-- **ImageMetrics** (8 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **common/__init__.py** (6 connections) — `src/common/__init__.py`
-- **compute_metrics()** (6 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **verify_pipeline_accuracy.py** (6 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
-- **tune_hybrid_detector.py** (5 connections) — `experiments/fp_reduction/tune_hybrid_detector.py`
-- **main()** (5 connections) — `experiments/models/eval_grounding_dino.py`
-- **compare_sr_all.py** (5 connections) — `tools/compare_sr_all.py`
-- **debug_greedy_match.py** (5 connections) — `tools/debug_greedy_match.py`
-- **main()** (5 connections) — `tools/debug_greedy_match.py`
-- **evaluate_and_visualize.py** (5 connections) — `tools/evaluate_and_visualize.py`
-- **debug_matches.py** (5 connections) — `tools/repro_accuracy/debug_matches.py`
-- **verify_cnn_scored.py** (5 connections) — `tools/repro_accuracy/verify_cnn_scored.py`
-- *... and 88 more nodes in this community*
+- **test_current_homr_worker.py** (29 connections) — `tests/test_current_homr_worker.py`
+- **homr_profile_compat.py** (24 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **install_current_homr_consumer_compat()** (22 connections) — `src/homr_runtime/api_compat.py`
+- **maintained_homr_worker.py** (18 connections) — `src/pipeline/detection/maintained_homr_worker.py`
+- **run()** (18 connections) — `src/pipeline/detection/maintained_homr_worker.py`
+- **api_compat.py** (15 connections) — `src/homr_runtime/api_compat.py`
+- **build_processing_config_compat()** (15 connections) — `src/homr_runtime/api_compat.py`
+- **Any** (12 connections)
+- **install_homr_api_compat()** (12 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **run()** (10 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
+- **_validate_cuda_session_records()** (9 connections) — `src/pipeline/detection/maintained_homr_worker.py`
+- **check_current_homr_runtime_contract.py** (9 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
+- **Any** (8 connections)
+- **download_weights_compat_mode()** (7 connections) — `src/homr_runtime/api_compat.py`
+- **load_predictions_compat_mode()** (7 connections) — `src/homr_runtime/api_compat.py`
+- **_install_processing_config_compat()** (7 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **_capture_homr_clef_mask()** (7 connections) — `src/pipeline/detection/maintained_homr_worker.py`
+- **Any** (7 connections)
+- **call_download_weights_compat()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **parse_staffs_compat_mode()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **processing_config_compat_mode()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **_required_positional_count()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **homr_runtime/segnet_cache.py** (6 connections) — `src/homr_runtime/segnet_cache.py`
+- **_install_load_predictions_compat()** (6 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **call_load_predictions_compat()** (5 connections) — `src/homr_runtime/api_compat.py`
+- *... and 65 more nodes in this community*
 
 ## Relationships
 
-- [Community 30](Community_30.md) (23 shared connections)
-- [Community 108](Community_108.md) (21 shared connections)
-- [Community 107](Community_107.md) (18 shared connections)
-- [Community 136](Community_136.md) (13 shared connections)
-- [Community 72](Community_72.md) (12 shared connections)
-- [Community 105](Community_105.md) (11 shared connections)
-- [Community 11](Community_11.md) (10 shared connections)
-- [Community 77](Community_77.md) (6 shared connections)
-- [Community 38](Community_38.md) (5 shared connections)
-- [Community 106](Community_106.md) (5 shared connections)
-- [Community 126](Community_126.md) (5 shared connections)
-- [Community 48](Community_48.md) (4 shared connections)
+- [Community 181](Community_181.md) (6 shared connections)
+- [Community 91](Community_91.md) (5 shared connections)
+- [Community 45](Community_45.md) (4 shared connections)
+- [Community 46](Community_46.md) (3 shared connections)
+- [Community 40](Community_40.md) (2 shared connections)
+- [Community 455](Community_455.md) (2 shared connections)
+- [Community 64](Community_64.md) (2 shared connections)
+- [Community 108](Community_108.md) (1 shared connections)
+- [Community 273](Community_273.md) (1 shared connections)
+- [Community 14](Community_14.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/fp_reduction/tune_hybrid_detector.py`
-- `experiments/models/eval_grounding_dino.py`
-- `experiments/models/eval_yolo_world.py`
-- `src/common/__init__.py`
-- `src/common/barline_evaluation.py`
-- `src/common/barline_geometry.py`
-- `src/homr_eval_scripts/core/metrics.py`
-- `tests/test_distribution_surface.py`
-- `tools/analyze_fp_heights.py`
-- `tools/cnn_classifier/create_fp_dataset.py`
-- `tools/cnn_classifier/identify_iter6_hard_samples.py`
-- `tools/compare_sr_all.py`
-- `tools/debug_greedy_match.py`
-- `tools/diagnostics/visualize_error_crops.py`
-- `tools/eval_existing_json.py`
-- `tools/evaluate_and_visualize.py`
-- `tools/inspect_gt_dupes.py`
-- `tools/inspect_gt_image.py`
-- `tools/repro_accuracy/debug_matches.py`
-- `tools/repro_accuracy/verify_cnn_scored.py`
+- `src/homr_runtime/api_compat.py`
+- `src/homr_runtime/segnet_cache.py`
+- `src/pipeline/detection/homr_profile_compat.py`
+- `src/pipeline/detection/maintained_homr_worker.py`
+- `tests/test_current_homr_worker.py`
+- `tools/issue255/check_current_homr_runtime_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 417 (98%)
-- INFERRED: 10 (2%)
+- EXTRACTED: 216 (94%)
+- INFERRED: 13 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

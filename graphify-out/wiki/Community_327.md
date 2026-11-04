@@ -1,36 +1,25 @@
 # Community 327
 
-> 8 nodes · cohesion 0.36
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **replay_numbering.py** (13 connections) — `tools/issue447/replay_numbering.py`
-- **replay()** (10 connections) — `tools/issue447/replay_numbering.py`
-- **e2e_semantic_replay.py** (4 connections) — `tools/issue447/e2e_semantic_replay.py`
-- **main()** (2 connections) — `tools/issue447/e2e_semantic_replay.py`
-- **main()** (2 connections) — `tools/issue447/replay_numbering.py`
-- **Actual production Phase C replay over matrix outputs, reusing real MMR results.** (1 connections) — `tools/issue447/e2e_semantic_replay.py`
-- **Path** (1 connections)
-- **Replay the real Phase C with retained MMR, an explicit boundary and manual…** (1 connections) — `tools/issue447/replay_numbering.py`
+- **graphify_query.sh** (3 connections) — `scripts/graphify_query.sh`
+- **graphify_query.sh script** (3 connections) — `scripts/graphify_query.sh`
+- **rebuild_code_graph()** (2 connections) — `scripts/graphify_query.sh`
+- **warn_if_code_changed_since_shared_graph()** (2 connections) — `scripts/graphify_query.sh`
 
 ## Relationships
 
-- [Community 222](Community_222.md) (4 shared connections)
-- [Community 24](Community_24.md) (3 shared connections)
-- [Community 97](Community_97.md) (2 shared connections)
-- [Community 111](Community_111.md) (2 shared connections)
-- [Community 20](Community_20.md) (1 shared connections)
-- [Community 143](Community_143.md) (1 shared connections)
-- [Community 65](Community_65.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/issue447/e2e_semantic_replay.py`
-- `tools/issue447/replay_numbering.py`
+- `scripts/graphify_query.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 24 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

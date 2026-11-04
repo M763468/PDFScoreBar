@@ -4,58 +4,51 @@
 
 ## Key Concepts
 
-- **test_issue254_connector_artifact_contract.py** (23 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **write_connector_masks()** (22 connections) — `src/common/connector_artifacts.py`
-- **common/connector_artifacts.py** (20 connections) — `src/common/connector_artifacts.py`
-- **install_homr_connector_artifact_capture()** (16 connections) — `src/pipeline/detection/connector_artifacts.py`
-- **connector_mask_paths_for_staff_mask()** (13 connections) — `src/common/connector_artifacts.py`
-- **detection/connector_artifacts.py** (13 connections) — `src/pipeline/detection/connector_artifacts.py`
-- **Path** (10 connections)
-- **Path** (8 connections)
-- **install_homr_skip_existing_guard()** (8 connections) — `src/pipeline/detection/connector_artifacts.py`
-- **_write_mask()** (8 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **invalidate_connector_masks()** (7 connections) — `src/common/connector_artifacts.py`
-- **capture_homr_threshold_masks()** (7 connections) — `src/pipeline/detection/connector_artifacts.py`
-- **connector_masks_complete()** (6 connections) — `src/common/connector_artifacts.py`
-- **test_stable_connector_artifact_contract_records_hashes_and_shape()** (6 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **test_manifest_records_the_same_connector_contract()** (5 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **test_missing_semantic_pair_keeps_explicit_page_image_fallback()** (5 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **test_numbering_auto_resolves_connector_masks_from_staff_mask_siblings()** (5 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **test_predictor_failure_invalidates_previous_semantic_pair()** (5 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **test_skip_existing_requires_complete_connector_artifacts()** (5 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **Any** (4 connections)
-- **test_debug_staff_mask_suffix_resolves_stable_connector_pair()** (4 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **test_predictor_wrapper_persists_stable_masks_without_changing_return_value()** (4 connections) — `tests/test_issue254_connector_artifact_contract.py`
-- **_as_binary_u8()** (3 connections) — `src/common/connector_artifacts.py`
-- **_sha256()** (3 connections) — `src/common/connector_artifacts.py`
-- **_staff_mask_stem()** (3 connections) — `src/common/connector_artifacts.py`
+- **manual_corrections.py** (20 connections) — `src/pipeline/steps/manual_corrections.py`
+- **test_manual_corrections.py** (18 connections) — `tests/test_manual_corrections.py`
+- **merge_measure_overrides()** (17 connections) — `src/pipeline/steps/manual_corrections.py`
+- **apply_mmr_measure_span_corrections()** (15 connections) — `src/pipeline/steps/manual_corrections.py`
+- **merge_barline_overrides()** (13 connections) — `src/pipeline/steps/manual_corrections.py`
+- **normalise_measure_overrides()** (12 connections) — `src/pipeline/steps/manual_corrections.py`
+- **barline_construction_overrides()** (9 connections) — `src/pipeline/steps/manual_corrections.py`
+- **measure_construction_overrides()** (9 connections) — `src/pipeline/steps/manual_corrections.py`
+- **normalise_barline_overrides()** (8 connections) — `src/pipeline/steps/manual_corrections.py`
+- **Payload** (7 connections)
+- **Any** (7 connections)
+- **MeasureOverride** (5 connections)
+- **_manual_comment()** (5 connections) — `src/pipeline/steps/manual_corrections.py`
+- **_measure_key()** (5 connections) — `src/pipeline/steps/manual_corrections.py`
+- **_set_measure_span_override()** (5 connections) — `src/pipeline/steps/manual_corrections.py`
+- **_normalise_barline_override()** (4 connections) — `src/pipeline/steps/manual_corrections.py`
+- **_normalise_measure_override()** (4 connections) — `src/pipeline/steps/manual_corrections.py`
+- **test_barline_construction_add_and_remove_are_not_measure_overrides()** (4 connections) — `tests/test_manual_corrections.py`
+- **BarlineOverride** (3 connections)
+- **_bbox()** (3 connections) — `src/pipeline/steps/manual_corrections.py`
+- **_to_int_or_none()** (3 connections) — `src/pipeline/steps/manual_corrections.py`
+- **test_measure_construction_force_measure_is_separate_from_future_grouping_ops()** (3 connections) — `tests/test_manual_corrections.py`
+- **test_measure_construction_malformed_item_reports_descriptive_error()** (2 connections) — `tests/test_manual_corrections.py`
+- **test_merge_measure_overrides_applies_manual_last_regardless_of_payload_order()** (2 connections) — `tests/test_manual_corrections.py`
+- **test_mmr_malformed_item_reports_descriptive_error()** (2 connections) — `tests/test_manual_corrections.py`
 - *... and 15 more nodes in this community*
 
 ## Relationships
 
-- [Community 219](Community_219.md) (10 shared connections)
-- [Community 181](Community_181.md) (7 shared connections)
-- [Community 149](Community_149.md) (6 shared connections)
-- [Community 163](Community_163.md) (5 shared connections)
-- [Community 122](Community_122.md) (5 shared connections)
-- [Community 2](Community_2.md) (4 shared connections)
-- [Community 113](Community_113.md) (3 shared connections)
-- [Community 41](Community_41.md) (2 shared connections)
-- [Community 49](Community_49.md) (2 shared connections)
-- [Community 0](Community_0.md) (2 shared connections)
-- [Community 156](Community_156.md) (1 shared connections)
-- [Community 3](Community_3.md) (1 shared connections)
+- [Community 32](Community_32.md) (11 shared connections)
+- [Community 26](Community_26.md) (5 shared connections)
+- [Community 222](Community_222.md) (3 shared connections)
+- [Community 56](Community_56.md) (2 shared connections)
+- [Community 8](Community_8.md) (2 shared connections)
+- [Community 25](Community_25.md) (1 shared connections)
 
 ## Source Files
 
-- `src/common/connector_artifacts.py`
-- `src/pipeline/detection/connector_artifacts.py`
-- `tests/test_issue254_connector_artifact_contract.py`
+- `src/pipeline/steps/manual_corrections.py`
+- `tests/test_manual_corrections.py`
 
 ## Audit Trail
 
-- EXTRACTED: 140 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 114 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visual-diff-viewer/run.sh** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
-- **run.sh script** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
+- **debug_visualize_col.py** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
+- **main()** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `.agents/skills/visual-diff-viewer/run.sh`
+- `experiments/cnn_classifier/debug_visualize_col.py`
 
 ## Audit Trail
 

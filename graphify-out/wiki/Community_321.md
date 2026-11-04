@@ -1,30 +1,27 @@
 # Community 321
 
-> 5 nodes · cohesion 0.80
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **drawMovementMarker()** (8 connections) — `tools/review_correction/app.js`
-- **drawBarlineCorrection()** (5 connections) — `tools/review_correction/app.js`
-- **drawBox()** (5 connections) — `tools/review_correction/app.js`
-- **drawLabel()** (5 connections) — `tools/review_correction/app.js`
-- **imgToCanvas()** (5 connections) — `tools/review_correction/app.js`
+- **correction_state.js** (4 connections) — `tools/review_correction/correction_state.js`
+- **refresh()** (3 connections) — `tools/review_correction/correction_state.js`
+- **render()** (2 connections) — `tools/review_correction/correction_state.js`
+- **update()** (2 connections) — `tools/review_correction/correction_state.js`
+- **enqueue()** (1 connections) — `tools/review_correction/correction_state.js`
 
 ## Relationships
 
-- [Community 9](Community_9.md) (5 shared connections)
-- [Community 134](Community_134.md) (4 shared connections)
-- [Community 146](Community_146.md) (2 shared connections)
-- [Community 133](Community_133.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/review_correction/app.js`
+- `tools/review_correction/correction_state.js`
 
 ## Audit Trail
 
-- EXTRACTED: 19 (95%)
-- INFERRED: 1 (5%)
+- EXTRACTED: 6 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

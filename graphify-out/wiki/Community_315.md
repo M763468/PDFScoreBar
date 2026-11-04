@@ -1,26 +1,26 @@
 # Community 315
 
-> 5 nodes · cohesion 0.70
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **load_gt_boxes()** (4 connections) — `tools/make_evidence_sheet.py`
-- **main()** (4 connections) — `tools/make_evidence_sheet.py`
-- **make_evidence_sheet.py** (3 connections) — `tools/make_evidence_sheet.py`
-- **put_text_block()** (2 connections) — `tools/make_evidence_sheet.py`
-- **Path** (2 connections)
+- **augment_dataset()** (3 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **overlay_text()** (3 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **generate_text_noise.py** (2 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **Reads Positive samples (train/1), generates augmented versions with text, and…** (1 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **Overlays random text on the image, avoiding the exact center (where H-Bar…** (1 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
 
 ## Relationships
 
-- [Community 30](Community_30.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/make_evidence_sheet.py`
+- `tools/mmr_training/augmentation/generate_text_noise.py`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

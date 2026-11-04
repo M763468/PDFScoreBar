@@ -1,47 +1,43 @@
 # Community 125
 
-> 21 nodes · cohesion 0.25
+> 21 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **run_original_geometry_graft.py** (30 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **_representative_report()** (12 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **Any** (11 connections)
-- **compare_geometry()** (8 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **geometry_snapshot()** (8 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **test_issue274_original_geometry_graft.py** (7 connections) — `tests/test_issue274_original_geometry_graft.py`
-- **_geometry_report()** (7 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **_semantic()** (7 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **main()** (5 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **_preflight()** (5 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **_systems()** (5 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **_target_geometry()** (5 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **_payload()** (4 connections) — `tests/test_issue274_original_geometry_graft.py`
-- **_bbox()** (4 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **_semantic_rows()** (4 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **test_compare_geometry_detects_topology_change()** (3 connections) — `tests/test_issue274_original_geometry_graft.py`
-- **test_compare_geometry_requires_exact_topology_and_bboxes()** (3 connections) — `tests/test_issue274_original_geometry_graft.py`
-- **test_geometry_snapshot_captures_only_mmr_geometry()** (3 connections) — `tests/test_issue274_original_geometry_graft.py`
-- **_page()** (3 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **Compare O1 support geometry to accepted O0 without accepting approximations.** (1 connections) — `tools/issue274/run_original_geometry_graft.py`
-- **Return only geometry consumed by MMR, in a deterministic structure.** (1 connections) — `tools/issue274/run_original_geometry_graft.py`
+- **suggest_candidate_drops()** (12 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **candidate_drops.py** (10 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **candidate_filter.py** (5 connections) — `src/pipeline/detector_routes/candidate_filter.py`
+- **main()** (5 connections) — `src/pipeline/detector_routes/candidate_filter.py`
+- **_build_page_mask()** (4 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **Any** (4 connections)
+- **_resolve_clef_mask_path()** (4 connections) — `src/pipeline/detector_routes/candidate_filter.py`
+- **_box_mask_overlap_ratio()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **_load_boxes()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **main()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **_page_bbox_from_mask()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **parse_args()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **parse_args()** (3 connections) — `src/pipeline/detector_routes/candidate_filter.py`
+- **_center_in_bbox()** (2 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **_median()** (2 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **Path** (2 connections)
+- **Path** (2 connections)
+- **Namespace** (1 connections)
+- **Return binary mask of the paper area (largest bright connected component).** (1 connections) — `src/pipeline/detector_routes/candidate_drops.py`
+- **Any** (1 connections)
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- [Community 12](Community_12.md) (20 shared connections)
-- [Community 81](Community_81.md) (6 shared connections)
-- [Community 69](Community_69.md) (2 shared connections)
-- [Community 172](Community_172.md) (2 shared connections)
-- [Community 24](Community_24.md) (2 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tests/test_issue274_original_geometry_graft.py`
-- `tools/issue274/run_original_geometry_graft.py`
+- `src/pipeline/detector_routes/candidate_drops.py`
+- `src/pipeline/detector_routes/candidate_filter.py`
 
 ## Audit Trail
 
-- EXTRACTED: 84 (100%)
+- EXTRACTED: 37 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

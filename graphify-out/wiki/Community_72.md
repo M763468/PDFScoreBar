@@ -1,59 +1,58 @@
 # Community 72
 
-> 32 nodes · cohesion 0.11
+> 32 nodes · cohesion 0.22
 
 ## Key Concepts
 
-- **barline_iou()** (20 connections) — `tools/extract_fp_crops_enhanced.py`
-- **edge_crop_homr_merge.py** (7 connections) — `tools/edge_crop_homr_merge.py`
-- **generate_hybrid_results.py** (7 connections) — `tools/generate_hybrid_results.py`
-- **multi_crop_merge.py** (7 connections) — `tools/multi_crop_merge.py`
-- **main()** (7 connections) — `tools/multi_crop_merge.py`
-- **scale_merge_homr_preds.py** (7 connections) — `tools/scale_merge_homr_preds.py`
-- **main()** (6 connections) — `tools/edge_crop_homr_merge.py`
-- **main()** (6 connections) — `tools/generate_hybrid_results.py`
-- **main()** (6 connections) — `tools/scale_merge_homr_preds.py`
-- **choose_representative()** (4 connections) — `tools/edge_crop_homr_merge.py`
-- **cluster_boxes()** (4 connections) — `tools/edge_crop_homr_merge.py`
-- **load_homr_boxes()** (4 connections) — `tools/edge_crop_homr_merge.py`
-- **choose_representative()** (4 connections) — `tools/generate_hybrid_results.py`
-- **choose_representative()** (4 connections) — `tools/multi_crop_merge.py`
-- **cluster_boxes()** (4 connections) — `tools/multi_crop_merge.py`
-- **load_homr_boxes()** (4 connections) — `tools/multi_crop_merge.py`
-- **choose_representative()** (4 connections) — `tools/scale_merge_homr_preds.py`
-- **cluster_boxes()** (4 connections) — `tools/scale_merge_homr_preds.py`
-- **load_homr_boxes()** (4 connections) — `tools/scale_merge_homr_preds.py`
-- **offset_boxes()** (3 connections) — `tools/edge_crop_homr_merge.py`
-- **cluster_boxes()** (3 connections) — `tools/generate_hybrid_results.py`
-- **has_match()** (3 connections) — `tools/generate_hybrid_results.py`
-- **load_json_boxes()** (3 connections) — `tools/generate_hybrid_results.py`
-- **offset_boxes()** (3 connections) — `tools/multi_crop_merge.py`
-- **scale_boxes()** (3 connections) — `tools/scale_merge_homr_preds.py`
+- **engine_contract.py** (42 connections) — `src/pipeline/engine_contract.py`
+- **ContractValidationError** (30 connections) — `src/pipeline/engine_contract.py`
+- **Any** (23 connections)
+- **_object()** (17 connections) — `src/pipeline/engine_contract.py`
+- **.from_dict()** (12 connections) — `src/pipeline/engine_contract.py`
+- **_require_string()** (12 connections) — `src/pipeline/engine_contract.py`
+- **.from_dict()** (10 connections) — `src/pipeline/engine_contract.py`
+- **_enum()** (9 connections) — `src/pipeline/engine_contract.py`
+- **.from_dict()** (9 connections) — `src/pipeline/engine_contract.py`
+- **_require_fields()** (9 connections) — `src/pipeline/engine_contract.py`
+- **_validate_correction_record()** (9 connections) — `src/pipeline/engine_contract.py`
+- **_coordinate_space()** (8 connections) — `src/pipeline/engine_contract.py`
+- **.from_dict()** (8 connections) — `src/pipeline/engine_contract.py`
+- **_envelope()** (8 connections) — `src/pipeline/engine_contract.py`
+- **.__post_init__()** (7 connections) — `src/pipeline/engine_contract.py`
+- **.__post_init__()** (7 connections) — `src/pipeline/engine_contract.py`
+- **.__post_init__()** (7 connections) — `src/pipeline/engine_contract.py`
+- **_sha256()** (7 connections) — `src/pipeline/engine_contract.py`
+- **test_required_wire_fields_and_malformed_scalar_types_are_rejected()** (7 connections) — `tests/test_engine_contract.py`
+- **.from_dict()** (6 connections) — `src/pipeline/engine_contract.py`
+- **_nonnegative_int()** (6 connections) — `src/pipeline/engine_contract.py`
+- **_positive_int()** (6 connections) — `src/pipeline/engine_contract.py`
+- **.__post_init__()** (6 connections) — `src/pipeline/engine_contract.py`
+- **.__post_init__()** (5 connections) — `src/pipeline/engine_contract.py`
+- **.__post_init__()** (5 connections) — `src/pipeline/engine_contract.py`
 - *... and 7 more nodes in this community*
 
 ## Relationships
 
-- [Community 30](Community_30.md) (14 shared connections)
-- [Community 1](Community_1.md) (12 shared connections)
-- [Community 190](Community_190.md) (2 shared connections)
-- [Community 336](Community_336.md) (1 shared connections)
-- [Community 106](Community_106.md) (1 shared connections)
-- [Community 189](Community_189.md) (1 shared connections)
-- [Community 243](Community_243.md) (1 shared connections)
-- [Community 7](Community_7.md) (1 shared connections)
+- [Community 110](Community_110.md) (25 shared connections)
+- [Community 80](Community_80.md) (13 shared connections)
+- [Community 19](Community_19.md) (10 shared connections)
+- [Community 34](Community_34.md) (8 shared connections)
+- [Community 178](Community_178.md) (6 shared connections)
+- [Community 63](Community_63.md) (5 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
+- [Community 111](Community_111.md) (2 shared connections)
+- [Community 79](Community_79.md) (1 shared connections)
+- [Community 297](Community_297.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/edge_crop_homr_merge.py`
-- `tools/extract_fp_crops_enhanced.py`
-- `tools/generate_hybrid_results.py`
-- `tools/multi_crop_merge.py`
-- `tools/scale_merge_homr_preds.py`
+- `src/pipeline/engine_contract.py`
+- `tests/test_engine_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 69 (79%)
-- INFERRED: 18 (21%)
+- EXTRACTED: 181 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

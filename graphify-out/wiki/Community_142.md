@@ -1,41 +1,40 @@
 # Community 142
 
-> 18 nodes · cohesion 0.28
+> 19 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **ndarray** (25 connections)
-- **detect_staffs_with_barlines()** (16 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Any** (11 connections)
-- **recover_end_barlines()** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **_ensure_mask_shape()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_sobel_vertical_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_vertical_run_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_column_sum_candidates()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_hough_vertical_candidates()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_sobel_vertical_candidates_weak()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_vertical_run_candidates_weak()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_barline_cc_dilated()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_barline_cc_relaxed()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_barline_cc_tiny()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **_scan_vertical_line()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **_cluster_by_y_centers()** (2 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Future** (1 connections)
-- **Runs the core homr staff and symbol detection pipeline. Returns: A tuple…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **train_mmr_classifier.py** (9 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **train_model()** (9 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **TextNoiseOverlay** (7 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **MMRDataset** (6 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__call__()** (4 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **calculate_metrics()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **_get_progress_bar()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **load_fonts_from_dir()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **load_fonts_from_zip()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **manual_train_test_split()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **set_seed()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **._estimate_staff_band()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **._load_font()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **._overlap_ratio()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__getitem__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__init__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__len__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **Dataset** (1 connections)
+- **.__init__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
 
 ## Relationships
 
-- [Community 39](Community_39.md) (25 shared connections)
-- [Community 107](Community_107.md) (8 shared connections)
-- [Community 30](Community_30.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/homr_eval_scripts/homr_evaluator.py`
+- `tools/mmr_training/train_mmr_classifier.py`
 
 ## Audit Trail
 
-- EXTRACTED: 77 (100%)
+- EXTRACTED: 29 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

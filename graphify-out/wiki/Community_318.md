@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **reconstruct()** (4 connections) — `tools/reconstruct_detection_results.py`
-- **reconstruct_detection_results.py** (3 connections) — `tools/reconstruct_detection_results.py`
-- **load_json()** (3 connections) — `tools/reconstruct_detection_results.py`
-- **bboxes_match()** (2 connections) — `tools/reconstruct_detection_results.py`
+- **main()** (4 connections) — `tools/render_pred_scatter_with_legend.py`
+- **render_pred_scatter_with_legend.py** (3 connections) — `tools/render_pred_scatter_with_legend.py`
+- **load_boxes()** (3 connections) — `tools/render_pred_scatter_with_legend.py`
+- **put_text_block()** (2 connections) — `tools/render_pred_scatter_with_legend.py`
 - **Path** (2 connections)
 
 ## Relationships
@@ -16,7 +16,7 @@
 
 ## Source Files
 
-- `tools/reconstruct_detection_results.py`
+- `tools/render_pred_scatter_with_legend.py`
 
 ## Audit Trail
 

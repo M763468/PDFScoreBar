@@ -1,12 +1,12 @@
 # Community 347
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **upscale_lowres_gt.py** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
-- **upscale_page()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
+- **visualize_ground_truth()** (2 connections) — `experiments/gemini/visualize_ground_truth.py`
+- **visualize_ground_truth.py** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
+- **Draws ground truth data on the image and saves it.** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/upscale_lowres_gt.py`
+- `experiments/gemini/visualize_ground_truth.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

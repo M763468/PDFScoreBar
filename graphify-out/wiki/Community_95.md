@@ -1,34 +1,34 @@
 # Community 95
 
-> 26 nodes · cohesion 0.08
+> 26 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **barline_cnn/manifest.json** (10 connections) — `models/barline_cnn/manifest.json`
-- **provenance** (7 connections) — `models/barline_cnn/manifest.json`
-- **production_contract** (4 connections) — `models/barline_cnn/manifest.json`
-- **training_evaluation_matcher** (4 connections) — `models/barline_cnn/manifest.json`
-- **release** (4 connections) — `models/barline_cnn/manifest.json`
-- **architecture** (1 connections) — `models/barline_cnn/manifest.json`
-- **cache_path** (1 connections) — `models/barline_cnn/manifest.json`
-- **model_id** (1 connections) — `models/barline_cnn/manifest.json`
-- **cnn_apply_nms** (1 connections) — `models/barline_cnn/manifest.json`
-- **cnn_threshold** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_experiment** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_issue** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_merge_commit** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_pr** (1 connections) — `models/barline_cnn/manifest.json`
-- **publication_issue** (1 connections) — `models/barline_cnn/manifest.json`
-- **source_checkpoint** (1 connections) — `models/barline_cnn/manifest.json`
-- **asset** (1 connections) — `models/barline_cnn/manifest.json`
-- **repository** (1 connections) — `models/barline_cnn/manifest.json`
-- **tag** (1 connections) — `models/barline_cnn/manifest.json`
-- **schema_version** (1 connections) — `models/barline_cnn/manifest.json`
-- **sha256** (1 connections) — `models/barline_cnn/manifest.json`
-- **size_bytes** (1 connections) — `models/barline_cnn/manifest.json`
-- **name** (1 connections) — `models/barline_cnn/manifest.json`
-- **vov_threshold** (1 connections) — `models/barline_cnn/manifest.json`
-- **xdist_threshold** (1 connections) — `models/barline_cnn/manifest.json`
+- **docker_image_resolver.py** (20 connections) — `scripts/docker_image_resolver.py`
+- **_resolve()** (13 connections) — `scripts/docker_image_resolver.py`
+- **_run()** (9 connections) — `scripts/docker_image_resolver.py`
+- **image_info()** (7 connections) — `scripts/docker_image_resolver.py`
+- **Path** (7 connections)
+- **list_runtime_images()** (6 connections) — `scripts/docker_image_resolver.py`
+- **_build_parser()** (5 connections) — `scripts/docker_image_resolver.py`
+- **git_ref_fingerprint()** (5 connections) — `scripts/docker_image_resolver.py`
+- **ImageInfo** (5 connections) — `scripts/docker_image_resolver.py`
+- **_list_images()** (5 connections) — `scripts/docker_image_resolver.py`
+- **_load_runtime_contract()** (5 connections) — `scripts/docker_image_resolver.py`
+- **_topic_has_runtime_diff()** (5 connections) — `scripts/docker_image_resolver.py`
+- **working_tree_fingerprint()** (5 connections) — `scripts/docker_image_resolver.py`
+- **_embedded_runtime_fingerprint()** (4 connections) — `scripts/docker_image_resolver.py`
+- **_find_develop_ref()** (4 connections) — `scripts/docker_image_resolver.py`
+- **_format_info()** (4 connections) — `scripts/docker_image_resolver.py`
+- **working_tree_source_fingerprint()** (4 connections) — `scripts/docker_image_resolver.py`
+- **_embedded_fingerprint()** (3 connections) — `scripts/docker_image_resolver.py`
+- **_inspect_image()** (3 connections) — `scripts/docker_image_resolver.py`
+- **classify_mismatch()** (2 connections) — `scripts/docker_image_resolver.py`
+- **_label()** (2 connections) — `scripts/docker_image_resolver.py`
+- **main()** (2 connections) — `scripts/docker_image_resolver.py`
+- **Namespace** (2 connections)
+- **CompletedProcess** (1 connections)
+- **ArgumentParser** (1 connections)
 - *... and 1 more nodes in this community*
 
 ## Relationships
@@ -37,12 +37,12 @@
 
 ## Source Files
 
-- `models/barline_cnn/manifest.json`
+- `scripts/docker_image_resolver.py`
 
 ## Audit Trail
 
-- EXTRACTED: 25 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 63 (97%)
+- INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,49 +1,51 @@
 # Community 85
 
-> 29 nodes · cohesion 0.14
+> 29 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **adoption_v2.py** (28 connections) — `tools/issue459/adoption_v2.py`
-- **evaluate()** (9 connections) — `tools/issue459/adoption_v2.py`
-- **fault()** (8 connections) — `tools/issue459/adoption_v2.py`
-- **main()** (7 connections) — `tools/issue459/adoption_v2.py`
-- **pair()** (7 connections) — `tools/issue459/adoption_v2.py`
-- **run_checks()** (7 connections) — `tools/issue459/adoption_v2.py`
-- **replay()** (5 connections) — `tools/issue459/adoption_v2.py`
-- **run_dir()** (5 connections) — `tools/issue459/adoption_v2.py`
-- **cells()** (4 connections) — `tools/issue459/adoption_v2.py`
-- **journal()** (4 connections) — `tools/issue459/adoption_v2.py`
-- **performance_gates()** (4 connections) — `tools/issue459/adoption_v2.py`
-- **cell_label()** (3 connections) — `tools/issue459/adoption_v2.py`
-- **decide()** (3 connections) — `tools/issue459/adoption_v2.py`
-- **launch()** (3 connections) — `tools/issue459/adoption_v2.py`
-- **memory_gate()** (3 connections) — `tools/issue459/adoption_v2.py`
-- **omr_process_count()** (3 connections) — `tools/issue459/adoption_v2.py`
-- **prepare_mixed()** (3 connections) — `tools/issue459/adoption_v2.py`
-- **warm_cache()** (3 connections) — `tools/issue459/adoption_v2.py`
-- **_container()** (2 connections) — `tools/issue459/adoption_v2.py`
-- **improvement()** (2 connections) — `tools/issue459/adoption_v2.py`
-- **_load()** (2 connections) — `tools/issue459/adoption_v2.py`
-- **_peaks()** (2 connections) — `tools/issue459/adoption_v2.py`
-- **Issue #459 adoption-v2 runner; contract:…** (1 connections) — `tools/issue459/adoption_v2.py`
-- **Interleave pages from four scores with four distinct page sizes (copies,…** (1 connections) — `tools/issue459/adoption_v2.py`
-- **Distinct sampled (pid) identities running a production or job OMR entrypoint.** (1 connections) — `tools/issue459/adoption_v2.py`
+- **rescore_full68_mmr_reuse_geometry_rebased.py** (24 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **Any** (15 connections)
+- **run()** (15 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **classify_changed_event()** (8 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_compare_changed_page()** (8 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_index()** (7 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_skip()** (7 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **mapping_method_counts()** (6 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_load_json()** (6 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **test_issue274_full68_mmr_reuse_geometry_rebased.py** (5 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **_event_state()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_page_inputs()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **Path** (5 connections)
+- **_score()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_semantic_index()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_json_item()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **main()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_semantic_items_differ()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_write_json()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_item()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **test_changed_event_classification_uses_rebased_gt()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **test_changed_event_without_rebased_gt_is_not_represented()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **_key()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **parse_args()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_resolve_project_path()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
 - *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [Community 222](Community_222.md) (6 shared connections)
-- [Community 65](Community_65.md) (4 shared connections)
+- [Community 138](Community_138.md) (5 shared connections)
+- [Community 113](Community_113.md) (5 shared connections)
 
 ## Source Files
 
-- `tools/issue459/adoption_v2.py`
+- `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- `tools/issue264/phase_c_fixture_rebase.py`
+- `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
 
 ## Audit Trail
 
-- EXTRACTED: 62 (93%)
-- INFERRED: 5 (7%)
+- EXTRACTED: 89 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

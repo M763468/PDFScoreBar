@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_bad_tps.py** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
-- **analyze_bad_tps()** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
+- **analyze_clusters.py** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
+- **analyze_clusters()** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_bad_tps.py`
+- `experiments/fp_reduction/analyze_clusters.py`
 
 ## Audit Trail
 

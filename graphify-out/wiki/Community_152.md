@@ -1,42 +1,39 @@
 # Community 152
 
-> 17 nodes · cohesion 0.16
+> 17 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **loadPage()** (14 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **renderPageList()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **fetchJSON()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadMmr()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadMovementEvidence()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **switchPage()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **displayPageNumber()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **displayPageNumberFor()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadCorrections()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadNumbering()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadBarlines()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **barlinePathFromPage()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **mmrPathFromPage()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementEvidenceCandidateId()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **normalizeMmrRecords()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **resetView()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **waitForMovementSaves()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **Any** (12 connections)
+- **ResourceSampler** (11 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._sample_rusage()** (5 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_read_gpu_sample()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._run()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._sample_process_tree()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.summary()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_cpu_seconds()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_linux_maxrss_bytes()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._record_gpu_peaks()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.stop()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.__init__()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **struct_rusage** (1 connections)
+- **Convert Linux resource.ru_maxrss KiB units to bytes.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Return a best-effort nvidia-smi sample. Empty when NVIDIA tooling is…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Best-effort process/GPU resource sampler for long Stage E runs.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.start()** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Relationships
 
-- [Community 15](Community_15.md) (18 shared connections)
-- [Community 186](Community_186.md) (4 shared connections)
-- [Community 253](Community_253.md) (4 shared connections)
-- [Community 208](Community_208.md) (2 shared connections)
-- [Community 168](Community_168.md) (1 shared connections)
+- [Community 132](Community_132.md) (10 shared connections)
+- [Community 240](Community_240.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_manual.js`
+- `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 51 (100%)
+- EXTRACTED: 38 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

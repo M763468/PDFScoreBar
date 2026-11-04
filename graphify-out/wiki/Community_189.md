@@ -1,37 +1,36 @@
 # Community 189
 
-> 13 nodes · cohesion 0.35
+> 14 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **musicxml_density_filter.py** (12 connections) — `tools/musicxml_density_filter.py`
-- **main()** (12 connections) — `tools/musicxml_density_filter.py`
+- **summarize_stage_d_drift.py** (10 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **main()** (7 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **Any** (7 connections)
+- **render_markdown()** (7 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **candidate_coverage_rows()** (5 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **load_json()** (5 connections) — `tools/issue120/summarize_stage_d_drift.py`
 - **Path** (5 connections)
-- **barline_score()** (4 connections) — `tools/musicxml_density_filter.py`
-- **parse_musicxml()** (4 connections) — `tools/musicxml_density_filter.py`
-- **remove_by_core()** (4 connections) — `tools/musicxml_density_filter.py`
-- **assign_staff()** (3 connections) — `tools/musicxml_density_filter.py`
-- **compute_core_mask()** (3 connections) — `tools/musicxml_density_filter.py`
-- **ensure_dir()** (3 connections) — `tools/musicxml_density_filter.py`
-- **load_detections()** (3 connections) — `tools/musicxml_density_filter.py`
-- **load_json()** (3 connections) — `tools/musicxml_density_filter.py`
-- **ndarray** (3 connections)
-- **MeasureInfo** (2 connections) — `tools/musicxml_density_filter.py`
+- **load_page_metrics()** (4 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **build_parser()** (3 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **format_detector()** (3 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **key()** (3 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **provenance_path()** (3 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **sort_rows()** (3 connections) — `tools/issue120/summarize_stage_d_drift.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 0](Community_0.md) (3 shared connections)
-- [Community 31](Community_31.md) (3 shared connections)
-- [Community 73](Community_73.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/musicxml_density_filter.py`
+- `tools/issue120/summarize_stage_d_drift.py`
 
 ## Audit Trail
 
-- EXTRACTED: 33 (97%)
-- INFERRED: 1 (3%)
+- EXTRACTED: 33 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

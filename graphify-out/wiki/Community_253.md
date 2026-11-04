@@ -1,33 +1,30 @@
 # Community 253
 
-> 8 nodes · cohesion 0.61
+> 9 nodes · cohesion 0.42
 
 ## Key Concepts
 
-- **pageValue()** (17 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **renderMmrRows()** (10 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **effectiveMmrState()** (9 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **manualMmrMap()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **measureKey()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **baseMmrMap()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **selectedMeasureKey()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **removeManualMmrForSelected()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **structural_omr_anchor_system.py** (7 connections) — `tools/structural_omr_anchor_system.py`
+- **main()** (7 connections) — `tools/structural_omr_anchor_system.py`
+- **load_omr_boxes()** (4 connections) — `tools/structural_omr_anchor_system.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_omr_anchor_system.py`
+- **build_predictions()** (3 connections) — `tools/structural_omr_anchor_system.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_omr_anchor_system.py`
+- **dedupe_x_centers()** (2 connections) — `tools/structural_omr_anchor_system.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_omr_anchor_system.py`
+- **Path** (2 connections)
 
 ## Relationships
 
-- [Community 186](Community_186.md) (9 shared connections)
-- [Community 169](Community_169.md) (8 shared connections)
-- [Community 16](Community_16.md) (8 shared connections)
-- [Community 208](Community_208.md) (4 shared connections)
-- [Community 153](Community_153.md) (4 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_manual.js`
+- `tools/structural_omr_anchor_system.py`
 
 ## Audit Trail
 
-- EXTRACTED: 50 (100%)
+- EXTRACTED: 18 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

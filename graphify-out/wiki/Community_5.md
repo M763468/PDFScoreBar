@@ -1,55 +1,59 @@
 # Community 5
 
-> 72 nodes · cohesion 0.09
+> 72 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **dense_probe_candidate.py** (52 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **DenseProbeCandidateConfig** (27 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **test_dense_probe_candidate_route.py** (25 connections) — `tests/test_dense_probe_candidate_route.py`
-- **run_dense_probe_candidate_route()** (20 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **Path** (17 connections)
-- **DenseProbeCandidatePaths** (16 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **config_from_yaml()** (14 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **resolve_paths()** (14 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **Any** (13 connections)
-- **build_route_provenance()** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **dense_probe_candidate_route.py** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate_route.py`
-- **run_issue36_generation_filter_compare()** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **attach_route_provenance()** (9 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **cleanup_targets()** (8 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **load_json()** (8 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **config_from_args()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **detector_summary()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **run_candidate_comparison()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **run_scoring_eval_and_coverage()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **CommandRunner** (6 connections)
-- **build_score_eval_command()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **make_logged_command_runner()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **main()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate_route.py`
-- **run_probe_rescue_candidate_generation()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
-- **validate_inputs()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **run_gt_rebuild_hybrid_eval.py** (62 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **main()** (51 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **ndarray** (38 connections)
+- **detect_probe_scan()** (21 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **Path** (21 connections)
+- **staff_bands_from_mask()** (17 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **.has_existing()** (14 connections) — `src/pipeline/probe_detector/existing.py`
+- **save_analysis_crops()** (8 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_adaptive()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_from_mask()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_hough()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_lsd()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_morph()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_omr()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_runlen()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **detect_end_barlines_staff_anchor()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **load_preds()** (6 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **build_row_stats()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **cluster_by_y_distance()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **filter_min_height_ratio()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **filter_stem_outside_staff()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **save_crops()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
+- **generate_expanded_candidates.py** (4 connections) — `experiments/cnn_classifier/generate_expanded_candidates.py`
+- **process_page()** (4 connections) — `experiments/cnn_classifier/generate_expanded_candidates.py`
 - *... and 47 more nodes in this community*
 
 ## Relationships
 
-- [Community 154](Community_154.md) (3 shared connections)
-- [Community 146](Community_146.md) (3 shared connections)
-- [Community 21](Community_21.md) (2 shared connections)
-- [Community 98](Community_98.md) (2 shared connections)
-- [Community 127](Community_127.md) (1 shared connections)
+- [Community 64](Community_64.md) (37 shared connections)
+- [Community 103](Community_103.md) (5 shared connections)
+- [Community 46](Community_46.md) (4 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
+- [Community 155](Community_155.md) (3 shared connections)
+- [Community 304](Community_304.md) (3 shared connections)
+- [Community 75](Community_75.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/dense_probe_candidate.py`
-- `src/pipeline/detector_routes/dense_probe_candidate_route.py`
-- `tests/test_dense_probe_candidate_route.py`
-- `tools/issue120/run_issue36_dense_bands_then_issue53_eval.py`
+- `experiments/cnn_classifier/debug_staff_bands.py`
+- `experiments/cnn_classifier/generate_expanded_candidates.py`
+- `experiments/cnn_classifier/generate_training_candidates.py`
+- `src/pipeline/probe_detector/existing.py`
+- `tools/run_eval_experiment.py`
+- `tools/run_gt_rebuild_hybrid_eval.py`
 
 ## Audit Trail
 
-- EXTRACTED: 243 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 257 (94%)
+- INFERRED: 15 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

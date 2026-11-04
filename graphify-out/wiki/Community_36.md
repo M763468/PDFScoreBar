@@ -1,51 +1,53 @@
 # Community 36
 
-> 45 nodes · cohesion 0.12
+> 40 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **audit_grouped_semantic_impact.py** (25 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **Any** (18 connections)
-- **_route_evidence()** (16 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **test_issue252_grouped_semantic_impact.py** (14 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **compare_grouped_final_numbering()** (12 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_route()** (10 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **normalize_isolated_mmr_overrides()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_target_component_memberships()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_bbox()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_system_signature()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_connector_evidence()** (6 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **main()** (6 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_grouped_payload()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_connector_supported_grouping_classifies_redundant_component_instance()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_grouped_audit_reports_connector_evidence_change_first()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_grouped_audit_reports_local_target_boundary_recovery()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **test_three_component_chain_is_supported_without_max_two_limit()** (5 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **_boundary_matches()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_compare_page_summaries()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_component_boxes()** (5 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **test_same_x_boundary_without_connector_support_is_not_grouping_evidence()** (4 connections) — `tests/test_issue252_grouped_semantic_impact.py`
-- **_center_x()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_load()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_measure_signature()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- **_write()** (4 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
-- *... and 20 more nodes in this community*
+- **run_numbering_count_replay.py** (18 connections) — `tools/issue267/run_numbering_count_replay.py`
+- **run()** (15 connections) — `tools/issue267/run_numbering_count_replay.py`
+- **test_issue267_count_compare.py** (13 connections) — `tests/test_issue267_count_compare.py`
+- **collect_run_signatures()** (11 connections) — `tools/issue267/compare_numbering_count_signatures.py`
+- **compare_signatures()** (11 connections) — `tools/issue267/compare_numbering_count_signatures.py`
+- **Path** (8 connections)
+- **compare_numbering_count_signatures.py** (8 connections) — `tools/issue267/compare_numbering_count_signatures.py`
+- **build_page_specs()** (8 connections) — `tools/issue267/run_numbering_count_replay.py`
+- **Path** (7 connections)
+- **_write_numbering()** (6 connections) — `tests/test_issue267_count_compare.py`
+- **Any** (6 connections)
+- **semantic_signature()** (6 connections) — `tools/issue267/compare_numbering_count_signatures.py`
+- **test_issue267_comparator_detects_boundary_shift_with_same_counts()** (5 connections) — `tests/test_issue267_count_compare.py`
+- **test_issue267_comparator_detects_empty_system_change()** (5 connections) — `tests/test_issue267_count_compare.py`
+- **test_issue267_count_comparator_identifies_changed_page()** (5 connections) — `tests/test_issue267_count_compare.py`
+- **test_issue267_count_comparator_reports_exact_match()** (5 connections) — `tests/test_issue267_count_compare.py`
+- **_load_json()** (5 connections) — `tools/issue267/run_numbering_count_replay.py`
+- **test_issue267_validation_rejects_dirty_tracked_code_worktree()** (4 connections) — `tests/test_issue267_count_compare.py`
+- **_count_signature()** (4 connections) — `tools/issue267/compare_numbering_count_signatures.py`
+- **_load_json()** (4 connections) — `tools/issue267/compare_numbering_count_signatures.py`
+- **_total_measures()** (4 connections) — `tools/issue267/compare_numbering_count_signatures.py`
+- **PageSpec** (4 connections) — `tools/issue267/run_numbering_count_replay.py`
+- **_write_json()** (4 connections) — `tools/issue267/run_numbering_count_replay.py`
+- **_init_git_repo()** (3 connections) — `tests/test_issue267_count_compare.py`
+- **test_issue267_replay_resolves_accepted_retained_inputs()** (3 connections) — `tests/test_issue267_count_compare.py`
+- *... and 15 more nodes in this community*
 
 ## Relationships
 
-- [Community 31](Community_31.md) (10 shared connections)
-- [Community 13](Community_13.md) (7 shared connections)
+- [Community 10](Community_10.md) (4 shared connections)
+- [Community 100](Community_100.md) (3 shared connections)
+- [Community 92](Community_92.md) (2 shared connections)
+- [Community 146](Community_146.md) (2 shared connections)
 
 ## Source Files
 
-- `tests/test_issue252_grouped_semantic_impact.py`
-- `tools/gui_helper/app.py`
-- `tools/issue252/audit_grouped_semantic_impact.py`
+- `tests/test_issue267_count_compare.py`
+- `tools/issue267/compare_numbering_count_signatures.py`
+- `tools/issue267/run_numbering_count_replay.py`
 
 ## Audit Trail
 
-- EXTRACTED: 132 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 107 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,20 +1,21 @@
 # Community 210
 
-> 11 nodes · cohesion 0.36
+> 12 nodes · cohesion 0.35
 
 ## Key Concepts
 
-- **inventory_tracked_artifacts.py** (8 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **main()** (6 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **build_parser()** (4 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **classify_path()** (4 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **ClassifiedPath** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **git_ls_files()** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **Path** (3 connections)
-- **render_markdown()** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **summarize()** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **markdown_table_cell()** (2 connections) — `tools/issue120/inventory_tracked_artifacts.py`
-- **ArgumentParser** (1 connections)
+- **visualize_mmr_fp_fn.py** (9 connections) — `tools/visualize_mmr_fp_fn.py`
+- **main()** (7 connections) — `tools/visualize_mmr_fp_fn.py`
+- **load_configs()** (5 connections) — `tools/visualize_mmr_fp_fn.py`
+- **Path** (5 connections)
+- **visualize_page()** (4 connections) — `tools/visualize_mmr_fp_fn.py`
+- **draw_label()** (3 connections) — `tools/visualize_mmr_fp_fn.py`
+- **load_pred_overrides()** (3 connections) — `tools/visualize_mmr_fp_fn.py`
+- **load_rest_gt()** (3 connections) — `tools/visualize_mmr_fp_fn.py`
+- **flatten_measures()** (2 connections) — `tools/visualize_mmr_fp_fn.py`
+- **PageConfig** (2 connections) — `tools/visualize_mmr_fp_fn.py`
+- **parse_work_page()** (2 connections) — `tools/visualize_mmr_fp_fn.py`
+- **ImageDraw** (1 connections)
 
 ## Relationships
 
@@ -22,11 +23,11 @@
 
 ## Source Files
 
-- `tools/issue120/inventory_tracked_artifacts.py`
+- `tools/visualize_mmr_fp_fn.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 23 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

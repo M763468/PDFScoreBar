@@ -1,26 +1,26 @@
 # Community 245
 
-> 9 nodes · cohesion 0.44
+> 9 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **structural_bar_infer.py** (7 connections) — `tools/structural_bar_infer.py`
-- **main()** (7 connections) — `tools/structural_bar_infer.py`
-- **load_gt_boxes()** (4 connections) — `tools/structural_bar_infer.py`
-- **load_omr_boxes()** (4 connections) — `tools/structural_bar_infer.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/structural_bar_infer.py`
-- **build_predictions()** (3 connections) — `tools/structural_bar_infer.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_bar_infer.py`
-- **Path** (3 connections)
-- **dedupe_x_centers()** (2 connections) — `tools/structural_bar_infer.py`
+- **write_debug_output()** (8 connections) — `src/pipeline/probe_detector/debug.py`
+- **debug.py** (6 connections) — `src/pipeline/probe_detector/debug.py`
+- **_draw_crop_band_overlays()** (5 connections) — `src/pipeline/probe_detector/debug.py`
+- **_draw_crop_labels()** (4 connections) — `src/pipeline/probe_detector/debug.py`
+- **_draw_relative_band_rect()** (4 connections) — `src/pipeline/probe_detector/debug.py`
+- **Any** (4 connections)
+- **ndarray** (4 connections)
+- **Path** (1 connections)
+- **Debug rendering helpers for probe detection.** (1 connections) — `src/pipeline/probe_detector/debug.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (4 shared connections)
+- [Community 103](Community_103.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/structural_bar_infer.py`
+- `src/pipeline/probe_detector/debug.py`
 
 ## Audit Trail
 

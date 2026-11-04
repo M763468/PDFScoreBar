@@ -1,48 +1,51 @@
 # Community 96
 
-> 26 nodes · cohesion 0.08
+> 20 nodes · cohesion 0.23
 
 ## Key Concepts
 
-- **barline_cnn/manifest.json** (10 connections) — `models/barline_cnn/manifest.json`
-- **provenance** (7 connections) — `models/barline_cnn/manifest.json`
-- **production_contract** (4 connections) — `models/barline_cnn/manifest.json`
-- **training_evaluation_matcher** (4 connections) — `models/barline_cnn/manifest.json`
-- **release** (4 connections) — `models/barline_cnn/manifest.json`
-- **architecture** (1 connections) — `models/barline_cnn/manifest.json`
-- **cache_path** (1 connections) — `models/barline_cnn/manifest.json`
-- **model_id** (1 connections) — `models/barline_cnn/manifest.json`
-- **cnn_apply_nms** (1 connections) — `models/barline_cnn/manifest.json`
-- **cnn_threshold** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_experiment** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_issue** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_merge_commit** (1 connections) — `models/barline_cnn/manifest.json`
-- **accepted_pr** (1 connections) — `models/barline_cnn/manifest.json`
-- **publication_issue** (1 connections) — `models/barline_cnn/manifest.json`
-- **source_checkpoint** (1 connections) — `models/barline_cnn/manifest.json`
-- **asset** (1 connections) — `models/barline_cnn/manifest.json`
-- **repository** (1 connections) — `models/barline_cnn/manifest.json`
-- **tag** (1 connections) — `models/barline_cnn/manifest.json`
-- **schema_version** (1 connections) — `models/barline_cnn/manifest.json`
-- **sha256** (1 connections) — `models/barline_cnn/manifest.json`
-- **size_bytes** (1 connections) — `models/barline_cnn/manifest.json`
-- **name** (1 connections) — `models/barline_cnn/manifest.json`
-- **vov_threshold** (1 connections) — `models/barline_cnn/manifest.json`
-- **xdist_threshold** (1 connections) — `models/barline_cnn/manifest.json`
-- *... and 1 more nodes in this community*
+- **proc_summary()** (19 connections) — `tools/issue447/analyze.py`
+- **issue447/analyze.py** (18 connections) — `tools/issue447/analyze.py`
+- **load()** (14 connections) — `tools/issue447/analyze.py`
+- **issue454/analyze.py** (11 connections) — `tools/issue454/analyze.py`
+- **main()** (9 connections) — `tools/issue447/analyze.py`
+- **Path** (9 connections)
+- **compare_bundle()** (8 connections) — `tools/issue447/analyze.py`
+- **e2e_candidate_matrix.py** (8 connections) — `tools/issue447/e2e_candidate_matrix.py`
+- **main()** (7 connections) — `tools/issue447/e2e_candidate_matrix.py`
+- **main()** (7 connections) — `tools/issue454/analyze.py`
+- **source_semantics()** (6 connections) — `tools/issue447/analyze.py`
+- **parallel_semantics()** (5 connections) — `tools/issue447/analyze.py`
+- **compare_sr()** (4 connections) — `tools/issue454/analyze.py`
+- **sr_result()** (4 connections) — `tools/issue454/analyze.py`
+- **test_process_summary_keeps_nested_residencies_and_cumulative_io_separate()** (2 connections) — `tests/test_issue447_profiling_tools.py`
+- **inventory()** (2 connections) — `tools/issue447/e2e_candidate_matrix.py`
+- **Re-score retained Issue #447 logs; this script never launches inference.** (1 connections) — `tools/issue447/analyze.py`
+- **Compare named semantic outputs and decoded masks, not counts/PNG bytes.** (1 connections) — `tools/issue447/analyze.py`
+- **Serial, predeclared E2E matrix; never launches full68 or edits production.** (1 connections) — `tools/issue447/e2e_candidate_matrix.py`
+- **Offline strict gates for frozen cache E2E runs; never starts inference.** (1 connections) — `tools/issue454/analyze.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 146](Community_146.md) (21 shared connections)
+- [Community 315](Community_315.md) (16 shared connections)
+- [Community 129](Community_129.md) (6 shared connections)
+- [Community 85](Community_85.md) (2 shared connections)
+- [Community 193](Community_193.md) (2 shared connections)
+- [Community 69](Community_69.md) (1 shared connections)
+- [Community 111](Community_111.md) (1 shared connections)
 
 ## Source Files
 
-- `models/barline_cnn/manifest.json`
+- `tests/test_issue447_profiling_tools.py`
+- `tools/issue447/analyze.py`
+- `tools/issue447/e2e_candidate_matrix.py`
+- `tools/issue454/analyze.py`
 
 ## Audit Trail
 
-- EXTRACTED: 25 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 91 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

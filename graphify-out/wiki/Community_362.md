@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **build_iter6_hard_samples.py** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
-- **extract_crop()** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
-- **main()** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
+- **summarize_inference_stats.py** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
+- **summarize()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/build_iter6_hard_samples.py`
+- `experiments/cnn_classifier/summarize_inference_stats.py`
 
 ## Audit Trail
 

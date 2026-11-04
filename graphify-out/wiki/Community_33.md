@@ -1,63 +1,59 @@
 # Community 33
 
-> 46 nodes · cohesion 0.10
+> 44 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **write_number_layer()** (36 connections) — `src/pipeline/review/number_layer.py`
-- **fixture()** (31 connections) — `tests/test_issue441_annotated_layer.py`
-- **number_layer.py** (25 connections) — `src/pipeline/review/number_layer.py`
-- **AnnotatedNumberLayerTests** (15 connections) — `tests/test_issue441_annotated_layer.py`
-- **test_issue441_annotated_layer.py** (14 connections) — `tests/test_issue441_annotated_layer.py`
-- **crop_label_layer.py** (12 connections) — `tools/issue441/crop_label_layer.py`
-- **_validate_saved_output()** (11 connections) — `src/pipeline/review/number_layer.py`
-- **NumberLayerValidationError** (10 connections) — `src/pipeline/review/number_layer.py`
-- **refine_annotated_layout.py** (9 connections) — `tools/issue441/refine_annotated_layout.py`
-- **main()** (7 connections) — `tools/issue441/refine_annotated_layout.py`
-- **digit_ink_bounds()** (6 connections) — `src/pipeline/review/number_layer.py`
-- **find_placement()** (6 connections) — `src/pipeline/review/number_layer.py`
-- **pix_array()** (6 connections) — `src/pipeline/review/number_layer.py`
-- **distance_to_staff_start()** (5 connections) — `src/pipeline/review/number_layer.py`
-- **ValueError** (5 connections)
-- **compare_placement()** (5 connections) — `tools/issue441/refine_annotated_layout.py`
-- **remove_owned_layer()** (4 connections) — `src/pipeline/review/number_layer.py`
-- **.test_corrupt_stream_digest_is_rejected_before_deletion()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **.test_no_free_space_refuses_without_creating_output()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **.test_save_then_validation_failure_never_publishes_result()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **.test_update_removes_only_owned_numbers_and_preserves_cropped_score()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **test_four_and_ten_digit_numbers_are_inside_crop_and_do_not_touch_page_edges()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **test_post_save_validator_rejects_an_outside_number_bbox()** (4 connections) — `tests/test_issue441_annotated_layer.py`
-- **_publish_validated_pair()** (3 connections) — `src/pipeline/review/number_layer.py`
-- **.test_concurrent_output_is_not_overwritten_or_deleted()** (3 connections) — `tests/test_issue441_annotated_layer.py`
-- *... and 21 more nodes in this community*
+- **test_omr_job.py** (20 connections) — `tests/test_omr_job.py`
+- **omr_job.py** (15 connections) — `src/pipeline/detection/omr_job.py`
+- **digest()** (14 connections) — `src/pipeline/detection/omr_job.py`
+- **consume()** (13 connections) — `src/pipeline/detection/omr_job.py`
+- **build()** (10 connections) — `src/pipeline/detection/omr_job.py`
+- **prediction_bytes()** (9 connections) — `src/pipeline/detection/omr_job.py`
+- **Path** (8 connections)
+- **omr_job_worker.py** (8 connections) — `src/pipeline/detection/omr_job_worker.py`
+- **run()** (8 connections) — `src/pipeline/detection/omr_job_worker.py`
+- **atomic_publish()** (7 connections) — `src/pipeline/detection/omr_job.py`
+- **bind_sources()** (6 connections) — `src/pipeline/detection/omr_job.py`
+- **bind_sr()** (6 connections) — `src/pipeline/detection/omr_job.py`
+- **execute_worker()** (6 connections) — `src/pipeline/detection/omr_job.py`
+- **Handoff** (6 connections) — `src/pipeline/detection/omr_job.py`
+- **build()** (6 connections) — `tests/test_omr_job.py`
+- **prepared()** (6 connections) — `tests/test_omr_job.py`
+- **Any** (5 connections)
+- **inputs()** (5 connections) — `tests/test_omr_job.py`
+- **test_bind_sr_rejects_changed_source_and_foreign_sr()** (5 connections) — `tests/test_omr_job_route.py`
+- **test_failed_directory_cannot_be_reused_but_fresh_job_recovers()** (5 connections) — `tests/test_omr_job.py`
+- **test_worker_fault_cannot_publish_complete_and_retains_diagnostics()** (5 connections) — `tests/test_omr_job.py`
+- **.from_request()** (4 connections) — `src/pipeline/detection/omr_job.py`
+- **_sr()** (4 connections) — `tests/test_omr_job_route.py`
+- **test_any_tampered_identity_rejects_even_when_consuming_another_page()** (4 connections) — `tests/test_omr_job.py`
+- **.cancelled()** (3 connections) — `src/pipeline/engine_lifecycle.py`
+- *... and 19 more nodes in this community*
 
 ## Relationships
 
-- [Community 23](Community_23.md) (19 shared connections)
-- [Community 20](Community_20.md) (11 shared connections)
-- [Community 2](Community_2.md) (8 shared connections)
-- [Community 221](Community_221.md) (6 shared connections)
-- [Community 3](Community_3.md) (4 shared connections)
-- [Community 10](Community_10.md) (2 shared connections)
-- [Community 30](Community_30.md) (2 shared connections)
-- [Community 244](Community_244.md) (1 shared connections)
-- [Community 32](Community_32.md) (1 shared connections)
-- [Community 69](Community_69.md) (1 shared connections)
-- [Community 80](Community_80.md) (1 shared connections)
-- [Community 4](Community_4.md) (1 shared connections)
+- [Community 65](Community_65.md) (7 shared connections)
+- [Community 111](Community_111.md) (4 shared connections)
+- [Community 80](Community_80.md) (2 shared connections)
+- [Community 81](Community_81.md) (2 shared connections)
+- [Community 16](Community_16.md) (1 shared connections)
+- [Community 30](Community_30.md) (1 shared connections)
+- [Community 77](Community_77.md) (1 shared connections)
+- [Community 2](Community_2.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/number_layer.py`
-- `tests/test_issue218_multistaff_system_grouping.py`
-- `tests/test_issue441_annotated_layer.py`
-- `tools/issue441/crop_label_layer.py`
-- `tools/issue441/refine_annotated_layout.py`
+- `src/pipeline/detection/omr_job.py`
+- `src/pipeline/detection/omr_job_worker.py`
+- `src/pipeline/engine_lifecycle.py`
+- `tests/test_omr_job.py`
+- `tests/test_omr_job_route.py`
 
 ## Audit Trail
 
-- EXTRACTED: 160 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 113 (96%)
+- INFERRED: 5 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,25 +4,25 @@
 
 ## Key Concepts
 
-- **structural_notehead_gaps.py** (5 connections) — `tools/structural_notehead_gaps.py`
-- **main()** (5 connections) — `tools/structural_notehead_gaps.py`
-- **build_predictions()** (3 connections) — `tools/structural_notehead_gaps.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_notehead_gaps.py`
-- **dedupe_x_centers()** (2 connections) — `tools/structural_notehead_gaps.py`
-- **group_bands_into_systems()** (2 connections) — `tools/structural_notehead_gaps.py`
-- **Path** (1 connections)
+- **hybrid_barline_detector.py** (7 connections) — `experiments/gemini/hybrid_barline_detector.py`
+- **main()** (6 connections) — `experiments/gemini/hybrid_barline_detector.py`
+- **load_gt_boxes()** (3 connections) — `experiments/gemini/hybrid_barline_detector.py`
+- **calculate_iou()** (2 connections) — `experiments/gemini/hybrid_barline_detector.py`
+- **load_predictions()** (2 connections) — `experiments/gemini/hybrid_barline_detector.py`
+- **parse_args()** (2 connections) — `experiments/gemini/hybrid_barline_detector.py`
+- **Loads ground truth barlines.** (1 connections) — `experiments/gemini/hybrid_barline_detector.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (1 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/structural_notehead_gaps.py`
+- `experiments/gemini/hybrid_barline_detector.py`
 
 ## Audit Trail
 
-- EXTRACTED: 11 (100%)
+- EXTRACTED: 13 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

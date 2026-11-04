@@ -1,28 +1,29 @@
 # Community 258
 
-> 7 nodes · cohesion 0.48
+> 8 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **hybrid_barline_detector.py** (7 connections) — `experiments/gemini/hybrid_barline_detector.py`
-- **main()** (6 connections) — `experiments/gemini/hybrid_barline_detector.py`
-- **load_gt_boxes()** (3 connections) — `experiments/gemini/hybrid_barline_detector.py`
-- **calculate_iou()** (2 connections) — `experiments/gemini/hybrid_barline_detector.py`
-- **load_predictions()** (2 connections) — `experiments/gemini/hybrid_barline_detector.py`
-- **parse_args()** (2 connections) — `experiments/gemini/hybrid_barline_detector.py`
-- **Loads ground truth barlines.** (1 connections) — `experiments/gemini/hybrid_barline_detector.py`
+- **analyze_measure_grid.py** (4 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **analyze_measure_grid()** (4 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **compute_gap_stats()** (3 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **load_metrics()** (3 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **solve_dp()** (3 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **Load ground truth indices.** (1 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **Compute and print gap stats for a subset of candidates.** (1 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **Find optimal subsequence of candidates. candidates: list of dicts (x_center,…** (1 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
 
 ## Relationships
 
-- [Community 0](Community_0.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `experiments/gemini/hybrid_barline_detector.py`
+- `experiments/fp_reduction/analyze_measure_grid.py`
 
 ## Audit Trail
 
-- EXTRACTED: 13 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

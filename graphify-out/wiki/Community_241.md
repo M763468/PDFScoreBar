@@ -1,34 +1,32 @@
 # Community 241
 
-> 9 nodes · cohesion 0.47
+> 10 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **mobilesheets_roundtrip_acceptance.py** (11 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **export()** (6 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **prepare()** (6 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **main()** (4 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **serve()** (4 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **require()** (3 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **sha()** (3 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **write()** (3 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
-- **Fixed #441 annotation-only MobileSheets roundtrip experiment, private inputs.…** (1 connections) — `tools/issue441/mobilesheets_roundtrip_acceptance.py`
+- **structural_dual_count_resample.py** (8 connections) — `tools/structural_dual_count_resample.py`
+- **main()** (8 connections) — `tools/structural_dual_count_resample.py`
+- **load_boxes()** (4 connections) — `tools/structural_dual_count_resample.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_dual_count_resample.py`
+- **build_predictions()** (3 connections) — `tools/structural_dual_count_resample.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_dual_count_resample.py`
+- **dedupe_x_centers()** (2 connections) — `tools/structural_dual_count_resample.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_dual_count_resample.py`
+- **Path** (2 connections)
+- **resample_positions()** (2 connections) — `tools/structural_dual_count_resample.py`
 
 ## Relationships
 
-- [Community 23](Community_23.md) (2 shared connections)
-- [Community 20](Community_20.md) (2 shared connections)
-- [Community 30](Community_30.md) (2 shared connections)
-- [Community 55](Community_55.md) (1 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/issue441/mobilesheets_roundtrip_acceptance.py`
+- `tools/structural_dual_count_resample.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (83%)
-- INFERRED: 4 (17%)
+- EXTRACTED: 20 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

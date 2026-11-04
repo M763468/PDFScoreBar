@@ -1,14 +1,15 @@
 # Community 293
 
-> 5 nodes · cohesion 0.70
+> 6 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **reconcile_metrics.py** (4 connections) — `experiments/fp_reduction/reconcile_metrics.py`
-- **main()** (4 connections) — `experiments/fp_reduction/reconcile_metrics.py`
-- **compute_iou()** (2 connections) — `experiments/fp_reduction/reconcile_metrics.py`
-- **load_boxes()** (2 connections) — `experiments/fp_reduction/reconcile_metrics.py`
-- **parse_args()** (2 connections) — `experiments/fp_reduction/reconcile_metrics.py`
+- **load_palette_index()** (4 connections) — `tools/cnn_classifier/visualize_deepscores.py`
+- **visualize_deepscores_filters()** (4 connections) — `tools/cnn_classifier/visualize_deepscores.py`
+- **visualize_deepscores.py** (3 connections) — `tools/cnn_classifier/visualize_deepscores.py`
+- **find_components()** (3 connections) — `tools/cnn_classifier/visualize_deepscores.py`
+- **ndarray** (2 connections)
+- **Path** (2 connections)
 
 ## Relationships
 
@@ -16,11 +17,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/reconcile_metrics.py`
+- `tools/cnn_classifier/visualize_deepscores.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 9 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

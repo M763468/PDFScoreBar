@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **extract_tp_crops.py** (1 connections) — `tools/extract_tp_crops.py`
-- **extract_crops()** (1 connections) — `tools/extract_tp_crops.py`
+- **eval_omr_dln_barlines_from_measures.py** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
+- **calculate_iou()** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/extract_tp_crops.py`
+- `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
 
 ## Audit Trail
 

@@ -1,12 +1,13 @@
 # Community 343
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **analyze_no_peak.py** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
-- **analyze_no_peak()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
+- **validate_issue267_numbering_counts.sh** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **validate_issue267_numbering_counts.sh script** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **require_clean_tracked_worktree()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **usage()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/analyze_no_peak.py`
+- `scripts/validate_issue267_numbering_counts.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

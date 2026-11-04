@@ -1,53 +1,78 @@
 # Community 27
 
-> 49 nodes · cohesion 0.10
+> 107 nodes · cohesion 0.04
 
 ## Key Concepts
 
-- **test_engine_input_safety.py** (24 connections) — `tests/test_engine_input_safety.py`
-- **engine_input_safety.py** (22 connections) — `src/pipeline/engine_input_safety.py`
-- **validate_local_pdf()** (22 connections) — `src/pipeline/engine_input_safety.py`
-- **JobSafetyPolicy** (16 connections) — `src/pipeline/engine_input_safety.py`
-- **_error()** (13 connections) — `src/pipeline/engine_input_safety.py`
-- **InputSafetyError** (13 connections) — `src/pipeline/engine_input_safety.py`
-- **resolve_local_input_path()** (13 connections) — `src/pipeline/engine_input_safety.py`
-- **Path** (11 connections)
-- **_write_pdf()** (10 connections) — `tests/test_engine_input_safety.py`
-- **validate_local_input_reference()** (8 connections) — `src/pipeline/engine_input_safety.py`
-- **validate_output_name()** (8 connections) — `src/pipeline/engine_input_safety.py`
-- **Path** (6 connections)
-- **_filesystem_unavailable()** (5 connections) — `src/pipeline/engine_input_safety.py`
-- **_read_bounded_file()** (5 connections) — `src/pipeline/engine_input_safety.py`
-- **ValidatedPdfMetadata** (5 connections) — `src/pipeline/engine_input_safety.py`
-- **test_page_and_render_amplification_are_rejected_before_rendering()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_path_resolution_oserror_is_normalized()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_pdf_byte_limit_is_enforced_before_parser_work()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_raw_page_selection_is_bounded_before_deduplication()** (5 connections) — `tests/test_engine_input_safety.py`
-- **test_read_oserror_is_normalized()** (5 connections) — `tests/test_engine_input_safety.py`
-- **_reject_symlink_components()** (4 connections) — `src/pipeline/engine_input_safety.py`
-- **_resolve_existing_input_path()** (4 connections) — `src/pipeline/engine_input_safety.py`
-- **_selected_pages()** (4 connections) — `src/pipeline/engine_input_safety.py`
-- **test_out_of_range_page_has_stable_code()** (4 connections) — `tests/test_engine_input_safety.py`
-- **test_output_name_is_a_stem_not_a_path()** (4 connections) — `tests/test_engine_input_safety.py`
-- *... and 24 more nodes in this community*
+- **greedy_barline_match()** (118 connections) — `src/common/barline_evaluation.py`
+- **barline_evaluation.py** (82 connections) — `src/common/barline_evaluation.py`
+- **is_barline_match()** (27 connections) — `src/common/barline_evaluation.py`
+- **metrics.py** (24 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **barline_iou()** (19 connections) — `src/common/barline_geometry.py`
+- **barline_vertical_overlap()** (16 connections) — `src/common/barline_geometry.py`
+- **center_distance_x()** (13 connections) — `src/common/barline_evaluation.py`
+- **barline_geometry.py** (12 connections) — `src/common/barline_geometry.py`
+- **load_ground_truth_boxes()** (11 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **expand_barline_box()** (9 connections) — `src/common/barline_geometry.py`
+- **verify_final_comparison.py** (9 connections) — `tools/verify_final_comparison.py`
+- **visualize_remaining_fn_v2.py** (9 connections) — `tools/visualize_remaining_fn_v2.py`
+- **get_barline_match_rank()** (8 connections) — `src/common/barline_evaluation.py`
+- **reproduce_issue44_validation.py** (8 connections) — `tools/reproduce_issue44_validation.py`
+- **omr_dln_staff_barlines.py** (7 connections) — `tools/omr_dln_staff_barlines.py`
+- **common/__init__.py** (6 connections) — `src/common/__init__.py`
+- **main()** (6 connections) — `tools/omr_dln_staff_barlines.py`
+- **main()** (6 connections) — `tools/verify_final_comparison.py`
+- **main()** (5 connections) — `experiments/models/eval_grounding_dino.py`
+- **compare_sr_all.py** (5 connections) — `tools/compare_sr_all.py`
+- **debug_greedy_match.py** (5 connections) — `tools/debug_greedy_match.py`
+- **main()** (5 connections) — `tools/debug_greedy_match.py`
+- **evaluate_and_visualize.py** (5 connections) — `tools/evaluate_and_visualize.py`
+- **debug_matches.py** (5 connections) — `tools/repro_accuracy/debug_matches.py`
+- **verify_cnn_scored.py** (5 connections) — `tools/repro_accuracy/verify_cnn_scored.py`
+- *... and 82 more nodes in this community*
 
 ## Relationships
 
-- [Community 34](Community_34.md) (13 shared connections)
-- [Community 63](Community_63.md) (13 shared connections)
-- [Community 72](Community_72.md) (3 shared connections)
-- [Community 80](Community_80.md) (3 shared connections)
-- [Community 104](Community_104.md) (1 shared connections)
+- [Community 64](Community_64.md) (20 shared connections)
+- [Community 156](Community_156.md) (19 shared connections)
+- [Community 152](Community_152.md) (17 shared connections)
+- [Community 75](Community_75.md) (13 shared connections)
+- [Community 142](Community_142.md) (13 shared connections)
+- [Community 18](Community_18.md) (12 shared connections)
+- [Community 39](Community_39.md) (11 shared connections)
+- [Community 108](Community_108.md) (11 shared connections)
+- [Community 31](Community_31.md) (5 shared connections)
+- [Community 109](Community_109.md) (5 shared connections)
+- [Community 59](Community_59.md) (5 shared connections)
+- [Community 60](Community_60.md) (5 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_input_safety.py`
-- `tests/test_engine_input_safety.py`
+- `experiments/models/eval_grounding_dino.py`
+- `experiments/models/eval_yolo_world.py`
+- `src/common/__init__.py`
+- `src/common/barline_evaluation.py`
+- `src/common/barline_geometry.py`
+- `src/homr_eval_scripts/core/metrics.py`
+- `tests/test_distribution_surface.py`
+- `tools/analyze_fp_heights.py`
+- `tools/cnn_classifier/create_fp_dataset.py`
+- `tools/cnn_classifier/identify_iter6_hard_samples.py`
+- `tools/compare_sr_all.py`
+- `tools/debug_greedy_match.py`
+- `tools/diagnostics/visualize_error_crops.py`
+- `tools/eval_existing_json.py`
+- `tools/evaluate_and_visualize.py`
+- `tools/inspect_gt_dupes.py`
+- `tools/inspect_gt_image.py`
+- `tools/omr_dln_staff_barlines.py`
+- `tools/repro_accuracy/debug_matches.py`
+- `tools/repro_accuracy/verify_cnn_scored.py`
 
 ## Audit Trail
 
-- EXTRACTED: 145 (95%)
-- INFERRED: 8 (5%)
+- EXTRACTED: 418 (99%)
+- INFERRED: 5 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

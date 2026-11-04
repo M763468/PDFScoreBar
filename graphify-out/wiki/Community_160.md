@@ -1,40 +1,43 @@
 # Community 160
 
-> 16 nodes · cohesion 0.32
+> 17 nodes · cohesion 0.29
 
 ## Key Concepts
 
-- **verify_detector_full68.py** (15 connections) — `tools/verification/verify_detector_full68.py`
-- **run()** (12 connections) — `tools/verification/verify_detector_full68.py`
-- **Path** (8 connections)
-- **_run_production_groups()** (8 connections) — `tools/verification/verify_detector_full68.py`
-- **_copy_probe_pages()** (4 connections) — `tools/verification/verify_detector_full68.py`
-- **_evaluation_args()** (4 connections) — `tools/verification/verify_detector_full68.py`
-- **_page_selector()** (4 connections) — `tools/verification/verify_detector_full68.py`
-- **Any** (4 connections)
-- **_select_images()** (4 connections) — `tools/verification/verify_detector_full68.py`
-- **_canonical_images()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_expected_metrics()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_group_images_by_score()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_metric_mismatches()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **_validate_detector_result()** (3 connections) — `tools/verification/verify_detector_full68.py`
-- **main()** (2 connections) — `tools/verification/verify_detector_full68.py`
-- **Namespace** (2 connections)
+- **render_overlay()** (19 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **render_grouped_numbering_overlay.py** (16 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_bbox()** (6 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **Any** (6 connections)
+- **_connector_roi()** (5 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_physical_components()** (5 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_system_box()** (5 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_draw_box()** (4 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_draw_translucent_box()** (4 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_load()** (4 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **Path** (4 connections)
+- **_raw_components()** (4 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_clip_box()** (3 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_legend()** (3 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **_page()** (3 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **ndarray** (3 connections)
+- **main()** (2 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
 
 ## Relationships
 
-- [Community 60](Community_60.md) (2 shared connections)
-- [Community 98](Community_98.md) (2 shared connections)
-- [Community 123](Community_123.md) (2 shared connections)
+- [Community 64](Community_64.md) (9 shared connections)
+- [Community 101](Community_101.md) (3 shared connections)
+- [Community 24](Community_24.md) (2 shared connections)
+- [Community 10](Community_10.md) (1 shared connections)
+- [Community 106](Community_106.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/verification/verify_detector_full68.py`
+- `tools/issue252/render_grouped_numbering_overlay.py`
 
 ## Audit Trail
 
-- EXTRACTED: 44 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 55 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

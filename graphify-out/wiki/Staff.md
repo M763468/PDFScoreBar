@@ -2,7 +2,7 @@
 
 > God node · 82 connections · `src/measure_numbering/types.py`
 
-**Community:** [Community 18](Community_18.md)
+**Community:** [Community 15](Community_15.md)
 
 ## Connections by Relation
 

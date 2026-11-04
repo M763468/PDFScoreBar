@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **test_numbering_preview.py** (1 connections) — `tests/test_numbering_preview.py`
-- **test_numbering_preview_uses_retained_artifact_consumer_without_mutating_package()** (1 connections) — `tests/test_numbering_preview.py`
+- **run_parameter_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
+- **run_parameter_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tests/test_numbering_preview.py`
+- `experiments/legacy/scripts/run_parameter_sweep.sh`
 
 ## Audit Trail
 

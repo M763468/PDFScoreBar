@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **eval_omr_dln_barlines_from_measures.py** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
-- **calculate_iou()** (1 connections) — `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
+- **analyze_tight_duplicates.py** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
+- **analyze_tight_duplicates()** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/models/omr_dln/eval_omr_dln_barlines_from_measures.py`
+- `experiments/fp_reduction/analyze_tight_duplicates.py`
 
 ## Audit Trail
 

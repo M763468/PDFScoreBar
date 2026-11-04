@@ -1,15 +1,16 @@
 # Community 275
 
-> 6 nodes · cohesion 0.47
+> 7 nodes · cohesion 0.52
 
 ## Key Concepts
 
-- **batch_gen_numbering_for_all.py** (4 connections) — `tools/batch_gen_numbering_for_all.py`
-- **ensure_numbering_json()** (4 connections) — `tools/batch_gen_numbering_for_all.py`
-- **main()** (2 connections) — `tools/batch_gen_numbering_for_all.py`
-- **run_command()** (2 connections) — `tools/batch_gen_numbering_for_all.py`
-- **Gen numbering_initial.json.** (1 connections) — `tools/batch_gen_numbering_for_all.py`
-- **# NOTE: mask_root structure is brittle.** (1 connections) — `tools/batch_gen_numbering_for_all.py`
+- **visualize_deepscores_dataset()** (5 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
+- **visualize_deepscores_full.py** (4 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
+- **load_palette_index()** (4 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
+- **find_components()** (3 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
+- **category_matches()** (2 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
+- **ndarray** (2 connections)
+- **Path** (2 connections)
 
 ## Relationships
 
@@ -17,11 +18,11 @@
 
 ## Source Files
 
-- `tools/batch_gen_numbering_for_all.py`
+- `tools/cnn_classifier/visualize_deepscores_full.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 11 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,11 +1,12 @@
 # Community 396
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **analyze_band_y.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_y.py`
-- **analyze_band_y()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_y.py`
+- **run_final_batch_comparison.py** (2 connections) — `tools/run_final_batch_comparison.py`
+- **main()** (2 connections) — `tools/run_final_batch_comparison.py`
+- **run_pipeline_for_all()** (2 connections) — `tools/run_final_batch_comparison.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/legacy/investigation_20260102/analyze_band_y.py`
+- `tools/run_final_batch_comparison.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

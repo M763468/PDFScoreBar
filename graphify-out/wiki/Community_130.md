@@ -1,44 +1,47 @@
 # Community 130
 
-> 21 nodes · cohesion 0.28
+> 22 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **run_issue36_dense_candidates_then_eval.py** (19 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **main()** (16 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **Path** (11 connections)
-- **load_json()** (8 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **detector_summary()** (6 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **Any** (6 connections)
-- **comparison_summary()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **load_optional_json()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **validate_complete_contract()** (5 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_filter_command()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_generation_command()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **candidate_root_summary()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **validate_detector_target()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **write_json()** (4 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **add_param_args()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **assert_candidate_match()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_compare_command()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **build_score_command()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **Namespace** (3 connections)
-- **require_under_logs()** (3 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
-- **run()** (2 connections) — `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- **compare_box_tree_stats.py** (21 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **compare()** (10 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **main()** (6 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **PageComparison** (6 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **Path** (5 connections)
+- **render_markdown()** (5 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **resolve_page_file()** (5 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **boxes_from_payload()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **build_parser()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **load_boxes()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **permission_error_message()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **stats()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **write_csv()** (4 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **BoxStats** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **count_loss_rank()** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **normalize_box()** (3 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **percentile()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **Any** (2 connections)
+- **Namespace** (2 connections)
+- **safe_delta()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **safe_ratio()** (2 connections) — `tools/issue120/compare_box_tree_stats.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 146](Community_146.md) (2 shared connections)
-- [Community 127](Community_127.md) (1 shared connections)
+- [Community 159](Community_159.md) (4 shared connections)
+- [Community 132](Community_132.md) (4 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
+- [Community 68](Community_68.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_issue36_dense_candidates_then_eval.py`
+- `tools/issue120/compare_box_tree_stats.py`
 
 ## Audit Trail
 
-- EXTRACTED: 62 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 53 (95%)
+- INFERRED: 3 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

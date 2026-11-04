@@ -1,31 +1,28 @@
 # Community 231
 
-> 10 nodes · cohesion 0.38
+> 5 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **structural_dual_count_resample.py** (8 connections) — `tools/structural_dual_count_resample.py`
-- **main()** (8 connections) — `tools/structural_dual_count_resample.py`
-- **load_boxes()** (4 connections) — `tools/structural_dual_count_resample.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/structural_dual_count_resample.py`
-- **build_predictions()** (3 connections) — `tools/structural_dual_count_resample.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_dual_count_resample.py`
-- **dedupe_x_centers()** (2 connections) — `tools/structural_dual_count_resample.py`
-- **group_bands_into_systems()** (2 connections) — `tools/structural_dual_count_resample.py`
-- **Path** (2 connections)
-- **resample_positions()** (2 connections) — `tools/structural_dual_count_resample.py`
+- **JobExecutor** (4 connections) — `src/pipeline/engine_contract.py`
+- **.__call__()** (4 connections) — `src/pipeline/engine_contract.py`
+- **Protocol** (1 connections)
+- **ProgressCallback** (1 connections)
+- **Direct Python boundary for CLI and worker/service adapters.** (1 connections) — `src/pipeline/engine_contract.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- [Community 48](Community_48.md) (1 shared connections)
+- [Community 73](Community_73.md) (1 shared connections)
+- [Community 41](Community_41.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/structural_dual_count_resample.py`
+- `src/pipeline/engine_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

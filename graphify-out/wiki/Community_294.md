@@ -1,44 +1,28 @@
 # Community 294
 
-> 14 nodes · cohesion 0.24
+> 6 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **current_sr_batch_worker.py** (16 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **_run()** (13 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **validate_compiler_counters()** (7 connections) — `src/pipeline/detection/sr_compiler_cache.py`
-- **_items()** (6 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **Path** (4 connections)
-- **_sha256()** (3 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **test_compiled_cache_event_accepted()** (3 connections) — `tests/test_sr_compiler_cache.py`
-- **test_unknown_or_partial_compilation_rejected()** (3 connections) — `tests/test_sr_compiler_cache.py`
-- **Any** (2 connections)
-- **parametrize** (2 connections)
-- **main()** (1 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **Generate verified current-x4 SR images with one Real-ESRGAN model lifetime.** (1 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
-- **Reject disabled compilation, graph breaks and unknown backend provenance.** (1 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **load_palette_index()** (4 connections) — `tools/cnn_classifier/visualize_deepscores_tp_check.py`
+- **visualize_deepscores_tp()** (4 connections) — `tools/cnn_classifier/visualize_deepscores_tp_check.py`
+- **visualize_deepscores_tp_check.py** (3 connections) — `tools/cnn_classifier/visualize_deepscores_tp_check.py`
+- **find_components()** (3 connections) — `tools/cnn_classifier/visualize_deepscores_tp_check.py`
+- **ndarray** (2 connections)
+- **Path** (2 connections)
 
 ## Relationships
 
-- [Community 43](Community_43.md) (8 shared connections)
-- [Community 109](Community_109.md) (5 shared connections)
-- [Community 174](Community_174.md) (3 shared connections)
-- [Community 50](Community_50.md) (2 shared connections)
-- [Community 165](Community_165.md) (2 shared connections)
-- [Community 144](Community_144.md) (1 shared connections)
-- [Community 103](Community_103.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/pipeline/detection/current_sr_batch_worker.py`
-- `src/pipeline/detection/sr_compiler_cache.py`
-- `tests/test_sr_compiler_cache.py`
+- `tools/cnn_classifier/visualize_deepscores_tp_check.py`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 9 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

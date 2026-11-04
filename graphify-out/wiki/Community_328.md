@@ -1,13 +1,14 @@
 # Community 328
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **validate_issue267_numbering_counts.sh** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
-- **validate_issue267_numbering_counts.sh script** (3 connections) — `scripts/validate_issue267_numbering_counts.sh`
-- **require_clean_tracked_worktree()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
-- **usage()** (2 connections) — `scripts/validate_issue267_numbering_counts.sh`
+- **visualize_mmr_errors.py** (4 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **main()** (3 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **draw_thick_rectangle()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **get_ttf_font()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **MMR Error Visualization and Inspection Tool (Local Diagnostics for Issue #94)…** (1 connections) — `tools/issue94/visualize_mmr_errors.py`
 
 ## Relationships
 
@@ -15,11 +16,11 @@
 
 ## Source Files
 
-- `scripts/validate_issue267_numbering_counts.sh`
+- `tools/issue94/visualize_mmr_errors.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

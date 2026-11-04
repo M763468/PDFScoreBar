@@ -1,62 +1,54 @@
 # Community 46
 
-> 31 nodes · cohesion 0.13
+> 40 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **current_support_worker.py** (28 connections) — `src/pipeline/detection/current_support_worker.py`
-- **run()** (20 connections) — `src/pipeline/detection/current_support_worker.py`
-- **_require_precomputed_sr()** (13 connections) — `src/pipeline/detection/current_support_worker.py`
-- **maintained_source_page_worker.py** (10 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **test_issue274_two_homr_profile.py** (9 connections) — `tests/test_issue274_two_homr_profile.py`
-- **_require_current_homr_bundle()** (8 connections) — `src/pipeline/detection/current_support_worker.py`
-- **Path** (7 connections)
-- **_build_worker_environment()** (6 connections) — `src/pipeline/detection/current_support_worker.py`
-- **_run_child_worker()** (6 connections) — `src/pipeline/detection/current_support_worker.py`
-- **run()** (6 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **_detector()** (6 connections) — `tests/test_issue274_two_homr_profile.py`
-- **Any** (5 connections)
-- **_load_completed_result()** (4 connections) — `src/pipeline/detection/current_support_worker.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/current_support_worker.py`
-- **main()** (4 connections) — `src/pipeline/detection/current_support_worker.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **main()** (4 connections) — `src/pipeline/detection/maintained_source_page_worker.py`
-- **Path** (4 connections)
-- **test_in_process_source_generation_reuses_current_x4_detection()** (4 connections) — `tests/test_issue274_two_homr_profile.py`
-- **test_current_x4_support_requires_all_canonical_artifacts()** (3 connections) — `tests/test_issue274_two_homr_profile.py`
-- **test_dry_run_declares_one_x4_homr_owner()** (3 connections) — `tests/test_issue274_two_homr_profile.py`
-- **support_main()** (3 connections) — `tools/issue447/omr_reuse_poc.py`
-- **Path** (2 connections)
-- **test_current_x4_support_rejects_incomplete_connector_bundle()** (2 connections) — `tests/test_issue274_two_homr_profile.py`
-- **Generate current x4/HOMR/OMR support for one detector page. The current support…** (1 connections) — `src/pipeline/detection/current_support_worker.py`
-- *... and 6 more nodes in this community*
+- **build_cnn_dataset.py** (34 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **visualize_deepscores_probe_scan.py** (14 connections) — `tools/cnn_classifier/visualize_deepscores_probe_scan.py`
+- **main()** (12 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **main()** (12 connections) — `tools/cnn_classifier/visualize_deepscores_probe_scan.py`
+- **extract_deepscores_probe_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_eval2_tp_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **_validate_eval2_image_frame()** (9 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **Path** (8 connections)
+- **load_palette_index()** (7 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **center_crop()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_local_tp_fp()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **find_components()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_deepscores_tp_from_segmentation()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **_is_historical_candidate_match()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **crop_size_from_bbox()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **extract_deepscores_negatives()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **load_eval2_pages()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **collect_tp_boxes()** (4 connections) — `tools/cnn_classifier/visualize_deepscores_probe_scan.py`
+- **find_latest_gt()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **load_config_file()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **load_staff_boxes_by_filename()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **ndarray** (3 connections)
+- **write_outputs()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **build_staff_bands_from_palette()** (3 connections) — `tools/cnn_classifier/visualize_deepscores_probe_scan.py`
+- **collect_fp_boxes()** (3 connections) — `tools/cnn_classifier/visualize_deepscores_probe_scan.py`
+- *... and 15 more nodes in this community*
 
 ## Relationships
 
-- [Community 109](Community_109.md) (6 shared connections)
-- [Community 325](Community_325.md) (4 shared connections)
-- [Community 52](Community_52.md) (4 shared connections)
-- [Community 61](Community_61.md) (4 shared connections)
-- [Community 22](Community_22.md) (4 shared connections)
-- [Community 174](Community_174.md) (4 shared connections)
-- [Community 79](Community_79.md) (4 shared connections)
-- [Community 64](Community_64.md) (3 shared connections)
-- [Community 1](Community_1.md) (3 shared connections)
-- [Community 124](Community_124.md) (3 shared connections)
-- [Community 301](Community_301.md) (3 shared connections)
-- [Community 75](Community_75.md) (3 shared connections)
+- [Community 39](Community_39.md) (10 shared connections)
+- [Community 5](Community_5.md) (4 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
+- [Community 174](Community_174.md) (3 shared connections)
+- [Community 141](Community_141.md) (3 shared connections)
+- [Community 108](Community_108.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/current_support_worker.py`
-- `src/pipeline/detection/maintained_source_page_worker.py`
-- `tests/test_issue274_two_homr_profile.py`
-- `tools/issue447/omr_reuse_poc.py`
+- `tools/cnn_classifier/build_cnn_dataset.py`
+- `tools/cnn_classifier/visualize_deepscores_probe_scan.py`
 
 ## Audit Trail
 
-- EXTRACTED: 110 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 115 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

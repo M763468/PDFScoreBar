@@ -1,49 +1,43 @@
 # Community 65
 
-> 34 nodes · cohesion 0.11
+> 17 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **DocLinkChecks** (18 connections) — `tests/test_doc_links.py`
-- **.run_check()** (14 connections) — `tests/test_doc_links.py`
-- **check_doc_links.py** (10 connections) — `tools/verification/check_doc_links.py`
-- **check()** (8 connections) — `tools/verification/check_doc_links.py`
-- **test_doc_links.py** (6 connections) — `tests/test_doc_links.py`
-- **prose_lines()** (6 connections) — `tools/verification/check_doc_links.py`
-- **links()** (5 connections) — `tools/verification/check_doc_links.py`
-- **slugify()** (5 connections) — `tools/verification/check_doc_links.py`
-- **anchors()** (4 connections) — `tools/verification/check_doc_links.py`
-- **main()** (4 connections) — `tools/verification/check_doc_links.py`
-- **.test_multi_line_indented_code_block_is_ignored()** (3 connections) — `tests/test_doc_links.py`
-- **destinations()** (3 connections) — `tools/verification/check_doc_links.py`
-- **Path** (3 connections)
-- **tracked_markdown()** (3 connections) — `tools/verification/check_doc_links.py`
-- **.test_balanced_parentheses_and_angle_destinations()** (2 connections) — `tests/test_doc_links.py`
-- **.test_code_examples_are_ignored()** (2 connections) — `tests/test_doc_links.py`
-- **.test_emphasis_is_removed_from_heading_slugs()** (2 connections) — `tests/test_doc_links.py`
-- **.test_escaped_destination_is_decoded()** (2 connections) — `tests/test_doc_links.py`
-- **.test_indented_code_block_is_ignored_but_list_continuation_is_checked()** (2 connections) — `tests/test_doc_links.py`
-- **.test_inline_code_spanning_lines_is_ignored()** (2 connections) — `tests/test_doc_links.py`
-- **.test_missing_target_and_fragment_are_reported()** (2 connections) — `tests/test_doc_links.py`
-- **.test_percent_encoded_target()** (2 connections) — `tests/test_doc_links.py`
-- **.test_query_string_is_not_part_of_the_path()** (2 connections) — `tests/test_doc_links.py`
-- **.test_reference_definitions_are_checked()** (2 connections) — `tests/test_doc_links.py`
-- **.test_relative_paths_are_resolved_against_root()** (2 connections) — `tests/test_doc_links.py`
-- *... and 9 more nodes in this community*
+- **test_omr_job_route.py** (21 connections) — `tests/test_omr_job_route.py`
+- **_drive()** (6 connections) — `tests/test_omr_job_route.py`
+- **select_route()** (5 connections) — `src/pipeline/detection/omr_job.py`
+- **_detector()** (4 connections) — `tests/test_omr_job_route.py`
+- **_pages()** (4 connections) — `tests/test_omr_job_route.py`
+- **test_support_worker_consumes_job_prediction_without_running_omr()** (4 connections) — `tests/test_omr_job_route.py`
+- **parametrize** (3 connections)
+- **_support_request()** (3 connections) — `tests/test_omr_job_route.py`
+- **test_coordinator_rejects_result_from_the_other_route()** (3 connections) — `tests/test_omr_job_route.py`
+- **test_excluded_jobs_keep_the_per_page_route()** (3 connections) — `tests/test_omr_job_route.py`
+- **test_invalid_policy_is_rejected()** (3 connections) — `tests/test_omr_job_route.py`
+- **test_route_is_selected_from_explicit_envelope()** (3 connections) — `tests/test_omr_job_route.py`
+- **test_support_worker_rejects_incomplete_job_without_publishing()** (3 connections) — `tests/test_omr_job_route.py`
+- **test_job_failure_never_falls_back_to_per_page_sources()** (2 connections) — `tests/test_omr_job_route.py`
+- **test_root_multi_page_job_runs_one_omr_phase_before_sources()** (2 connections) — `tests/test_omr_job_route.py`
+- **Decide the OMR route before the job starts; never changes after a failure.…** (1 connections) — `src/pipeline/detection/omr_job.py`
+- **Route selection and production wiring of the per-job OMR route (Issue #459).** (1 connections) — `tests/test_omr_job_route.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 33](Community_33.md) (7 shared connections)
+- [Community 154](Community_154.md) (3 shared connections)
+- [Community 111](Community_111.md) (3 shared connections)
+- [Community 16](Community_16.md) (2 shared connections)
 
 ## Source Files
 
-- `tests/test_doc_links.py`
-- `tools/verification/check_doc_links.py`
+- `src/pipeline/detection/omr_job.py`
+- `tests/test_omr_job_route.py`
 
 ## Audit Trail
 
-- EXTRACTED: 63 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 42 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

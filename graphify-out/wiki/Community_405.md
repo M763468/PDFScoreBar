@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_promiscuous_union_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
-- **run_promiscuous_union_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
+- **analyze_diagnosis.py** (1 connections) — `experiments/fp_reduction/analyze_diagnosis.py`
+- **analyze()** (1 connections) — `experiments/fp_reduction/analyze_diagnosis.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
+- `experiments/fp_reduction/analyze_diagnosis.py`
 
 ## Audit Trail
 

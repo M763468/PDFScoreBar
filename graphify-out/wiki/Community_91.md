@@ -1,60 +1,48 @@
 # Community 91
 
-> 27 nodes · cohesion 0.13
+> 27 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **hybrid.py** (26 connections) — `src/pipeline/detection/hybrid.py`
-- **HybridDetector** (20 connections) — `src/pipeline/detection/hybrid.py`
-- **._run_homr_in_process()** (14 connections) — `src/pipeline/detection/hybrid.py`
-- **.run()** (13 connections) — `src/pipeline/detection/hybrid.py`
-- **_HomrInternalLogFilter** (9 connections) — `src/pipeline/detection/hybrid.py`
-- **Path** (6 connections)
-- **._write_line()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **._all_stems_exist()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **._get_python_cmd()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **_suppress_homr_low_value_internal_logs()** (4 connections) — `src/pipeline/detection/hybrid.py`
-- **log_vram_usage()** (4 connections) — `src/pipeline/detection/utils.py`
-- **.__init__()** (3 connections) — `src/pipeline/detection/hybrid.py`
-- **._omr_all_stems_exist()** (3 connections) — `src/pipeline/detection/hybrid.py`
-- **._rel()** (3 connections) — `src/pipeline/detection/hybrid.py`
-- **Any** (3 connections)
-- **_env_flag_enabled()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **.flush()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **.__init__()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **._should_suppress()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **.write()** (2 connections) — `src/pipeline/detection/hybrid.py`
-- **Hybrid detection engine using Homr and OMR-DLN.** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Encapsulates hybrid detection logic (Baseline, SR, OMR-DLN).** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Returns the appropriate python command, falling back to host if images are…** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Step 2.1: Hybrid Detection (Subprocess or In-Process)** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Runs Homr inference (baseline or SR) in-process for persistence.** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **review_tool/app.js** (26 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **loadPage()** (5 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **draw()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **populateBoxList()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **getFilteredBoxes()** (3 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **fetchJSON()** (2 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **updateCanvasSize()** (2 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **baseImg** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **boxes** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **boxList** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **canvas** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **categoryColors** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **categoryFilter** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **clearLabelBtn** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **ctx** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **initLabels()** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **labelButtons** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **labels** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **overlayImg** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **pageMeta** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **pageSelect** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **saveBtn** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **setStatus()** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **showBoxes** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
+- **showOverlay** (1 connections) — `experiments/phase5b_notehead_geom/review_tool/app.js`
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 15](Community_15.md) (6 shared connections)
-- [Community 1](Community_1.md) (5 shared connections)
-- [Community 154](Community_154.md) (5 shared connections)
-- [Community 79](Community_79.md) (5 shared connections)
-- [Community 131](Community_131.md) (4 shared connections)
-- [Community 325](Community_325.md) (3 shared connections)
-- [Community 84](Community_84.md) (3 shared connections)
-- [Community 123](Community_123.md) (3 shared connections)
-- [Community 64](Community_64.md) (2 shared connections)
-- [Community 455](Community_455.md) (2 shared connections)
-- [Community 50](Community_50.md) (2 shared connections)
-- [Community 150](Community_150.md) (2 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/pipeline/detection/hybrid.py`
-- `src/pipeline/detection/utils.py`
+- `experiments/phase5b_notehead_geom/review_tool/app.js`
 
 ## Audit Trail
 
-- EXTRACTED: 85 (93%)
-- INFERRED: 6 (7%)
+- EXTRACTED: 32 (97%)
+- INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

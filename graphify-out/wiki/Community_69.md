@@ -1,58 +1,62 @@
 # Community 69
 
-> 32 nodes · cohesion 0.12
+> 29 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **test_issue218_multistaff_system_grouping.py** (32 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **ConnectorAwareSystemBuilder** (18 connections) — `src/measure_numbering/connector_aware_builder.py`
-- **evaluate_issue218_measure_gt.py** (10 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **build()** (8 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **test_multistaff_boundary_needs_staff_span_or_cross_staff_support()** (7 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **evaluate()** (7 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **.__init__()** (6 connections) — `src/measure_numbering/pipeline.py`
-- **parametrize** (6 connections)
-- **test_barline_free_voice_requires_positive_multistaff_chain()** (6 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **test_transitive_divisi_merge_preserves_neighbor_and_measure_progression()** (6 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **align_intervals()** (6 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **score_page()** (6 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **._group_by_geometry()** (5 connections) — `src/measure_numbering/connector_aware_builder.py`
-- **test_guard_is_required_even_with_an_aligned_nonleft_ink_bridge()** (5 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **test_pipeline_extracts_pair_evidence_and_numbers_divisi_once()** (5 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **main()** (5 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **digest()** (4 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **Path** (4 connections)
-- **resolve()** (4 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **validate_gt()** (4 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- **test_absent_connector_breaks_each_link_without_transitive_bypass()** (3 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **test_manual_gt_does_not_shift_indices_to_hide_a_missing_measure()** (2 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **test_manual_gt_numbers_must_agree_with_rest_durations()** (2 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **test_manual_gt_shared_rest_and_page_index_follow_production_override_contract()** (2 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **boundary_matches()** (2 connections) — `tools/verification/evaluate_issue218_measure_gt.py`
-- *... and 7 more nodes in this community*
+- **load_image()** (26 connections) — `src/pipeline/utils/images.py`
+- **images.py** (22 connections) — `src/pipeline/utils/images.py`
+- **collect_images()** (15 connections) — `src/pipeline/utils/images.py`
+- **replay_numbering.py** (13 connections) — `tools/issue447/replay_numbering.py`
+- **replay()** (10 connections) — `tools/issue447/replay_numbering.py`
+- **clear_image_cache()** (7 connections) — `src/pipeline/utils/images.py`
+- **Path** (7 connections)
+- **test_issue236_review_package_source_images.py** (7 connections) — `tests/test_issue236_review_package_source_images.py`
+- **load_image_size()** (6 connections) — `src/pipeline/utils/images.py`
+- **resolve_page_ids()** (6 connections) — `src/pipeline/utils/images.py`
+- **_config()** (5 connections) — `tests/test_issue236_review_package_source_images.py`
+- **_write_text()** (5 connections) — `tests/test_issue236_review_package_source_images.py`
+- **Any** (4 connections)
+- **ndarray** (4 connections)
+- **_review_package_enabled()** (4 connections) — `src/pipeline/utils/images.py`
+- **_stage_external_review_images()** (4 connections) — `src/pipeline/utils/images.py`
+- **test_collect_images_keeps_external_source_images_without_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
+- **test_collect_images_keeps_run_dir_source_images_for_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
+- **test_collect_images_stages_external_source_images_for_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
+- **e2e_semantic_replay.py** (4 connections) — `tools/issue447/e2e_semantic_replay.py`
+- **_path_is_inside()** (3 connections) — `src/pipeline/utils/images.py`
+- **Path** (2 connections)
+- **main()** (2 connections) — `tools/issue447/e2e_semantic_replay.py`
+- **main()** (2 connections) — `tools/issue447/replay_numbering.py`
+- **Image collection and page id helpers.** (1 connections) — `src/pipeline/utils/images.py`
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [Community 8](Community_8.md) (18 shared connections)
-- [Community 18](Community_18.md) (17 shared connections)
-- [Community 77](Community_77.md) (6 shared connections)
-- [Community 42](Community_42.md) (4 shared connections)
-- [Community 50](Community_50.md) (4 shared connections)
-- [Community 90](Community_90.md) (4 shared connections)
-- [Community 183](Community_183.md) (1 shared connections)
-- [Community 33](Community_33.md) (1 shared connections)
+- [Community 14](Community_14.md) (15 shared connections)
+- [Community 25](Community_25.md) (6 shared connections)
+- [Community 146](Community_146.md) (5 shared connections)
+- [Community 172](Community_172.md) (4 shared connections)
+- [Community 68](Community_68.md) (3 shared connections)
+- [Community 111](Community_111.md) (3 shared connections)
+- [Community 110](Community_110.md) (3 shared connections)
+- [Community 32](Community_32.md) (3 shared connections)
+- [Community 49](Community_49.md) (3 shared connections)
+- [Community 100](Community_100.md) (3 shared connections)
+- [Community 70](Community_70.md) (2 shared connections)
+- [Community 156](Community_156.md) (2 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/connector_aware_builder.py`
-- `src/measure_numbering/pipeline.py`
-- `tests/test_issue218_multistaff_system_grouping.py`
-- `tools/verification/evaluate_issue218_measure_gt.py`
+- `src/pipeline/utils/images.py`
+- `tests/test_issue236_review_package_source_images.py`
+- `tools/issue447/e2e_semantic_replay.py`
+- `tools/issue447/replay_numbering.py`
 
 ## Audit Trail
 
-- EXTRACTED: 108 (95%)
-- INFERRED: 6 (5%)
+- EXTRACTED: 117 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

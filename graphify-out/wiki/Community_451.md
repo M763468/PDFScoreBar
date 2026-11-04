@@ -1,10 +1,11 @@
 # Community 451
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **gui_helper/config.py** (0 connections) — `tools/gui_helper/config.py`
+- **populate_missing_gt.py** (1 connections) — `tools/populate_missing_gt.py`
+- **main()** (1 connections) — `tools/populate_missing_gt.py`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `tools/gui_helper/config.py`
+- `tools/populate_missing_gt.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

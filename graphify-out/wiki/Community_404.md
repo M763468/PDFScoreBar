@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_phase5b_srcheck.sh** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
-- **run_phase5b_srcheck.sh script** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
+- **analyze_crossings.py** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
+- **analyze_crossings()** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
+- `experiments/fp_reduction/analyze_crossings.py`
 
 ## Audit Trail
 

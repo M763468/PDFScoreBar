@@ -1,51 +1,48 @@
 # Community 116
 
-> 23 nodes · cohesion 0.20
+> 21 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **dense_full_pipeline.py** (20 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **reconstruct_dense_full_pipeline_route()** (19 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **regenerate_probe_rescue_candidates()** (13 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **regenerate_dense_candidates()** (11 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Path** (9 connections)
-- **load_route_image_paths()** (7 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Any** (7 connections)
-- **_run_command()** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_phase_summary()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_write_compact_log()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **CommandLogSummary** (4 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_write_execution_summary()** (4 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_compact_log_path()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_load_staff_mask_paths()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_stringify_params()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **_add_params()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **.to_json()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Popen** (1 connections)
-- **Dense full-pipeline detector route support. This module reconstructs detector-…** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Load the detector-route image list from a benchmark inventory.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Regenerate the dense candidate/filter root inside this route run.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Regenerate probe-rescue candidates for the dense detector route.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Rebuild all dense full-pipeline detector inputs from current-run sources.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **diagnose_ocr_frame_changed_pages.py** (22 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **run()** (15 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **run_h2_matrix()** (12 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **Any** (8 connections)
+- **_preflight()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_semantic()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_comparison()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **legacy_frame_dimensions()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_load_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_probe_matrix_condition()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_write_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **test_issue274_ocr_frame_causal.py** (4 connections) — `tests/test_issue274_ocr_frame_causal.py`
+- **main()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_normalise()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **Path** (4 connections)
+- **_semantic_items()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **_legacy_frame_select()** (3 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **test_legacy_frame_dimensions_keep_positive_dimensions()** (2 connections) — `tests/test_issue274_ocr_frame_causal.py`
+- **test_legacy_frame_dimensions_remove_the_four_20px_border_edges()** (2 connections) — `tests/test_issue274_ocr_frame_causal.py`
+- **_variant_from_debug()** (2 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- **Recreate the pre-border contract for a 20px border on every edge.** (1 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
 
 ## Relationships
 
-- [Community 156](Community_156.md) (10 shared connections)
-- [Community 60](Community_60.md) (4 shared connections)
-- [Community 154](Community_154.md) (3 shared connections)
-- [Community 192](Community_192.md) (3 shared connections)
-- [Community 132](Community_132.md) (3 shared connections)
-- [Community 58](Community_58.md) (2 shared connections)
-- [Community 68](Community_68.md) (2 shared connections)
+- [Community 9](Community_9.md) (7 shared connections)
+- [Community 286](Community_286.md) (3 shared connections)
+- [Community 44](Community_44.md) (3 shared connections)
+- [Community 79](Community_79.md) (3 shared connections)
+- [Community 55](Community_55.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/dense_full_pipeline.py`
+- `tests/test_issue274_ocr_frame_causal.py`
+- `tools/issue274/diagnose_ocr_frame_changed_pages.py`
 
 ## Audit Trail
 
-- EXTRACTED: 77 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 71 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

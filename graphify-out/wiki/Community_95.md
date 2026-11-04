@@ -1,48 +1,51 @@
 # Community 95
 
-> 26 nodes · cohesion 0.20
+> 27 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **docker_image_resolver.py** (20 connections) — `scripts/docker_image_resolver.py`
-- **_resolve()** (13 connections) — `scripts/docker_image_resolver.py`
-- **_run()** (9 connections) — `scripts/docker_image_resolver.py`
-- **image_info()** (7 connections) — `scripts/docker_image_resolver.py`
-- **Path** (7 connections)
-- **list_runtime_images()** (6 connections) — `scripts/docker_image_resolver.py`
-- **_build_parser()** (5 connections) — `scripts/docker_image_resolver.py`
-- **git_ref_fingerprint()** (5 connections) — `scripts/docker_image_resolver.py`
-- **ImageInfo** (5 connections) — `scripts/docker_image_resolver.py`
-- **_list_images()** (5 connections) — `scripts/docker_image_resolver.py`
-- **_load_runtime_contract()** (5 connections) — `scripts/docker_image_resolver.py`
-- **_topic_has_runtime_diff()** (5 connections) — `scripts/docker_image_resolver.py`
-- **working_tree_fingerprint()** (5 connections) — `scripts/docker_image_resolver.py`
-- **_embedded_runtime_fingerprint()** (4 connections) — `scripts/docker_image_resolver.py`
-- **_find_develop_ref()** (4 connections) — `scripts/docker_image_resolver.py`
-- **_format_info()** (4 connections) — `scripts/docker_image_resolver.py`
-- **working_tree_source_fingerprint()** (4 connections) — `scripts/docker_image_resolver.py`
-- **_embedded_fingerprint()** (3 connections) — `scripts/docker_image_resolver.py`
-- **_inspect_image()** (3 connections) — `scripts/docker_image_resolver.py`
-- **classify_mismatch()** (2 connections) — `scripts/docker_image_resolver.py`
-- **_label()** (2 connections) — `scripts/docker_image_resolver.py`
-- **main()** (2 connections) — `scripts/docker_image_resolver.py`
-- **Namespace** (2 connections)
-- **CompletedProcess** (1 connections)
-- **ArgumentParser** (1 connections)
-- *... and 1 more nodes in this community*
+- **compare_full68_variants.py** (20 connections) — `tools/issue284/compare_full68_variants.py`
+- **main()** (12 connections) — `tools/issue284/compare_full68_variants.py`
+- **Any** (10 connections)
+- **support_semantics()** (9 connections) — `tools/issue284/compare_full68_variants.py`
+- **load_json()** (8 connections) — `tools/issue284/compare_full68_variants.py`
+- **Path** (8 connections)
+- **test_issue284_retained_artifact_paths.py** (7 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **resolve_retained_path()** (7 connections) — `tools/issue284/compare_full68_variants.py`
+- **boxes_from_payload()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **gt_boxes()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **hybrid_metrics()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **page_artifact()** (6 connections) — `tools/issue284/compare_full68_variants.py`
+- **numbering_view()** (5 connections) — `tools/issue284/compare_full68_variants.py`
+- **Path** (4 connections)
+- **normalize_box()** (4 connections) — `tools/issue284/compare_full68_variants.py`
+- **normalize_overrides()** (4 connections) — `tools/issue284/compare_full68_variants.py`
+- **test_comparator_prefers_requested_variant_over_existing_recorded_path()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **test_comparator_resolves_relocated_variant_artifact()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **test_support_semantics_rejects_missing_declared_connector_artifact()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **test_support_semantics_rejects_missing_required_connector_field()** (3 connections) — `tests/test_issue284_retained_artifact_paths.py`
+- **aggregate_hybrid()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **bbox_differences()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **score_map()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **sha256()** (3 connections) — `tools/issue284/compare_full68_variants.py`
+- **Compare fresh post-#285 control and Issue #284 candidate full-68 runs. The…** (1 connections) — `tools/issue284/compare_full68_variants.py`
+- *... and 2 more nodes in this community*
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 27](Community_27.md) (4 shared connections)
+- [Community 64](Community_64.md) (4 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
 
 ## Source Files
 
-- `scripts/docker_image_resolver.py`
+- `tests/test_issue284_retained_artifact_paths.py`
+- `tools/issue284/compare_full68_variants.py`
 
 ## Audit Trail
 
-- EXTRACTED: 63 (97%)
-- INFERRED: 2 (3%)
+- EXTRACTED: 79 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

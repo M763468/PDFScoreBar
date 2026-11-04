@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **safe_gh_post.sh** (1 connections) — `tools/utils/safe_gh_post.sh`
-- **safe_gh_post.sh script** (1 connections) — `tools/utils/safe_gh_post.sh`
+- **compare_batch_structure.py** (1 connections) — `tools/compare_batch_structure.py`
+- **compare_batches()** (1 connections) — `tools/compare_batch_structure.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/utils/safe_gh_post.sh`
+- `tools/compare_batch_structure.py`
 
 ## Audit Trail
 

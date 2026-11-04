@@ -1,12 +1,13 @@
 # Community 347
 
-> 3 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **visualize_ground_truth()** (2 connections) — `experiments/gemini/visualize_ground_truth.py`
-- **visualize_ground_truth.py** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
-- **Draws ground truth data on the image and saves it.** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
+- **recipe_references()** (3 connections) — `tools/check_makefile_references.py`
+- **check_makefile_references.py** (2 connections) — `tools/check_makefile_references.py`
+- **main()** (2 connections) — `tools/check_makefile_references.py`
+- **Path** (1 connections)
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/gemini/visualize_ground_truth.py`
+- `tools/check_makefile_references.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

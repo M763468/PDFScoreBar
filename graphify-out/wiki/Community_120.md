@@ -1,44 +1,46 @@
 # Community 120
 
-> 22 nodes · cohesion 0.26
+> 23 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **gt_relabel_support.py** (19 connections) — `tools/gt_relabel_support.py`
-- **apply_edits()** (11 connections) — `tools/gt_relabel_support.py`
-- **near_hit_check()** (9 connections) — `tools/gt_relabel_support.py`
-- **prepare()** (9 connections) — `tools/gt_relabel_support.py`
-- **Path** (9 connections)
-- **write_crop_and_template()** (9 connections) — `tools/gt_relabel_support.py`
-- **load_boxes()** (6 connections) — `tools/gt_relabel_support.py`
-- **load_candidates()** (6 connections) — `tools/gt_relabel_support.py`
-- **load_gt_entries()** (6 connections) — `tools/gt_relabel_support.py`
-- **load_page_config()** (6 connections) — `tools/gt_relabel_support.py`
-- **read_json()** (6 connections) — `tools/gt_relabel_support.py`
-- **near_hit()** (5 connections) — `tools/gt_relabel_support.py`
-- **main()** (4 connections) — `tools/gt_relabel_support.py`
-- **apply_delta()** (3 connections) — `tools/gt_relabel_support.py`
-- **bbox_center()** (3 connections) — `tools/gt_relabel_support.py`
-- **Candidate** (3 connections) — `tools/gt_relabel_support.py`
-- **clamp_box()** (3 connections) — `tools/gt_relabel_support.py`
-- **intersect()** (3 connections) — `tools/gt_relabel_support.py`
-- **Namespace** (3 connections)
-- **scale_box()** (3 connections) — `tools/gt_relabel_support.py`
-- **unscale_box()** (3 connections) — `tools/gt_relabel_support.py`
-- **CropMeta** (2 connections) — `tools/gt_relabel_support.py`
+- **eval_stage_e_contract.py** (17 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_prepare_eval_inputs()** (13 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **Path** (11 connections)
+- **main()** (8 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **Namespace** (6 connections)
+- **_stage_e_run_root()** (5 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_build_eval_args()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **build_parser()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_candidate_paths()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_canonical_mismatches()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_default_eval_inputs_dir()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_default_eval_output_dir()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **MissingStageEArtifactError** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_print_summary()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_scored_paths()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_selected_records()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_first_existing()** (3 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_materialize_file()** (3 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **_metric_matches()** (2 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **Any** (1 connections)
+- **ArgumentParser** (1 connections)
+- **RuntimeError** (1 connections)
+- **Raised when the Stage E run root does not contain required artifacts.** (1 connections) — `tools/issue120/eval_stage_e_contract.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (9 shared connections)
+- [Community 39](Community_39.md) (3 shared connections)
+- [Community 132](Community_132.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_support.py`
+- `tools/issue120/eval_stage_e_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 67 (96%)
-- INFERRED: 3 (4%)
+- EXTRACTED: 59 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

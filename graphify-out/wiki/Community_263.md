@@ -1,28 +1,30 @@
 # Community 263
 
-> 7 nodes · cohesion 0.52
+> 8 nodes · cohesion 0.54
 
 ## Key Concepts
 
-- **visualize_deepscores_dataset()** (5 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
-- **visualize_deepscores_full.py** (4 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
-- **load_palette_index()** (4 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
-- **find_components()** (3 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
-- **category_matches()** (2 connections) — `tools/cnn_classifier/visualize_deepscores_full.py`
-- **ndarray** (2 connections)
-- **Path** (2 connections)
+- **run()** (10 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
+- **check_current_homr_runtime_contract.py** (9 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
+- **_write_payload()** (4 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
+- **_is_within()** (3 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
+- **main()** (3 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
+- **Any** (3 connections)
+- **Path** (3 connections)
+- **_signature()** (3 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 58](Community_58.md) (6 shared connections)
+- [Community 28](Community_28.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/cnn_classifier/visualize_deepscores_full.py`
+- `tools/issue255/check_current_homr_runtime_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 11 (100%)
+- EXTRACTED: 23 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

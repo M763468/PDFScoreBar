@@ -1,11 +1,12 @@
 # Community 387
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **analyze_crossings.py** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
-- **analyze_crossings()** (1 connections) — `experiments/fp_reduction/analyze_crossings.py`
+- **benchmark_scipy_label.py** (2 connections) — `tools/issue363/benchmark_scipy_label.py`
+- **main()** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
+- **Compare scipy.ndimage.label on retained full-resolution binary masks.** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_crossings.py`
+- `tools/issue363/benchmark_scipy_label.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

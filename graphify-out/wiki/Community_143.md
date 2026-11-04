@@ -1,42 +1,41 @@
 # Community 143
 
-> 18 nodes · cohesion 0.28
+> 19 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **ndarray** (25 connections)
-- **detect_staffs_with_barlines()** (16 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Any** (11 connections)
-- **recover_end_barlines()** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **_ensure_mask_shape()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_sobel_vertical_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_vertical_run_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_column_sum_candidates()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_hough_vertical_candidates()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_sobel_vertical_candidates_weak()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_vertical_run_candidates_weak()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_barline_cc_dilated()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_barline_cc_relaxed()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **generate_barline_cc_tiny()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **_scan_vertical_line()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **_cluster_by_y_centers()** (2 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Future** (1 connections)
-- **Runs the core homr staff and symbol detection pipeline. Returns: A tuple…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **barline_gt_helper.py** (13 connections) — `tools/barline_gt_helper.py`
+- **AnnotatorState** (8 connections) — `tools/barline_gt_helper.py`
+- **prepare_state()** (7 connections) — `tools/barline_gt_helper.py`
+- **run_gui()** (7 connections) — `tools/barline_gt_helper.py`
+- **mouse_handler()** (5 connections) — `tools/barline_gt_helper.py`
+- **add_manual_box()** (4 connections) — `tools/barline_gt_helper.py`
+- **AnnotatedBox** (4 connections) — `tools/barline_gt_helper.py`
+- **draw()** (4 connections) — `tools/barline_gt_helper.py`
+- **load_detection_boxes()** (4 connections) — `tools/barline_gt_helper.py`
+- **load_existing_gt()** (4 connections) — `tools/barline_gt_helper.py`
+- **main()** (4 connections) — `tools/barline_gt_helper.py`
+- **Path** (4 connections)
+- **save_selected()** (4 connections) — `tools/barline_gt_helper.py`
+- **parse_args()** (3 connections) — `tools/barline_gt_helper.py`
+- **toggle_box()** (3 connections) — `tools/barline_gt_helper.py`
+- **BoxType** (2 connections)
+- **Namespace** (2 connections)
+- **.contains()** (1 connections) — `tools/barline_gt_helper.py`
+- **.reset_manual()** (1 connections) — `tools/barline_gt_helper.py`
 
 ## Relationships
 
-- [Community 40](Community_40.md) (25 shared connections)
-- [Community 108](Community_108.md) (8 shared connections)
-- [Community 31](Community_31.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/homr_eval_scripts/homr_evaluator.py`
+- `tools/barline_gt_helper.py`
 
 ## Audit Trail
 
-- EXTRACTED: 77 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 41 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

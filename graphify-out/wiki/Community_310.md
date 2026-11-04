@@ -1,14 +1,14 @@
 # Community 310
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **export_product_evidence.py** (4 connections) — `tools/issue441/export_product_evidence.py`
-- **main()** (3 connections) — `tools/issue441/export_product_evidence.py`
-- **require()** (2 connections) — `tools/issue441/export_product_evidence.py`
-- **sha()** (2 connections) — `tools/issue441/export_product_evidence.py`
-- **Export only hashes, counts and explicitly selected gates from private #441…** (1 connections) — `tools/issue441/export_product_evidence.py`
+- **detect_vertical_line_candidates()** (3 connections) — `experiments/hybrid/opencv_candidate_detector.py`
+- **plot_projection()** (3 connections) — `experiments/hybrid/opencv_candidate_detector.py`
+- **opencv_candidate_detector.py** (2 connections) — `experiments/hybrid/opencv_candidate_detector.py`
+- **Creates an image of the projection profile for debugging.** (1 connections) — `experiments/hybrid/opencv_candidate_detector.py`
+- **Uses a vertical projection profile on the original binary image to find…** (1 connections) — `experiments/hybrid/opencv_candidate_detector.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue441/export_product_evidence.py`
+- `experiments/hybrid/opencv_candidate_detector.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

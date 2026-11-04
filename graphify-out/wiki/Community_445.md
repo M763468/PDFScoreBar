@@ -1,10 +1,11 @@
 # Community 445
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **eval_omr_dln_all.py** (0 connections) — `experiments/models/omr_dln/eval_omr_dln_all.py`
+- **prepare_rebuild_eval2.py** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
+- **prepare_eval2_rebuild()** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `experiments/models/omr_dln/eval_omr_dln_all.py`
+- `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

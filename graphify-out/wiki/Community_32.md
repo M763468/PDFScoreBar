@@ -1,63 +1,64 @@
 # Community 32
 
-> 46 nodes · cohesion 0.13
+> 33 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **apply_corrections.py** (71 connections) — `src/pipeline/review/apply_corrections.py`
-- **_run_retained_artifact_correction()** (28 connections) — `src/pipeline/review/apply_corrections.py`
-- **Any** (24 connections)
-- **application.py** (23 connections) — `tools/review_correction/application.py`
-- **Path** (20 connections)
-- **_resolve_source_manifest_path()** (13 connections) — `src/pipeline/review/apply_corrections.py`
-- **preview_numbering()** (13 connections) — `tools/review_correction/application.py`
-- **_merge_existing_override_inputs()** (10 connections) — `src/pipeline/review/apply_corrections.py`
-- **test_issue236_selective_correction_rerun.py** (10 connections) — `tests/test_issue236_selective_correction_rerun.py`
-- **_final_numbering_from_retained_geometry()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_read_existing_override_inputs()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_rebuild_phase_a_numbering()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_remap_measure_key()** (9 connections) — `src/pipeline/review/apply_corrections.py`
-- **_read_json_object_if_exists()** (8 connections) — `src/pipeline/review/apply_corrections.py`
-- **_reuse_auto_mmr_overrides()** (8 connections) — `src/pipeline/review/apply_corrections.py`
-- **_current_barline_overrides()** (7 connections) — `src/pipeline/review/apply_corrections.py`
-- **_mmr_suppression_override_payload()** (7 connections) — `src/pipeline/review/apply_corrections.py`
-- **_read_staging_payloads()** (7 connections) — `src/pipeline/review/apply_corrections.py`
-- **apply_barline_overrides()** (7 connections) — `src/pipeline/steps/barlines.py`
-- **movement_boundaries_for_page()** (7 connections) — `src/pipeline/steps/numbering.py`
-- **_barline_neighborhood_keys()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_current_homr_staff_mask()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_resolve_package_artifact()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_source_numbering_base()** (6 connections) — `src/pipeline/review/apply_corrections.py`
-- **_first_numbering_page()** (5 connections) — `src/pipeline/review/apply_corrections.py`
-- *... and 21 more nodes in this community*
+- **load_json()** (53 connections) — `src/pipeline/core/__init__.py`
+- **write_json()** (45 connections) — `src/pipeline/core/__init__.py`
+- **load_yaml()** (43 connections) — `src/pipeline/core/__init__.py`
+- **ensure_dir()** (30 connections) — `src/pipeline/core/__init__.py`
+- **pipeline/core/__init__.py** (15 connections) — `src/pipeline/core/__init__.py`
+- **write_yaml()** (8 connections) — `src/pipeline/core/__init__.py`
+- **test_issue268_explicit_boundary_resets_at_mid_page_system_and_preserves_provenance()** (8 connections) — `tests/test_issue257_mmr_page_rebase.py`
+- **test_three_page_phase_c_preserves_manual_precedence_without_cross_page_leakage()** (8 connections) — `tests/test_issue257_mmr_page_rebase.py`
+- **run_phase_b_page001_acceptance.py** (8 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
+- **Path** (7 connections)
+- **test_issue268_skip_existing_reuses_persisted_score_state()** (7 connections) — `tests/test_issue257_mmr_page_rebase.py`
+- **Any** (6 connections)
+- **test_pipeline_integration.py** (6 connections) — `tests/test_pipeline_integration.py`
+- **main()** (6 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
+- **_FakeImage** (5 connections) — `tests/test_issue257_mmr_page_rebase.py`
+- **Path** (5 connections)
+- **test_issue268_rejects_boundary_inside_excluded_page()** (5 connections) — `tests/test_issue257_mmr_page_rebase.py`
+- **test_issue355_trusted_accuracy_smoke.py** (5 connections) — `tests/test_issue355_trusted_accuracy_smoke.py`
+- **.test_full_sequence()** (5 connections) — `tests/test_pipeline_integration.py`
+- **write_manifest()** (4 connections) — `src/pipeline/core/__init__.py`
+- **test_canonical_direct_run_discovers_established_external_images()** (4 connections) — `tests/test_distribution_surface.py`
+- **_matching_manifest()** (4 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
+- **materialize_canonical_artifact_manifest()** (4 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
+- **Path** (4 connections)
+- **resolve_manifest()** (4 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
+- *... and 8 more nodes in this community*
 
 ## Relationships
 
-- [Community 59](Community_59.md) (13 shared connections)
-- [Community 26](Community_26.md) (11 shared connections)
-- [Community 44](Community_44.md) (11 shared connections)
-- [Community 25](Community_25.md) (9 shared connections)
-- [Community 12](Community_12.md) (8 shared connections)
-- [Community 182](Community_182.md) (7 shared connections)
-- [Community 23](Community_23.md) (7 shared connections)
-- [Community 8](Community_8.md) (6 shared connections)
-- [Community 50](Community_50.md) (6 shared connections)
-- [Community 222](Community_222.md) (5 shared connections)
-- [Community 21](Community_21.md) (4 shared connections)
-- [Community 2](Community_2.md) (4 shared connections)
+- [Community 9](Community_9.md) (19 shared connections)
+- [Community 10](Community_10.md) (14 shared connections)
+- [Community 14](Community_14.md) (14 shared connections)
+- [Community 25](Community_25.md) (13 shared connections)
+- [Community 49](Community_49.md) (10 shared connections)
+- [Community 55](Community_55.md) (9 shared connections)
+- [Community 0](Community_0.md) (9 shared connections)
+- [Community 110](Community_110.md) (8 shared connections)
+- [Community 86](Community_86.md) (7 shared connections)
+- [Community 118](Community_118.md) (6 shared connections)
+- [Community 154](Community_154.md) (5 shared connections)
+- [Community 18](Community_18.md) (5 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/apply_corrections.py`
-- `src/pipeline/steps/barlines.py`
-- `src/pipeline/steps/numbering.py`
-- `tests/test_issue236_selective_correction_rerun.py`
-- `tools/review_correction/application.py`
+- `src/pipeline/core/__init__.py`
+- `tests/test_distribution_surface.py`
+- `tests/test_issue257_mmr_page_rebase.py`
+- `tests/test_issue355_trusted_accuracy_smoke.py`
+- `tests/test_pipeline_integration.py`
+- `tools/issue264/run_phase_b_page001_acceptance.py`
 
 ## Audit Trail
 
-- EXTRACTED: 249 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 241 (98%)
+- INFERRED: 4 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

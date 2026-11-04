@@ -1,47 +1,49 @@
 # Community 88
 
-> 27 nodes · cohesion 0.11
+> 28 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **train.py** (12 connections) — `experiments/cnn_classifier/train.py`
-- **train()** (9 connections) — `experiments/cnn_classifier/train.py`
-- **GaussianBlur** (7 connections) — `experiments/cnn_classifier/train.py`
-- **BarlineDataset** (6 connections) — `experiments/cnn_classifier/train.py`
-- **get_gpu_transforms()** (4 connections) — `experiments/cnn_classifier/train.py`
-- **GPUNormalize** (4 connections) — `experiments/cnn_classifier/train.py`
-- **GPUSaltPepperNoise** (4 connections) — `experiments/cnn_classifier/train.py`
-- **load_model_weights()** (4 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (3 connections) — `experiments/cnn_classifier/train.py`
-- **get_cpu_transforms()** (3 connections) — `experiments/cnn_classifier/train.py`
-- **calculate_metrics()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **find_optimal_threshold()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **get_model()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (2 connections) — `experiments/cnn_classifier/train.py`
-- **Path** (2 connections)
-- **.__getitem__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__len__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__call__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__init__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.__repr__()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **get_args()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.forward()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **.forward()** (1 connections) — `experiments/cnn_classifier/train.py`
-- **Dataset** (1 connections)
-- *... and 2 more nodes in this community*
+- **rescore_full68_mmr_reuse_geometry_rebased.py** (24 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **Any** (15 connections)
+- **run()** (15 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **classify_changed_event()** (8 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_compare_changed_page()** (8 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_index()** (7 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_skip()** (7 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_load_json()** (6 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **test_issue274_full68_mmr_reuse_geometry_rebased.py** (5 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **_event_state()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_page_inputs()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **Path** (5 connections)
+- **_score()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_semantic_index()** (5 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_json_item()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **main()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_semantic_items_differ()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_write_json()** (4 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_item()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **test_changed_event_classification_uses_rebased_gt()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **test_changed_event_without_rebased_gt_is_not_represented()** (3 connections) — `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- **_key()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **parse_args()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_resolve_project_path()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- **_runtime_with_explicit_allocator_names()** (3 connections) — `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
+- *... and 3 more nodes in this community*
 
 ## Relationships
 
-- [Community 14](Community_14.md) (1 shared connections)
+- [Community 105](Community_105.md) (5 shared connections)
+- [Community 125](Community_125.md) (3 shared connections)
 
 ## Source Files
 
-- `experiments/cnn_classifier/train.py`
+- `tests/test_issue274_full68_mmr_reuse_geometry_rebased.py`
+- `tools/issue274/rescore_full68_mmr_reuse_geometry_rebased.py`
 
 ## Audit Trail
 
-- EXTRACTED: 40 (100%)
+- EXTRACTED: 85 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

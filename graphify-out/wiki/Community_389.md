@@ -1,11 +1,12 @@
 # Community 389
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **analyze_fps.py** (1 connections) — `experiments/fp_reduction/analyze_fps.py`
-- **analyze_fps()** (1 connections) — `experiments/fp_reduction/analyze_fps.py`
+- **docker_negative.py** (2 connections) — `tools/issue454/docker_negative.py`
+- **main()** (1 connections) — `tools/issue454/docker_negative.py`
+- **CPU-only Docker ownership, integrity, crash and cross-container flock checks.** (1 connections) — `tools/issue454/docker_negative.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_fps.py`
+- `tools/issue454/docker_negative.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

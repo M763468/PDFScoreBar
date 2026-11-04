@@ -1,25 +1,26 @@
 # Community 334
 
-> 4 nodes · cohesion 0.67
+> 5 nodes · cohesion 0.80
 
 ## Key Concepts
 
-- **find_top_windows()** (3 connections) — `tools/dense_region_crops.py`
-- **dense_region_crops.py** (2 connections) — `tools/dense_region_crops.py`
-- **main()** (2 connections) — `tools/dense_region_crops.py`
-- **ndarray** (1 connections)
+- **verify_pipeline_accuracy.py** (6 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
+- **verify_dataset()** (5 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
+- **load_json()** (3 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
+- **main()** (3 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
+- **get_gt_boxes()** (2 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 27](Community_27.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/dense_region_crops.py`
+- `tools/repro_accuracy/verify_pipeline_accuracy.py`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 11 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

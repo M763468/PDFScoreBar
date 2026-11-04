@@ -1,22 +1,22 @@
 # Community 306
 
-> 5 nodes · cohesion 0.70
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **inspect_errors.py** (4 connections) — `tools/inspect_errors.py`
-- **draw_errors()** (4 connections) — `tools/inspect_errors.py`
-- **get_measure_coords()** (2 connections) — `tools/inspect_errors.py`
-- **load_json()** (2 connections) — `tools/inspect_errors.py`
-- **main()** (2 connections) — `tools/inspect_errors.py`
+- **build_row_stats()** (4 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
+- **visualize_scan_bands.py** (3 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
+- **cluster_by_y_distance()** (3 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
+- **ndarray** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/inspect_errors.py`
+- `experiments/cnn_classifier/visualize_scan_bands.py`
 
 ## Audit Trail
 

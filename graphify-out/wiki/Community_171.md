@@ -1,37 +1,41 @@
 # Community 171
 
-> 14 nodes · cohesion 0.33
+> 13 nodes · cohesion 0.32
 
 ## Key Concepts
 
-- **review_overlay_generator.py** (13 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **main()** (12 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **ndarray** (5 connections)
-- **cluster_by_y_distance()** (4 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **draw_boxes()** (4 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **geom_notehead_ratio_filter()** (4 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **load_notehead_mask()** (4 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **load_preds()** (4 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **apply_margin_bands()** (3 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **estimate_staff_space()** (3 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
-- **Path** (3 connections)
-- **PageSpec** (2 connections) — `experiments/phase5b_notehead_geom/review_overlay_generator.py`
+- **component_poc.py** (15 connections) — `tools/issue447/component_poc.py`
+- **sr_screen()** (7 connections) — `tools/issue447/component_poc.py`
+- **main()** (6 connections) — `tools/issue447/component_poc.py`
+- **Path** (6 connections)
+- **write_profile()** (6 connections) — `tools/issue447/component_poc.py`
+- **homr_profile()** (5 connections) — `tools/issue447/component_poc.py`
+- **model_wall()** (5 connections) — `tools/issue447/component_poc.py`
+- **omr_profile()** (5 connections) — `tools/issue447/component_poc.py`
+- **source_parallel()** (4 connections) — `tools/issue447/component_poc.py`
+- **Profile** (1 connections)
+- **Isolated SR batching screen and retained-input HOMR CPU diagnostics for #447.** (1 connections) — `tools/issue447/component_poc.py`
+- **Monotonic call spans independent of cProfile's call graph accounting.** (1 connections) — `tools/issue447/component_poc.py`
+- **Two disposable source workers only; retained SR, no shared model lifetime.** (1 connections) — `tools/issue447/component_poc.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (6 shared connections)
-- [Community 0](Community_0.md) (3 shared connections)
+- [Community 129](Community_129.md) (3 shared connections)
+- [Community 146](Community_146.md) (3 shared connections)
+- [Community 35](Community_35.md) (2 shared connections)
+- [Community 279](Community_279.md) (2 shared connections)
+- [Community 214](Community_214.md) (1 shared connections)
+- [Community 80](Community_80.md) (1 shared connections)
+- [Community 38](Community_38.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/review_overlay_generator.py`
+- `tools/issue447/component_poc.py`
 
 ## Audit Trail
 
-- EXTRACTED: 39 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 35 (92%)
+- INFERRED: 3 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

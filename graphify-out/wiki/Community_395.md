@@ -1,11 +1,12 @@
 # Community 395
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **analyze_band_count.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_count.py`
-- **analyze_band_count()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_count.py`
+- **run_failure_analysis.py** (2 connections) — `tools/run_failure_analysis.py`
+- **main()** (2 connections) — `tools/run_failure_analysis.py`
+- **run_debug()** (2 connections) — `tools/run_failure_analysis.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/legacy/investigation_20260102/analyze_band_count.py`
+- `tools/run_failure_analysis.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

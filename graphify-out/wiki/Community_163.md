@@ -1,55 +1,44 @@
 # Community 163
 
-> 22 nodes · cohesion 0.13
+> 16 nodes · cohesion 0.22
 
 ## Key Concepts
 
-- **test_issue115_runtime_boundaries.py** (24 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **count_staff_crossings()** (9 connections) — `src/homr_runtime/filtering.py`
-- **filter_detections_by_notehead_proximity()** (9 connections) — `src/homr_runtime/filtering.py`
-- **TransformInfo** (8 connections) — `src/homr_runtime/types.py`
-- **local_import_targets()** (7 connections) — `tools/check_repository_surface.py`
-- **AST** (4 connections)
-- **test_filtering_preserves_prediction_identity_and_partition()** (3 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **ndarray** (2 connections)
-- **test_dense_dispatch_preserves_explicit_historical_profile()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **test_maintained_batch_workflow_uses_its_own_worker_and_backend()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **test_staff_crossings_count_contiguous_lines_and_clamp_to_image()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **test_surface_check_finds_lazy_runtime_leaks_but_ignores_external_modules()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **test_surface_check_resolves_relative_imports_and_package_initializers()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **test_transform_record_preserves_anisotropic_total_scale()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **BarlinePrediction** (1 connections)
-- **Counts the number of staff line crossings for a vertical barline candidate. A…** (1 connections) — `src/homr_runtime/filtering.py`
-- **Filters barline detections that are horizontally close to noteheads, which are…** (1 connections) — `src/homr_runtime/filtering.py`
-- **.total_scale()** (1 connections) — `src/homr_runtime/types.py`
-- **parametrize** (1 connections)
-- **test_batch_workflows_preserve_profile_detector_subclass_contract()** (1 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **test_legacy_heuristics_adapter_preserves_actual_consumer_patch_points()** (1 connections) — `tests/test_issue115_runtime_boundaries.py`
-- **Resolve source imports without importing modules or loading models.** (1 connections) — `tools/check_repository_surface.py`
+- **phase_c_phase_a_support.py** (14 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **ensure_phase_a_semantic_support()** (9 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **augment_report()** (8 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **install_phase_a_support_replay()** (7 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **test_phase_a_support_replay_uses_retained_x4_without_mutating_canonical_staff()** (5 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
+- **test_issue264_phase_c_phase_a_support.py** (4 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
+- **_completed_current_homr_result()** (4 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **Any** (4 connections)
+- **Path** (4 connections)
+- **_write_mask()** (3 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
+- **Path** (2 connections)
+- **MonkeyPatch** (1 connections)
+- **Fresh Phase-A connector-semantic replay for Issue #264 Phase C. The frozen…** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **Patch the Phase-C runner's canonical path resolver for this process only.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **Add replay and Phase-B fallback provenance without changing score semantics.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **Return a Proxy/SR staff path backed by fresh current-HOMR semantics.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
 
 ## Relationships
 
-- [Community 15](Community_15.md) (11 shared connections)
-- [Community 3](Community_3.md) (5 shared connections)
-- [Community 75](Community_75.md) (3 shared connections)
-- [Community 64](Community_64.md) (3 shared connections)
-- [Community 67](Community_67.md) (2 shared connections)
-- [Community 319](Community_319.md) (1 shared connections)
-- [Community 326](Community_326.md) (1 shared connections)
-- [Community 49](Community_49.md) (1 shared connections)
-- [Community 53](Community_53.md) (1 shared connections)
+- [Community 84](Community_84.md) (5 shared connections)
+- [Community 32](Community_32.md) (4 shared connections)
+- [Community 214](Community_214.md) (3 shared connections)
+- [Community 55](Community_55.md) (2 shared connections)
+- [Community 92](Community_92.md) (2 shared connections)
+- [Community 28](Community_28.md) (1 shared connections)
 
 ## Source Files
 
-- `src/homr_runtime/filtering.py`
-- `src/homr_runtime/types.py`
-- `tests/test_issue115_runtime_boundaries.py`
-- `tools/check_repository_surface.py`
+- `tests/test_issue264_phase_c_phase_a_support.py`
+- `tools/issue264/phase_c_phase_a_support.py`
 
 ## Audit Trail
 
-- EXTRACTED: 56 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 43 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

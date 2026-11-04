@@ -1,12 +1,12 @@
 # Community 360
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **test_issue447_e2e_matrix.py** (2 connections) — `tests/test_issue447_e2e_matrix.py`
-- **Exercise fresh-output matrix orchestration without Docker, models or inference.** (1 connections) — `tests/test_issue447_e2e_matrix.py`
-- **test_fresh_matrix_reaches_both_replays_and_conditional_combination()** (1 connections) — `tests/test_issue447_e2e_matrix.py`
+- **analyze_no_peak.py** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
+- **analyze_no_peak()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/analyze_no_peak.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tests/test_issue447_e2e_matrix.py`
+- `experiments/cnn_classifier/analyze_no_peak.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

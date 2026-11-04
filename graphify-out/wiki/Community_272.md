@@ -1,27 +1,28 @@
 # Community 272
 
-> 6 nodes · cohesion 0.53
+> 7 nodes · cohesion 0.48
 
 ## Key Concepts
 
-- **debug_mechanism_page3.py** (6 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
-- **main()** (4 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
-- **run_evaluation()** (3 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
-- **load_data()** (2 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
-- **parse_args()** (2 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
-- **draw_boxes()** (1 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
+- **test_issue264_phase_b_manifest_discovery.py** (5 connections) — `tests/test_issue264_phase_b_manifest_discovery.py`
+- **Path** (4 connections)
+- **test_materialize_canonical_artifact_manifest()** (4 connections) — `tests/test_issue264_phase_b_manifest_discovery.py`
+- **test_materialize_canonical_artifact_manifest_fails_on_missing()** (3 connections) — `tests/test_issue264_phase_b_manifest_discovery.py`
+- **MonkeyPatch** (2 connections)
+- **test_matching_manifest_skips_non_mapping_json()** (2 connections) — `tests/test_issue264_phase_b_manifest_discovery.py`
+- **test_matching_manifest_skips_unreadable_json()** (2 connections) — `tests/test_issue264_phase_b_manifest_discovery.py`
 
 ## Relationships
 
-- [Community 0](Community_0.md) (2 shared connections)
+- [Community 32](Community_32.md) (2 shared connections)
 
 ## Source Files
 
-- `experiments/fp_reduction/debug_mechanism_page3.py`
+- `tests/test_issue264_phase_b_manifest_discovery.py`
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
+- EXTRACTED: 12 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

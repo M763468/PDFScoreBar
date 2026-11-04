@@ -1,30 +1,31 @@
 # Community 238
 
-> 9 nodes · cohesion 0.39
+> 10 nodes · cohesion 0.44
 
 ## Key Concepts
 
-- **fn_template_scan.py** (6 connections) — `tools/fn_template_scan.py`
-- **main()** (6 connections) — `tools/fn_template_scan.py`
-- **load_gt_boxes()** (4 connections) — `tools/fn_template_scan.py`
-- **compute_staff_height()** (3 connections) — `tools/fn_template_scan.py`
-- **load_template_heights()** (3 connections) — `tools/fn_template_scan.py`
-- **draw_box()** (2 connections) — `tools/fn_template_scan.py`
-- **put_text_block()** (2 connections) — `tools/fn_template_scan.py`
+- **probe_bar_candidates.py** (7 connections) — `tools/probe_bar_candidates.py`
+- **main()** (7 connections) — `tools/probe_bar_candidates.py`
+- **ndarray** (5 connections)
+- **draw_candidates()** (4 connections) — `tools/probe_bar_candidates.py`
+- **load_staff_mask()** (4 connections) — `tools/probe_bar_candidates.py`
+- **local_maxima()** (3 connections) — `tools/probe_bar_candidates.py`
+- **rolling_sum()** (3 connections) — `tools/probe_bar_candidates.py`
+- **staff_bands_from_mask()** (3 connections) — `tools/probe_bar_candidates.py`
+- **PageSpec** (2 connections) — `tools/probe_bar_candidates.py`
 - **Path** (2 connections)
-- **ndarray** (1 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/fn_template_scan.py`
+- `tools/probe_bar_candidates.py`
 
 ## Audit Trail
 
-- EXTRACTED: 15 (100%)
+- EXTRACTED: 20 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

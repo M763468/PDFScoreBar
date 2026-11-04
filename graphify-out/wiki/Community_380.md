@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **sort_measures.py** (2 connections) — `tools/sort_measures.py`
-- **group_and_sort_measures()** (2 connections) — `tools/sort_measures.py`
-- **main()** (2 connections) — `tools/sort_measures.py`
+- **build_iter7_hard_samples.py** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
+- **extract_crop()** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
+- **main()** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/sort_measures.py`
+- `tools/cnn_classifier/build_iter7_hard_samples.py`
 
 ## Audit Trail
 

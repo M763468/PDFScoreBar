@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
-- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
+- **execute_phase5b_homr.sh** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
+- **execute_phase5b_homr.sh script** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
+- `experiments/fp_reduction/execute_phase5b_homr.sh`
 
 ## Audit Trail
 

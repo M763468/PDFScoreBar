@@ -1,31 +1,31 @@
 # Community 229
 
-> 10 nodes · cohesion 0.40
+> 10 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **probe_ratio_plot.py** (7 connections) — `tools/probe_ratio_plot.py`
-- **main()** (6 connections) — `tools/probe_ratio_plot.py`
-- **load_boxes()** (4 connections) — `tools/probe_ratio_plot.py`
-- **load_staff_mask()** (4 connections) — `tools/probe_ratio_plot.py`
-- **ndarray** (4 connections)
-- **draw_ratio_plot()** (3 connections) — `tools/probe_ratio_plot.py`
-- **staff_bands_from_mask()** (3 connections) — `tools/probe_ratio_plot.py`
-- **PageSpec** (2 connections) — `tools/probe_ratio_plot.py`
-- **Path** (2 connections)
-- **rolling_sum()** (2 connections) — `tools/probe_ratio_plot.py`
+- **local_pr_validation.sh** (9 connections) — `scripts/local_pr_validation.sh`
+- **local_pr_validation.sh script** (6 connections) — `scripts/local_pr_validation.sh`
+- **classify_changes()** (3 connections) — `scripts/local_pr_validation.sh`
+- **add_unique_line()** (2 connections) — `scripts/local_pr_validation.sh`
+- **collect_changed_files()** (2 connections) — `scripts/local_pr_validation.sh`
+- **determine_base_ref()** (2 connections) — `scripts/local_pr_validation.sh`
+- **render_summary()** (2 connections) — `scripts/local_pr_validation.sh`
+- **resolve_base_candidate()** (2 connections) — `scripts/local_pr_validation.sh`
+- **run_and_capture()** (2 connections) — `scripts/local_pr_validation.sh`
+- **usage()** (2 connections) — `scripts/local_pr_validation.sh`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/probe_ratio_plot.py`
+- `scripts/local_pr_validation.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 19 (100%)
+- EXTRACTED: 16 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

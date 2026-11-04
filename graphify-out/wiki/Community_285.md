@@ -1,28 +1,27 @@
 # Community 285
 
-> 6 nodes · cohesion 0.33
+> 6 nodes · cohesion 0.53
 
 ## Key Concepts
 
-- **issue458/matrix.py** (3 connections) — `tools/issue458/matrix.py`
-- **post_validate.py** (3 connections) — `tools/issue458/post_validate.py`
-- **main()** (1 connections) — `tools/issue458/matrix.py`
-- **Frozen serial production comparison. Run only after seed qualification.** (1 connections) — `tools/issue458/matrix.py`
-- **main()** (1 connections) — `tools/issue458/post_validate.py`
-- **Run semantic/fault/smoke gates after the serialized benchmark releases GPU.** (1 connections) — `tools/issue458/post_validate.py`
+- **debug_mechanism_page3.py** (6 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
+- **main()** (4 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
+- **run_evaluation()** (3 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
+- **load_data()** (2 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
+- **parse_args()** (2 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
+- **draw_boxes()** (1 connections) — `experiments/fp_reduction/debug_mechanism_page3.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 27](Community_27.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/issue458/matrix.py`
-- `tools/issue458/post_validate.py`
+- `experiments/fp_reduction/debug_mechanism_page3.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

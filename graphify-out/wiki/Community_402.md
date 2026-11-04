@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_confirmed_union_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
-- **run_confirmed_union_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
+- **analyze_bad_tps.py** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
+- **analyze_bad_tps()** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
+- `experiments/fp_reduction/analyze_bad_tps.py`
 
 ## Audit Trail
 

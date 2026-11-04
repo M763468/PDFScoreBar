@@ -1,13 +1,14 @@
 # Community 327
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **graphify_query.sh** (3 connections) — `scripts/graphify_query.sh`
-- **graphify_query.sh script** (3 connections) — `scripts/graphify_query.sh`
-- **rebuild_code_graph()** (2 connections) — `scripts/graphify_query.sh`
-- **warn_if_code_changed_since_shared_graph()** (2 connections) — `scripts/graphify_query.sh`
+- **issue459/matrix.py** (3 connections) — `tools/issue459/matrix.py`
+- **validate_primary()** (3 connections) — `tools/issue459/matrix.py`
+- **main()** (2 connections) — `tools/issue459/matrix.py`
+- **Finish fixed performance cells after the root warm primary screen. Stop on the…** (1 connections) — `tools/issue459/matrix.py`
+- **Accept only a passed root/multi/warm screen under the original >=3% gate. Other…** (1 connections) — `tools/issue459/matrix.py`
 
 ## Relationships
 
@@ -15,7 +16,7 @@
 
 ## Source Files
 
-- `scripts/graphify_query.sh`
+- `tools/issue459/matrix.py`
 
 ## Audit Trail
 

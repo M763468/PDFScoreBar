@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **experiment_a.py** (4 connections) — `tools/issue194/experiment_a.py`
-- **main()** (4 connections) — `tools/issue194/experiment_a.py`
-- **analyze_system_first_measure()** (2 connections) — `tools/issue194/experiment_a.py`
-- **load_numbering_base()** (2 connections) — `tools/issue194/experiment_a.py`
-- **simulate_guards()** (2 connections) — `tools/issue194/experiment_a.py`
+- **diagnose_alignment.py** (4 connections) — `experiments/fp_reduction/diagnose_alignment.py`
+- **main()** (4 connections) — `experiments/fp_reduction/diagnose_alignment.py`
+- **draw_boxes()** (2 connections) — `experiments/fp_reduction/diagnose_alignment.py`
+- **load_boxes()** (2 connections) — `experiments/fp_reduction/diagnose_alignment.py`
+- **parse_args()** (2 connections) — `experiments/fp_reduction/diagnose_alignment.py`
 
 ## Relationships
 
@@ -16,7 +16,7 @@
 
 ## Source Files
 
-- `tools/issue194/experiment_a.py`
+- `experiments/fp_reduction/diagnose_alignment.py`
 
 ## Audit Trail
 

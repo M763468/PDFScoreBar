@@ -1,13 +1,13 @@
 # Community 342
 
-> 4 nodes · cohesion 0.50
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **resume_browser_acceptance.cjs** (3 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
-- **{ chromium }** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
-- **fs** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
-- **path** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **graphify_query.sh** (3 connections) — `scripts/graphify_query.sh`
+- **graphify_query.sh script** (3 connections) — `scripts/graphify_query.sh`
+- **rebuild_code_graph()** (2 connections) — `scripts/graphify_query.sh`
+- **warn_if_code_changed_since_shared_graph()** (2 connections) — `scripts/graphify_query.sh`
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/review_correction/resume_browser_acceptance.cjs`
+- `scripts/graphify_query.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

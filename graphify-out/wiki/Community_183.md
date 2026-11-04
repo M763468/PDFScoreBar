@@ -1,39 +1,54 @@
 # Community 183
 
-> 13 nodes · cohesion 0.45
+> 23 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **TestIssue197SystemGroupingConnectorEvidence** (17 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.make_staff_pair()** (12 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.make_barlines()** (10 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.make_connection_image()** (8 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_connector_density_schema_is_accepted()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_connector_evidence_rescues_near_threshold_false_split()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_high_alignment_connection_with_explicit_no_connector_is_guarded()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_low_alignment_connection_with_explicit_no_connector_is_guarded()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_low_alignment_connection_without_connector_evidence_keeps_legacy_merge()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_near_threshold_pair_is_not_rescued_without_connector_evidence()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_connector_evidence_rescues_with_image_without_internal_bridge()** (4 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_pipeline_page_image_fallback_can_generate_connector_evidence()** (4 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
-- **.test_positive_only_fallback_omits_absent_pairs()** (3 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **BatchSRVerifiedProfileHybridDetector** (11 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **profile_hybrid_batch_sr.py** (10 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **VerifiedProfileHybridDetector** (10 connections) — `src/pipeline/detection/profile_hybrid.py`
+- **verified_source_page_worker.py** (7 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **test_issue255_page_local_source_generation.py** (7 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **_detector()** (7 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **run()** (6 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **_load_request()** (4 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **Path** (4 connections)
+- **test_verified_source_page_worker_records_process_boundary()** (4 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/profile_hybrid.py`
+- **test_one_page_source_worker_runs_two_homr_sources_in_order()** (3 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **test_verified_sources_launch_one_top_level_worker_per_page()** (3 connections) — `tests/test_issue255_page_local_source_generation.py`
+- **._run_homr_profile()** (2 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **main()** (2 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **Path** (2 connections)
+- **Any** (1 connections)
+- **VerifiedProfileHybridDetector** (1 connections)
+- **Historical/compatibility hybrid workflow with dedicated batch SR.** (1 connections) — `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- **Any** (1 connections)
+- **Any** (1 connections)
+- **Generate one two-HOMR detector source page in a disposable Python process.** (1 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **VerifiedProfileHybridDetector** (1 connections)
 
 ## Relationships
 
-- [Community 18](Community_18.md) (10 shared connections)
-- [Community 50](Community_50.md) (4 shared connections)
-- [Community 77](Community_77.md) (2 shared connections)
-- [Community 14](Community_14.md) (1 shared connections)
-- [Community 69](Community_69.md) (1 shared connections)
+- [Community 71](Community_71.md) (4 shared connections)
+- [Community 154](Community_154.md) (4 shared connections)
+- [Community 16](Community_16.md) (3 shared connections)
+- [Community 35](Community_35.md) (3 shared connections)
+- [Community 111](Community_111.md) (2 shared connections)
+- [Community 26](Community_26.md) (1 shared connections)
+- [Community 182](Community_182.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue197_system_grouping_connector_evidence.py`
+- `src/pipeline/detection/profile_hybrid.py`
+- `src/pipeline/detection/profile_hybrid_batch_sr.py`
+- `src/pipeline/detection/verified_source_page_worker.py`
+- `tests/test_issue255_page_local_source_generation.py`
 
 ## Audit Trail
 
-- EXTRACTED: 44 (83%)
-- INFERRED: 9 (17%)
+- EXTRACTED: 50 (91%)
+- INFERRED: 5 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

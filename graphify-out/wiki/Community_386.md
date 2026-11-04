@@ -1,11 +1,12 @@
 # Community 386
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **analyze_clusters.py** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
-- **analyze_clusters()** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
+- **visualize_issue194.py** (2 connections) — `tools/issue194/visualize_issue194.py`
+- **draw_boxes()** (2 connections) — `tools/issue194/visualize_issue194.py`
+- **main()** (2 connections) — `tools/issue194/visualize_issue194.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_clusters.py`
+- `tools/issue194/visualize_issue194.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,12 +1,13 @@
 # Community 346
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **upscale_lowres_gt.py** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
-- **upscale_page()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
+- **batch_verify_numbering.py** (3 connections) — `tools/batch_verify_numbering.py`
+- **process_page()** (3 connections) — `tools/batch_verify_numbering.py`
+- **main()** (2 connections) — `tools/batch_verify_numbering.py`
+- **run_command()** (2 connections) — `tools/batch_verify_numbering.py`
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/upscale_lowres_gt.py`
+- `tools/batch_verify_numbering.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

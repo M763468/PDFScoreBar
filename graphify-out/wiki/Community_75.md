@@ -1,58 +1,59 @@
 # Community 75
 
-> 23 nodes · cohesion 0.13
+> 45 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **BatchSRVerifiedProfileHybridDetector** (17 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **maintained_profile_hybrid.py** (14 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **dense_orchestrator_batch_sr.py** (11 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **DetectorOrchestrator** (10 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **VerifiedProfileHybridDetector** (8 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **run_detection_step()** (7 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **test_issue255_detector_dispatch_contract.py** (5 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **_dense_config()** (4 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **._run_hybrid_detection()** (3 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
-- **Path** (3 connections)
-- **test_dense_route_without_profile_reaches_dense_validation()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **test_exported_orchestrator_dispatches_dense_route()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **test_verified_route_rejects_duplicate_image_stems_before_outputs_collide()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
-- **Any** (2 connections)
-- **Path** (2 connections)
-- **Any** (2 connections)
-- **BaseDetectorOrchestrator** (1 connections)
-- **Verified dense-route production orchestrator with dedicated batch SR.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **Keep the accepted dense route unchanged except for current-x4 SR scheduling.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **Run the verified dense production detector with a dedicated all-pages SR phase.** (1 connections) — `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- **Maintained original-page baseline and current-x4 support workflow.** (1 connections) — `src/pipeline/detection/maintained_profile_hybrid.py`
+- **barline_iou()** (20 connections) — `tools/extract_fp_crops_enhanced.py`
+- **notehead_fn_cause_analysis.py** (11 connections) — `tools/notehead_fn_cause_analysis.py`
+- **main()** (11 connections) — `tools/notehead_fn_cause_analysis.py`
+- **edge_crop_homr_merge.py** (7 connections) — `tools/edge_crop_homr_merge.py`
+- **generate_hybrid_results.py** (7 connections) — `tools/generate_hybrid_results.py`
+- **multi_crop_merge.py** (7 connections) — `tools/multi_crop_merge.py`
+- **main()** (7 connections) — `tools/multi_crop_merge.py`
+- **scale_merge_homr_preds.py** (7 connections) — `tools/scale_merge_homr_preds.py`
+- **main()** (6 connections) — `tools/edge_crop_homr_merge.py`
+- **main()** (6 connections) — `tools/generate_hybrid_results.py`
+- **main()** (6 connections) — `tools/scale_merge_homr_preds.py`
+- **endpoint_overlap()** (5 connections) — `tools/notehead_fn_cause_analysis.py`
+- **ndarray** (5 connections)
+- **choose_representative()** (4 connections) — `tools/edge_crop_homr_merge.py`
+- **cluster_boxes()** (4 connections) — `tools/edge_crop_homr_merge.py`
+- **load_homr_boxes()** (4 connections) — `tools/edge_crop_homr_merge.py`
+- **choose_representative()** (4 connections) — `tools/generate_hybrid_results.py`
+- **choose_representative()** (4 connections) — `tools/multi_crop_merge.py`
+- **cluster_boxes()** (4 connections) — `tools/multi_crop_merge.py`
+- **load_homr_boxes()** (4 connections) — `tools/multi_crop_merge.py`
+- **best_match()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
+- **draw_boxes()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
+- **endpoint_windows()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
+- **load_boxes()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
+- **load_notehead_mask()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
+- *... and 20 more nodes in this community*
 
 ## Relationships
 
-- [Community 68](Community_68.md) (6 shared connections)
-- [Community 123](Community_123.md) (5 shared connections)
-- [Community 64](Community_64.md) (4 shared connections)
-- [Community 79](Community_79.md) (4 shared connections)
-- [Community 22](Community_22.md) (4 shared connections)
-- [Community 46](Community_46.md) (3 shared connections)
-- [Community 124](Community_124.md) (3 shared connections)
-- [Community 163](Community_163.md) (3 shared connections)
-- [Community 53](Community_53.md) (2 shared connections)
-- [Community 301](Community_301.md) (2 shared connections)
-- [Community 38](Community_38.md) (2 shared connections)
-- [Community 61](Community_61.md) (1 shared connections)
+- [Community 64](Community_64.md) (19 shared connections)
+- [Community 27](Community_27.md) (13 shared connections)
+- [Community 232](Community_232.md) (1 shared connections)
+- [Community 109](Community_109.md) (1 shared connections)
+- [Community 199](Community_199.md) (1 shared connections)
+- [Community 184](Community_184.md) (1 shared connections)
+- [Community 5](Community_5.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/dense_orchestrator_batch_sr.py`
-- `src/pipeline/detection/maintained_profile_hybrid.py`
-- `tests/test_issue255_detector_dispatch_contract.py`
+- `tools/edge_crop_homr_merge.py`
+- `tools/extract_fp_crops_enhanced.py`
+- `tools/generate_hybrid_results.py`
+- `tools/multi_crop_merge.py`
+- `tools/notehead_fn_cause_analysis.py`
+- `tools/scale_merge_homr_preds.py`
 
 ## Audit Trail
 
-- EXTRACTED: 65 (88%)
-- INFERRED: 9 (12%)
+- EXTRACTED: 102 (85%)
+- INFERRED: 18 (15%)
 - AMBIGUOUS: 0 (0%)
 
 ---

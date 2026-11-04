@@ -1,27 +1,29 @@
 # Community 309
 
-> 5 nodes · cohesion 0.50
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **benchmark_ccl_algorithms.py** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
-- **boxes_for()** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
-- **main()** (2 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
-- **ndarray** (1 connections)
-- **Compare OpenCV connected-component algorithms on retained staff masks.** (1 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **tune_hybrid_detector.py** (5 connections) — `experiments/fp_reduction/tune_hybrid_detector.py`
+- **has_match()** (4 connections) — `experiments/fp_reduction/tune_hybrid_detector.py`
+- **load_json_boxes()** (4 connections) — `experiments/fp_reduction/tune_hybrid_detector.py`
+- **main()** (4 connections) — `experiments/fp_reduction/tune_hybrid_detector.py`
+- **Path** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 27](Community_27.md) (3 shared connections)
+- [Community 64](Community_64.md) (2 shared connections)
+- [Community 153](Community_153.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue363/benchmark_ccl_algorithms.py`
+- `experiments/fp_reduction/tune_hybrid_detector.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 11 (92%)
+- INFERRED: 1 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_crop_centers.py** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
-- **visualize_crop_centers()** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
+- **run_promiscuous_union_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
+- **run_promiscuous_union_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/visualize_crop_centers.py`
+- `experiments/legacy/tools_archive/run_promiscuous_union_eval.sh`
 
 ## Audit Trail
 

@@ -1,44 +1,44 @@
 # Community 119
 
-> 22 nodes · cohesion 0.20
+> 20 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **analyze_failure_cases.py** (16 connections) — `tools/analyze_failure_cases.py`
-- **main()** (13 connections) — `tools/analyze_failure_cases.py`
-- **analyze_measure()** (7 connections) — `tools/analyze_failure_cases.py`
-- **ndarray** (6 connections)
-- **Path** (5 connections)
-- **build_paths()** (4 connections) — `tools/analyze_failure_cases.py`
-- **detect_hbar()** (4 connections) — `tools/analyze_failure_cases.py`
-- **parse_targets()** (4 connections) — `tools/analyze_failure_cases.py`
-- **preprocess_image()** (4 connections) — `tools/analyze_failure_cases.py`
-- **scan_pages()** (4 connections) — `tools/analyze_failure_cases.py`
-- **Target** (4 connections) — `tools/analyze_failure_cases.py`
-- **draw_context_overlay()** (3 connections) — `tools/analyze_failure_cases.py`
-- **draw_label_box()** (3 connections) — `tools/analyze_failure_cases.py`
-- **draw_label_corner()** (3 connections) — `tools/analyze_failure_cases.py`
-- **ensure_dir()** (3 connections) — `tools/analyze_failure_cases.py`
-- **extract_number_from_text()** (2 connections) — `tools/analyze_failure_cases.py`
-- **iter_measures()** (2 connections) — `tools/analyze_failure_cases.py`
-- **RapidOCR** (2 connections)
-- **setup_logging()** (2 connections) — `tools/analyze_failure_cases.py`
-- **Analyze known failure cases for multi-measure rest detection. This script…** (1 connections) — `tools/analyze_failure_cases.py`
-- **Detect horizontal bar presence (H-bar) and return pixel count.** (1 connections) — `tools/analyze_failure_cases.py`
-- **Apply OCR-friendly preprocessing (mirrors debug_ocr_candidates.py).** (1 connections) — `tools/analyze_failure_cases.py`
+- **inspect_stage_d_payload_schema.py** (19 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **inspect_one()** (12 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **Path** (7 connections)
+- **SchemaRow** (7 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **write_reports()** (6 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **build_parser()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **main()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **missing_row()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **resolve()** (5 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **load_json()** (4 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **Any** (4 connections)
+- **render_markdown()** (4 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **write_csv()** (4 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **box_field()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **normalize_box()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **parse_root()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **payload_items()** (3 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **Namespace** (2 connections)
+- **summarize_keys()** (2 connections) — `tools/issue120/inspect_stage_d_payload_schema.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 132](Community_132.md) (5 shared connections)
+- [Community 159](Community_159.md) (4 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/analyze_failure_cases.py`
+- `tools/issue120/inspect_stage_d_payload_schema.py`
 
 ## Audit Trail
 
-- EXTRACTED: 47 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 55 (96%)
+- INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

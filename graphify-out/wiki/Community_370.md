@@ -1,12 +1,12 @@
 # Community 370
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **benchmark_scipy_label.py** (2 connections) — `tools/issue363/benchmark_scipy_label.py`
-- **main()** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
-- **Compare scipy.ndimage.label on retained full-resolution binary masks.** (1 connections) — `tools/issue363/benchmark_scipy_label.py`
+- **docker_container_preflight.sh** (2 connections) — `scripts/docker_container_preflight.sh`
+- **docker_container_preflight.sh script** (2 connections) — `scripts/docker_container_preflight.sh`
+- **usage()** (2 connections) — `scripts/docker_container_preflight.sh`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/issue363/benchmark_scipy_label.py`
+- `scripts/docker_container_preflight.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

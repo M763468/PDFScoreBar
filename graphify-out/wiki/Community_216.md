@@ -1,19 +1,20 @@
 # Community 216
 
-> 10 nodes · cohesion 0.29
+> 11 nodes · cohesion 0.27
 
 ## Key Concepts
 
-- **analyze_fn_attribution.py** (5 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **analyze_page()** (5 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **find_match()** (4 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **calculate_iou()** (3 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **load_json_predictions()** (3 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **main()** (2 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **Find if a matching prediction exists for a given ground truth bbox.** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **Load bboxes from a JSON file.** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **Analyzes a single page's false negatives.** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
-- **Calculate the Intersection over Union (IoU) of two bounding boxes. Each box is…** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **test_issue459_adoption_v2.py** (9 connections) — `tests/test_issue459_adoption_v2.py`
+- **blocks()** (6 connections) — `tests/test_issue459_adoption_v2.py`
+- **test_decision_never_treats_missing_gate_as_pass()** (2 connections) — `tests/test_issue459_adoption_v2.py`
+- **test_improvement_inside_noise_fails_noise_gate()** (2 connections) — `tests/test_issue459_adoption_v2.py`
+- **test_negligible_improvement_fails_floor()** (2 connections) — `tests/test_issue459_adoption_v2.py`
+- **test_one_regressed_block_fails_direction_gate()** (2 connections) — `tests/test_issue459_adoption_v2.py`
+- **test_performance_gates_pass_reproducible_improvement()** (2 connections) — `tests/test_issue459_adoption_v2.py`
+- **test_performance_gates_require_three_complete_blocks()** (2 connections) — `tests/test_issue459_adoption_v2.py`
+- **parametrize** (1 connections)
+- **test_memory_gate_limits()** (1 connections) — `tests/test_issue459_adoption_v2.py`
+- **test_omr_process_count_distinguishes_entrypoints()** (1 connections) — `tests/test_issue459_adoption_v2.py`
 
 ## Relationships
 
@@ -21,11 +22,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_fn_attribution.py`
+- `tests/test_issue459_adoption_v2.py`
 
 ## Audit Trail
 
-- EXTRACTED: 13 (100%)
+- EXTRACTED: 15 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

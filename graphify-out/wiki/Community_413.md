@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **validate_issue264_phase_c_mmr.sh** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
-- **validate_issue264_phase_c_mmr.sh script** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
+- **analyze_band_y.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_y.py`
+- **analyze_band_y()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_y.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `scripts/validate_issue264_phase_c_mmr.sh`
+- `experiments/legacy/investigation_20260102/analyze_band_y.py`
 
 ## Audit Trail
 

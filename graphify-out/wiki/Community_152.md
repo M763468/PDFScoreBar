@@ -1,40 +1,60 @@
 # Community 152
 
-> 17 nodes · cohesion 0.18
+> 27 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **Any** (12 connections)
-- **ResourceSampler** (11 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._sample_rusage()** (5 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_read_gpu_sample()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._run()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._sample_process_tree()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.summary()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_cpu_seconds()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **_linux_maxrss_bytes()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._record_gpu_peaks()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.stop()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.__init__()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **struct_rusage** (1 connections)
-- **Convert Linux resource.ru_maxrss KiB units to bytes.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Return a best-effort nvidia-smi sample. Empty when NVIDIA tooling is…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Best-effort process/GPU resource sampler for long Stage E runs.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.start()** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **BarlinePrediction** (18 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **BarlineMatch** (14 connections) — `src/common/barline_evaluation.py`
+- **BarlineMatchResult** (14 connections) — `src/common/barline_evaluation.py`
+- **BarlineSoftMatch** (14 connections) — `src/common/barline_evaluation.py`
+- **.predict()** (13 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **apply_left_margin_exclusion()** (9 connections) — `src/common/barline_evaluation.py`
+- **HomrPredictor** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **run_homr_on_image()** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **ImageMetrics** (8 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **TransformInfo** (8 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **AggregateMetrics** (7 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **compute_metrics()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **draw_overlay()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **compute_metrics()** (6 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **enable_segnet_cache()** (6 connections) — `src/homr_runtime/segnet_cache.py`
+- **map_pred_to_orig()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **ProcessingConfig** (4 connections)
+- **aggregate_metrics()** (3 connections) — `src/homr_eval_scripts/core/metrics.py`
+- **.__init__()** (3 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **XmlGeneratorArguments** (3 connections)
+- **callable** (1 connections)
+- **Reclassify matches whose centres fall within a left margin as false positives.** (1 connections) — `src/common/barline_evaluation.py`
+- **BarlinePrediction** (1 connections)
+- **Persistent Homr Predictor for batch processing.** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Runs the core homr staff and symbol detection pipeline for a single image with…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 132](Community_132.md) (10 shared connections)
-- [Community 240](Community_240.md) (3 shared connections)
+- [Community 3](Community_3.md) (37 shared connections)
+- [Community 27](Community_27.md) (17 shared connections)
+- [Community 47](Community_47.md) (6 shared connections)
+- [Community 131](Community_131.md) (6 shared connections)
+- [Community 62](Community_62.md) (5 shared connections)
+- [Community 38](Community_38.md) (4 shared connections)
+- [Community 203](Community_203.md) (3 shared connections)
+- [Community 64](Community_64.md) (1 shared connections)
+- [Community 213](Community_213.md) (1 shared connections)
+- [Community 180](Community_180.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_stage_e_full_pipeline.py`
+- `src/common/barline_evaluation.py`
+- `src/homr_eval_scripts/core/metrics.py`
+- `src/homr_eval_scripts/homr_evaluator.py`
+- `src/homr_runtime/segnet_cache.py`
 
 ## Audit Trail
 
-- EXTRACTED: 38 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 99 (78%)
+- INFERRED: 28 (22%)
 - AMBIGUOUS: 0 (0%)
 
 ---

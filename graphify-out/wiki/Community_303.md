@@ -1,26 +1,30 @@
 # Community 303
 
-> 5 nodes · cohesion 0.70
+> 6 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **analyze_mmr_errors.py** (4 connections) — `tools/analyze_mmr_errors.py`
-- **analyze_all_processed()** (4 connections) — `tools/analyze_mmr_errors.py`
-- **load_model()** (2 connections) — `tools/analyze_mmr_errors.py`
-- **map_global_index_to_coords()** (2 connections) — `tools/analyze_mmr_errors.py`
-- **predict_crop()** (2 connections) — `tools/analyze_mmr_errors.py`
+- **saveCorrectionType()** (6 connections) — `tools/review_correction/app.js`
+- **setDirty()** (6 connections) — `tools/review_correction/app.js`
+- **invalidateProvisionalNumbering()** (4 connections) — `tools/review_correction/app.js`
+- **queueMovementSave()** (4 connections) — `tools/review_correction/app.js`
+- **saveCorrectionPage()** (3 connections) — `tools/review_correction/app.js`
+- **updateDirtyStatus()** (3 connections) — `tools/review_correction/app.js`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 6](Community_6.md) (6 shared connections)
+- [Community 138](Community_138.md) (5 shared connections)
+- [Community 151](Community_151.md) (3 shared connections)
+- [Community 137](Community_137.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/analyze_mmr_errors.py`
+- `tools/review_correction/app.js`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

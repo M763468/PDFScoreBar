@@ -1,53 +1,47 @@
 # Community 102
 
-> 26 nodes · cohesion 0.19
+> 24 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **build_cnn_dataset.py** (34 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **main()** (12 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_deepscores_probe_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_eval2_tp_fp()** (10 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **Path** (8 connections)
-- **load_palette_index()** (7 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **center_crop()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_local_tp_fp()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **find_components()** (6 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_deepscores_tp_from_segmentation()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **_is_historical_candidate_match()** (5 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **crop_size_from_bbox()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **extract_deepscores_negatives()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **load_eval2_pages()** (4 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **find_latest_gt()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **load_config_file()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **load_staff_boxes_by_filename()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **ndarray** (3 connections)
-- **write_outputs()** (3 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **assign_splits()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **build_samples()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **category_matches()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **expand_boxes_to_staff_boxes()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **link_or_copy()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **normalize_gt_boxes()** (2 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- *... and 1 more nodes in this community*
+- **SourceJobs** (16 connections) — `src/pipeline/detection/source_concurrency.py`
+- **test_issue458_source_concurrency.py** (16 connections) — `tests/test_issue458_source_concurrency.py`
+- **select_workers()** (8 connections) — `src/pipeline/detection/source_concurrency.py`
+- **source_concurrency.py** (7 connections) — `src/pipeline/detection/source_concurrency.py`
+- **SourceCancelled** (4 connections) — `src/pipeline/detection/source_concurrency.py`
+- **.run()** (3 connections) — `src/pipeline/detection/source_concurrency.py`
+- **test_invalid_exact_shapes()** (3 connections) — `tests/test_issue458_source_concurrency.py`
+- **test_sr_result_identity_rejected()** (3 connections) — `tests/test_issue458_source_concurrency.py`
+- **RuntimeError** (2 connections)
+- **._fail()** (2 connections) — `src/pipeline/detection/source_concurrency.py`
+- **.ordered()** (2 connections) — `src/pipeline/detection/source_concurrency.py`
+- **._ordered_pool()** (2 connections) — `src/pipeline/detection/source_concurrency.py`
+- **parametrize** (2 connections)
+- **test_admission()** (2 connections) — `tests/test_issue458_source_concurrency.py`
+- **test_duplicate()** (2 connections) — `tests/test_issue458_source_concurrency.py`
+- **test_exact_shapes_reject_unknown_shape_with_same_area()** (2 connections) — `tests/test_issue458_source_concurrency.py`
+- **test_failure_cancels_running_and_queued()** (2 connections) — `tests/test_issue458_source_concurrency.py`
+- **test_later_failure_is_not_hidden_by_earlier_cancel()** (2 connections) — `tests/test_issue458_source_concurrency.py`
+- **test_order_and_bound()** (2 connections) — `tests/test_issue458_source_concurrency.py`
+- **test_timeout_kills_descendants()** (2 connections) — `tests/test_issue458_source_concurrency.py`
+- **Bounded disposable source jobs and explicit, conservative admission.** (1 connections) — `src/pipeline/detection/source_concurrency.py`
+- **A sibling failed or the caller cancelled; never replace the original error.** (1 connections) — `src/pipeline/detection/source_concurrency.py`
+- **.__init__()** (1 connections) — `src/pipeline/detection/source_concurrency.py`
+- **test_sigterm_cleans_worker()** (1 connections) — `tests/test_issue458_source_concurrency.py`
 
 ## Relationships
 
-- [Community 78](Community_78.md) (8 shared connections)
-- [Community 175](Community_175.md) (5 shared connections)
-- [Community 195](Community_195.md) (5 shared connections)
-- [Community 0](Community_0.md) (3 shared connections)
-- [Community 168](Community_168.md) (3 shared connections)
-- [Community 7](Community_7.md) (1 shared connections)
+- [Community 16](Community_16.md) (12 shared connections)
 
 ## Source Files
 
-- `tools/cnn_classifier/build_cnn_dataset.py`
+- `src/pipeline/detection/source_concurrency.py`
+- `tests/test_issue458_source_concurrency.py`
 
 ## Audit Trail
 
-- EXTRACTED: 86 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 49 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

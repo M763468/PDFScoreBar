@@ -1,30 +1,31 @@
 # Community 239
 
-> 9 nodes · cohesion 0.44
+> 10 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **main()** (6 connections) — `tools/issue120/attach_eval_provenance.py`
-- **attach_eval_provenance.py** (5 connections) — `tools/issue120/attach_eval_provenance.py`
-- **load_json()** (4 connections) — `tools/issue120/attach_eval_provenance.py`
-- **write_json()** (4 connections) — `tools/issue120/attach_eval_provenance.py`
-- **build_parser()** (3 connections) — `tools/issue120/attach_eval_provenance.py`
-- **default_provenance()** (3 connections) — `tools/issue120/attach_eval_provenance.py`
-- **Any** (3 connections)
-- **Path** (3 connections)
-- **ArgumentParser** (1 connections)
+- **probe_ratio_plot.py** (7 connections) — `tools/probe_ratio_plot.py`
+- **main()** (6 connections) — `tools/probe_ratio_plot.py`
+- **load_boxes()** (4 connections) — `tools/probe_ratio_plot.py`
+- **load_staff_mask()** (4 connections) — `tools/probe_ratio_plot.py`
+- **ndarray** (4 connections)
+- **draw_ratio_plot()** (3 connections) — `tools/probe_ratio_plot.py`
+- **staff_bands_from_mask()** (3 connections) — `tools/probe_ratio_plot.py`
+- **PageSpec** (2 connections) — `tools/probe_ratio_plot.py`
+- **Path** (2 connections)
+- **rolling_sum()** (2 connections) — `tools/probe_ratio_plot.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/attach_eval_provenance.py`
+- `tools/probe_ratio_plot.py`
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
+- EXTRACTED: 19 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

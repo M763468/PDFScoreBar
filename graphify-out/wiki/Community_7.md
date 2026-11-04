@@ -1,59 +1,66 @@
 # Community 7
 
-> 77 nodes · cohesion 0.08
+> 85 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **run_gt_rebuild_hybrid_eval.py** (62 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **main()** (51 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **ndarray** (38 connections)
-- **detect_probe_scan()** (21 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **Path** (21 connections)
-- **staff_bands_from_mask()** (17 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **.has_existing()** (14 connections) — `src/pipeline/probe_detector/existing.py`
-- **save_analysis_crops()** (8 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_adaptive()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_from_mask()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_hough()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_lsd()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_morph()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_omr()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_runlen()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **detect_end_barlines_staff_anchor()** (7 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **load_preds()** (6 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **build_row_stats()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **cluster_by_y_distance()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **filter_min_height_ratio()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **filter_stem_outside_staff()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **save_crops()** (5 connections) — `tools/run_gt_rebuild_hybrid_eval.py`
-- **visualize_eval2.py** (5 connections) — `tools/visualize_eval2.py`
-- **process_run()** (5 connections) — `tools/visualize_eval2.py`
-- *... and 52 more nodes in this community*
+- **ReviewPackage** (42 connections) — `tools/review_correction/server.py`
+- **test_review_correction_history.py** (34 connections) — `tests/test_review_correction_history.py`
+- **test_review_correction_server.py** (30 connections) — `tests/test_review_correction_server.py`
+- **test_review_correction_application.py** (26 connections) — `tests/test_review_correction_application.py`
+- **test_issue441_mobilesheets_roundtrip.py** (23 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
+- **_application()** (21 connections) — `tests/test_review_correction_application.py`
+- **_request()** (19 connections) — `tests/test_review_correction_server.py`
+- **encoded()** (18 connections) — `tools/review_correction/history.py`
+- **resume.py** (14 connections) — `tools/review_correction/resume.py`
+- **create_session()** (14 connections) — `tools/review_correction/resume.py`
+- **_handoff()** (13 connections) — `tests/test_review_correction_server.py`
+- **_fake_engine()** (12 connections) — `tests/test_review_correction_application.py`
+- **_pdf_package()** (12 connections) — `tests/test_review_correction_history.py`
+- **_checkpoint()** (11 connections) — `tests/test_review_correction_history.py`
+- **import_attempt()** (11 connections) — `tools/review_correction/legacy.py`
+- **test_legacy_import_rejects_changed_inputs_and_keeps_checkpoints()** (8 connections) — `tests/test_review_correction_history.py`
+- **list_attempts()** (8 connections) — `tools/review_correction/legacy.py`
+- **sha()** (7 connections) — `src/pipeline/review/number_layer.py`
+- **test_product_resume_records_original_and_cleaned_pdf_and_preserves_test()** (7 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
+- **test_null_source_reference_preserves_correction_save_and_apply()** (7 connections) — `tests/test_review_correction_history.py`
+- **prepare_pdf()** (7 connections) — `tools/review_correction/resume.py`
+- **_returned()** (6 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
+- **test_remapped_xrefs_preserve_new_annotations_and_replace_only_old_numbers()** (6 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
+- **test_second_resume_uses_product_result_and_selected_session_checkpoint()** (6 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
+- **test_resume_sessions_are_independent_and_reject_unknown_background()** (6 connections) — `tests/test_review_correction_history.py`
+- *... and 60 more nodes in this community*
 
 ## Relationships
 
-- [Community 31](Community_31.md) (37 shared connections)
-- [Community 100](Community_100.md) (5 shared connections)
-- [Community 0](Community_0.md) (3 shared connections)
-- [Community 195](Community_195.md) (3 shared connections)
-- [Community 151](Community_151.md) (3 shared connections)
-- [Community 102](Community_102.md) (1 shared connections)
-- [Community 73](Community_73.md) (1 shared connections)
+- [Community 11](Community_11.md) (22 shared connections)
+- [Community 114](Community_114.md) (20 shared connections)
+- [Community 126](Community_126.md) (17 shared connections)
+- [Community 150](Community_150.md) (8 shared connections)
+- [Community 89](Community_89.md) (8 shared connections)
+- [Community 45](Community_45.md) (3 shared connections)
+- [Community 13](Community_13.md) (3 shared connections)
+- [Community 29](Community_29.md) (2 shared connections)
+- [Community 56](Community_56.md) (2 shared connections)
+- [Community 20](Community_20.md) (2 shared connections)
+- [Community 49](Community_49.md) (1 shared connections)
+- [Community 0](Community_0.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/cnn_classifier/debug_staff_bands.py`
-- `experiments/cnn_classifier/generate_expanded_candidates.py`
-- `experiments/cnn_classifier/generate_training_candidates.py`
-- `src/pipeline/probe_detector/existing.py`
-- `tools/run_eval_experiment.py`
-- `tools/run_gt_rebuild_hybrid_eval.py`
-- `tools/visualize_eval2.py`
+- `src/pipeline/review/number_layer.py`
+- `tests/test_issue441_mobilesheets_roundtrip.py`
+- `tests/test_review_correction_application.py`
+- `tests/test_review_correction_history.py`
+- `tests/test_review_correction_server.py`
+- `tools/review_correction/history.py`
+- `tools/review_correction/legacy.py`
+- `tools/review_correction/resume.py`
+- `tools/review_correction/server.py`
 
 ## Audit Trail
 
-- EXTRACTED: 264 (95%)
+- EXTRACTED: 301 (95%)
 - INFERRED: 15 (5%)
 - AMBIGUOUS: 0 (0%)
 

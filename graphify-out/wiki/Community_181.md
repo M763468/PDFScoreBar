@@ -1,44 +1,44 @@
 # Community 181
 
-> 13 nodes · cohesion 0.22
+> 14 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **current_homr_worker.py** (14 connections) — `src/pipeline/detection/current_homr_worker.py`
-- **run()** (14 connections) — `src/pipeline/detection/current_homr_worker.py`
-- **connector_mask_paths()** (11 connections) — `src/common/connector_artifacts.py`
-- **_resize_mask_to_image_size()** (6 connections) — `src/pipeline/detection/current_homr_worker.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/current_homr_worker.py`
-- **main()** (2 connections) — `src/pipeline/detection/current_homr_worker.py`
-- **Path** (2 connections)
-- **test_current_homr_worker_restores_sr_masks_to_original_page_size()** (2 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
-- **Return stable connector-mask paths for one HOMR page output.** (1 connections) — `src/common/connector_artifacts.py`
-- **Any** (1 connections)
-- **ndarray** (1 connections)
-- **Run current HOMR on one precomputed x4 image for connector semantics.** (1 connections) — `src/pipeline/detection/current_homr_worker.py`
-- **Restore an SR-space HOMR mask to the original page-image coordinates.** (1 connections) — `src/pipeline/detection/current_homr_worker.py`
+- **score_candidates_then_eval_full68.py** (17 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **main()** (9 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **copy_candidates()** (7 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **build_probe_run_id_from_parts()** (6 connections) — `src/pipeline/core/__init__.py`
+- **Path** (6 connections)
+- **run_selected_scorer()** (6 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **write_json()** (5 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **build_parser()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **build_provenance()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **collect_images()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **run_eval()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
+- **Namespace** (3 connections)
+- **Any** (2 connections)
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 45](Community_45.md) (7 shared connections)
-- [Community 1](Community_1.md) (6 shared connections)
-- [Community 150](Community_150.md) (3 shared connections)
-- [Community 157](Community_157.md) (3 shared connections)
-- [Community 455](Community_455.md) (2 shared connections)
-- [Community 15](Community_15.md) (2 shared connections)
-- [Community 164](Community_164.md) (1 shared connections)
-- [Community 92](Community_92.md) (1 shared connections)
-- [Community 149](Community_149.md) (1 shared connections)
+- [Community 159](Community_159.md) (4 shared connections)
+- [Community 156](Community_156.md) (3 shared connections)
+- [Community 18](Community_18.md) (3 shared connections)
+- [Community 132](Community_132.md) (3 shared connections)
+- [Community 59](Community_59.md) (1 shared connections)
+- [Community 81](Community_81.md) (1 shared connections)
+- [Community 60](Community_60.md) (1 shared connections)
+- [Community 32](Community_32.md) (1 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
 
 ## Source Files
 
-- `src/common/connector_artifacts.py`
-- `src/pipeline/detection/current_homr_worker.py`
-- `tests/test_issue264_phase_a_connector_geometry.py`
+- `src/pipeline/core/__init__.py`
+- `tools/issue120/score_candidates_then_eval_full68.py`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (100%)
+- EXTRACTED: 48 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

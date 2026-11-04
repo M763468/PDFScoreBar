@@ -1,15 +1,16 @@
 # Community 278
 
-> 6 nodes · cohesion 0.60
+> 7 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **load_palette_index()** (4 connections) — `tools/cnn_classifier/visualize_deepscores.py`
-- **visualize_deepscores_filters()** (4 connections) — `tools/cnn_classifier/visualize_deepscores.py`
-- **visualize_deepscores.py** (3 connections) — `tools/cnn_classifier/visualize_deepscores.py`
-- **find_components()** (3 connections) — `tools/cnn_classifier/visualize_deepscores.py`
-- **ndarray** (2 connections)
-- **Path** (2 connections)
+- **compare_ccl_corpus.py** (4 connections) — `tools/issue363/compare_ccl_corpus.py`
+- **main()** (3 connections) — `tools/issue363/compare_ccl_corpus.py`
+- **read_unique_masks()** (3 connections) — `tools/issue363/compare_ccl_corpus.py`
+- **staff_boxes()** (3 connections) — `tools/issue363/compare_ccl_corpus.py`
+- **ndarray** (1 connections)
+- **Path** (1 connections)
+- **Compare OpenCV component bounding boxes with contour-derived bounding boxes.…** (1 connections) — `tools/issue363/compare_ccl_corpus.py`
 
 ## Relationships
 
@@ -17,11 +18,11 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/visualize_deepscores.py`
+- `tools/issue363/compare_ccl_corpus.py`
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

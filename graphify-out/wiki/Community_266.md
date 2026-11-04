@@ -1,28 +1,29 @@
 # Community 266
 
-> 7 nodes · cohesion 0.38
+> 8 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **compare_ccl_corpus.py** (4 connections) — `tools/issue363/compare_ccl_corpus.py`
-- **main()** (3 connections) — `tools/issue363/compare_ccl_corpus.py`
-- **read_unique_masks()** (3 connections) — `tools/issue363/compare_ccl_corpus.py`
-- **staff_boxes()** (3 connections) — `tools/issue363/compare_ccl_corpus.py`
-- **ndarray** (1 connections)
-- **Path** (1 connections)
-- **Compare OpenCV component bounding boxes with contour-derived bounding boxes.…** (1 connections) — `tools/issue363/compare_ccl_corpus.py`
+- **musicxml_staff_count_infer.py** (6 connections) — `tools/musicxml_staff_count_infer.py`
+- **main()** (6 connections) — `tools/musicxml_staff_count_infer.py`
+- **load_gt_boxes()** (4 connections) — `tools/musicxml_staff_count_infer.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/musicxml_staff_count_infer.py`
+- **build_predictions()** (3 connections) — `tools/musicxml_staff_count_infer.py`
+- **count_measures()** (3 connections) — `tools/musicxml_staff_count_infer.py`
+- **extract_staff_bands()** (3 connections) — `tools/musicxml_staff_count_infer.py`
+- **Path** (3 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/issue363/compare_ccl_corpus.py`
+- `tools/musicxml_staff_count_infer.py`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 17 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

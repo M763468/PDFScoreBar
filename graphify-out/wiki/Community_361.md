@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **batch_rest_roi_test.py** (2 connections) — `tools/batch_rest_roi_test.py`
-- **main()** (2 connections) — `tools/batch_rest_roi_test.py`
-- **run_command()** (2 connections) — `tools/batch_rest_roi_test.py`
+- **investigate_double_bar.py** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
+- **analyze_box()** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/investigate_double_bar.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/batch_rest_roi_test.py`
+- `experiments/cnn_classifier/investigate_double_bar.py`
 
 ## Audit Trail
 

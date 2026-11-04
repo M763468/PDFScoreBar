@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **build_expansion_config.py** (1 connections) — `tools/gt_relabel_gui/build_expansion_config.py`
-- **main()** (1 connections) — `tools/gt_relabel_gui/build_expansion_config.py`
+- **phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
+- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/gt_relabel_gui/build_expansion_config.py`
+- `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh`
 
 ## Audit Trail
 

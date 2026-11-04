@@ -1,11 +1,12 @@
 # Community 382
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **pr-refinement/run.sh** (1 connections) — `.agents/skills/pr-refinement/run.sh`
-- **run.sh script** (1 connections) — `.agents/skills/pr-refinement/run.sh`
+- **convert_eval2_pdfs.py** (2 connections) — `tools/convert_eval2_pdfs.py`
+- **convert_pdf()** (2 connections) — `tools/convert_eval2_pdfs.py`
+- **main()** (2 connections) — `tools/convert_eval2_pdfs.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `.agents/skills/pr-refinement/run.sh`
+- `tools/convert_eval2_pdfs.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,12 +1,13 @@
 # Community 349
 
-> 3 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **add_measure_numbers()** (2 connections) — `experiments/legacy/archive/add_measure_numbers.py`
-- **add_measure_numbers.py** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
-- **Adds measure numbers to a score image based on a list of barline coordinates.…** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
+- **find_top_windows()** (3 connections) — `tools/dense_region_crops.py`
+- **dense_region_crops.py** (2 connections) — `tools/dense_region_crops.py`
+- **main()** (2 connections) — `tools/dense_region_crops.py`
+- **ndarray** (1 connections)
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/legacy/archive/add_measure_numbers.py`
+- `tools/dense_region_crops.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

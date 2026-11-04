@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **strings.js** (2 connections) — `tools/review_correction/strings.js`
-- **reviewEnglish** (1 connections) — `tools/review_correction/strings.js`
-- **reviewJapanese** (1 connections) — `tools/review_correction/strings.js`
+- **test_issue447_e2e_matrix.py** (2 connections) — `tests/test_issue447_e2e_matrix.py`
+- **Exercise fresh-output matrix orchestration without Docker, models or inference.** (1 connections) — `tests/test_issue447_e2e_matrix.py`
+- **test_fresh_matrix_reaches_both_replays_and_conditional_combination()** (1 connections) — `tests/test_issue447_e2e_matrix.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/review_correction/strings.js`
+- `tests/test_issue447_e2e_matrix.py`
 
 ## Audit Trail
 

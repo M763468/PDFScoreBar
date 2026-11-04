@@ -1,32 +1,32 @@
 # Community 211
 
-> 11 nodes · cohesion 0.33
+> 11 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **render_remaining_fn_overlays.py** (8 connections) — `tools/render_remaining_fn_overlays.py`
-- **main()** (7 connections) — `tools/render_remaining_fn_overlays.py`
-- **load_boxes()** (4 connections) — `tools/render_remaining_fn_overlays.py`
-- **load_remaining_fn_targets()** (4 connections) — `tools/render_remaining_fn_overlays.py`
-- **build_parser()** (3 connections) — `tools/render_remaining_fn_overlays.py`
-- **draw_boxes()** (3 connections) — `tools/render_remaining_fn_overlays.py`
-- **get_page_paths()** (3 connections) — `tools/render_remaining_fn_overlays.py`
-- **draw_legend()** (2 connections) — `tools/render_remaining_fn_overlays.py`
-- **PagePaths** (2 connections) — `tools/render_remaining_fn_overlays.py`
-- **Path** (2 connections)
-- **ArgumentParser** (1 connections)
+- **_orchestrator()** (9 connections) — `tests/test_detector_orchestrator_input_contract.py`
+- **test_detector_orchestrator_input_contract.py** (8 connections) — `tests/test_detector_orchestrator_input_contract.py`
+- **Path** (6 connections)
+- **test_dry_run_returns_contract_without_writing_manifest()** (4 connections) — `tests/test_detector_orchestrator_input_contract.py`
+- **test_run_detection_returns_persisted_contract()** (4 connections) — `tests/test_detector_orchestrator_input_contract.py`
+- **test_true_is_not_a_valid_path_override()** (4 connections) — `tests/test_detector_orchestrator_input_contract.py`
+- **test_orchestrator_records_fresh_upstream_contract()** (3 connections) — `tests/test_detector_orchestrator_input_contract.py`
+- **test_orchestrator_records_precomputed_candidate_contract()** (3 connections) — `tests/test_detector_orchestrator_input_contract.py`
+- **MonkeyPatch** (2 connections)
+- **DetectorOrchestrator** (1 connections)
+- **parametrize** (1 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- [Community 72](Community_72.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/render_remaining_fn_overlays.py`
+- `tests/test_detector_orchestrator_input_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 21 (100%)
+- EXTRACTED: 24 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

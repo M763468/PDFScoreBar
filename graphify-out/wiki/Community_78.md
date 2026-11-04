@@ -1,56 +1,55 @@
 # Community 78
 
-> 30 nodes · cohesion 0.13
+> 30 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **PageStaffUnit** (19 connections) — `src/common/barline_units.py`
-- **load_page_staff_units()** (17 connections) — `src/common/barline_units.py`
-- **test_barline_units.py** (17 connections) — `tests/test_barline_units.py`
-- **barline_units.py** (15 connections) — `src/common/barline_units.py`
-- **require_page_staff_unit()** (11 connections) — `src/common/barline_units.py`
-- **validate_coordinate_dimensions()** (11 connections) — `src/common/barline_units.py`
-- **verify_source_hash()** (6 connections) — `src/common/barline_units.py`
-- **center_anchor_xdist_limit()** (5 connections) — `src/common/barline_evaluation.py`
-- **_parse_page_unit()** (5 connections) — `src/common/barline_units.py`
-- **test_manifest_dimensions_and_source_hash_are_verified()** (5 connections) — `tests/test_barline_units.py`
-- **test_staff_unit_manifest_preserves_page_provenance()** (5 connections) — `tests/test_barline_units.py`
-- **test_staff_unit_manifest_rejects_nonfinite_unit_size()** (5 connections) — `tests/test_barline_units.py`
-- **_require_mapping()** (4 connections) — `src/common/barline_units.py`
-- **_manifest()** (4 connections) — `tests/test_barline_units.py`
-- **Path** (4 connections)
-- **test_center_anchor_is_resolution_independent_with_staff_units()** (3 connections) — `tests/test_barline_units.py`
-- **page_key()** (2 connections) — `src/common/barline_units.py`
-- **Any** (2 connections)
-- **Path** (2 connections)
-- **test_center_anchor_requires_one_explicit_distance_contract()** (2 connections) — `tests/test_barline_units.py`
-- **test_normalized_matcher_rejects_nonfinite_values()** (2 connections) — `tests/test_barline_units.py`
-- **Return the strong-pair X tolerance in the boxes' coordinate frame.** (1 connections) — `src/common/barline_evaluation.py`
-- **Validated staff-unit metadata for normalized barline matching.** (1 connections) — `src/common/barline_units.py`
-- **Staff spacing and provenance in the exact box coordinate frame.** (1 connections) — `src/common/barline_units.py`
-- **Fail loudly when boxes and the page-unit manifest use different frames.** (1 connections) — `src/common/barline_units.py`
+- **runtime_contract.py** (28 connections) — `docker/runtime_contract.py`
+- **run_preflight()** (18 connections) — `docker/runtime_contract.py`
+- **Path** (11 connections)
+- **source_fingerprint()** (10 connections) — `docker/runtime_contract.py`
+- **distribution.py** (9 connections) — `docker/distribution.py`
+- **runtime_fingerprint()** (9 connections) — `docker/runtime_contract.py`
+- **main()** (6 connections) — `docker/distribution.py`
+- **validate_distribution_provenance()** (6 connections) — `docker/runtime_contract.py`
+- **main()** (5 connections) — `docker/runtime_contract.py`
+- **_validate_production_provenance()** (5 connections) — `docker/runtime_contract.py`
+- **source_identity()** (4 connections) — `docker/distribution.py`
+- **_build_parser()** (4 connections) — `docker/runtime_contract.py`
+- **_dockerfile_runtime_contract()** (4 connections) — `docker/runtime_contract.py`
+- **_require_file()** (4 connections) — `docker/runtime_contract.py`
+- **_runtime_contract_bytes()** (4 connections) — `docker/runtime_contract.py`
+- **runtime_fingerprint_entries()** (4 connections) — `docker/runtime_contract.py`
+- **_symlink_ancestor()** (4 connections) — `docker/runtime_contract.py`
+- **capture()** (3 connections) — `docker/distribution.py`
+- **_remove_exact_sequence()** (3 connections) — `docker/runtime_contract.py`
+- **_resolve_input_path()** (3 connections) — `docker/runtime_contract.py`
+- **_source_contract_files()** (3 connections) — `docker/runtime_contract.py`
+- **_host_provenance()** (2 connections) — `docker/runtime_contract.py`
+- **ArgumentParser** (1 connections)
+- **Build/runtime contract fingerprinting and fail-fast Docker validation.** (1 connections) — `docker/runtime_contract.py`
+- **Hash runtime-sensitive source independently of git/worktree metadata.** (1 connections) — `docker/runtime_contract.py`
 - *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [Community 127](Community_127.md) (11 shared connections)
-- [Community 102](Community_102.md) (8 shared connections)
-- [Community 137](Community_137.md) (7 shared connections)
-- [Community 0](Community_0.md) (6 shared connections)
-- [Community 175](Community_175.md) (6 shared connections)
-- [Community 136](Community_136.md) (2 shared connections)
-- [Community 128](Community_128.md) (1 shared connections)
+- [Community 40](Community_40.md) (8 shared connections)
+- [Community 8](Community_8.md) (5 shared connections)
+- [Community 71](Community_71.md) (4 shared connections)
+- [Community 154](Community_154.md) (4 shared connections)
+- [Community 202](Community_202.md) (2 shared connections)
+- [Community 35](Community_35.md) (2 shared connections)
+- [Community 80](Community_80.md) (2 shared connections)
 
 ## Source Files
 
-- `src/common/barline_evaluation.py`
-- `src/common/barline_units.py`
-- `tests/test_barline_units.py`
+- `docker/distribution.py`
+- `docker/runtime_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 94 (96%)
-- INFERRED: 4 (4%)
+- EXTRACTED: 92 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

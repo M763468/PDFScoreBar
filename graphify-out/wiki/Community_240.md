@@ -1,27 +1,27 @@
 # Community 240
 
-> 9 nodes · cohesion 0.31
+> 10 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **CapturedProgressMirror** (10 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._drain_once()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._mirror_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.stop()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.__init__()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **._run()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.summary()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **.start()** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
-- **Mirror selected captured fd-level lines to the original console while retaining…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **select_trusted_templates.py** (7 connections) — `tools/select_trusted_templates.py`
+- **main()** (7 connections) — `tools/select_trusted_templates.py`
+- **load_boxes()** (4 connections) — `tools/select_trusted_templates.py`
+- **load_gt_boxes()** (4 connections) — `tools/select_trusted_templates.py`
+- **compute_staff_height()** (3 connections) — `tools/select_trusted_templates.py`
+- **iou()** (3 connections) — `tools/select_trusted_templates.py`
+- **draw_boxes()** (2 connections) — `tools/select_trusted_templates.py`
+- **put_text_block()** (2 connections) — `tools/select_trusted_templates.py`
+- **Path** (2 connections)
+- **ndarray** (1 connections)
 
 ## Relationships
 
-- [Community 132](Community_132.md) (5 shared connections)
-- [Community 152](Community_152.md) (3 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_stage_e_full_pipeline.py`
+- `tools/select_trusted_templates.py`
 
 ## Audit Trail
 

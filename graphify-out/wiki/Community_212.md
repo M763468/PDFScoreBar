@@ -1,32 +1,32 @@
 # Community 212
 
-> 11 nodes · cohesion 0.36
+> 11 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **structural_musicxml_system_resample.py** (9 connections) — `tools/structural_musicxml_system_resample.py`
-- **main()** (9 connections) — `tools/structural_musicxml_system_resample.py`
-- **load_omr_boxes()** (4 connections) — `tools/structural_musicxml_system_resample.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/structural_musicxml_system_resample.py`
-- **build_predictions()** (3 connections) — `tools/structural_musicxml_system_resample.py`
-- **count_musicxml_measures()** (3 connections) — `tools/structural_musicxml_system_resample.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_musicxml_system_resample.py`
-- **Path** (3 connections)
-- **dedupe_x_centers()** (2 connections) — `tools/structural_musicxml_system_resample.py`
-- **group_bands_into_systems()** (2 connections) — `tools/structural_musicxml_system_resample.py`
-- **resample_positions()** (2 connections) — `tools/structural_musicxml_system_resample.py`
+- **run()** (9 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **check_current_production_baseline.py** (7 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **_load_json()** (6 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **Path** (6 connections)
+- **_collect_production_outputs()** (5 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **_host_path()** (5 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **_box_set()** (4 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **_evaluation_args()** (4 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **Any** (3 connections)
+- **main()** (2 connections) — `experiments/issue43/check_current_production_baseline.py`
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/structural_musicxml_system_resample.py`
+- `experiments/issue43/check_current_production_baseline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 23 (100%)
+- EXTRACTED: 26 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

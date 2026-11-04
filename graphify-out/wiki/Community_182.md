@@ -1,44 +1,41 @@
 # Community 182
 
-> 13 nodes · cohesion 0.35
+> 14 nodes · cohesion 0.34
 
 ## Key Concepts
 
-- **test_reviewed_movement_apply.py** (24 connections) — `tests/test_reviewed_movement_apply.py`
-- **_load_movement_boundary_input()** (23 connections) — `src/pipeline/review/apply_corrections.py`
-- **_handoff()** (10 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_retained_config_records_exact_reviewed_movement_input()** (4 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_finalized_package_movement_output_is_authoritative()** (3 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_missing_reviewed_movement_output_uses_source_config()** (3 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_numbering_preview_accepts_partial_saved_movement_review()** (3 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_preview_resolves_saved_evidence_review_without_package_export()** (3 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_review_artifact_cannot_substitute_unresolved_candidates()** (3 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_saved_movement_decisions_require_finalized_export()** (3 connections) — `tests/test_reviewed_movement_apply.py`
-- **test_stale_resolved_output_is_rejected_after_saved_review_changes()** (3 connections) — `tests/test_reviewed_movement_apply.py`
-- **Prefer a finalized package-local movement decision, with legacy fallback.…** (1 connections) — `src/pipeline/review/apply_corrections.py`
-- **parametrize** (1 connections)
+- **ProfileHybridDetector** (19 connections) — `src/pipeline/detection/profile_sources.py`
+- **._generate_one_page_sources_in_process()** (7 connections) — `src/pipeline/detection/profile_sources.py`
+- **.run()** (7 connections) — `src/pipeline/detection/profile_sources.py`
+- **Any** (7 connections)
+- **Path** (7 connections)
+- **._generate_page_sources()** (6 connections) — `src/pipeline/detection/profile_sources.py`
+- **._current_detection_path()** (5 connections) — `src/pipeline/detection/profile_sources.py`
+- **._source_page_worker()** (4 connections) — `src/pipeline/detection/profile_sources.py`
+- **._support_worker()** (4 connections) — `src/pipeline/detection/profile_sources.py`
+- **.__init__()** (3 connections) — `src/pipeline/detection/profile_sources.py`
+- **._run_homr_profile()** (3 connections) — `src/pipeline/detection/profile_sources.py`
+- **Generate the two-HOMR source artifacts for one page in this process.** (1 connections) — `src/pipeline/detection/profile_sources.py`
+- **Reconstruct Stage E with one original-image and one x4 HOMR inference. Issue…** (1 connections) — `src/pipeline/detection/profile_sources.py`
+- **Generate heavy detector sources with one top-level worker per page.** (1 connections) — `src/pipeline/detection/profile_sources.py`
 
 ## Relationships
 
-- [Community 8](Community_8.md) (8 shared connections)
-- [Community 32](Community_32.md) (7 shared connections)
-- [Community 59](Community_59.md) (5 shared connections)
-- [Community 18](Community_18.md) (3 shared connections)
-- [Community 4](Community_4.md) (2 shared connections)
-- [Community 30](Community_30.md) (2 shared connections)
-- [Community 25](Community_25.md) (1 shared connections)
-- [Community 21](Community_21.md) (1 shared connections)
-- [Community 77](Community_77.md) (1 shared connections)
+- [Community 81](Community_81.md) (5 shared connections)
+- [Community 154](Community_154.md) (3 shared connections)
+- [Community 16](Community_16.md) (2 shared connections)
+- [Community 71](Community_71.md) (1 shared connections)
+- [Community 183](Community_183.md) (1 shared connections)
+- [Community 32](Community_32.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/apply_corrections.py`
-- `tests/test_reviewed_movement_apply.py`
+- `src/pipeline/detection/profile_sources.py`
 
 ## Audit Trail
 
-- EXTRACTED: 57 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 40 (91%)
+- INFERRED: 4 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,14 +1,14 @@
 # Community 312
 
-> 5 nodes · cohesion 0.50
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **issue459/matrix.py** (3 connections) — `tools/issue459/matrix.py`
-- **validate_primary()** (3 connections) — `tools/issue459/matrix.py`
-- **main()** (2 connections) — `tools/issue459/matrix.py`
-- **Finish fixed performance cells after the root warm primary screen. Stop on the…** (1 connections) — `tools/issue459/matrix.py`
-- **Accept only a passed root/multi/warm screen under the original >=3% gate. Other…** (1 connections) — `tools/issue459/matrix.py`
+- **check_pr_slice.sh** (4 connections) — `scripts/check_pr_slice.sh`
+- **check_pr_slice.sh script** (3 connections) — `scripts/check_pr_slice.sh`
+- **run_and_log()** (2 connections) — `scripts/check_pr_slice.sh`
+- **usage()** (2 connections) — `scripts/check_pr_slice.sh`
+- **trim()** (1 connections) — `scripts/check_pr_slice.sh`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue459/matrix.py`
+- `scripts/check_pr_slice.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

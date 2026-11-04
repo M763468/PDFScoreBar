@@ -1,26 +1,27 @@
 # Community 291
 
-> 5 nodes · cohesion 0.60
+> 6 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **build_row_stats()** (4 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
-- **visualize_scan_bands.py** (3 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
-- **cluster_by_y_distance()** (3 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/visualize_scan_bands.py`
-- **ndarray** (1 connections)
+- **analyze_deepscores_components()** (4 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
+- **load_palette_index()** (4 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
+- **analyze_deepscores_filters.py** (3 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
+- **find_components()** (3 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
+- **ndarray** (2 connections)
+- **Path** (2 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `experiments/cnn_classifier/visualize_scan_bands.py`
+- `tools/cnn_classifier/analyze_deepscores_filters.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 9 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

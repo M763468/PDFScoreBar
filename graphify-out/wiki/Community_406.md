@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_promiscuous_union_eval_page3.sh** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
-- **run_promiscuous_union_eval_page3.sh script** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
+- **analyze_fps.py** (1 connections) — `experiments/fp_reduction/analyze_fps.py`
+- **analyze_fps()** (1 connections) — `experiments/fp_reduction/analyze_fps.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
+- `experiments/fp_reduction/analyze_fps.py`
 
 ## Audit Trail
 

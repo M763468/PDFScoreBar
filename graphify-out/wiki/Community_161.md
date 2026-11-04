@@ -1,36 +1,40 @@
 # Community 161
 
-> 15 nodes · cohesion 0.19
+> 17 nodes · cohesion 0.32
 
 ## Key Concepts
 
-- **incontext_barline_detector.py** (7 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **main()** (6 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **generate_prompt_with_examples()** (5 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **configure_api_key()** (3 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **detect_barlines_with_gemini()** (3 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **draw_and_save_results()** (3 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **encode_image()** (3 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **load_ground_truth()** (3 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **Draws the detected barlines on the image and saves it.** (1 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **Configure the Gemini API key from environment variables.** (1 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **Main function to run the barline detection and evaluation.** (1 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **Encodes an image file to a base64 string.** (1 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **Loads the ground truth data from a JSON file.** (1 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **Generates the prompt for barline detection using in-context examples.** (1 connections) — `experiments/gemini/incontext_barline_detector.py`
-- **Calls the Gemini API to detect barlines and returns the cleaned JSON string.** (1 connections) — `experiments/gemini/incontext_barline_detector.py`
+- **diagnose_phase_b_layout_divergence.py** (20 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **run()** (13 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **Path** (8 connections)
+- **_rebuild()** (8 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **Any** (7 connections)
+- **_semantic_connector_paths()** (5 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_classify()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_layout_signature()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_load_json()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_page_image_ink_evidence()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_resolve_project_path()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_write_json()** (4 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_barlines_path()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **main()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **parse_args()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **_staff_membership()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 10](Community_10.md) (6 shared connections)
+- [Community 100](Community_100.md) (3 shared connections)
+- [Community 146](Community_146.md) (3 shared connections)
 
 ## Source Files
 
-- `experiments/gemini/incontext_barline_detector.py`
+- `tools/issue264/diagnose_phase_b_layout_divergence.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 55 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,62 +1,64 @@
 # Community 1
 
-> 90 nodes · cohesion 0.05
+> 82 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **test_current_homr_worker.py** (29 connections) — `tests/test_current_homr_worker.py`
-- **homr_profile_compat.py** (24 connections) — `src/pipeline/detection/homr_profile_compat.py`
-- **install_current_homr_consumer_compat()** (22 connections) — `src/homr_runtime/api_compat.py`
-- **maintained_homr_worker.py** (18 connections) — `src/pipeline/detection/maintained_homr_worker.py`
-- **run()** (18 connections) — `src/pipeline/detection/maintained_homr_worker.py`
-- **api_compat.py** (15 connections) — `src/homr_runtime/api_compat.py`
-- **build_processing_config_compat()** (15 connections) — `src/homr_runtime/api_compat.py`
-- **Any** (12 connections)
-- **install_homr_api_compat()** (12 connections) — `src/pipeline/detection/homr_profile_compat.py`
-- **run()** (10 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
-- **_validate_cuda_session_records()** (9 connections) — `src/pipeline/detection/maintained_homr_worker.py`
-- **check_current_homr_runtime_contract.py** (9 connections) — `tools/issue255/check_current_homr_runtime_contract.py`
-- **Any** (8 connections)
-- **download_weights_compat_mode()** (7 connections) — `src/homr_runtime/api_compat.py`
-- **load_predictions_compat_mode()** (7 connections) — `src/homr_runtime/api_compat.py`
-- **_install_processing_config_compat()** (7 connections) — `src/pipeline/detection/homr_profile_compat.py`
-- **_capture_homr_clef_mask()** (7 connections) — `src/pipeline/detection/maintained_homr_worker.py`
-- **Any** (7 connections)
-- **call_download_weights_compat()** (6 connections) — `src/homr_runtime/api_compat.py`
-- **parse_staffs_compat_mode()** (6 connections) — `src/homr_runtime/api_compat.py`
-- **processing_config_compat_mode()** (6 connections) — `src/homr_runtime/api_compat.py`
-- **_required_positional_count()** (6 connections) — `src/homr_runtime/api_compat.py`
-- **homr_runtime/segnet_cache.py** (6 connections) — `src/homr_runtime/segnet_cache.py`
-- **_install_load_predictions_compat()** (6 connections) — `src/pipeline/detection/homr_profile_compat.py`
-- **call_load_predictions_compat()** (5 connections) — `src/homr_runtime/api_compat.py`
-- *... and 65 more nodes in this community*
+- **test_distribution_surface.py** (37 connections) — `tests/test_distribution_surface.py`
+- **test_release_candidate.py** (23 connections) — `tests/test_release_candidate.py`
+- **check_candidate()** (19 connections) — `tools/release_candidate.py`
+- **check_tree()** (16 connections) — `tools/materialize_distribution.py`
+- **create_candidate()** (14 connections) — `tools/release_candidate.py`
+- **create()** (13 connections) — `tests/test_release_candidate.py`
+- **release_candidate.py** (13 connections) — `tools/release_candidate.py`
+- **source()** (12 connections) — `tests/test_release_candidate.py`
+- **git()** (11 connections) — `tests/test_release_candidate.py`
+- **_init_candidate_git()** (9 connections) — `tests/test_distribution_surface.py`
+- **check_repository_surface.py** (9 connections) — `tools/check_repository_surface.py`
+- **materialize_distribution.py** (9 connections) — `tools/materialize_distribution.py`
+- **materialize()** (9 connections) — `tools/materialize_distribution.py`
+- **selected_files()** (9 connections) — `tools/materialize_distribution.py`
+- **snapshot()** (9 connections) — `tools/release_candidate.py`
+- **git()** (8 connections) — `tools/release_candidate.py`
+- **Path** (8 connections)
+- **commit()** (7 connections) — `tests/test_release_candidate.py`
+- **test_different_executing_tools_reject_create_and_check()** (7 connections) — `tests/test_release_candidate.py`
+- **main()** (7 connections) — `tools/check_repository_surface.py`
+- **test_surface_checker_rejects_missing_review_and_engine_contract_files()** (6 connections) — `tests/test_issue100_runtime_surface.py`
+- **parametrize** (5 connections)
+- **test_issue100_runtime_surface.py** (5 connections) — `tests/test_issue100_runtime_surface.py`
+- **test_candidate_rejects_forged_committed_content_and_provenance()** (5 connections) — `tests/test_release_candidate.py`
+- **test_pinned_candidate_is_minimal_independent_and_reproducible()** (5 connections) — `tests/test_release_candidate.py`
+- *... and 57 more nodes in this community*
 
 ## Relationships
 
-- [Community 181](Community_181.md) (6 shared connections)
-- [Community 91](Community_91.md) (5 shared connections)
-- [Community 45](Community_45.md) (4 shared connections)
-- [Community 46](Community_46.md) (3 shared connections)
-- [Community 40](Community_40.md) (2 shared connections)
-- [Community 455](Community_455.md) (2 shared connections)
-- [Community 64](Community_64.md) (2 shared connections)
-- [Community 108](Community_108.md) (1 shared connections)
-- [Community 273](Community_273.md) (1 shared connections)
-- [Community 14](Community_14.md) (1 shared connections)
+- [Community 26](Community_26.md) (5 shared connections)
+- [Community 41](Community_41.md) (4 shared connections)
+- [Community 11](Community_11.md) (4 shared connections)
+- [Community 32](Community_32.md) (3 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
+- [Community 196](Community_196.md) (2 shared connections)
+- [Community 81](Community_81.md) (2 shared connections)
+- [Community 86](Community_86.md) (1 shared connections)
+- [Community 69](Community_69.md) (1 shared connections)
+- [Community 20](Community_20.md) (1 shared connections)
+- [Community 150](Community_150.md) (1 shared connections)
+- [Community 122](Community_122.md) (1 shared connections)
 
 ## Source Files
 
-- `src/homr_runtime/api_compat.py`
-- `src/homr_runtime/segnet_cache.py`
-- `src/pipeline/detection/homr_profile_compat.py`
-- `src/pipeline/detection/maintained_homr_worker.py`
-- `tests/test_current_homr_worker.py`
-- `tools/issue255/check_current_homr_runtime_contract.py`
+- `tests/test_distribution_surface.py`
+- `tests/test_issue100_runtime_surface.py`
+- `tests/test_release_candidate.py`
+- `tools/check_repository_surface.py`
+- `tools/materialize_distribution.py`
+- `tools/release_candidate.py`
 
 ## Audit Trail
 
-- EXTRACTED: 216 (94%)
-- INFERRED: 13 (6%)
+- EXTRACTED: 214 (95%)
+- INFERRED: 11 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

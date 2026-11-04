@@ -1,33 +1,33 @@
 # Community 207
 
-> 11 nodes · cohesion 0.49
+> 12 nodes · cohesion 0.32
 
 ## Key Concepts
 
-- **TestProbeXDomainDetection** (10 connections) — `tests/test_probe_x_domain.py`
-- **._detect()** (8 connections) — `tests/test_probe_x_domain.py`
-- **._base_image()** (7 connections) — `tests/test_probe_x_domain.py`
-- **._staff_mask()** (5 connections) — `tests/test_probe_x_domain.py`
-- **.test_bounded_domain_prevents_margin_peak_from_consuming_candidate_budget()** (5 connections) — `tests/test_probe_x_domain.py`
-- **.test_staff_mask_domain_excludes_margin_candidate()** (5 connections) — `tests/test_probe_x_domain.py`
-- **.test_staff_mask_domain_reports_reduced_projected_width()** (4 connections) — `tests/test_probe_x_domain.py`
-- **ndarray** (3 connections)
-- **._centers()** (3 connections) — `tests/test_probe_x_domain.py`
-- **.test_default_mode_is_exactly_full_width()** (3 connections) — `tests/test_probe_x_domain.py`
-- **.test_missing_staff_span_falls_back_to_full_width_detection()** (3 connections) — `tests/test_probe_x_domain.py`
+- **split_double_barlines.py** (11 connections) — `tools/split_double_barlines.py`
+- **process_file()** (9 connections) — `tools/split_double_barlines.py`
+- **_resolve_min_split_width()** (3 connections) — `tools/split_double_barlines.py`
+- **_should_split()** (3 connections) — `tools/split_double_barlines.py`
+- **_estimate_unit_size_from_bbox_height()** (2 connections) — `tools/split_double_barlines.py`
+- **_extract_bbox()** (2 connections) — `tools/split_double_barlines.py`
+- **extract_peaks()** (2 connections) — `tools/split_double_barlines.py`
+- **get_image_path()** (2 connections) — `tools/split_double_barlines.py`
+- **load_json()** (2 connections) — `tools/split_double_barlines.py`
+- **main()** (2 connections) — `tools/split_double_barlines.py`
+- **save_json()** (2 connections) — `tools/split_double_barlines.py`
+- **visualize_split()** (2 connections) — `tools/split_double_barlines.py`
 
 ## Relationships
 
-- [Community 87](Community_87.md) (1 shared connections)
-- [Community 100](Community_100.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tests/test_probe_x_domain.py`
+- `tools/split_double_barlines.py`
 
 ## Audit Trail
 
-- EXTRACTED: 29 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

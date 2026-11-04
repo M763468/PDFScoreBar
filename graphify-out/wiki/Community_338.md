@@ -1,13 +1,13 @@
 # Community 338
 
-> 4 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **observe_processes.py** (3 connections) — `tools/issue447/observe_processes.py`
-- **main()** (2 connections) — `tools/issue447/observe_processes.py`
-- **snapshot()** (2 connections) — `tools/issue447/observe_processes.py`
-- **Read-only /proc and cgroup sampler for one dedicated benchmark container. Run…** (1 connections) — `tools/issue447/observe_processes.py`
+- **evaluate_accuracy_batch.py** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **main()** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **compute_iou()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **find_gt_file()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/issue447/observe_processes.py`
+- `experiments/cnn_classifier/evaluate_accuracy_batch.py`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

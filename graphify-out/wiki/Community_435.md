@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **populate_provisional_gt.py** (1 connections) — `tools/populate_provisional_gt.py`
-- **main()** (1 connections) — `tools/populate_provisional_gt.py`
+- **check_gt_config.py** (1 connections) — `tools/check_gt_config.py`
+- **main()** (1 connections) — `tools/check_gt_config.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/populate_provisional_gt.py`
+- `tools/check_gt_config.py`
 
 ## Audit Trail
 

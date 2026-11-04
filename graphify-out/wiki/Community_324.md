@@ -1,13 +1,14 @@
 # Community 324
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **visualize_errors_only.py** (3 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
-- **main()** (3 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
-- **compute_iou()** (2 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
-- **find_gt_file()** (2 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
+- **benchmark_ccl_algorithms.py** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **boxes_for()** (3 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **main()** (2 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
+- **ndarray** (1 connections)
+- **Compare OpenCV connected-component algorithms on retained staff masks.** (1 connections) — `tools/issue363/benchmark_ccl_algorithms.py`
 
 ## Relationships
 
@@ -15,7 +16,7 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/visualize_errors_only.py`
+- `tools/issue363/benchmark_ccl_algorithms.py`
 
 ## Audit Trail
 

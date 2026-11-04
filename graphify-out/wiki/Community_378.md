@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **run_failure_analysis.py** (2 connections) — `tools/run_failure_analysis.py`
-- **main()** (2 connections) — `tools/run_failure_analysis.py`
-- **run_debug()** (2 connections) — `tools/run_failure_analysis.py`
+- **batch_rest_roi_test.py** (2 connections) — `tools/batch_rest_roi_test.py`
+- **main()** (2 connections) — `tools/batch_rest_roi_test.py`
+- **run_command()** (2 connections) — `tools/batch_rest_roi_test.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/run_failure_analysis.py`
+- `tools/batch_rest_roi_test.py`
 
 ## Audit Trail
 

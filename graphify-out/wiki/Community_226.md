@@ -1,31 +1,33 @@
 # Community 226
 
-> 10 nodes · cohesion 0.49
+> 11 nodes · cohesion 0.49
 
 ## Key Concepts
 
-- **run_compile_full68_variant.py** (7 connections) — `tools/issue284/run_compile_full68_variant.py`
-- **_run_score()** (7 connections) — `tools/issue284/run_compile_full68_variant.py`
-- **Path** (6 connections)
-- **_cache_snapshot()** (5 connections) — `tools/issue284/run_compile_full68_variant.py`
-- **_write_variant_summary()** (5 connections) — `tools/issue284/run_compile_full68_variant.py`
-- **main()** (4 connections) — `tools/issue284/run_compile_full68_variant.py`
-- **_derive_config()** (3 connections) — `tools/issue284/run_compile_full68_variant.py`
-- **Any** (3 connections)
-- **_worker_env()** (3 connections) — `tools/issue284/run_compile_full68_variant.py`
-- **Run one canonical full-68 Issue #284 variant with an explicit SR compile mode.…** (1 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **verify_detector_accuracy_smoke.py** (11 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **verify()** (11 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **_assert_detection_contract()** (6 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **_resolve_repo_path()** (6 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **Path** (5 connections)
+- **_resolve_run_dir()** (5 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **Any** (4 connections)
+- **_load_boxes()** (3 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **main()** (3 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **_sha256()** (3 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
+- **_without_keys()** (3 connections) — `tools/verification/verify_detector_accuracy_smoke.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 27](Community_27.md) (3 shared connections)
+- [Community 32](Community_32.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/issue284/run_compile_full68_variant.py`
+- `tools/verification/verify_detector_accuracy_smoke.py`
 
 ## Audit Trail
 
-- EXTRACTED: 22 (100%)
+- EXTRACTED: 33 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

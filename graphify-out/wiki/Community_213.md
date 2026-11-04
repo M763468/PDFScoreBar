@@ -1,33 +1,32 @@
 # Community 213
 
-> 11 nodes · cohesion 0.36
+> 6 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **structural_omr_per_band.py** (9 connections) — `tools/structural_omr_per_band.py`
-- **main()** (9 connections) — `tools/structural_omr_per_band.py`
-- **load_gt_boxes()** (4 connections) — `tools/structural_omr_per_band.py`
-- **load_omr_boxes()** (4 connections) — `tools/structural_omr_per_band.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/structural_omr_per_band.py`
-- **build_predictions()** (3 connections) — `tools/structural_omr_per_band.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_omr_per_band.py`
-- **Path** (3 connections)
-- **dedupe_x_centers()** (2 connections) — `tools/structural_omr_per_band.py`
-- **group_bands_into_systems()** (2 connections) — `tools/structural_omr_per_band.py`
-- **resample_positions()** (2 connections) — `tools/structural_omr_per_band.py`
+- **clear_segnet_cache()** (5 connections) — `src/homr_runtime/segnet_cache.py`
+- **.cleanup()** (3 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **.cleanup()** (3 connections) — `src/homr_runtime/predictor.py`
+- **Release VRAM and other resources.** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Release VRAM and other resources.** (1 connections) — `src/homr_runtime/predictor.py`
+- **Clear the Segnet session cache and release VRAM/RAM.** (1 connections) — `src/homr_runtime/segnet_cache.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (4 shared connections)
+- [Community 38](Community_38.md) (2 shared connections)
+- [Community 152](Community_152.md) (1 shared connections)
+- [Community 180](Community_180.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/structural_omr_per_band.py`
+- `src/homr_eval_scripts/homr_evaluator.py`
+- `src/homr_runtime/predictor.py`
+- `src/homr_runtime/segnet_cache.py`
 
 ## Audit Trail
 
-- EXTRACTED: 24 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

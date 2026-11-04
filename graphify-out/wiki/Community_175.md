@@ -1,38 +1,40 @@
 # Community 175
 
-> 14 nodes · cohesion 0.24
+> 15 nodes · cohesion 0.25
 
 ## Key Concepts
 
-- **_validate_eval2_image_frame()** (9 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **build_manifest()** (9 connections) — `tools/issue313/build_staff_units_manifest.py`
-- **test_issue313_manifest_and_dataset.py** (8 connections) — `tests/test_issue313_manifest_and_dataset.py`
-- **build_staff_units_manifest.py** (7 connections) — `tools/issue313/build_staff_units_manifest.py`
-- **test_eval2_builder_rejects_x4_original_dimension_mismatch()** (4 connections) — `tests/test_issue313_manifest_and_dataset.py`
-- **test_staff_units_generator_emits_portable_provenance()** (3 connections) — `tests/test_issue313_manifest_and_dataset.py`
-- **_sha256()** (3 connections) — `tools/issue313/build_staff_units_manifest.py`
-- **Path** (2 connections)
-- **main()** (2 connections) — `tools/issue313/build_staff_units_manifest.py`
-- **_page_key()** (2 connections) — `tools/issue313/build_staff_units_manifest.py`
-- **_portable_source_path()** (2 connections) — `tools/issue313/build_staff_units_manifest.py`
-- **Path** (2 connections)
-- **Reject x4/original (or other) frame mismatches before canonical matching.** (1 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **Any** (1 connections)
+- **draw()** (21 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **itemsForCurrentPage()** (13 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **renderMovementRows()** (11 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **drawMovementMarker()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementStateAt()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementSystemsOnPage()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **systemBounds()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementCandidateAt()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **drawBox()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **drawLabel()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **imgToCanvas()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **resolvedMovementAt()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **measureDisplayLabel()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementReviewAt()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementEvidenceText()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
 
 ## Relationships
 
-- [Community 78](Community_78.md) (6 shared connections)
-- [Community 102](Community_102.md) (5 shared connections)
+- [Community 195](Community_195.md) (17 shared connections)
+- [Community 12](Community_12.md) (16 shared connections)
+- [Community 262](Community_262.md) (8 shared connections)
+- [Community 219](Community_219.md) (6 shared connections)
+- [Community 158](Community_158.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue313_manifest_and_dataset.py`
-- `tools/cnn_classifier/build_cnn_dataset.py`
-- `tools/issue313/build_staff_units_manifest.py`
+- `tools/gt_relabel_gui/app_manual.js`
 
 ## Audit Trail
 
-- EXTRACTED: 33 (100%)
+- EXTRACTED: 74 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

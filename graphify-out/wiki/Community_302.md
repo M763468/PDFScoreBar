@@ -1,14 +1,15 @@
 # Community 302
 
-> 5 nodes · cohesion 0.80
+> 6 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **analyze()** (4 connections) — `tools/analyze_barline_distribution.py`
-- **analyze_barline_distribution.py** (3 connections) — `tools/analyze_barline_distribution.py`
-- **extract_staff_bands()** (3 connections) — `tools/analyze_barline_distribution.py`
-- **load_json()** (3 connections) — `tools/analyze_barline_distribution.py`
-- **Path** (3 connections)
+- **main()** (5 connections) — `tools/render_pred_overlay_with_legend.py`
+- **render_pred_overlay_with_legend.py** (4 connections) — `tools/render_pred_overlay_with_legend.py`
+- **load_boxes()** (3 connections) — `tools/render_pred_overlay_with_legend.py`
+- **draw_boxes()** (2 connections) — `tools/render_pred_overlay_with_legend.py`
+- **put_text_block()** (2 connections) — `tools/render_pred_overlay_with_legend.py`
+- **Path** (2 connections)
 
 ## Relationships
 
@@ -16,11 +17,11 @@
 
 ## Source Files
 
-- `tools/analyze_barline_distribution.py`
+- `tools/render_pred_overlay_with_legend.py`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 9 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

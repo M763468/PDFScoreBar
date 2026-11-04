@@ -1,33 +1,32 @@
 # Community 224
 
-> 10 nodes · cohesion 0.24
+> 11 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **draw()** (10 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **imgToCanvas()** (6 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **drawSelectedBox()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **computeProbe()** (3 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **drawBoxes()** (3 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **drawHandles()** (2 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **drawTypeLabel()** (2 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **hitHandle()** (2 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **logProbe()** (2 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **pointInBox()** (2 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **structural_omr_per_band.py** (9 connections) — `tools/structural_omr_per_band.py`
+- **main()** (9 connections) — `tools/structural_omr_per_band.py`
+- **load_gt_boxes()** (4 connections) — `tools/structural_omr_per_band.py`
+- **load_omr_boxes()** (4 connections) — `tools/structural_omr_per_band.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_omr_per_band.py`
+- **build_predictions()** (3 connections) — `tools/structural_omr_per_band.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_omr_per_band.py`
+- **Path** (3 connections)
+- **dedupe_x_centers()** (2 connections) — `tools/structural_omr_per_band.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_omr_per_band.py`
+- **resample_positions()** (2 connections) — `tools/structural_omr_per_band.py`
 
 ## Relationships
 
-- [Community 28](Community_28.md) (10 shared connections)
-- [Community 176](Community_176.md) (3 shared connections)
-- [Community 282](Community_282.md) (2 shared connections)
+- [Community 64](Community_64.md) (4 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_gt.js`
+- `tools/structural_omr_per_band.py`
 
 ## Audit Trail
 
-- EXTRACTED: 26 (100%)
+- EXTRACTED: 24 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

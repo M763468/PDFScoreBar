@@ -1,47 +1,44 @@
 # Community 134
 
-> 21 nodes · cohesion 0.15
+> 21 nodes · cohesion 0.23
 
 ## Key Concepts
 
-- **reviewerCopy()** (20 connections) — `tools/review_correction/app.js`
-- **loadPage()** (19 connections) — `tools/review_correction/app.js`
-- **renderPageList()** (9 connections) — `tools/review_correction/app.js`
-- **switchPage()** (7 connections) — `tools/review_correction/app.js`
-- **fetchJSON()** (6 connections) — `tools/review_correction/app.js`
-- **loadMmr()** (6 connections) — `tools/review_correction/app.js`
-- **loadMovementEvidence()** (6 connections) — `tools/review_correction/app.js`
-- **saveCorrectionTypes()** (5 connections) — `tools/review_correction/app.js`
-- **updateMovementFinishButton()** (5 connections) — `tools/review_correction/app.js`
-- **loadCorrections()** (4 connections) — `tools/review_correction/app.js`
-- **loadNumbering()** (4 connections) — `tools/review_correction/app.js`
-- **measureDisplayLabel()** (4 connections) — `tools/review_correction/app.js`
-- **loadBarlines()** (3 connections) — `tools/review_correction/app.js`
-- **barlinePathFromPage()** (2 connections) — `tools/review_correction/app.js`
-- **mmrPathFromPage()** (2 connections) — `tools/review_correction/app.js`
-- **movementEvidenceCandidateId()** (2 connections) — `tools/review_correction/app.js`
-- **normalizeMmrRecords()** (2 connections) — `tools/review_correction/app.js`
-- **resetView()** (2 connections) — `tools/review_correction/app.js`
-- **saveDirtyTypes()** (2 connections) — `tools/review_correction/app.js`
-- **updatePageNavigation()** (2 connections) — `tools/review_correction/app.js`
-- **waitForMovementSaves()** (2 connections) — `tools/review_correction/app.js`
+- **run_stage_d_upstream_regen.py** (18 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **run_hybrid_for_score()** (9 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **compose_bands_for_score()** (8 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **Path** (8 connections)
+- **run()** (7 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **build_det_cfg()** (5 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **Any** (5 connections)
+- **write_json()** (5 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **boxes_from_payload()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **build_parser()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **load_json_boxes()** (4 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **main()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **normalize_box()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **PageComposition** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **Namespace** (3 connections)
+- **score_images()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **ScoreRun** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **source_path_for()** (3 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **ordered_sources()** (2 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **slugify()** (2 connections) — `tools/issue120/run_stage_d_upstream_regen.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 9](Community_9.md) (22 shared connections)
-- [Community 147](Community_147.md) (15 shared connections)
-- [Community 135](Community_135.md) (12 shared connections)
-- [Community 288](Community_288.md) (2 shared connections)
-- [Community 320](Community_320.md) (1 shared connections)
+- [Community 70](Community_70.md) (4 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/review_correction/app.js`
+- `tools/issue120/run_stage_d_upstream_regen.py`
 
 ## Audit Trail
 
-- EXTRACTED: 83 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 52 (96%)
+- INFERRED: 2 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

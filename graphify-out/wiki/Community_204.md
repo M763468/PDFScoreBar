@@ -1,32 +1,36 @@
 # Community 204
 
-> 11 nodes · cohesion 0.33
+> 12 nodes · cohesion 0.26
 
 ## Key Concepts
 
-- **test_configuration_reference.py** (8 connections) — `tests/test_configuration_reference.py`
-- **reference_drift()** (7 connections) — `tests/test_configuration_reference.py`
-- **_load_config()** (4 connections) — `tests/test_configuration_reference.py`
-- **_leaf_values()** (3 connections) — `tests/test_configuration_reference.py`
-- **test_changed_canonical_value_is_reported_as_drift()** (3 connections) — `tests/test_configuration_reference.py`
-- **test_every_canonical_config_key_and_value_is_documented()** (3 connections) — `tests/test_configuration_reference.py`
-- **test_new_canonical_key_is_reported_as_missing()** (3 connections) — `tests/test_configuration_reference.py`
-- **documented_values()** (2 connections) — `tests/test_configuration_reference.py`
+- **candidate_generation.py** (9 connections) — `src/pipeline/detector_routes/candidate_generation.py`
+- **_run_one()** (9 connections) — `src/pipeline/detector_routes/candidate_generation.py`
+- **test_probe_x_domain_route.py** (6 connections) — `tests/test_probe_x_domain_route.py`
+- **_load_boxes()** (3 connections) — `src/pipeline/detector_routes/candidate_generation.py`
+- **main()** (3 connections) — `src/pipeline/detector_routes/candidate_generation.py`
+- **parse_args()** (3 connections) — `src/pipeline/detector_routes/candidate_generation.py`
+- **Path** (2 connections)
+- **test_dense_probe_rescue_forwards_x_domain_without_changing_y_band_source()** (2 connections) — `tests/test_probe_x_domain_route.py`
+- **test_inventory_generation_loads_staff_mask_for_row_stats_x_domain()** (2 connections) — `tests/test_probe_x_domain_route.py`
+- **_normalize_name()** (1 connections) — `src/pipeline/detector_routes/candidate_generation.py`
 - **Any** (1 connections)
-- **Keep the configuration reference in sync with the canonical production config.…** (1 connections) — `tests/test_configuration_reference.py`
-- **Return human-readable drift messages; an empty list means in sync.** (1 connections) — `tests/test_configuration_reference.py`
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 60](Community_60.md) (3 shared connections)
+- [Community 115](Community_115.md) (3 shared connections)
+- [Community 103](Community_103.md) (2 shared connections)
 
 ## Source Files
 
-- `tests/test_configuration_reference.py`
+- `src/pipeline/detector_routes/candidate_generation.py`
+- `tests/test_probe_x_domain_route.py`
 
 ## Audit Trail
 
-- EXTRACTED: 18 (100%)
+- EXTRACTED: 25 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,37 +1,35 @@
 # Community 190
 
-> 13 nodes · cohesion 0.35
+> 13 nodes · cohesion 0.32
 
 ## Key Concepts
 
-- **notehead_fn_cause_analysis.py** (11 connections) — `tools/notehead_fn_cause_analysis.py`
-- **main()** (11 connections) — `tools/notehead_fn_cause_analysis.py`
-- **endpoint_overlap()** (5 connections) — `tools/notehead_fn_cause_analysis.py`
-- **ndarray** (5 connections)
-- **best_match()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
-- **draw_boxes()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
-- **endpoint_windows()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
-- **load_boxes()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
-- **load_notehead_mask()** (4 connections) — `tools/notehead_fn_cause_analysis.py`
-- **denoise_notehead_mask()** (3 connections) — `tools/notehead_fn_cause_analysis.py`
-- **filter_notehead_components()** (3 connections) — `tools/notehead_fn_cause_analysis.py`
-- **PageSpec** (2 connections) — `tools/notehead_fn_cause_analysis.py`
-- **Path** (2 connections)
+- **run_homr_tuning.py** (10 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **main()** (8 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **append_step_log()** (4 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **current_jst()** (4 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **parse_args()** (4 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **load_num_predictions()** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **Path** (3 connections)
+- **run_trial()** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **timestamp()** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **TrialResult** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **ensure_python()** (2 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **datetime** (2 connections)
+- **Namespace** (1 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (5 shared connections)
-- [Community 73](Community_73.md) (2 shared connections)
-- [Community 0](Community_0.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/notehead_fn_cause_analysis.py`
+- `experiments/legacy/tools_archive/run_homr_tuning.py`
 
 ## Audit Trail
 
-- EXTRACTED: 33 (94%)
-- INFERRED: 2 (6%)
+- EXTRACTED: 25 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

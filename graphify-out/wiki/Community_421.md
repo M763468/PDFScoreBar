@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **cnn_classifier/__init__.py** (1 connections) — `tools/cnn_classifier/__init__.py`
-- **CNN classifier tooling package.** (1 connections) — `tools/cnn_classifier/__init__.py`
+- **run_phase5b_srcheck.sh** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
+- **run_phase5b_srcheck.sh script** (1 connections) — `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/__init__.py`
+- `experiments/legacy/tools_archive/run_phase5b_srcheck.sh`
 
 ## Audit Trail
 

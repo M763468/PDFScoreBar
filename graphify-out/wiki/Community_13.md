@@ -1,64 +1,55 @@
 # Community 13
 
-> 61 nodes · cohesion 0.08
+> 60 nodes · cohesion 0.07
 
 ## Key Concepts
 
-- **run_grouped_final_numbering_comparison.py** (35 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **render_overlay()** (19 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
-- **main()** (18 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **render_grouped_numbering_overlay.py** (16 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
-- **test_cnn_scoring_model_path.py** (15 connections) — `tests/test_cnn_scoring_model_path.py`
-- **_load_model()** (14 connections) — `src/pipeline/steps/cnn_scoring.py`
-- **_number_route()** (14 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_build_model()** (11 connections) — `src/pipeline/steps/cnn_scoring.py`
-- **_resolve_model_path()** (11 connections) — `src/pipeline/steps/cnn_scoring.py`
-- **Path** (11 connections)
-- **test_issue296_verified_cnn_contract.py** (10 connections) — `tests/test_issue296_verified_cnn_contract.py`
-- **_infer_model_architecture()** (9 connections) — `src/pipeline/steps/cnn_scoring.py`
-- **_validate_verified_cnn_checkpoint()** (8 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **_score_candidates()** (8 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **Any** (7 connections)
-- **_resolve_cnn_model_path()** (7 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_bbox()** (6 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
-- **Any** (6 connections)
-- **_connector_roi()** (5 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
-- **_physical_components()** (5 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
-- **_system_box()** (5 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
-- **_config()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_load()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_validate_cnn_staff_mask_contract()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_validate_image_contract()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- *... and 36 more nodes in this community*
+- **gt_relabel_gui/server.py** (20 connections) — `tools/gt_relabel_gui/server.py`
+- **test_manual_gui_server.py** (15 connections) — `tests/test_manual_gui_server.py`
+- **.do_GET()** (10 connections) — `tools/gt_relabel_gui/server.py`
+- **.do_POST()** (10 connections) — `tools/gt_relabel_gui/server.py`
+- **_manual_handoff_config()** (10 connections) — `tools/gt_relabel_gui/server.py`
+- **Path** (8 connections)
+- **_strict_review_handoff()** (7 connections) — `tests/test_manual_gui_server.py`
+- **Handler** (7 connections) — `tools/gt_relabel_gui/server.py`
+- **_manual_output_for()** (7 connections) — `tools/gt_relabel_gui/server.py`
+- **Handler** (7 connections) — `tools/gui_helper_for_staff_scan/server.py`
+- **Handler** (6 connections) — `experiments/phase5b_notehead_geom/review_tool/server.py`
+- **gui_helper_for_staff_scan/server.py** (6 connections) — `tools/gui_helper_for_staff_scan/server.py`
+- **.do_GET()** (6 connections) — `tools/gui_helper_for_staff_scan/server.py`
+- **HTTPServer** (5 connections)
+- **_manual_payload()** (5 connections) — `tools/gt_relabel_gui/server.py`
+- **_page_config_for()** (5 connections) — `tools/gt_relabel_gui/server.py`
+- **Path** (5 connections)
+- **.do_GET()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/server.py`
+- **Path** (4 connections)
+- **item_payload()** (4 connections) — `tools/gt_relabel_gui/server.py`
+- **_load_manual_items()** (4 connections) — `tools/gt_relabel_gui/server.py`
+- **main()** (4 connections) — `tools/gt_relabel_gui/server.py`
+- **safe_path()** (4 connections) — `tools/gt_relabel_gui/server.py`
+- **scan_items()** (4 connections) — `tools/gt_relabel_gui/server.py`
+- **scan_pages()** (4 connections) — `tools/gui_helper_for_staff_scan/server.py`
+- *... and 35 more nodes in this community*
 
 ## Relationships
 
-- [Community 154](Community_154.md) (17 shared connections)
-- [Community 31](Community_31.md) (9 shared connections)
-- [Community 36](Community_36.md) (7 shared connections)
-- [Community 68](Community_68.md) (5 shared connections)
-- [Community 61](Community_61.md) (5 shared connections)
-- [Community 42](Community_42.md) (4 shared connections)
-- [Community 8](Community_8.md) (4 shared connections)
-- [Community 10](Community_10.md) (3 shared connections)
-- [Community 70](Community_70.md) (3 shared connections)
-- [Community 6](Community_6.md) (3 shared connections)
-- [Community 25](Community_25.md) (3 shared connections)
-- [Community 50](Community_50.md) (2 shared connections)
+- [Community 7](Community_7.md) (3 shared connections)
+- [Community 113](Community_113.md) (2 shared connections)
+- [Community 21](Community_21.md) (2 shared connections)
+- [Community 2](Community_2.md) (2 shared connections)
+- [Community 150](Community_150.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/dense_orchestrator.py`
-- `src/pipeline/steps/cnn_scoring.py`
-- `tests/test_cnn_scoring_model_path.py`
-- `tests/test_issue296_verified_cnn_contract.py`
-- `tools/issue252/render_grouped_numbering_overlay.py`
-- `tools/issue252/run_grouped_final_numbering_comparison.py`
+- `experiments/phase5b_notehead_geom/review_tool/server.py`
+- `tests/test_manual_gui_server.py`
+- `tools/gt_relabel_gui/server.py`
+- `tools/gui_helper_for_staff_scan/server.py`
 
 ## Audit Trail
 
-- EXTRACTED: 212 (100%)
-- INFERRED: 1 (0%)
+- EXTRACTED: 130 (97%)
+- INFERRED: 4 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

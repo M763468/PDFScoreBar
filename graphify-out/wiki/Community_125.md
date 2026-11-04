@@ -1,43 +1,46 @@
 # Community 125
 
-> 21 nodes · cohesion 0.18
+> 20 nodes · cohesion 0.28
 
 ## Key Concepts
 
-- **suggest_candidate_drops()** (12 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **candidate_drops.py** (10 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **candidate_filter.py** (5 connections) — `src/pipeline/detector_routes/candidate_filter.py`
-- **main()** (5 connections) — `src/pipeline/detector_routes/candidate_filter.py`
-- **_build_page_mask()** (4 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **Any** (4 connections)
-- **_resolve_clef_mask_path()** (4 connections) — `src/pipeline/detector_routes/candidate_filter.py`
-- **_box_mask_overlap_ratio()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **_load_boxes()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **main()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **_page_bbox_from_mask()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **parse_args()** (3 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **parse_args()** (3 connections) — `src/pipeline/detector_routes/candidate_filter.py`
-- **_center_in_bbox()** (2 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **_median()** (2 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **Path** (2 connections)
-- **Path** (2 connections)
-- **Namespace** (1 connections)
-- **Return binary mask of the paper area (largest bright connected component).** (1 connections) — `src/pipeline/detector_routes/candidate_drops.py`
-- **Any** (1 connections)
+- **rescore_phase_c_mmr_geometry_rebased.py** (23 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **run()** (15 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **normalise_overrides()** (12 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **Any** (11 connections)
+- **_artifact_path()** (10 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **Path** (8 connections)
+- **_load_json()** (6 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_score_overrides()** (6 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_page_inputs()** (5 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_verify_artifact_detail()** (5 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **main()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_resolve_project_path()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_write_json()** (4 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_artifact_index()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_override_key()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_override_skip()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **parse_args()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_sha256_file()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
+- **_summary_totals()** (3 connections) — `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
 - **Namespace** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 105](Community_105.md) (8 shared connections)
+- [Community 186](Community_186.md) (8 shared connections)
+- [Community 66](Community_66.md) (3 shared connections)
+- [Community 88](Community_88.md) (3 shared connections)
+- [Community 84](Community_84.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/candidate_drops.py`
-- `src/pipeline/detector_routes/candidate_filter.py`
+- `tools/issue264/phase_c_fixture_rebase.py`
+- `tools/issue264/rescore_phase_c_mmr_geometry_rebased.py`
 
 ## Audit Trail
 
-- EXTRACTED: 37 (100%)
+- EXTRACTED: 78 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

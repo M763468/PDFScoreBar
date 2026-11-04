@@ -1,12 +1,13 @@
 # Community 345
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **summarize_inference_stats.py** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
-- **summarize()** (2 connections) — `experiments/cnn_classifier/summarize_inference_stats.py`
+- **batch_debug_ocr.py** (3 connections) — `tools/batch_debug_ocr.py`
+- **process_page()** (3 connections) — `tools/batch_debug_ocr.py`
+- **main()** (2 connections) — `tools/batch_debug_ocr.py`
+- **run_command()** (2 connections) — `tools/batch_debug_ocr.py`
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/summarize_inference_stats.py`
+- `tools/batch_debug_ocr.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

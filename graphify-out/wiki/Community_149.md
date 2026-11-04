@@ -1,45 +1,48 @@
 # Community 149
 
-> 17 nodes · cohesion 0.23
+> 18 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **component_poc.py** (15 connections) — `tools/issue447/component_poc.py`
-- **sr_screen()** (7 connections) — `tools/issue447/component_poc.py`
-- **main()** (6 connections) — `tools/issue447/component_poc.py`
-- **pixel_difference()** (6 connections) — `tools/issue447/component_poc.py`
-- **Path** (6 connections)
-- **write_profile()** (6 connections) — `tools/issue447/component_poc.py`
-- **batched_enhance()** (5 connections) — `tools/issue447/component_poc.py`
-- **homr_profile()** (5 connections) — `tools/issue447/component_poc.py`
-- **model_wall()** (5 connections) — `tools/issue447/component_poc.py`
-- **omr_profile()** (5 connections) — `tools/issue447/component_poc.py`
-- **source_parallel()** (4 connections) — `tools/issue447/component_poc.py`
-- **test_pixel_comparison_reports_channel_differences_and_shape_mismatch()** (2 connections) — `tests/test_issue447_profiling_tools.py`
-- **Profile** (1 connections)
-- **Isolated SR batching screen and retained-input HOMR CPU diagnostics for #447.** (1 connections) — `tools/issue447/component_poc.py`
-- **Monotonic call spans independent of cProfile's call graph accounting.** (1 connections) — `tools/issue447/component_poc.py`
-- **Same padding/FP16/uint8/CPU-stitch contract; batch only equal-shaped tiles.** (1 connections) — `tools/issue447/component_poc.py`
-- **Two disposable source workers only; retained SR, no shared model lifetime.** (1 connections) — `tools/issue447/component_poc.py`
+- **run_detection_step()** (21 connections) — `src/pipeline/detection/__init__.py`
+- **TestPipelineDetection** (8 connections) — `tests/test_pipeline_detection.py`
+- **_detector_route()** (6 connections) — `src/pipeline/detection/__init__.py`
+- **.__new__()** (6 connections) — `src/pipeline/detection/__init__.py`
+- **._base_config()** (6 connections) — `tests/test_pipeline_detection.py`
+- **DetectorOrchestrator** (5 connections) — `src/pipeline/detection/__init__.py`
+- **_validate_verified_image_stems()** (5 connections) — `src/pipeline/detection/__init__.py`
+- **test_pipeline_detection.py** (4 connections) — `tests/test_pipeline_detection.py`
+- **Any** (3 connections)
+- **Path** (3 connections)
+- **.test_precomputed_probe_candidates_are_copied_and_scored_with_cnn_bands()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_probe_score_name_is_forwarded_to_probe_and_cnn()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_run_detection_step_allows_explicit_cnn_nms_opt_in()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_run_detection_step_skips_probe_and_cnn_on_dry_run()** (3 connections) — `tests/test_pipeline_detection.py`
+- **.test_run_detection_step_uses_orchestrator()** (3 connections) — `tests/test_pipeline_detection.py`
+- **Dispatch standard or verified dense production detection.** (1 connections) — `src/pipeline/detection/__init__.py`
+- **Reject ambiguous verified-route calls before profile artifacts can collide.** (1 connections) — `src/pipeline/detection/__init__.py`
+- **Route the public orchestrator constructor by the configured detector route.** (1 connections) — `src/pipeline/detection/__init__.py`
 
 ## Relationships
 
-- [Community 141](Community_141.md) (5 shared connections)
-- [Community 165](Community_165.md) (4 shared connections)
-- [Community 222](Community_222.md) (3 shared connections)
-- [Community 181](Community_181.md) (1 shared connections)
-- [Community 41](Community_41.md) (1 shared connections)
-- [Community 15](Community_15.md) (1 shared connections)
+- [Community 28](Community_28.md) (6 shared connections)
+- [Community 14](Community_14.md) (3 shared connections)
+- [Community 70](Community_70.md) (3 shared connections)
+- [Community 154](Community_154.md) (2 shared connections)
+- [Community 72](Community_72.md) (2 shared connections)
+- [Community 53](Community_53.md) (2 shared connections)
+- [Community 166](Community_166.md) (2 shared connections)
+- [Community 40](Community_40.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue447_profiling_tools.py`
-- `tools/issue447/component_poc.py`
+- `src/pipeline/detection/__init__.py`
+- `tests/test_pipeline_detection.py`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (93%)
-- INFERRED: 3 (7%)
+- EXTRACTED: 50 (94%)
+- INFERRED: 3 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

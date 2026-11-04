@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **verify_product_integration.py** (4 connections) — `tools/issue441/verify_product_integration.py`
-- **main()** (3 connections) — `tools/issue441/verify_product_integration.py`
-- **numbers()** (3 connections) — `tools/issue441/verify_product_integration.py`
-- **require()** (3 connections) — `tools/issue441/verify_product_integration.py`
-- **Rescore the fixed #441 browser run and retrieve its result after server…** (1 connections) — `tools/issue441/verify_product_integration.py`
+- **main()** (4 connections) — `experiments/legacy/tools_archive/experiment_rest_ocr.py`
+- **run_ocr()** (4 connections) — `experiments/legacy/tools_archive/experiment_rest_ocr.py`
+- **experiment_rest_ocr.py** (2 connections) — `experiments/legacy/tools_archive/experiment_rest_ocr.py`
+- **Path** (2 connections)
+- **RapidOCR** (2 connections)
 
 ## Relationships
 
@@ -16,7 +16,7 @@
 
 ## Source Files
 
-- `tools/issue441/verify_product_integration.py`
+- `experiments/legacy/tools_archive/experiment_rest_ocr.py`
 
 ## Audit Trail
 

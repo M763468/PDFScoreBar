@@ -1,11 +1,12 @@
 # Community 392
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **analyze_tight_duplicates.py** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
-- **analyze_tight_duplicates()** (1 connections) — `experiments/fp_reduction/analyze_tight_duplicates.py`
+- **render_staff_context_sheet.py** (2 connections) — `tools/render_staff_context_sheet.py`
+- **main()** (2 connections) — `tools/render_staff_context_sheet.py`
+- **put_text_block()** (2 connections) — `tools/render_staff_context_sheet.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_tight_duplicates.py`
+- `tools/render_staff_context_sheet.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

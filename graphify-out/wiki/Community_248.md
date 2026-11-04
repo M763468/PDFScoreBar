@@ -1,29 +1,30 @@
 # Community 248
 
-> 8 nodes · cohesion 0.46
+> 9 nodes · cohesion 0.39
 
 ## Key Concepts
 
-- **render_detection_quality_overlay.py** (5 connections) — `tools/render_detection_quality_overlay.py`
-- **main()** (5 connections) — `tools/render_detection_quality_overlay.py`
-- **draw_boxes()** (3 connections) — `tools/render_detection_quality_overlay.py`
-- **load_boxes()** (3 connections) — `tools/render_detection_quality_overlay.py`
-- **load_detections()** (3 connections) — `tools/render_detection_quality_overlay.py`
-- **load_matches()** (3 connections) — `tools/render_detection_quality_overlay.py`
-- **Path** (3 connections)
-- **Color** (1 connections)
+- **fn_template_scan.py** (6 connections) — `tools/fn_template_scan.py`
+- **main()** (6 connections) — `tools/fn_template_scan.py`
+- **load_gt_boxes()** (4 connections) — `tools/fn_template_scan.py`
+- **compute_staff_height()** (3 connections) — `tools/fn_template_scan.py`
+- **load_template_heights()** (3 connections) — `tools/fn_template_scan.py`
+- **draw_box()** (2 connections) — `tools/fn_template_scan.py`
+- **put_text_block()** (2 connections) — `tools/fn_template_scan.py`
+- **Path** (2 connections)
+- **ndarray** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/render_detection_quality_overlay.py`
+- `tools/fn_template_scan.py`
 
 ## Audit Trail
 
-- EXTRACTED: 13 (100%)
+- EXTRACTED: 15 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

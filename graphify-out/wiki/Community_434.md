@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **populate_missing_gt.py** (1 connections) — `tools/populate_missing_gt.py`
-- **main()** (1 connections) — `tools/populate_missing_gt.py`
+- **analyze_divisi_logic.py** (1 connections) — `tools/analyze_divisi_logic.py`
+- **main()** (1 connections) — `tools/analyze_divisi_logic.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/populate_missing_gt.py`
+- `tools/analyze_divisi_logic.py`
 
 ## Audit Trail
 

@@ -1,25 +1,26 @@
 # Community 329
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **analyze_mmr_failures_v2.py** (3 connections) — `tools/analyze_mmr_failures_v2.py`
-- **main()** (3 connections) — `tools/analyze_mmr_failures_v2.py`
-- **detect_hbar_centroid()** (2 connections) — `tools/analyze_mmr_failures_v2.py`
-- **preprocess_image_ocr()** (2 connections) — `tools/analyze_mmr_failures_v2.py`
+- **load_gt_boxes()** (4 connections) — `tools/make_evidence_sheet.py`
+- **main()** (4 connections) — `tools/make_evidence_sheet.py`
+- **make_evidence_sheet.py** (3 connections) — `tools/make_evidence_sheet.py`
+- **put_text_block()** (2 connections) — `tools/make_evidence_sheet.py`
+- **Path** (2 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/analyze_mmr_failures_v2.py`
+- `tools/make_evidence_sheet.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

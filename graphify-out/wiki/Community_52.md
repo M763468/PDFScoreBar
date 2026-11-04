@@ -1,58 +1,48 @@
 # Community 52
 
-> 41 nodes · cohesion 0.11
+> 37 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **test_omr_job.py** (20 connections) — `tests/test_omr_job.py`
-- **omr_job.py** (15 connections) — `src/pipeline/detection/omr_job.py`
-- **digest()** (14 connections) — `src/pipeline/detection/omr_job.py`
-- **consume()** (13 connections) — `src/pipeline/detection/omr_job.py`
-- **build()** (10 connections) — `src/pipeline/detection/omr_job.py`
-- **prediction_bytes()** (9 connections) — `src/pipeline/detection/omr_job.py`
-- **Path** (8 connections)
-- **omr_job_worker.py** (8 connections) — `src/pipeline/detection/omr_job_worker.py`
-- **run()** (8 connections) — `src/pipeline/detection/omr_job_worker.py`
-- **atomic_publish()** (7 connections) — `src/pipeline/detection/omr_job.py`
-- **bind_sources()** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **bind_sr()** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **execute_worker()** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **Handoff** (6 connections) — `src/pipeline/detection/omr_job.py`
-- **build()** (6 connections) — `tests/test_omr_job.py`
-- **prepared()** (6 connections) — `tests/test_omr_job.py`
-- **Any** (5 connections)
-- **inputs()** (5 connections) — `tests/test_omr_job.py`
-- **test_failed_directory_cannot_be_reused_but_fresh_job_recovers()** (5 connections) — `tests/test_omr_job.py`
-- **test_worker_fault_cannot_publish_complete_and_retains_diagnostics()** (5 connections) — `tests/test_omr_job.py`
-- **.from_request()** (4 connections) — `src/pipeline/detection/omr_job.py`
-- **test_any_tampered_identity_rejects_even_when_consuming_another_page()** (4 connections) — `tests/test_omr_job.py`
-- **.cancelled()** (3 connections) — `src/pipeline/engine_lifecycle.py`
-- **test_ordered_complete_handoff_copies_exact_bytes_without_overwrite()** (3 connections) — `tests/test_omr_job.py`
-- **test_zero_extent_clipped_edges_preserve_existing_strict_consensus_contract()** (3 connections) — `tests/test_omr_job.py`
-- *... and 16 more nodes in this community*
+- **app_rest.js** (36 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **loadPage()** (9 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **draw()** (5 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **renderMeasureList()** (4 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **drawBox()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **drawLabel()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **fetchJSON()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **imgToCanvas()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **loadRestGT()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **save()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **setDirty()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **updateSelectedMeta()** (3 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **applyRestGT()** (2 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **collectOverrides()** (2 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **resetView()** (2 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **applyBtn** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **canvas** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **canvasToImg()** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **ctx** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **dirtyStatus** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **image** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **measureList** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **measures** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **nextBtn** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- **pageMeta** (1 connections) — `tools/gt_relabel_gui/app_rest.js`
+- *... and 12 more nodes in this community*
 
 ## Relationships
 
-- [Community 124](Community_124.md) (7 shared connections)
-- [Community 46](Community_46.md) (4 shared connections)
-- [Community 41](Community_41.md) (2 shared connections)
-- [Community 79](Community_79.md) (2 shared connections)
-- [Community 22](Community_22.md) (1 shared connections)
-- [Community 34](Community_34.md) (1 shared connections)
-- [Community 74](Community_74.md) (1 shared connections)
-- [Community 4](Community_4.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/pipeline/detection/omr_job.py`
-- `src/pipeline/detection/omr_job_worker.py`
-- `src/pipeline/engine_lifecycle.py`
-- `tests/test_omr_job.py`
+- `tools/gt_relabel_gui/app_rest.js`
 
 ## Audit Trail
 
-- EXTRACTED: 108 (96%)
-- INFERRED: 5 (4%)
+- EXTRACTED: 53 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

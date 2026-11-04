@@ -1,49 +1,48 @@
 # Community 83
 
-> 30 nodes · cohesion 0.15
+> 22 nodes · cohesion 0.27
 
 ## Key Concepts
 
-- **run_full68_variant.py** (15 connections) — `tools/issue284/run_full68_variant.py`
-- **Path** (11 connections)
-- **main()** (9 connections) — `tools/issue284/run_full68_variant.py`
-- **ResourceSampler** (9 connections) — `tools/issue284/run_full68_variant.py`
-- **run_score()** (9 connections) — `tools/issue284/run_full68_variant.py`
-- **test_issue284_full68_runner_provenance.py** (8 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **Any** (7 connections)
-- **write_variant_summary()** (6 connections) — `tools/issue284/run_full68_variant.py`
-- **load_json()** (5 connections) — `tools/issue284/run_full68_variant.py`
-- **page_artifacts()** (5 connections) — `tools/issue284/run_full68_variant.py`
-- **parse_source_commit()** (5 connections) — `tools/issue284/run_full68_variant.py`
-- **require_host_provenance()** (4 connections) — `tools/issue284/run_full68_variant.py`
-- **test_parse_source_commit_rejects_invalid_sha()** (3 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **derive_config()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **load_scores()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **require_canonical_runtime()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **._gpu()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **._process()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **._run()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **sha256()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **stage_score()** (3 connections) — `tools/issue284/run_full68_variant.py`
-- **test_host_provenance_requires_clean_verification()** (2 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **test_parse_source_commit_normalizes_full_sha()** (2 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **test_variant_summary_records_host_verified_provenance()** (2 connections) — `tests/test_issue284_full68_runner_provenance.py`
-- **.finish()** (2 connections) — `tools/issue284/run_full68_variant.py`
-- *... and 5 more nodes in this community*
+- **homr_runtime/heuristics.py** (23 connections) — `src/homr_runtime/heuristics.py`
+- **detect_staffs_with_barlines()** (17 connections) — `src/homr_runtime/heuristics.py`
+- **barline_candidates.py** (13 connections) — `src/homr_runtime/barline_candidates.py`
+- **ndarray** (10 connections)
+- **_ensure_mask_shape()** (9 connections) — `src/homr_runtime/barline_candidates.py`
+- **Any** (9 connections)
+- **generate_sobel_vertical_candidates()** (7 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_vertical_run_candidates()** (7 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_column_sum_candidates()** (6 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_hough_vertical_candidates()** (6 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_sobel_vertical_candidates_weak()** (6 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_vertical_run_candidates_weak()** (6 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_barline_cc_dilated()** (5 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_barline_cc_relaxed()** (5 connections) — `src/homr_runtime/barline_candidates.py`
+- **generate_barline_cc_tiny()** (5 connections) — `src/homr_runtime/barline_candidates.py`
+- **Generate barline candidates from segmentation masks and image features.…** (1 connections) — `src/homr_runtime/barline_candidates.py`
+- **Any** (1 connections)
+- **Future** (1 connections)
+- **ndarray** (1 connections)
+- **ProcessingConfig** (1 connections)
+- **Assemble HOMR staffs and symbols; callable bindings remain compatibility patch…** (1 connections) — `src/homr_runtime/heuristics.py`
+- **Runs the core homr staff and symbol detection pipeline. Returns: A tuple…** (1 connections) — `src/homr_runtime/heuristics.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 38](Community_38.md) (7 shared connections)
+- [Community 170](Community_170.md) (5 shared connections)
+- [Community 26](Community_26.md) (2 shared connections)
+- [Community 47](Community_47.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue284_full68_runner_provenance.py`
-- `tools/issue284/run_full68_variant.py`
+- `src/homr_runtime/barline_candidates.py`
+- `src/homr_runtime/heuristics.py`
 
 ## Audit Trail
 
-- EXTRACTED: 66 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 78 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

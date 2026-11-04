@@ -1,32 +1,33 @@
 # Community 209
 
-> 11 nodes · cohesion 0.45
+> 12 nodes · cohesion 0.41
 
 ## Key Concepts
 
-- **build_contract()** (8 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **attach_stage_e_eval_contract.py** (7 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **Any** (6 connections)
-- **load_json()** (5 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **read_missing_pages()** (5 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **infer_numbering_output()** (4 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **Path** (4 connections)
-- **write_json()** (4 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **get_nested()** (3 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **main()** (3 connections) — `tools/issue120/attach_stage_e_eval_contract.py`
-- **Namespace** (1 connections)
+- **variable_length_staff_probe.py** (10 connections) — `tools/variable_length_staff_probe.py`
+- **main()** (9 connections) — `tools/variable_length_staff_probe.py`
+- **ndarray** (8 connections)
+- **draw_staff_bounds()** (4 connections) — `tools/variable_length_staff_probe.py`
+- **extract_staff_bands()** (4 connections) — `tools/variable_length_staff_probe.py`
+- **find_staff_lines()** (4 connections) — `tools/variable_length_staff_probe.py`
+- **score_window()** (4 connections) — `tools/variable_length_staff_probe.py`
+- **binarize_for_scoring()** (3 connections) — `tools/variable_length_staff_probe.py`
+- **longest_run()** (3 connections) — `tools/variable_length_staff_probe.py`
+- **make_variants()** (3 connections) — `tools/variable_length_staff_probe.py`
+- **put_text_block()** (3 connections) — `tools/variable_length_staff_probe.py`
+- **score_to_rank()** (2 connections) — `tools/variable_length_staff_probe.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/issue120/attach_stage_e_eval_contract.py`
+- `tools/variable_length_staff_probe.py`
 
 ## Audit Trail
 
-- EXTRACTED: 25 (100%)
+- EXTRACTED: 30 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

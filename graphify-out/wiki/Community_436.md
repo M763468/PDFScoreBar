@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **find_baseline_runs.py** (1 connections) — `tools/repro_accuracy/find_baseline_runs.py`
-- **find_mapping()** (1 connections) — `tools/repro_accuracy/find_baseline_runs.py`
+- **create_comprehensive_gt_config.py** (1 connections) — `tools/cnn_classifier/create_comprehensive_gt_config.py`
+- **main()** (1 connections) — `tools/cnn_classifier/create_comprehensive_gt_config.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/find_baseline_runs.py`
+- `tools/cnn_classifier/create_comprehensive_gt_config.py`
 
 ## Audit Trail
 

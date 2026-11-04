@@ -1,31 +1,31 @@
 # Community 227
 
-> 10 nodes · cohesion 0.42
+> 10 nodes · cohesion 0.29
 
 ## Key Concepts
 
-- **make_fn_crops.py** (7 connections) — `tools/make_fn_crops.py`
-- **main()** (7 connections) — `tools/make_fn_crops.py`
-- **draw_boxes()** (4 connections) — `tools/make_fn_crops.py`
-- **load_gt_boxes()** (4 connections) — `tools/make_fn_crops.py`
-- **load_pred_boxes()** (4 connections) — `tools/make_fn_crops.py`
-- **ndarray** (4 connections)
-- **compute_staff_height()** (3 connections) — `tools/make_fn_crops.py`
-- **overlay_mask_blue()** (3 connections) — `tools/make_fn_crops.py`
-- **put_text_block()** (3 connections) — `tools/make_fn_crops.py`
-- **Path** (2 connections)
+- **analyze_fn_attribution.py** (5 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **analyze_page()** (5 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **find_match()** (4 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **calculate_iou()** (3 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **load_json_predictions()** (3 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **main()** (2 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **Find if a matching prediction exists for a given ground truth bbox.** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **Load bboxes from a JSON file.** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **Analyzes a single page's false negatives.** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
+- **Calculate the Intersection over Union (IoU) of two bounding boxes. Each box is…** (1 connections) — `experiments/fp_reduction/analyze_fn_attribution.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/make_fn_crops.py`
+- `experiments/fp_reduction/analyze_fn_attribution.py`
 
 ## Audit Trail
 
-- EXTRACTED: 22 (100%)
+- EXTRACTED: 13 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

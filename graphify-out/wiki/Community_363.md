@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **build_iter7_hard_samples.py** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
-- **extract_crop()** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
-- **main()** (2 connections) — `tools/cnn_classifier/build_iter7_hard_samples.py`
+- **upscale_lowres_gt.py** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
+- **upscale_page()** (2 connections) — `experiments/cnn_classifier/upscale_lowres_gt.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/build_iter7_hard_samples.py`
+- `experiments/cnn_classifier/upscale_lowres_gt.py`
 
 ## Audit Trail
 

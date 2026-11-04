@@ -1,14 +1,14 @@
 # Community 321
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **correction_state.js** (4 connections) — `tools/review_correction/correction_state.js`
-- **refresh()** (3 connections) — `tools/review_correction/correction_state.js`
-- **render()** (2 connections) — `tools/review_correction/correction_state.js`
-- **update()** (2 connections) — `tools/review_correction/correction_state.js`
-- **enqueue()** (1 connections) — `tools/review_correction/correction_state.js`
+- **inspect_errors.py** (4 connections) — `tools/inspect_errors.py`
+- **draw_errors()** (4 connections) — `tools/inspect_errors.py`
+- **get_measure_coords()** (2 connections) — `tools/inspect_errors.py`
+- **load_json()** (2 connections) — `tools/inspect_errors.py`
+- **main()** (2 connections) — `tools/inspect_errors.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/review_correction/correction_state.js`
+- `tools/inspect_errors.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

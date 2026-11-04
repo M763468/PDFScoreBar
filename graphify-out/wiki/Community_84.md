@@ -1,49 +1,51 @@
 # Community 84
 
-> 20 nodes · cohesion 0.15
+> 29 nodes · cohesion 0.16
 
 ## Key Concepts
 
-- **apply_advanced_sr()** (17 connections) — `src/common/preprocessing.py`
-- **preprocessing.py** (15 connections) — `src/common/preprocessing.py`
-- **_RealESRGANTileLogFilter** (7 connections) — `src/common/preprocessing.py`
-- **_perf_span()** (4 connections) — `src/common/preprocessing.py`
-- **_suppress_realesrgan_tile_logs()** (4 connections) — `src/common/preprocessing.py`
-- **apply_super_resolution()** (3 connections) — `src/common/preprocessing.py`
-- **apply_vertical_closing()** (3 connections) — `src/common/preprocessing.py`
-- **ndarray** (3 connections)
-- **._write_line()** (3 connections) — `src/common/preprocessing.py`
-- **_env_flag_enabled()** (2 connections) — `src/common/preprocessing.py`
-- **Any** (2 connections)
-- **.flush()** (2 connections) — `src/common/preprocessing.py`
-- **.__init__()** (2 connections) — `src/common/preprocessing.py`
-- **.write()** (2 connections) — `src/common/preprocessing.py`
-- **test_generic_sr_tolerant_import_contract_stays_explicit()** (2 connections) — `tests/test_issue409_failure_contracts.py`
-- **Applies super-resolution to an image using OpenCV's dnn_superres module.…** (1 connections) — `src/common/preprocessing.py`
-- **Applies advanced super-resolution using the installed Real-ESRGAN runtime.…** (1 connections) — `src/common/preprocessing.py`
-- **Use pipeline perf tracing only when the opt-in trace is enabled.** (1 connections) — `src/common/preprocessing.py`
-- **Drop Real-ESRGAN per-tile progress prints while forwarding other stdout.** (1 connections) — `src/common/preprocessing.py`
-- **Applies a vertical closing operation to an image to connect broken vertical…** (1 connections) — `src/common/preprocessing.py`
+- **phase_c_acceptance_integrity.py** (16 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **validate_resume_contract()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **verify_source_report()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Any** (10 connections)
+- **run_phase_c_mmr_regression_container.py** (10 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
+- **Path** (8 connections)
+- **stamp_source_report()** (8 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **require_source_non_index_gates()** (7 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **build_producer_contract()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_load_json()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **main()** (6 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
+- **_describe_file()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **source_non_index_gate_failures()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_verify_generated_artifacts()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_sha256_file()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **_write_json()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **main()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **parse_args()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **phase_c_current_homr_isolated.py** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
+- **run()** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
+- **Namespace** (1 connections)
+- **Require all source gates unrelated to historical index-addressed scoring.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Bind a completed, augmented source report to this invocation and producer…** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Verify canonical non-index source gates and current-invocation identity.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Allow --resume only for a completed run produced by the exact current contract.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [Community 109](Community_109.md) (5 shared connections)
-- [Community 41](Community_41.md) (3 shared connections)
-- [Community 40](Community_40.md) (3 shared connections)
-- [Community 91](Community_91.md) (3 shared connections)
-- [Community 174](Community_174.md) (2 shared connections)
-- [Community 79](Community_79.md) (2 shared connections)
-- [Community 10](Community_10.md) (1 shared connections)
-- [Community 456](Community_456.md) (1 shared connections)
+- [Community 186](Community_186.md) (8 shared connections)
+- [Community 163](Community_163.md) (5 shared connections)
+- [Community 125](Community_125.md) (2 shared connections)
 
 ## Source Files
 
-- `src/common/preprocessing.py`
-- `tests/test_issue409_failure_contracts.py`
+- `tools/issue264/phase_c_acceptance_integrity.py`
+- `tools/issue264/phase_c_current_homr_isolated.py`
+- `tools/issue264/run_phase_c_mmr_regression_container.py`
 
 ## Audit Trail
 
-- EXTRACTED: 48 (100%)
+- EXTRACTED: 79 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

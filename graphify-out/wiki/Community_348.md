@@ -1,12 +1,13 @@
 # Community 348
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **run_full68_x_domain_ab.sh** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
-- **run_full68_x_domain_ab.sh script** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
-- **usage()** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
+- **compare_hybrid_results.py** (3 connections) — `tools/compare_hybrid_results.py`
+- **main()** (3 connections) — `tools/compare_hybrid_results.py`
+- **compute_iou()** (2 connections) — `tools/compare_hybrid_results.py`
+- **load_predictions()** (2 connections) — `tools/compare_hybrid_results.py`
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/issue43/run_full68_x_domain_ab.sh`
+- `tools/compare_hybrid_results.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

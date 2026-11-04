@@ -1,31 +1,31 @@
 # Community 233
 
-> 10 nodes · cohesion 0.38
+> 10 nodes · cohesion 0.31
 
 ## Key Concepts
 
-- **structural_system_union_resample.py** (8 connections) — `tools/structural_system_union_resample.py`
-- **main()** (8 connections) — `tools/structural_system_union_resample.py`
-- **load_omr_boxes()** (4 connections) — `tools/structural_system_union_resample.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/structural_system_union_resample.py`
-- **build_predictions()** (3 connections) — `tools/structural_system_union_resample.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_system_union_resample.py`
-- **dedupe_x_centers()** (2 connections) — `tools/structural_system_union_resample.py`
-- **group_bands_into_systems()** (2 connections) — `tools/structural_system_union_resample.py`
+- **main()** (6 connections) — `tools/debug_ocr_candidates.py`
+- **debug_ocr_candidates.py** (5 connections) — `tools/debug_ocr_candidates.py`
+- **detect_hbar()** (3 connections) — `tools/debug_ocr_candidates.py`
+- **ensure_dir()** (3 connections) — `tools/debug_ocr_candidates.py`
+- **extract_number_from_text()** (3 connections) — `tools/debug_ocr_candidates.py`
+- **preprocess_image()** (3 connections) — `tools/debug_ocr_candidates.py`
 - **Path** (2 connections)
-- **resample_positions()** (2 connections) — `tools/structural_system_union_resample.py`
+- **Apply preprocessing for OCR (same as generate_numbering_overrides.py)** (1 connections) — `tools/debug_ocr_candidates.py`
+- **Detect if the ROI contains a horizontal bar (H-bar) characteristic of multi-…** (1 connections) — `tools/debug_ocr_candidates.py`
+- **Extract a valid multi-measure rest number from text.** (1 connections) — `tools/debug_ocr_candidates.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/structural_system_union_resample.py`
+- `tools/debug_ocr_candidates.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 14 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

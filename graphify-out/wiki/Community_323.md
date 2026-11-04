@@ -1,13 +1,14 @@
 # Community 323
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **evaluate_accuracy_batch.py** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
-- **main()** (3 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
-- **compute_iou()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
-- **find_gt_file()** (2 connections) — `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- **experiment_c.py** (3 connections) — `tools/issue194/experiment_c.py`
+- **analyze_page()** (3 connections) — `tools/issue194/experiment_c.py`
+- **check_aligned_connection_sim()** (3 connections) — `tools/issue194/experiment_c.py`
+- **main()** (2 connections) — `tools/issue194/experiment_c.py`
+- **Simulate the vertical connectivity check at aligned positions.** (1 connections) — `tools/issue194/experiment_c.py`
 
 ## Relationships
 
@@ -15,11 +16,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/evaluate_accuracy_batch.py`
+- `tools/issue194/experiment_c.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

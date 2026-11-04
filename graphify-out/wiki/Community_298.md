@@ -1,26 +1,27 @@
 # Community 298
 
-> 5 nodes · cohesion 0.60
+> 6 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **check_pr_slice.sh** (4 connections) — `scripts/check_pr_slice.sh`
-- **check_pr_slice.sh script** (3 connections) — `scripts/check_pr_slice.sh`
-- **run_and_log()** (2 connections) — `scripts/check_pr_slice.sh`
-- **usage()** (2 connections) — `scripts/check_pr_slice.sh`
-- **trim()** (1 connections) — `scripts/check_pr_slice.sh`
+- **load_boxes()** (4 connections) — `tools/gtfree_snap_peak.py`
+- **snap_boxes_to_peaks()** (4 connections) — `tools/gtfree_snap_peak.py`
+- **gtfree_snap_peak.py** (3 connections) — `tools/gtfree_snap_peak.py`
+- **main()** (3 connections) — `tools/gtfree_snap_peak.py`
+- **ndarray** (1 connections)
+- **Path** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (2 shared connections)
 
 ## Source Files
 
-- `scripts/check_pr_slice.sh`
+- `tools/gtfree_snap_peak.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 9 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

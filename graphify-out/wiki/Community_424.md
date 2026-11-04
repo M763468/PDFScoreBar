@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **crop_debug_image.py** (1 connections) — `tools/crop_debug_image.py`
-- **main()** (1 connections) — `tools/crop_debug_image.py`
+- **run_regression_template.sh** (1 connections) — `experiments/legacy/tools_archive/run_regression_template.sh`
+- **run_regression_template.sh script** (1 connections) — `experiments/legacy/tools_archive/run_regression_template.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/crop_debug_image.py`
+- `experiments/legacy/tools_archive/run_regression_template.sh`
 
 ## Audit Trail
 

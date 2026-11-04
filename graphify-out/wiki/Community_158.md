@@ -1,37 +1,42 @@
 # Community 158
 
-> 16 nodes · cohesion 0.17
+> 17 nodes · cohesion 0.16
 
 ## Key Concepts
 
-- **generate_numbering_overrides_heuristic.py** (8 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **main()** (7 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **check_musical_elements()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **detect_hbar()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **draw_debug_info()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **extract_number_from_text()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **preprocess_image()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **visualize_masks()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **ensure_dir()** (2 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **Path** (1 connections)
-- **Check if the measure contains musical elements (notes, stems) that contradict a…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **Apply preprocessing for OCR: - Grayscale - Otsu Thresholding - Inversion (to…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **Draw rectangle and text on debug image. Status: 'found' (Green), 'rejected'…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **Overlay mask visualizations on the debug image. roi_rect: (x, y, w, h) absolute…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **Detect if the ROI contains a rectangular horizontal bar (H-bar) characteristic…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
-- **Extract a valid multi-measure rest number from text.** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **loadPage()** (14 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **renderPageList()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **fetchJSON()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **loadMmr()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **loadMovementEvidence()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **switchPage()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **displayPageNumber()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **displayPageNumberFor()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **loadCorrections()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **loadNumbering()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **loadBarlines()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **barlinePathFromPage()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **mmrPathFromPage()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **movementEvidenceCandidateId()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **normalizeMmrRecords()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **resetView()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **waitForMovementSaves()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 12](Community_12.md) (18 shared connections)
+- [Community 195](Community_195.md) (4 shared connections)
+- [Community 262](Community_262.md) (4 shared connections)
+- [Community 219](Community_219.md) (2 shared connections)
+- [Community 175](Community_175.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/generate_numbering_overrides_heuristic.py`
+- `tools/gt_relabel_gui/app_manual.js`
 
 ## Audit Trail
 
-- EXTRACTED: 21 (100%)
+- EXTRACTED: 51 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

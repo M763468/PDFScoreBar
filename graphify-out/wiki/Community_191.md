@@ -1,33 +1,35 @@
 # Community 191
 
-> 12 nodes · cohesion 0.52
+> 13 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **diagnose_production_vs_fullwidth.py** (9 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **run()** (9 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **_load_json()** (7 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **Path** (7 connections)
-- **_box_list()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **_full_width_page_dirs()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **_host_path()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **_production_page_dirs()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **Any** (5 connections)
-- **_score_map()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **_normalize_box()** (4 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
-- **main()** (2 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **export_review_boxes.py** (12 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **main()** (11 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **cluster_by_y_distance()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **geom_notehead_ratio_filter()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **load_notehead_mask()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **load_preds()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **estimate_staff_space()** (3 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **provenance_map()** (3 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **ndarray** (3 connections)
+- **Path** (3 connections)
+- **PageSpec** (2 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (6 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
 
 ## Source Files
 
-- `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- `experiments/phase5b_notehead_geom/export_review_boxes.py`
 
 ## Audit Trail
 
-- EXTRACTED: 34 (100%)
+- EXTRACTED: 35 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

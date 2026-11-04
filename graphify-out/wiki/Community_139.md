@@ -1,41 +1,43 @@
 # Community 139
 
-> 19 nodes · cohesion 0.25
+> 20 nodes · cohesion 0.29
 
 ## Key Concepts
 
-- **barline_gt_helper.py** (13 connections) — `tools/barline_gt_helper.py`
-- **AnnotatorState** (8 connections) — `tools/barline_gt_helper.py`
-- **prepare_state()** (7 connections) — `tools/barline_gt_helper.py`
-- **run_gui()** (7 connections) — `tools/barline_gt_helper.py`
-- **mouse_handler()** (5 connections) — `tools/barline_gt_helper.py`
-- **add_manual_box()** (4 connections) — `tools/barline_gt_helper.py`
-- **AnnotatedBox** (4 connections) — `tools/barline_gt_helper.py`
-- **draw()** (4 connections) — `tools/barline_gt_helper.py`
-- **load_detection_boxes()** (4 connections) — `tools/barline_gt_helper.py`
-- **load_existing_gt()** (4 connections) — `tools/barline_gt_helper.py`
-- **main()** (4 connections) — `tools/barline_gt_helper.py`
-- **Path** (4 connections)
-- **save_selected()** (4 connections) — `tools/barline_gt_helper.py`
-- **parse_args()** (3 connections) — `tools/barline_gt_helper.py`
-- **toggle_box()** (3 connections) — `tools/barline_gt_helper.py`
-- **BoxType** (2 connections)
-- **Namespace** (2 connections)
-- **.contains()** (1 connections) — `tools/barline_gt_helper.py`
-- **.reset_manual()** (1 connections) — `tools/barline_gt_helper.py`
+- **audit_full68_candidate_changes.py** (19 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **audit()** (16 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_json()** (9 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **Any** (8 connections)
+- **Path** (6 connections)
+- **_audit_box()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_boxes_from_payload()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_host_path()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_existing_boxes()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_normalize_box()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_scored_map()** (5 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_gt()** (4 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_inventory_records()** (4 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_outside_staff_span_for_candidate_y()** (4 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_load_staff_units()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_matches_any_gt()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_parse_eval_run_dir()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_summarize()** (3 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **main()** (2 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
+- **_pad_px_from_existing()** (2 connections) — `experiments/issue43/audit_full68_candidate_changes.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 39](Community_39.md) (2 shared connections)
+- [Community 27](Community_27.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/barline_gt_helper.py`
+- `experiments/issue43/audit_full68_candidate_changes.py`
 
 ## Audit Trail
 
-- EXTRACTED: 41 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 60 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

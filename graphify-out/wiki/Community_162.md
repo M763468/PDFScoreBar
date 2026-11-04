@@ -1,37 +1,39 @@
 # Community 162
 
-> 15 nodes · cohesion 0.19
+> 16 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **incontext_barline_detector_pre_chain_of_thought_prompt.py** (7 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **main()** (6 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **generate_prompt_with_examples()** (5 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **configure_api_key()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **detect_barlines_with_gemini()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **draw_and_save_results()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **encode_image()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **load_ground_truth()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **Draws the detected barlines on the image and saves it.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **Configure the Gemini API key from environment variables.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **Main function to run the barline detection and evaluation.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **Encodes an image file to a base64 string.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **Loads the ground truth data from a JSON file.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **Generates the prompt for barline detection using in-context examples.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
-- **Calls the Gemini API to detect barlines and returns the cleaned JSON string.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **stage_e_dense_full_pipeline.py** (11 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **DenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **reconstruct_stage_e_dense_route()** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **StageEDenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Path** (4 connections)
+- **regenerate_dense_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **regenerate_issue53_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **.from_dense()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **.issue53_root()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Freshly reconstructed dense route inputs.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Compatibility shim for the historical Stage E dense route module. New code…** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Historical Stage E artifact view with legacy field access.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Legacy name for Stage E Issue53-style probe-rescue candidates.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Compatibility wrapper for the historical Stage E route-root keyword.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Compatibility wrapper for the historical Issue53-style rescue name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **Compatibility wrapper for the historical Stage E route name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 115](Community_115.md) (10 shared connections)
 
 ## Source Files
 
-- `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- `src/pipeline/detector_routes/dense_full_pipeline.py`
+- `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 30 (94%)
+- INFERRED: 2 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,12 +1,13 @@
 # Community 353
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **docker_container_preflight.sh** (2 connections) — `scripts/docker_container_preflight.sh`
-- **docker_container_preflight.sh script** (2 connections) — `scripts/docker_container_preflight.sh`
-- **usage()** (2 connections) — `scripts/docker_container_preflight.sh`
+- **ensure_dir()** (3 connections) — `tools/mmr_training/extract_rest_rois.py`
+- **extract_rest_rois.py** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
+- **main()** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
+- **Path** (1 connections)
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `scripts/docker_container_preflight.sh`
+- `tools/mmr_training/extract_rest_rois.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

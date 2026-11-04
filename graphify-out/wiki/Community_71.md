@@ -1,56 +1,64 @@
 # Community 71
 
-> 30 nodes · cohesion 0.13
+> 34 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **DetectorOrchestrator** (21 connections) — `src/pipeline/detection/orchestrator.py`
-- **._run_probe_scan()** (13 connections) — `src/pipeline/detection/orchestrator.py`
-- **Path** (11 connections)
-- **._run_cnn_scoring()** (10 connections) — `src/pipeline/detection/orchestrator.py`
-- **.run_detection()** (7 connections) — `src/pipeline/detection/orchestrator.py`
-- **Any** (7 connections)
-- **run_detection_step()** (7 connections) — `src/pipeline/detection/orchestrator.py`
-- **_candidate_json_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
-- **._copy_precomputed_probe_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
-- **.__init__()** (6 connections) — `src/pipeline/detection/orchestrator.py`
-- **._get_effective_images_for_probe()** (5 connections) — `src/pipeline/detection/orchestrator.py`
-- **._record_input_contract()** (5 connections) — `src/pipeline/detection/orchestrator.py`
-- **._run_hybrid_detection()** (5 connections) — `src/pipeline/detection/orchestrator.py`
-- **_split_score_page_from_stem()** (4 connections) — `src/pipeline/detection/orchestrator.py`
-- **._get_effective_score_name()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_clef_mask_dir()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_cnn_bands_from()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_precomputed_probe_candidates_root()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **._resolve_staff_mask_dir()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **_reject_removed_detector_route_keys()** (3 connections) — `src/pipeline/detection/orchestrator.py`
-- **Persist which detector source is authoritative before executing stages.** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Executes the full detection pipeline.** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Step 2.1: Hybrid Detection (Subprocess or In-Process)** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Step 2.2: Probe Scan (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Step 2.3: CNN Scoring (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- *... and 5 more nodes in this community*
+- **homr_profile.py** (13 connections) — `src/pipeline/detection/homr_profile.py`
+- **run_homr_profile()** (12 connections) — `src/pipeline/detection/maintained_profile.py`
+- **run_with_logging()** (11 connections) — `src/pipeline/core/__init__.py`
+- **run_homr_profile()** (11 connections) — `src/pipeline/detection/homr_profile.py`
+- **load_homr_profile()** (10 connections) — `src/pipeline/detection/homr_profile.py`
+- **validate_profile_runtime()** (10 connections) — `src/pipeline/detection/profile_contract.py`
+- **profile_hybrid.py** (10 connections) — `src/pipeline/detection/profile_hybrid.py`
+- **maintained_profile.py** (9 connections) — `src/pipeline/detection/maintained_profile.py`
+- **load_profile_manifest()** (9 connections) — `src/pipeline/detection/profile_contract.py`
+- **test_homr_profile.py** (9 connections) — `tests/test_homr_profile.py`
+- **build_profile_command()** (7 connections) — `src/pipeline/detection/homr_profile.py`
+- **profile_contract.py** (6 connections) — `src/pipeline/detection/profile_contract.py`
+- **build_profile_environment()** (5 connections) — `src/pipeline/detection/homr_profile.py`
+- **Any** (4 connections)
+- **Any** (3 connections)
+- **_required_commit()** (3 connections) — `src/pipeline/detection/profile_contract.py`
+- **test_profile_command_rejects_one_sr_path_for_multiple_images()** (3 connections) — `tests/test_homr_profile.py`
+- **test_profile_command_uses_isolated_python_and_precomputed_sr()** (3 connections) — `tests/test_homr_profile.py`
+- **test_profile_environment_prioritizes_pinned_sources()** (3 connections) — `tests/test_homr_profile.py`
+- **test_subprocess_utils.py** (3 connections) — `tests/test_subprocess_utils.py`
+- **Path** (2 connections)
+- **Path** (2 connections)
+- **test_maintained_original_profile_is_immutable_and_original_space()** (2 connections) — `tests/test_homr_profile.py`
+- **test_stage_e_verified_profile_is_pinned_and_artifact_free()** (2 connections) — `tests/test_homr_profile.py`
+- **test_maintained_backend_rejects_historical_execution_without_loading_it()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- *... and 9 more nodes in this community*
 
 ## Relationships
 
-- [Community 154](Community_154.md) (10 shared connections)
-- [Community 123](Community_123.md) (4 shared connections)
-- [Community 60](Community_60.md) (2 shared connections)
-- [Community 201](Community_201.md) (2 shared connections)
-- [Community 91](Community_91.md) (2 shared connections)
-- [Community 68](Community_68.md) (2 shared connections)
-- [Community 21](Community_21.md) (1 shared connections)
-- [Community 92](Community_92.md) (1 shared connections)
-- [Community 37](Community_37.md) (1 shared connections)
+- [Community 183](Community_183.md) (4 shared connections)
+- [Community 154](Community_154.md) (4 shared connections)
+- [Community 78](Community_78.md) (4 shared connections)
+- [Community 111](Community_111.md) (3 shared connections)
+- [Community 26](Community_26.md) (3 shared connections)
+- [Community 70](Community_70.md) (2 shared connections)
+- [Community 43](Community_43.md) (2 shared connections)
+- [Community 32](Community_32.md) (1 shared connections)
+- [Community 182](Community_182.md) (1 shared connections)
+- [Community 81](Community_81.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/orchestrator.py`
+- `src/pipeline/core/__init__.py`
+- `src/pipeline/detection/homr_profile.py`
+- `src/pipeline/detection/maintained_profile.py`
+- `src/pipeline/detection/profile_contract.py`
+- `src/pipeline/detection/profile_hybrid.py`
+- `tests/test_homr_profile.py`
+- `tests/test_issue115_runtime_boundaries.py`
+- `tests/test_subprocess_utils.py`
 
 ## Audit Trail
 
-- EXTRACTED: 81 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 95 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

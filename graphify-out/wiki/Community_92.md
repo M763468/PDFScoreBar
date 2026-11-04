@@ -1,54 +1,53 @@
 # Community 92
 
-> 27 nodes · cohesion 0.14
+> 20 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **build_detector_input_contract()** (17 connections) — `src/pipeline/detection/input_contract.py`
-- **test_issue255_production_detector_restoration.py** (14 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_detector_input_contract.py** (9 connections) — `tests/test_detector_input_contract.py`
-- **input_contract.py** (8 connections) — `src/pipeline/detection/input_contract.py`
-- **require_fresh_detector_input_contract()** (6 connections) — `src/pipeline/detection/input_contract.py`
-- **Path** (5 connections)
-- **_configured()** (4 connections) — `src/pipeline/detection/input_contract.py`
-- **_config()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_dense_inventory_uses_only_current_hybrid_and_profile_masks()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_dense_route_cnn_uses_manifest_original_coordinates_and_nms_false()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_verified_profile_is_selected_for_hybrid_detection()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **Any** (3 connections)
-- **test_falsey_override_values_are_unset()** (3 connections) — `tests/test_detector_input_contract.py`
-- **test_truthy_path_strings_select_precomputed_route()** (3 connections) — `tests/test_detector_input_contract.py`
-- **test_current_sr_worker_uses_verified_x4_settings()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **test_current_support_runs_sr_homr_omr_as_separate_phases()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **parametrize** (2 connections)
-- **test_cnn_bands_override_makes_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_empty_detection_config_is_fresh_upstream()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_fresh_guard_names_all_candidate_source_overrides()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_precomputed_probe_candidates_make_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
-- **test_canonical_detector_config_uses_verified_restored_route()** (2 connections) — `tests/test_issue255_production_detector_restoration.py`
-- **Classify whether detector candidates come from fresh upstream or overrides. A…** (1 connections) — `src/pipeline/detection/input_contract.py`
-- **Match the truthiness gate used by the detector path resolvers.** (1 connections) — `src/pipeline/detection/input_contract.py`
-- **Return the authoritative candidate-source contract for one detector run.** (1 connections) — `src/pipeline/detection/input_contract.py`
-- *... and 2 more nodes in this community*
+- **describe_connector_artifacts()** (18 connections) — `src/common/connector_artifacts.py`
+- **test_issue264_phase_a_connector_geometry.py** (18 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **resolve_paths_from_detection()** (14 connections) — `src/pipeline/detection/utils.py`
+- **detection/utils.py** (10 connections) — `src/pipeline/detection/utils.py`
+- **test_numbering_resolves_current_homr_semantics_without_replacing_staff_geometry()** (10 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **test_numbering_uses_semantic_staff_geometry_only_for_connector_rois()** (8 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **test_numbering_preserves_page_image_fallback_without_semantic_pair()** (7 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **Path** (6 connections)
+- **_write_mask()** (6 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **_probe_root()** (5 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **_discover_current_homr_staff_mask()** (4 connections) — `src/pipeline/detection/utils.py`
+- **_semantic_dir()** (4 connections) — `tests/test_issue264_phase_a_connector_geometry.py`
+- **Path** (3 connections)
+- **Any** (2 connections)
+- **Any** (1 connections)
+- **Describe the connector source actually available to numbering.** (1 connections) — `src/common/connector_artifacts.py`
+- **Utility functions for path resolution and system monitoring in detection.** (1 connections) — `src/pipeline/detection/utils.py`
+- **Find one retained current-HOMR mask beside a replay connector artifact.** (1 connections) — `src/pipeline/detection/utils.py`
+- **Resolves output paths for barlines and staff masks after detection.** (1 connections) — `src/pipeline/detection/utils.py`
+- **ndarray** (1 connections)
 
 ## Relationships
 
-- [Community 68](Community_68.md) (7 shared connections)
-- [Community 154](Community_154.md) (2 shared connections)
-- [Community 109](Community_109.md) (2 shared connections)
-- [Community 46](Community_46.md) (2 shared connections)
-- [Community 71](Community_71.md) (1 shared connections)
-- [Community 181](Community_181.md) (1 shared connections)
+- [Community 28](Community_28.md) (14 shared connections)
+- [Community 14](Community_14.md) (8 shared connections)
+- [Community 268](Community_268.md) (4 shared connections)
+- [Community 112](Community_112.md) (3 shared connections)
+- [Community 214](Community_214.md) (3 shared connections)
+- [Community 110](Community_110.md) (2 shared connections)
+- [Community 163](Community_163.md) (2 shared connections)
+- [Community 36](Community_36.md) (2 shared connections)
+- [Community 70](Community_70.md) (2 shared connections)
+- [Community 100](Community_100.md) (2 shared connections)
+- [Community 10](Community_10.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/input_contract.py`
-- `tests/test_detector_input_contract.py`
-- `tests/test_issue255_production_detector_restoration.py`
+- `src/common/connector_artifacts.py`
+- `src/pipeline/detection/utils.py`
+- `tests/test_issue264_phase_a_connector_geometry.py`
 
 ## Audit Trail
 
-- EXTRACTED: 63 (100%)
+- EXTRACTED: 82 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

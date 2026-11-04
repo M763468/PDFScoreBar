@@ -1,14 +1,15 @@
 # Community 295
 
-> 5 nodes · cohesion 0.50
+> 6 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **detect_vertical_line_candidates()** (3 connections) — `experiments/hybrid/opencv_candidate_detector.py`
-- **plot_projection()** (3 connections) — `experiments/hybrid/opencv_candidate_detector.py`
-- **opencv_candidate_detector.py** (2 connections) — `experiments/hybrid/opencv_candidate_detector.py`
-- **Creates an image of the projection profile for debugging.** (1 connections) — `experiments/hybrid/opencv_candidate_detector.py`
-- **Uses a vertical projection profile on the original binary image to find…** (1 connections) — `experiments/hybrid/opencv_candidate_detector.py`
+- **coordinate_annotator.py** (5 connections) — `tools/coordinate_annotator.py`
+- **main()** (4 connections) — `tools/coordinate_annotator.py`
+- **draw_annotations()** (3 connections) — `tools/coordinate_annotator.py`
+- **mouse_callback()** (3 connections) — `tools/coordinate_annotator.py`
+- **save_annotations()** (2 connections) — `tools/coordinate_annotator.py`
+- **LEGACY: use tools/gt_relabel_gui (gt-editor mode) for new GT creation.** (1 connections) — `tools/coordinate_annotator.py`
 
 ## Relationships
 
@@ -16,12 +17,12 @@
 
 ## Source Files
 
-- `experiments/hybrid/opencv_candidate_detector.py`
+- `tools/coordinate_annotator.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

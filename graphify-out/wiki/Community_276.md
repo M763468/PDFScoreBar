@@ -1,27 +1,28 @@
 # Community 276
 
-> 6 nodes · cohesion 0.60
+> 7 nodes · cohesion 0.48
 
 ## Key Concepts
 
-- **analyze_deepscores_components()** (4 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
-- **load_palette_index()** (4 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
-- **analyze_deepscores_filters.py** (3 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
-- **find_components()** (3 connections) — `tools/cnn_classifier/analyze_deepscores_filters.py`
+- **fn_probe_overlay.py** (4 connections) — `tools/fn_probe_overlay.py`
+- **draw_box()** (4 connections) — `tools/fn_probe_overlay.py`
+- **load_gt_boxes()** (4 connections) — `tools/fn_probe_overlay.py`
+- **main()** (4 connections) — `tools/fn_probe_overlay.py`
+- **put_text_block()** (3 connections) — `tools/fn_probe_overlay.py`
 - **ndarray** (2 connections)
-- **Path** (2 connections)
+- **Path** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/cnn_classifier/analyze_deepscores_filters.py`
+- `tools/fn_probe_overlay.py`
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 12 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

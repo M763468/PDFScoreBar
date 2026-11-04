@@ -1,12 +1,13 @@
 # Community 351
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **analyze_fp_source.py** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_source.py`
-- **check_source()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_source.py`
-- **iou()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_source.py`
+- **find_numbering_file()** (3 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
+- **main()** (3 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
+- **build_rest_gt_config.py** (2 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
+- **Path** (2 connections)
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/legacy/investigation_20260102/analyze_fp_source.py`
+- `tools/gt_relabel_gui/build_rest_gt_config.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

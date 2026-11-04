@@ -1,44 +1,39 @@
 # Community 157
 
-> 16 nodes · cohesion 0.22
+> 17 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **phase_c_phase_a_support.py** (14 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **ensure_phase_a_semantic_support()** (9 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **augment_report()** (8 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **install_phase_a_support_replay()** (7 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **test_phase_a_support_replay_uses_retained_x4_without_mutating_canonical_staff()** (5 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
-- **test_issue264_phase_c_phase_a_support.py** (4 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
-- **_completed_current_homr_result()** (4 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Any** (4 connections)
-- **Path** (4 connections)
-- **_write_mask()** (3 connections) — `tests/test_issue264_phase_c_phase_a_support.py`
-- **Path** (2 connections)
-- **MonkeyPatch** (1 connections)
-- **Fresh Phase-A connector-semantic replay for Issue #264 Phase C. The frozen…** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Patch the Phase-C runner's canonical path resolver for this process only.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Add replay and Phase-B fallback provenance without changing score semantics.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
-- **Return a Proxy/SR staff path backed by fresh current-HOMR semantics.** (1 connections) — `tools/issue264/phase_c_phase_a_support.py`
+- **Any** (12 connections)
+- **ResourceSampler** (11 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._sample_rusage()** (5 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_read_gpu_sample()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._run()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._sample_process_tree()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.summary()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_cpu_seconds()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_linux_maxrss_bytes()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._record_gpu_peaks()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.stop()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.__init__()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **struct_rusage** (1 connections)
+- **Convert Linux resource.ru_maxrss KiB units to bytes.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Return a best-effort nvidia-smi sample. Empty when NVIDIA tooling is…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Best-effort process/GPU resource sampler for long Stage E runs.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.start()** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Relationships
 
-- [Community 94](Community_94.md) (5 shared connections)
-- [Community 181](Community_181.md) (3 shared connections)
-- [Community 12](Community_12.md) (2 shared connections)
-- [Community 82](Community_82.md) (2 shared connections)
-- [Community 219](Community_219.md) (2 shared connections)
-- [Community 98](Community_98.md) (2 shared connections)
-- [Community 45](Community_45.md) (1 shared connections)
+- [Community 135](Community_135.md) (10 shared connections)
+- [Community 250](Community_250.md) (3 shared connections)
 
 ## Source Files
 
-- `tests/test_issue264_phase_c_phase_a_support.py`
-- `tools/issue264/phase_c_phase_a_support.py`
+- `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 43 (100%)
+- EXTRACTED: 38 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

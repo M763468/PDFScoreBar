@@ -1,30 +1,31 @@
 # Community 235
 
-> 9 nodes · cohesion 0.47
+> 10 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **write_debug_output()** (8 connections) — `src/pipeline/probe_detector/debug.py`
-- **debug.py** (6 connections) — `src/pipeline/probe_detector/debug.py`
-- **_draw_crop_band_overlays()** (5 connections) — `src/pipeline/probe_detector/debug.py`
-- **_draw_crop_labels()** (4 connections) — `src/pipeline/probe_detector/debug.py`
-- **_draw_relative_band_rect()** (4 connections) — `src/pipeline/probe_detector/debug.py`
-- **Any** (4 connections)
-- **ndarray** (4 connections)
-- **Path** (1 connections)
-- **Debug rendering helpers for probe detection.** (1 connections) — `src/pipeline/probe_detector/debug.py`
+- **evaluate_compile_full68_ab.py** (7 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **main()** (6 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **_load_json()** (5 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **_variant()** (5 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **Any** (3 connections)
+- **_score_view()** (3 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **_git_changed_paths()** (2 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **_git_is_ancestor()** (2 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **Path** (2 connections)
+- **Evaluate the final Issue #284 eager-vs-compile canonical full-68 A/B. The…** (1 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
 
 ## Relationships
 
-- [Community 100](Community_100.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/pipeline/probe_detector/debug.py`
+- `tools/issue284/evaluate_compile_full68_ab.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 18 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

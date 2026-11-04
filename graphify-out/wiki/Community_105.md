@@ -1,53 +1,52 @@
 # Community 105
 
-> 22 nodes · cohesion 0.21
+> 26 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **test_probe_helpers.py** (28 connections) — `tests/test_probe_helpers.py`
-- **measurements.py** (14 connections) — `src/pipeline/probe_detector/measurements.py`
-- **project_staff_band()** (12 connections) — `src/pipeline/probe_detector/measurements.py`
-- **measure_candidate_scan()** (10 connections) — `src/pipeline/probe_detector/measurements.py`
-- **CandidateScanConfig** (10 connections) — `src/pipeline/probe_detector/types.py`
-- **BandProjectionConfig** (9 connections) — `src/pipeline/probe_detector/types.py`
-- **select_signal_peaks()** (7 connections) — `src/pipeline/probe_detector/measurements.py`
-- **test_candidate_measurement_keeps_fallback_and_staff_peak_exclusion()** (6 connections) — `tests/test_probe_helpers.py`
-- **BandProjection** (5 connections) — `src/pipeline/probe_detector/measurements.py`
-- **_projection_config()** (5 connections) — `tests/test_probe_helpers.py`
-- **CandidateScanMeasurement** (4 connections) — `src/pipeline/probe_detector/measurements.py`
-- **ndarray** (3 connections)
-- **_candidate_scan_config()** (3 connections) — `tests/test_probe_helpers.py`
-- **test_band_projection_keeps_domain_halo_and_extension_ratios()** (3 connections) — `tests/test_probe_helpers.py`
-- **test_row_padding_ratio_precedes_staff_padding_and_clips_at_image_boundary()** (3 connections) — `tests/test_probe_helpers.py`
-- **test_develop_probe_debug_remains_opt_in_and_writes_artifacts()** (2 connections) — `tests/test_probe_helpers.py`
-- **test_peak_domain_and_limit_are_applied_before_returning_selection()** (2 connections) — `tests/test_probe_helpers.py`
-- **test_peak_ties_keep_leftmost_then_apply_distance_in_score_order()** (2 connections) — `tests/test_probe_helpers.py`
-- **Staff projections, peak selection and candidate measurements before acceptance.** (1 connections) — `src/pipeline/probe_detector/measurements.py`
-- **Existing options for candidate-local ink measurements; no new defaults.** (1 connections) — `src/pipeline/probe_detector/types.py`
-- **parametrize** (1 connections)
-- **test_develop_wide_split_opt_in_calls_existing_implementation()** (1 connections) — `tests/test_probe_helpers.py`
+- **phase_c_fixture_rebase.py** (20 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **rebase_expected_overrides()** (17 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **map_measure_bbox()** (12 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **test_issue264_phase_c_fixture_rebase.py** (11 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **Any** (9 connections)
+- **measure_for_index()** (8 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_numbering()** (7 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **iter_measures()** (7 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **mapping_method_counts()** (6 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **test_fixture_rebase_can_use_overlap_when_center_moved_just_outside()** (4 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **test_fixture_rebase_rejects_weak_spatial_match()** (4 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **MeasureRef** (4 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_overlap_score()** (4 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **test_fixture_rebase_coalesces_equivalent_items_after_system_merge()** (3 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **test_fixture_rebase_preserves_index_when_geometry_is_unchanged()** (3 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **test_fixture_rebase_rejects_conflicting_items_after_system_merge()** (3 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **test_fixture_rebase_tracks_same_page_region_after_system_index_shift()** (3 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **_contains()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_normalise_bbox()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_single_page()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_skip()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_area()** (2 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_center()** (2 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **_intersection_area()** (2 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- **Evaluation-only rebase of historical MMR fixtures onto current numbering…** (1 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 100](Community_100.md) (20 shared connections)
-- [Community 8](Community_8.md) (5 shared connections)
-- [Community 259](Community_259.md) (3 shared connections)
-- [Community 87](Community_87.md) (2 shared connections)
-- [Community 31](Community_31.md) (1 shared connections)
-- [Community 50](Community_50.md) (1 shared connections)
-- [Community 77](Community_77.md) (1 shared connections)
-- [Community 18](Community_18.md) (1 shared connections)
+- [Community 125](Community_125.md) (8 shared connections)
+- [Community 88](Community_88.md) (5 shared connections)
+- [Community 66](Community_66.md) (3 shared connections)
+- [Community 44](Community_44.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/probe_detector/measurements.py`
-- `src/pipeline/probe_detector/types.py`
-- `tests/test_probe_helpers.py`
+- `tests/test_issue264_phase_c_fixture_rebase.py`
+- `tools/issue264/phase_c_fixture_rebase.py`
 
 ## Audit Trail
 
-- EXTRACTED: 79 (95%)
-- INFERRED: 4 (5%)
+- EXTRACTED: 80 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

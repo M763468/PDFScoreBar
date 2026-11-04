@@ -1,43 +1,39 @@
 # Community 166
 
-> 15 nodes · cohesion 0.34
+> 16 nodes · cohesion 0.32
 
 ## Key Concepts
 
-- **test_source_page_provenance.py** (18 connections) — `tests/test_source_page_provenance.py`
-- **resolve_source_page_references()** (16 connections) — `src/pipeline/utils/images.py`
-- **_pdf()** (9 connections) — `tests/test_source_page_provenance.py`
+- **verify_detector_full68.py** (15 connections) — `tools/verification/verify_detector_full68.py`
+- **run()** (12 connections) — `tools/verification/verify_detector_full68.py`
 - **Path** (8 connections)
-- **test_cached_pdf_render_restores_verified_source_geometry()** (7 connections) — `tests/test_source_page_provenance.py`
-- **test_rendered_source_geometry_survives_public_review_and_correction()** (7 connections) — `tests/test_source_page_provenance.py`
-- **test_direct_pdf_provenance_does_not_rehash_mutated_source_path()** (4 connections) — `tests/test_source_page_provenance.py`
-- **test_direct_pdf_render_rejects_stale_or_reordered_page_stems()** (4 connections) — `tests/test_source_page_provenance.py`
-- **test_direct_pdf_render_requires_render_step_identity()** (4 connections) — `tests/test_source_page_provenance.py`
-- **test_direct_pdf_selection_retains_physical_source_pages()** (4 connections) — `tests/test_source_page_provenance.py`
-- **test_renderer_uses_provenance_bound_source_bytes()** (4 connections) — `tests/test_source_page_provenance.py`
-- **test_skipped_pdf_render_does_not_claim_direct_provenance()** (4 connections) — `tests/test_source_page_provenance.py`
-- **test_external_or_reordered_images_have_unknown_source_page()** (3 connections) — `tests/test_source_page_provenance.py`
-- **Return physical PDF provenance for a direct render or verified render cache.…** (1 connections) — `src/pipeline/utils/images.py`
-- **parametrize** (1 connections)
+- **_run_production_groups()** (8 connections) — `tools/verification/verify_detector_full68.py`
+- **_copy_probe_pages()** (4 connections) — `tools/verification/verify_detector_full68.py`
+- **_evaluation_args()** (4 connections) — `tools/verification/verify_detector_full68.py`
+- **_page_selector()** (4 connections) — `tools/verification/verify_detector_full68.py`
+- **Any** (4 connections)
+- **_select_images()** (4 connections) — `tools/verification/verify_detector_full68.py`
+- **_canonical_images()** (3 connections) — `tools/verification/verify_detector_full68.py`
+- **_expected_metrics()** (3 connections) — `tools/verification/verify_detector_full68.py`
+- **_group_images_by_score()** (3 connections) — `tools/verification/verify_detector_full68.py`
+- **_metric_mismatches()** (3 connections) — `tools/verification/verify_detector_full68.py`
+- **_validate_detector_result()** (3 connections) — `tools/verification/verify_detector_full68.py`
+- **main()** (2 connections) — `tools/verification/verify_detector_full68.py`
+- **Namespace** (2 connections)
 
 ## Relationships
 
-- [Community 144](Community_144.md) (4 shared connections)
-- [Community 21](Community_21.md) (3 shared connections)
-- [Community 63](Community_63.md) (3 shared connections)
-- [Community 112](Community_112.md) (3 shared connections)
-- [Community 2](Community_2.md) (3 shared connections)
-- [Community 35](Community_35.md) (3 shared connections)
-- [Community 122](Community_122.md) (3 shared connections)
+- [Community 59](Community_59.md) (2 shared connections)
+- [Community 32](Community_32.md) (2 shared connections)
+- [Community 149](Community_149.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/utils/images.py`
-- `tests/test_source_page_provenance.py`
+- `tools/verification/verify_detector_full68.py`
 
 ## Audit Trail
 
-- EXTRACTED: 58 (100%)
+- EXTRACTED: 44 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

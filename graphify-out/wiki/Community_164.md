@@ -1,45 +1,37 @@
 # Community 164
 
-> 15 nodes · cohesion 0.30
+> 16 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **connector_mask_paths_for_numbering()** (19 connections) — `src/common/connector_artifacts.py`
-- **verify_issue218_divisi.py** (8 connections) — `tools/verification/verify_issue218_divisi.py`
-- **verify()** (7 connections) — `tools/verification/verify_issue218_divisi.py`
-- **test_issue274_connector_support_contract.py** (5 connections) — `tests/test_issue274_connector_support_contract.py`
-- **prepare()** (5 connections) — `tools/verification/verify_issue218_divisi.py`
-- **_staff_path()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
-- **test_numbering_fallback_remains_available_without_declared_current_support()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
-- **test_numbering_rejects_missing_pair_inside_declared_current_support()** (4 connections) — `tests/test_issue274_connector_support_contract.py`
-- **main()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
-- **Path** (4 connections)
-- **resolve()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
-- **sha256()** (4 connections) — `tools/verification/verify_issue218_divisi.py`
-- **Path** (3 connections)
-- **inspect_page()** (2 connections) — `tools/verification/verify_issue218_divisi.py`
-- **Resolve connector semantics for a numbering consumer. Numbering may…** (1 connections) — `src/common/connector_artifacts.py`
+- **generate_numbering_overrides_heuristic.py** (8 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **main()** (7 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **check_musical_elements()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **detect_hbar()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **draw_debug_info()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **extract_number_from_text()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **preprocess_image()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **visualize_masks()** (3 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **ensure_dir()** (2 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Path** (1 connections)
+- **Check if the measure contains musical elements (notes, stems) that contradict a…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Apply preprocessing for OCR: - Grayscale - Otsu Thresholding - Inversion (to…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Draw rectangle and text on debug image. Status: 'found' (Green), 'rejected'…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Overlay mask visualizations on the debug image. roi_rect: (x, y, w, h) absolute…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Detect if the ROI contains a rectangular horizontal bar (H-bar) characteristic…** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
+- **Extract a valid multi-measure rest number from text.** (1 connections) — `tools/generate_numbering_overrides_heuristic.py`
 
 ## Relationships
 
-- [Community 45](Community_45.md) (5 shared connections)
-- [Community 150](Community_150.md) (3 shared connections)
-- [Community 2](Community_2.md) (2 shared connections)
-- [Community 122](Community_122.md) (2 shared connections)
-- [Community 181](Community_181.md) (1 shared connections)
-- [Community 219](Community_219.md) (1 shared connections)
-- [Community 50](Community_50.md) (1 shared connections)
-- [Community 42](Community_42.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/common/connector_artifacts.py`
-- `tests/test_issue274_connector_support_contract.py`
-- `tools/verification/verify_issue218_divisi.py`
+- `tools/generate_numbering_overrides_heuristic.py`
 
 ## Audit Trail
 
-- EXTRACTED: 47 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

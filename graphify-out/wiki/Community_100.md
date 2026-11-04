@@ -1,61 +1,61 @@
 # Community 100
 
-> 24 nodes · cohesion 0.17
+> 25 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **detect_probe_scan()** (34 connections) — `src/pipeline/probe_detector/__init__.py`
-- **probe_detector/__init__.py** (24 connections) — `src/pipeline/probe_detector/__init__.py`
-- **probe_detector/types.py** (13 connections) — `src/pipeline/probe_detector/types.py`
-- **ExistingBarlines** (8 connections) — `src/pipeline/probe_detector/existing.py`
-- **apply_gap_rescue()** (8 connections) — `src/pipeline/probe_detector/rescue.py`
-- **build_divisi_map()** (7 connections) — `src/pipeline/probe_detector/bands.py`
-- **rescue.py** (7 connections) — `src/pipeline/probe_detector/rescue.py`
-- **apply_rightmost_rescue()** (7 connections) — `src/pipeline/probe_detector/rescue.py`
-- **existing.py** (5 connections) — `src/pipeline/probe_detector/existing.py`
-- **BandSelectionConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **DivisiRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **GapRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **RightmostRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
-- **.closest_existing_band()** (3 connections) — `src/pipeline/probe_detector/existing.py`
-- **.has_existing_for_suppression()** (3 connections) — `src/pipeline/probe_detector/existing.py`
-- **Any** (2 connections)
-- **test_existing_suppression_requires_vertical_overlap_and_preserves_nearest_band()** (2 connections) — `tests/test_probe_helpers.py`
-- **Lookup and suppression against existing barlines in a staff band.** (1 connections) — `src/pipeline/probe_detector/existing.py`
-- **ndarray** (1 connections)
+- **MeasureNumberingPipeline** (54 connections) — `src/measure_numbering/pipeline.py`
+- **numbering_phases.py** (14 connections) — `src/pipeline/steps/numbering_phases.py`
+- **.process_page()** (11 connections) — `src/measure_numbering/pipeline.py`
+- **NumberingPhaseServices** (10 connections) — `src/pipeline/steps/numbering_phases.py`
+- **run_final_numbering_and_overlays()** (10 connections) — `src/pipeline/steps/numbering_phases.py`
+- **run_mmr_batch_detection()** (10 connections) — `src/pipeline/steps/numbering_phases.py`
+- **run_base_numbering_and_barline_correction()** (9 connections) — `src/pipeline/steps/numbering_phases.py`
+- **cli.py** (8 connections) — `src/measure_numbering/cli.py`
+- **render_overlay()** (8 connections) — `src/measure_numbering/cli.py`
+- **main()** (6 connections) — `src/measure_numbering/cli.py`
+- **._connector_evidence_staves()** (5 connections) — `src/measure_numbering/pipeline.py`
+- **.run_sequential()** (4 connections) — `src/measure_numbering/pipeline.py`
+- **Path** (4 connections)
+- **Any** (3 connections)
+- **Path** (3 connections)
+- **normalize_barlines()** (2 connections) — `src/measure_numbering/cli.py`
+- **.test_pipeline_uses_connector_aware_builder_by_default()** (2 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
 - **Path** (1 connections)
-- **Core probe scan detection logic orchestrating submodules.** (1 connections) — `src/pipeline/probe_detector/__init__.py`
-- **Rescue logic for probe detection.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
-- **Rescue barlines in large gaps between detected barlines using relaxed threshold.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
-- **Shared types/config for probe detector modules.** (1 connections) — `src/pipeline/probe_detector/types.py`
+- **Any** (1 connections)
+- **Integrated pipeline to assign measure numbers to a score.** (1 connections) — `src/measure_numbering/pipeline.py`
+- **Measure semantic masks against the staff geometry from the same producer. The…** (1 connections) — `src/measure_numbering/pipeline.py`
+- **Numbering phase execution and services; scheduling remains in the orchestrator.** (1 connections) — `src/pipeline/steps/numbering_phases.py`
+- **Phase B: MMR Batch Detection.** (1 connections) — `src/pipeline/steps/numbering_phases.py`
+- **Phase C: Final Numbering & Overlays.** (1 connections) — `src/pipeline/steps/numbering_phases.py`
+- **Phase A: Base Numbering & Barline Correction.** (1 connections) — `src/pipeline/steps/numbering_phases.py`
 
 ## Relationships
 
-- [Community 105](Community_105.md) (20 shared connections)
-- [Community 259](Community_259.md) (9 shared connections)
-- [Community 7](Community_7.md) (5 shared connections)
-- [Community 87](Community_87.md) (4 shared connections)
-- [Community 31](Community_31.md) (4 shared connections)
-- [Community 235](Community_235.md) (3 shared connections)
-- [Community 192](Community_192.md) (2 shared connections)
-- [Community 154](Community_154.md) (2 shared connections)
-- [Community 37](Community_37.md) (2 shared connections)
-- [Community 151](Community_151.md) (2 shared connections)
-- [Community 207](Community_207.md) (1 shared connections)
+- [Community 10](Community_10.md) (21 shared connections)
+- [Community 24](Community_24.md) (6 shared connections)
+- [Community 14](Community_14.md) (6 shared connections)
+- [Community 44](Community_44.md) (5 shared connections)
+- [Community 192](Community_192.md) (4 shared connections)
+- [Community 109](Community_109.md) (4 shared connections)
+- [Community 49](Community_49.md) (3 shared connections)
+- [Community 161](Community_161.md) (3 shared connections)
+- [Community 110](Community_110.md) (3 shared connections)
+- [Community 36](Community_36.md) (3 shared connections)
+- [Community 15](Community_15.md) (3 shared connections)
+- [Community 76](Community_76.md) (3 shared connections)
 
 ## Source Files
 
-- `src/pipeline/probe_detector/__init__.py`
-- `src/pipeline/probe_detector/bands.py`
-- `src/pipeline/probe_detector/existing.py`
-- `src/pipeline/probe_detector/rescue.py`
-- `src/pipeline/probe_detector/types.py`
-- `tests/test_probe_helpers.py`
+- `src/measure_numbering/cli.py`
+- `src/measure_numbering/pipeline.py`
+- `src/pipeline/steps/numbering_phases.py`
+- `tests/test_issue197_system_grouping_connector_evidence.py`
 
 ## Audit Trail
 
-- EXTRACTED: 99 (97%)
-- INFERRED: 3 (3%)
+- EXTRACTED: 111 (87%)
+- INFERRED: 17 (13%)
 - AMBIGUOUS: 0 (0%)
 
 ---

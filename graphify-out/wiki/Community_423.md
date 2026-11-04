@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **compare_batch_structure.py** (1 connections) — `tools/compare_batch_structure.py`
-- **compare_batches()** (1 connections) — `tools/compare_batch_structure.py`
+- **run_promiscuous_union_eval_page3.sh** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
+- **run_promiscuous_union_eval_page3.sh script** (1 connections) — `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/compare_batch_structure.py`
+- `experiments/legacy/tools_archive/run_promiscuous_union_eval_page3.sh`
 
 ## Audit Trail
 

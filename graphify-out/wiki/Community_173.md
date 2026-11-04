@@ -1,43 +1,36 @@
 # Community 173
 
-> 14 nodes · cohesion 0.33
+> 15 nodes · cohesion 0.31
 
 ## Key Concepts
 
-- **score_candidates_then_eval_full68.py** (17 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **main()** (9 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **copy_candidates()** (7 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **build_probe_run_id_from_parts()** (6 connections) — `src/pipeline/core/__init__.py`
-- **Path** (6 connections)
-- **run_selected_scorer()** (6 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **write_json()** (5 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **build_parser()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **build_provenance()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **collect_images()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **run_eval()** (4 connections) — `tools/issue120/score_candidates_then_eval_full68.py`
-- **Namespace** (3 connections)
-- **Any** (2 connections)
-- **ArgumentParser** (1 connections)
+- **test_issue291_canonical_gt_contract.py** (12 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_load_rows()** (8 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_bbox()** (6 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_issue291_no_plain_same_ink_conflicts_and_p3_is_preserved()** (6 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_pair_metrics()** (5 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_barline_type()** (4 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_canonical_files()** (4 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **Any** (4 connections)
+- **test_issue291_prokofiev_assignment_case_is_not_deleted()** (4 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_issue291_canonical_gt_count()** (3 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_issue291_reviewed_p1_corrections_are_canonical()** (3 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **_overlap()** (2 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **Path** (2 connections)
+- **test_issue291_changed_pages_are_sequentially_renumbered()** (2 connections) — `tests/test_issue291_canonical_gt_contract.py`
+- **test_stage_e_profile_keeps_issue291_gt_with_accepted_issue296_cnn_refresh()** (1 connections) — `tests/test_issue291_canonical_gt_contract.py`
 
 ## Relationships
 
-- [Community 154](Community_154.md) (4 shared connections)
-- [Community 146](Community_146.md) (4 shared connections)
-- [Community 11](Community_11.md) (3 shared connections)
-- [Community 128](Community_128.md) (3 shared connections)
-- [Community 60](Community_60.md) (1 shared connections)
-- [Community 79](Community_79.md) (1 shared connections)
-- [Community 98](Community_98.md) (1 shared connections)
-- [Community 127](Community_127.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/pipeline/core/__init__.py`
-- `tools/issue120/score_candidates_then_eval_full68.py`
+- `tests/test_issue291_canonical_gt_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 48 (100%)
+- EXTRACTED: 33 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,39 +1,36 @@
 # Community 168
 
-> 15 nodes · cohesion 0.25
+> 15 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **test_issue296_cnn_dataset_matching.py** (15 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **_is_canonical_candidate_match()** (8 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
-- **_verified_orchestrator()** (6 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **Path** (4 connections)
-- **_run_builder()** (4 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_dataset_builder_help_works_without_pythonpath()** (3 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_dataset_builder_rejects_obsolete_iou_threshold_option()** (3 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_candidate_outside_center_anchor_xdist_is_negative()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_candidate_requires_half_vertical_overlap()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_candidate_with_no_horizontal_iou_can_still_be_canonical_positive()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_accepts_explicit_d27_scoring_contract_in_dry_run()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_rejects_cnn_nms_enabled()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_requires_explicit_cnn_apply_nms()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **test_verified_route_requires_explicit_cnn_threshold()** (2 connections) — `tests/test_issue296_cnn_dataset_matching.py`
-- **Match a generated candidate with the canonical production/evaluation contract.** (1 connections) — `tools/cnn_classifier/build_cnn_dataset.py`
+- **incontext_barline_detector_pre_chain_of_thought_prompt.py** (7 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **main()** (6 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **generate_prompt_with_examples()** (5 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **configure_api_key()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **detect_barlines_with_gemini()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **draw_and_save_results()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **encode_image()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **load_ground_truth()** (3 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **Draws the detected barlines on the image and saves it.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **Configure the Gemini API key from environment variables.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **Main function to run the barline detection and evaluation.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **Encodes an image file to a base64 string.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **Loads the ground truth data from a JSON file.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **Generates the prompt for barline detection using in-context examples.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
+- **Calls the Gemini API to detect barlines and returns the cleaned JSON string.** (1 connections) — `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
 
 ## Relationships
 
-- [Community 102](Community_102.md) (3 shared connections)
-- [Community 68](Community_68.md) (2 shared connections)
-- [Community 0](Community_0.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tests/test_issue296_cnn_dataset_matching.py`
-- `tools/cnn_classifier/build_cnn_dataset.py`
+- `experiments/legacy/archive/barline_detection_prompts/incontext_barline_detector_pre_chain_of_thought_prompt.py`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
+- EXTRACTED: 20 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

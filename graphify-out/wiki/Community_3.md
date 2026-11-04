@@ -1,64 +1,55 @@
 # Community 3
 
-> 82 nodes · cohesion 0.06
+> 41 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **test_distribution_surface.py** (37 connections) — `tests/test_distribution_surface.py`
-- **test_release_candidate.py** (23 connections) — `tests/test_release_candidate.py`
-- **check_candidate()** (19 connections) — `tools/release_candidate.py`
-- **check_tree()** (16 connections) — `tools/materialize_distribution.py`
-- **create_candidate()** (14 connections) — `tools/release_candidate.py`
-- **create()** (13 connections) — `tests/test_release_candidate.py`
-- **release_candidate.py** (13 connections) — `tools/release_candidate.py`
-- **source()** (12 connections) — `tests/test_release_candidate.py`
-- **git()** (11 connections) — `tests/test_release_candidate.py`
-- **_init_candidate_git()** (9 connections) — `tests/test_distribution_surface.py`
-- **check_repository_surface.py** (9 connections) — `tools/check_repository_surface.py`
-- **materialize_distribution.py** (9 connections) — `tools/materialize_distribution.py`
-- **materialize()** (9 connections) — `tools/materialize_distribution.py`
-- **selected_files()** (9 connections) — `tools/materialize_distribution.py`
-- **snapshot()** (9 connections) — `tools/release_candidate.py`
-- **git()** (8 connections) — `tools/release_candidate.py`
-- **Path** (8 connections)
-- **commit()** (7 connections) — `tests/test_release_candidate.py`
-- **test_different_executing_tools_reject_create_and_check()** (7 connections) — `tests/test_release_candidate.py`
-- **main()** (7 connections) — `tools/check_repository_surface.py`
-- **test_surface_checker_rejects_missing_review_and_engine_contract_files()** (6 connections) — `tests/test_issue100_runtime_surface.py`
-- **parametrize** (5 connections)
-- **test_issue100_runtime_surface.py** (5 connections) — `tests/test_issue100_runtime_surface.py`
-- **test_candidate_rejects_forged_committed_content_and_provenance()** (5 connections) — `tests/test_release_candidate.py`
-- **test_pinned_candidate_is_minimal_independent_and_reproducible()** (5 connections) — `tests/test_release_candidate.py`
-- *... and 57 more nodes in this community*
+- **homr_evaluator.py** (69 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **run_evaluation()** (41 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Path** (26 connections)
+- **ImageMetrics** (12 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **AggregateMetrics** (10 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_metrics_json()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_readme()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **compute_transform_info()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **ensure_dir()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **export_measure_grid_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **resolve_clusters_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **resolve_tight_duplicates_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **save_homr_results()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **compute_and_save_gap_stats()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Namespace** (5 connections)
+- **timestamp_jst()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_compare_md()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_metrics_csv()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **write_run_config()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **aggregate_metrics()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **choose_run_id()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **current_jst()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **load_ground_truth_mapping()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **parse_args()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **prepare_working_image()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- *... and 16 more nodes in this community*
 
 ## Relationships
 
-- [Community 163](Community_163.md) (5 shared connections)
-- [Community 63](Community_63.md) (4 shared connections)
-- [Community 33](Community_33.md) (4 shared connections)
-- [Community 98](Community_98.md) (3 shared connections)
-- [Community 0](Community_0.md) (3 shared connections)
-- [Community 178](Community_178.md) (2 shared connections)
-- [Community 79](Community_79.md) (2 shared connections)
-- [Community 20](Community_20.md) (2 shared connections)
-- [Community 112](Community_112.md) (1 shared connections)
-- [Community 144](Community_144.md) (1 shared connections)
-- [Community 38](Community_38.md) (1 shared connections)
-- [Community 56](Community_56.md) (1 shared connections)
+- [Community 152](Community_152.md) (37 shared connections)
+- [Community 131](Community_131.md) (24 shared connections)
+- [Community 62](Community_62.md) (7 shared connections)
+- [Community 203](Community_203.md) (6 shared connections)
+- [Community 54](Community_54.md) (3 shared connections)
+- [Community 27](Community_27.md) (2 shared connections)
+- [Community 58](Community_58.md) (2 shared connections)
+- [Community 23](Community_23.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_distribution_surface.py`
-- `tests/test_issue100_runtime_surface.py`
-- `tests/test_release_candidate.py`
-- `tools/check_repository_surface.py`
-- `tools/materialize_distribution.py`
-- `tools/release_candidate.py`
+- `src/homr_eval_scripts/homr_evaluator.py`
 
 ## Audit Trail
 
-- EXTRACTED: 214 (95%)
-- INFERRED: 11 (5%)
+- EXTRACTED: 177 (94%)
+- INFERRED: 12 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

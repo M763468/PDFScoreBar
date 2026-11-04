@@ -1,40 +1,41 @@
 # Community 148
 
-> 17 nodes · cohesion 0.20
+> 19 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **analyze_and_visualize_all_errors.py** (12 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **analyze_page()** (6 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **main()** (6 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **TestDataset** (6 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **barline_iou()** (4 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **box_dist()** (3 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **get_fp_candidates()** (3 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **box_center()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **get_model()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **get_transform()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **load_gt_and_preds()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **load_metadata()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **parse_original_index_from_path()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **train_mmr_classifier.py** (9 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **train_model()** (9 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **TextNoiseOverlay** (7 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **MMRDataset** (6 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__call__()** (4 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **calculate_metrics()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **_get_progress_bar()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **load_fonts_from_dir()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **load_fonts_from_zip()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **manual_train_test_split()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **set_seed()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **._estimate_staff_band()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **._load_font()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **._overlap_ratio()** (2 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__getitem__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__init__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
+- **.__len__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
 - **Dataset** (1 connections)
-- **.__getitem__()** (1 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **.__init__()** (1 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
-- **.__len__()** (1 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **.__init__()** (1 connections) — `tools/mmr_training/train_mmr_classifier.py`
 
 ## Relationships
 
-- [Community 0](Community_0.md) (1 shared connections)
-- [Community 203](Community_203.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- `tools/mmr_training/train_mmr_classifier.py`
 
 ## Audit Trail
 
-- EXTRACTED: 27 (93%)
-- INFERRED: 2 (7%)
+- EXTRACTED: 29 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **core/predictor.py** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
-- **Module alias preserving predictor monkeypatch and class identity for old…** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
+- **analyze_divisi.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
+- **analyze_divisi()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `src/homr_eval_scripts/core/predictor.py`
+- `experiments/legacy/investigation_20260102/analyze_divisi.py`
 
 ## Audit Trail
 

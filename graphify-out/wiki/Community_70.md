@@ -1,57 +1,60 @@
 # Community 70
 
-> 32 nodes · cohesion 0.15
+> 27 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **MMRClassifier** (25 connections) — `src/measure_numbering/mmr.py`
-- **diagnose_ocr_frame_changed_pages.py** (22 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **run()** (15 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **run_h2_matrix()** (12 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **Any** (8 connections)
-- **run_mmr_batch()** (6 connections) — `src/measure_numbering/mmr.py`
-- **_preflight()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_semantic()** (6 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
-- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
-- **Path** (5 connections)
-- **_comparison()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **legacy_frame_dimensions()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_load_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_probe_matrix_condition()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_write_json()** (5 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **._load_model()** (4 connections) — `src/measure_numbering/mmr.py`
-- **test_issue274_ocr_frame_causal.py** (4 connections) — `tests/test_issue274_ocr_frame_causal.py`
-- **main()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **_normalise()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **Path** (4 connections)
-- **_semantic_items()** (4 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **device** (3 connections)
-- **_legacy_frame_select()** (3 connections) — `tools/issue274/diagnose_ocr_frame_changed_pages.py`
-- **.__init__()** (2 connections) — `src/measure_numbering/mmr.py`
-- *... and 7 more nodes in this community*
+- **hybrid.py** (26 connections) — `src/pipeline/detection/hybrid.py`
+- **HybridDetector** (20 connections) — `src/pipeline/detection/hybrid.py`
+- **._run_homr_in_process()** (14 connections) — `src/pipeline/detection/hybrid.py`
+- **.run()** (13 connections) — `src/pipeline/detection/hybrid.py`
+- **_HomrInternalLogFilter** (9 connections) — `src/pipeline/detection/hybrid.py`
+- **Path** (6 connections)
+- **._write_line()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **._all_stems_exist()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **._get_python_cmd()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **_suppress_homr_low_value_internal_logs()** (4 connections) — `src/pipeline/detection/hybrid.py`
+- **log_vram_usage()** (4 connections) — `src/pipeline/detection/utils.py`
+- **.__init__()** (3 connections) — `src/pipeline/detection/hybrid.py`
+- **._omr_all_stems_exist()** (3 connections) — `src/pipeline/detection/hybrid.py`
+- **._rel()** (3 connections) — `src/pipeline/detection/hybrid.py`
+- **Any** (3 connections)
+- **_env_flag_enabled()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **.flush()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **.__init__()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **._should_suppress()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **.write()** (2 connections) — `src/pipeline/detection/hybrid.py`
+- **Hybrid detection engine using Homr and OMR-DLN.** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Encapsulates hybrid detection logic (Baseline, SR, OMR-DLN).** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Returns the appropriate python command, falling back to host if images are…** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Step 2.1: Hybrid Detection (Subprocess or In-Process)** (1 connections) — `src/pipeline/detection/hybrid.py`
+- **Runs Homr inference (baseline or SR) in-process for persistence.** (1 connections) — `src/pipeline/detection/hybrid.py`
+- *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 12](Community_12.md) (11 shared connections)
-- [Community 14](Community_14.md) (8 shared connections)
-- [Community 6](Community_6.md) (7 shared connections)
-- [Community 51](Community_51.md) (4 shared connections)
-- [Community 50](Community_50.md) (3 shared connections)
-- [Community 13](Community_13.md) (3 shared connections)
-- [Community 126](Community_126.md) (2 shared connections)
-- [Community 82](Community_82.md) (2 shared connections)
+- [Community 38](Community_38.md) (6 shared connections)
+- [Community 58](Community_58.md) (5 shared connections)
+- [Community 81](Community_81.md) (5 shared connections)
+- [Community 72](Community_72.md) (4 shared connections)
+- [Community 134](Community_134.md) (4 shared connections)
+- [Community 32](Community_32.md) (3 shared connections)
+- [Community 16](Community_16.md) (3 shared connections)
+- [Community 54](Community_54.md) (3 shared connections)
+- [Community 149](Community_149.md) (3 shared connections)
+- [Community 71](Community_71.md) (2 shared connections)
+- [Community 200](Community_200.md) (2 shared connections)
+- [Community 69](Community_69.md) (2 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/mmr.py`
-- `tests/test_issue274_ocr_frame_causal.py`
-- `tools/issue274/diagnose_ocr_frame_changed_pages.py`
+- `src/pipeline/detection/hybrid.py`
+- `src/pipeline/detection/utils.py`
 
 ## Audit Trail
 
-- EXTRACTED: 110 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 85 (93%)
+- INFERRED: 6 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

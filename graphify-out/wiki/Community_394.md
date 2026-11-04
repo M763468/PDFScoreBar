@@ -1,11 +1,12 @@
 # Community 394
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **barline_detector.py** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
-- **detect_barlines()** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
+- **strings.js** (2 connections) — `tools/review_correction/strings.js`
+- **reviewEnglish** (1 connections) — `tools/review_correction/strings.js`
+- **reviewJapanese** (1 connections) — `tools/review_correction/strings.js`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/legacy/archive/opencv/barline_detector.py`
+- `tools/review_correction/strings.js`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

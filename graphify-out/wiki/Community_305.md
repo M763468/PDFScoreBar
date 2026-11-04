@@ -1,14 +1,15 @@
 # Community 305
 
-> 5 nodes · cohesion 0.60
+> 6 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **main.js** (4 connections) — `tools/gui_helper/static/js/main.js`
-- **createOverlayBox()** (2 connections) — `tools/gui_helper/static/js/main.js`
-- **renderOverlays()** (2 connections) — `tools/gui_helper/static/js/main.js`
-- **saveDecisions()** (2 connections) — `tools/gui_helper/static/js/main.js`
-- **setupSaveButton()** (2 connections) — `tools/gui_helper/static/js/main.js`
+- **render_candidate_filter_overlay.py** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
+- **_load_boxes()** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
+- **main()** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
+- **parse_args()** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
+- **Namespace** (1 connections)
+- **Path** (1 connections)
 
 ## Relationships
 
@@ -16,11 +17,11 @@
 
 ## Source Files
 
-- `tools/gui_helper/static/js/main.js`
+- `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

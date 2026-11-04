@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **validate_issue264_phase_b.sh** (1 connections) — `scripts/validate_issue264_phase_b.sh`
-- **validate_issue264_phase_b.sh script** (1 connections) — `scripts/validate_issue264_phase_b.sh`
+- **analyze_band_count.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_count.py`
+- **analyze_band_count()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_band_count.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `scripts/validate_issue264_phase_b.sh`
+- `experiments/legacy/investigation_20260102/analyze_band_count.py`
 
 ## Audit Trail
 

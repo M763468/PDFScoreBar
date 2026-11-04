@@ -1,14 +1,14 @@
 # Community 316
 
-> 5 nodes · cohesion 0.70
+> 5 nodes · cohesion 0.80
 
 ## Key Concepts
 
-- **organize_mmr_errors.py** (4 connections) — `tools/organize_mmr_errors.py`
-- **organize_errors()** (4 connections) — `tools/organize_mmr_errors.py`
-- **load_model()** (2 connections) — `tools/organize_mmr_errors.py`
-- **map_global_index_to_coords()** (2 connections) — `tools/organize_mmr_errors.py`
-- **predict_crop()** (2 connections) — `tools/organize_mmr_errors.py`
+- **analyze()** (4 connections) — `tools/analyze_barline_distribution.py`
+- **analyze_barline_distribution.py** (3 connections) — `tools/analyze_barline_distribution.py`
+- **extract_staff_bands()** (3 connections) — `tools/analyze_barline_distribution.py`
+- **load_json()** (3 connections) — `tools/analyze_barline_distribution.py`
+- **Path** (3 connections)
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/organize_mmr_errors.py`
+- `tools/analyze_barline_distribution.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

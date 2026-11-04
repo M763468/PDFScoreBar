@@ -1,36 +1,33 @@
 # Community 180
 
-> 13 nodes · cohesion 0.33
+> 9 nodes · cohesion 0.31
 
 ## Key Concepts
 
-- **export_review_boxes.py** (12 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **main()** (11 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **cluster_by_y_distance()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **geom_notehead_ratio_filter()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **load_notehead_mask()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **load_preds()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **estimate_staff_space()** (3 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **provenance_map()** (3 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
-- **ndarray** (3 connections)
-- **Path** (3 connections)
-- **PageSpec** (2 connections) — `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- **homr_runtime/segnet_cache.py** (6 connections) — `src/homr_runtime/segnet_cache.py`
+- **_get_session()** (5 connections) — `src/homr_runtime/segnet_cache.py`
+- **CachedSegnet** (4 connections) — `src/homr_runtime/segnet_cache.py`
+- **_create_session()** (3 connections) — `src/homr_runtime/segnet_cache.py`
+- **InferenceSession** (2 connections)
+- **.__init__()** (2 connections) — `src/homr_runtime/segnet_cache.py`
+- **.run()** (1 connections) — `src/homr_runtime/segnet_cache.py`
+- **Segnet cache patcher to avoid repeated ONNXRuntime model loads.** (1 connections) — `src/homr_runtime/segnet_cache.py`
+- **Drop-in replacement for homr.segmentation.inference_segnet.Segnet.** (1 connections) — `src/homr_runtime/segnet_cache.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (6 shared connections)
-- [Community 0](Community_0.md) (3 shared connections)
+- [Community 152](Community_152.md) (1 shared connections)
+- [Community 213](Community_213.md) (1 shared connections)
+- [Community 58](Community_58.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/export_review_boxes.py`
+- `src/homr_runtime/segnet_cache.py`
 
 ## Audit Trail
 
-- EXTRACTED: 35 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 13 (93%)
+- INFERRED: 1 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

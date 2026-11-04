@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_system_grouping.py** (1 connections) — `tools/visualize_system_grouping.py`
-- **main()** (1 connections) — `tools/visualize_system_grouping.py`
+- **debug_rest_candidates.py** (1 connections) — `tools/debug_rest_candidates.py`
+- **main()** (1 connections) — `tools/debug_rest_candidates.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/visualize_system_grouping.py`
+- `tools/debug_rest_candidates.py`
 
 ## Audit Trail
 

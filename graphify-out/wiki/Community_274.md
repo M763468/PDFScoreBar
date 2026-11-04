@@ -1,15 +1,16 @@
 # Community 274
 
-> 6 nodes · cohesion 0.33
+> 7 nodes · cohesion 0.48
 
 ## Key Concepts
 
-- **test_issue396_review_ui.py** (5 connections) — `tests/test_issue396_review_ui.py`
-- **Static contract checks for the isolated user correction review entry.** (1 connections) — `tests/test_issue396_review_ui.py`
-- **test_controlled_copy_populates_primary_navigation_and_context_labels()** (1 connections) — `tests/test_issue396_review_ui.py`
-- **test_review_scripts_load_in_dependency_order_and_keep_legacy_canvas_hooks()** (1 connections) — `tests/test_issue396_review_ui.py`
-- **test_review_surface_separates_navigation_display_task_and_result_state()** (1 connections) — `tests/test_issue396_review_ui.py`
-- **test_reviewer_copy_is_controlled_and_task_operations_are_localized()** (1 connections) — `tests/test_issue396_review_ui.py`
+- **test_issue459_matrix.py** (5 connections) — `tests/test_issue459_matrix.py`
+- **_run_with_primary()** (4 connections) — `tests/test_issue459_matrix.py`
+- **test_matrix_rejects_non_primary_summary()** (3 connections) — `tests/test_issue459_matrix.py`
+- **parametrize** (2 connections)
+- **test_matrix_rejects_failed_primary()** (2 connections) — `tests/test_issue459_matrix.py`
+- **test_matrix_rejects_passed_label_contradicted_by_medians()** (2 connections) — `tests/test_issue459_matrix.py`
+- **test_remaining_matrix_stops_at_failed_gate_without_retry()** (2 connections) — `tests/test_issue459_matrix.py`
 
 ## Relationships
 
@@ -17,11 +18,11 @@
 
 ## Source Files
 
-- `tests/test_issue396_review_ui.py`
+- `tests/test_issue459_matrix.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

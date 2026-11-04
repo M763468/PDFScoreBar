@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_eval2_bulletproof.sh** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
-- **run_eval2_bulletproof.sh script** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
+- **cnn_classifier/__init__.py** (1 connections) — `tools/cnn_classifier/__init__.py`
+- **CNN classifier tooling package.** (1 connections) — `tools/cnn_classifier/__init__.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/run_eval2_bulletproof.sh`
+- `tools/cnn_classifier/__init__.py`
 
 ## Audit Trail
 

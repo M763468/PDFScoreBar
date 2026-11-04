@@ -1,29 +1,30 @@
 # Community 252
 
-> 8 nodes · cohesion 0.46
+> 9 nodes · cohesion 0.44
 
 ## Key Concepts
 
-- **fn_probe_overlay_multi.py** (5 connections) — `tools/fn_probe_overlay_multi.py`
-- **main()** (5 connections) — `tools/fn_probe_overlay_multi.py`
-- **draw_box()** (4 connections) — `tools/fn_probe_overlay_multi.py`
-- **load_gt_boxes()** (4 connections) — `tools/fn_probe_overlay_multi.py`
-- **load_probe_scores()** (3 connections) — `tools/fn_probe_overlay_multi.py`
-- **put_text_block()** (3 connections) — `tools/fn_probe_overlay_multi.py`
-- **ndarray** (2 connections)
-- **Path** (2 connections)
+- **structural_bar_infer.py** (7 connections) — `tools/structural_bar_infer.py`
+- **main()** (7 connections) — `tools/structural_bar_infer.py`
+- **load_gt_boxes()** (4 connections) — `tools/structural_bar_infer.py`
+- **load_omr_boxes()** (4 connections) — `tools/structural_bar_infer.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_bar_infer.py`
+- **build_predictions()** (3 connections) — `tools/structural_bar_infer.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_bar_infer.py`
+- **Path** (3 connections)
+- **dedupe_x_centers()** (2 connections) — `tools/structural_bar_infer.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (2 shared connections)
+- [Community 64](Community_64.md) (4 shared connections)
 
 ## Source Files
 
-- `tools/fn_probe_overlay_multi.py`
+- `tools/structural_bar_infer.py`
 
 ## Audit Trail
 
-- EXTRACTED: 15 (100%)
+- EXTRACTED: 20 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

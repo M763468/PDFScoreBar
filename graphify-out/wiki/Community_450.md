@@ -1,10 +1,11 @@
 # Community 450
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **extract_fn_barlines.py** (0 connections) — `tools/extract_fn_barlines.py`
+- **visualize_rest_rois.py** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
+- **main()** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `tools/extract_fn_barlines.py`
+- `tools/mmr_training/visualize_rest_rois.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,53 +1,60 @@
 # Community 17
 
-> 60 nodes · cohesion 0.07
+> 57 nodes · cohesion 0.07
 
 ## Key Concepts
 
-- **gt_relabel_gui/server.py** (20 connections) — `tools/gt_relabel_gui/server.py`
-- **test_manual_gui_server.py** (15 connections) — `tests/test_manual_gui_server.py`
-- **.do_GET()** (10 connections) — `tools/gt_relabel_gui/server.py`
-- **.do_POST()** (10 connections) — `tools/gt_relabel_gui/server.py`
-- **_manual_handoff_config()** (10 connections) — `tools/gt_relabel_gui/server.py`
-- **Path** (8 connections)
-- **_strict_review_handoff()** (7 connections) — `tests/test_manual_gui_server.py`
-- **Handler** (7 connections) — `tools/gt_relabel_gui/server.py`
-- **_manual_output_for()** (7 connections) — `tools/gt_relabel_gui/server.py`
-- **Handler** (7 connections) — `tools/gui_helper_for_staff_scan/server.py`
-- **Handler** (6 connections) — `experiments/phase5b_notehead_geom/review_tool/server.py`
-- **gui_helper_for_staff_scan/server.py** (6 connections) — `tools/gui_helper_for_staff_scan/server.py`
-- **.do_GET()** (6 connections) — `tools/gui_helper_for_staff_scan/server.py`
-- **HTTPServer** (5 connections)
-- **_manual_payload()** (5 connections) — `tools/gt_relabel_gui/server.py`
-- **_page_config_for()** (5 connections) — `tools/gt_relabel_gui/server.py`
-- **Path** (5 connections)
-- **.do_GET()** (4 connections) — `experiments/phase5b_notehead_geom/review_tool/server.py`
-- **Path** (4 connections)
-- **item_payload()** (4 connections) — `tools/gt_relabel_gui/server.py`
-- **_load_manual_items()** (4 connections) — `tools/gt_relabel_gui/server.py`
-- **main()** (4 connections) — `tools/gt_relabel_gui/server.py`
-- **safe_path()** (4 connections) — `tools/gt_relabel_gui/server.py`
-- **scan_items()** (4 connections) — `tools/gt_relabel_gui/server.py`
-- **scan_pages()** (4 connections) — `tools/gui_helper_for_staff_scan/server.py`
-- *... and 35 more nodes in this community*
+- **TelemetryRecorder** (40 connections) — `src/pipeline/engine_telemetry.py`
+- **ProgressEvent** (27 connections) — `src/pipeline/engine_contract.py`
+- **test_engine_telemetry.py** (24 connections) — `tests/test_engine_telemetry.py`
+- **ResourceSampler** (19 connections) — `src/pipeline/engine_telemetry.py`
+- **ProgressKind** (16 connections) — `src/pipeline/engine_contract.py`
+- **engine_telemetry.py** (12 connections) — `src/pipeline/engine_telemetry.py`
+- **.emit()** (8 connections) — `src/pipeline/engine_telemetry.py`
+- **_SuccessfulOrchestrator** (7 connections) — `tests/test_pipeline_telemetry.py`
+- **.start_job()** (6 connections) — `src/pipeline/engine_telemetry.py`
+- **.terminal()** (6 connections) — `src/pipeline/engine_telemetry.py`
+- **_FailingOrchestrator** (6 connections) — `tests/test_pipeline_telemetry.py`
+- **._sample_once()** (5 connections) — `src/pipeline/engine_telemetry.py`
+- **_ConstructorFailingOrchestrator** (5 connections) — `tests/test_pipeline_telemetry.py`
+- **.from_json()** (4 connections) — `src/pipeline/engine_contract.py`
+- **.progress()** (4 connections) — `src/pipeline/engine_telemetry.py`
+- **test_recorder_terminal_kind_matches_job_status()** (4 connections) — `tests/test_engine_telemetry.py`
+- **test_summary_resources_are_job_result_compatible_without_sampling()** (4 connections) — `tests/test_engine_telemetry.py`
+- **._dispatch()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **.__init__()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **.stage()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **.summary()** (3 connections) — `src/pipeline/engine_telemetry.py`
+- **parametrize** (3 connections)
+- **test_progress_event_rejects_invalid_additive_telemetry_fields()** (3 connections) — `tests/test_engine_telemetry.py`
+- **test_progress_event_telemetry_fields_round_trip_deterministically()** (3 connections) — `tests/test_engine_telemetry.py`
+- **test_resource_sampler_rejects_non_finite_or_non_positive_interval()** (3 connections) — `tests/test_engine_telemetry.py`
+- *... and 32 more nodes in this community*
 
 ## Relationships
 
-- [Community 30](Community_30.md) (4 shared connections)
-- [Community 26](Community_26.md) (4 shared connections)
-- [Community 4](Community_4.md) (2 shared connections)
+- [Community 117](Community_117.md) (12 shared connections)
+- [Community 48](Community_48.md) (11 shared connections)
+- [Community 41](Community_41.md) (9 shared connections)
+- [Community 73](Community_73.md) (8 shared connections)
+- [Community 30](Community_30.md) (5 shared connections)
+- [Community 14](Community_14.md) (5 shared connections)
+- [Community 99](Community_99.md) (2 shared connections)
+- [Community 81](Community_81.md) (1 shared connections)
+- [Community 86](Community_86.md) (1 shared connections)
+- [Community 126](Community_126.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/review_tool/server.py`
-- `tests/test_manual_gui_server.py`
-- `tools/gt_relabel_gui/server.py`
-- `tools/gui_helper_for_staff_scan/server.py`
+- `src/pipeline/engine_contract.py`
+- `src/pipeline/engine_telemetry.py`
+- `tests/test_engine_telemetry.py`
+- `tests/test_pipeline_telemetry.py`
 
 ## Audit Trail
 
-- EXTRACTED: 130 (97%)
-- INFERRED: 4 (3%)
+- EXTRACTED: 143 (88%)
+- INFERRED: 19 (12%)
 - AMBIGUOUS: 0 (0%)
 
 ---

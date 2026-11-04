@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_parameter_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
-- **run_parameter_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_parameter_sweep.sh`
+- **pr-refinement/run.sh** (1 connections) — `.agents/skills/pr-refinement/run.sh`
+- **run.sh script** (1 connections) — `.agents/skills/pr-refinement/run.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/scripts/run_parameter_sweep.sh`
+- `.agents/skills/pr-refinement/run.sh`
 
 ## Audit Trail
 

@@ -1,30 +1,31 @@
 # Community 237
 
-> 9 nodes · cohesion 0.56
+> 10 nodes · cohesion 0.42
 
 ## Key Concepts
 
-- **main()** (7 connections) — `tools/cnn_classifier/extract_deepscores_color_components.py`
-- **extract_deepscores_color_components.py** (6 connections) — `tools/cnn_classifier/extract_deepscores_color_components.py`
-- **draw_boxes()** (4 connections) — `tools/cnn_classifier/extract_deepscores_color_components.py`
-- **load_palette_index()** (4 connections) — `tools/cnn_classifier/extract_deepscores_color_components.py`
-- **load_seg_rgb()** (4 connections) — `tools/cnn_classifier/extract_deepscores_color_components.py`
+- **make_fn_crops.py** (7 connections) — `tools/make_fn_crops.py`
+- **main()** (7 connections) — `tools/make_fn_crops.py`
+- **draw_boxes()** (4 connections) — `tools/make_fn_crops.py`
+- **load_gt_boxes()** (4 connections) — `tools/make_fn_crops.py`
+- **load_pred_boxes()** (4 connections) — `tools/make_fn_crops.py`
 - **ndarray** (4 connections)
-- **Path** (4 connections)
-- **save_crops()** (4 connections) — `tools/cnn_classifier/extract_deepscores_color_components.py`
-- **find_components()** (3 connections) — `tools/cnn_classifier/extract_deepscores_color_components.py`
+- **compute_staff_height()** (3 connections) — `tools/make_fn_crops.py`
+- **overlay_mask_blue()** (3 connections) — `tools/make_fn_crops.py`
+- **put_text_block()** (3 connections) — `tools/make_fn_crops.py`
+- **Path** (2 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/cnn_classifier/extract_deepscores_color_components.py`
+- `tools/make_fn_crops.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 22 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

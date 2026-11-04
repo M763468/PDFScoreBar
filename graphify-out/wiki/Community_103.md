@@ -1,58 +1,63 @@
 # Community 103
 
-> 26 nodes · cohesion 0.17
+> 26 nodes · cohesion 0.18
 
 ## Key Concepts
 
-- **ReviewPackage** (42 connections) — `tools/review_correction/server.py`
-- **Path** (12 connections)
-- **ReviewHandler** (12 connections) — `tools/review_correction/server.py`
-- **.record_correction()** (12 connections) — `tools/review_correction/server.py`
-- **.do_POST()** (10 connections) — `tools/review_correction/server.py`
-- **.do_GET()** (9 connections) — `tools/review_correction/server.py`
-- **.__init__()** (9 connections) — `tools/review_correction/server.py`
-- **._resolve()** (7 connections) — `tools/review_correction/server.py`
-- **._context()** (6 connections) — `tools/review_correction/server.py`
-- **.output()** (6 connections) — `tools/review_correction/server.py`
-- **._declare_output()** (5 connections) — `tools/review_correction/server.py`
-- **.writable()** (5 connections) — `tools/review_correction/server.py`
-- **_atomic_write()** (4 connections) — `tools/review_correction/server.py`
-- **_inside()** (4 connections) — `tools/review_correction/server.py`
-- **_load_items()** (4 connections) — `tools/review_correction/server.py`
-- **.readable()** (4 connections) — `tools/review_correction/server.py`
-- **_load_boxes()** (3 connections) — `tools/review_correction/server.py`
-- **_payload()** (3 connections) — `tools/review_correction/server.py`
-- **._file()** (3 connections) — `tools/review_correction/server.py`
-- **._json()** (3 connections) — `tools/review_correction/server.py`
-- **._trusted_host()** (3 connections) — `tools/review_correction/server.py`
-- **._trusted_write()** (3 connections) — `tools/review_correction/server.py`
-- **BaseHTTPRequestHandler** (1 connections)
-- **Save and publish its immutable checkpoint in one serialized transition.** (1 connections) — `tools/review_correction/server.py`
-- **Record any correction type through one package-bound atomic transition.…** (1 connections) — `tools/review_correction/server.py`
+- **detect_probe_scan()** (34 connections) — `src/pipeline/probe_detector/__init__.py`
+- **bands.py** (24 connections) — `src/pipeline/probe_detector/bands.py`
+- **probe_detector/__init__.py** (24 connections) — `src/pipeline/probe_detector/__init__.py`
+- **probe_detector/types.py** (13 connections) — `src/pipeline/probe_detector/types.py`
+- **resolve_bands()** (8 connections) — `src/pipeline/probe_detector/bands.py`
+- **ExistingBarlines** (8 connections) — `src/pipeline/probe_detector/existing.py`
+- **apply_gap_rescue()** (8 connections) — `src/pipeline/probe_detector/rescue.py`
+- **build_divisi_map()** (7 connections) — `src/pipeline/probe_detector/bands.py`
+- **rescue.py** (7 connections) — `src/pipeline/probe_detector/rescue.py`
+- **apply_rightmost_rescue()** (7 connections) — `src/pipeline/probe_detector/rescue.py`
+- **existing.py** (5 connections) — `src/pipeline/probe_detector/existing.py`
+- **BandSelectionConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **DivisiRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **GapRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **RightmostRescueConfig** (5 connections) — `src/pipeline/probe_detector/types.py`
+- **.closest_existing_band()** (3 connections) — `src/pipeline/probe_detector/existing.py`
+- **.has_existing_for_suppression()** (3 connections) — `src/pipeline/probe_detector/existing.py`
+- **Any** (2 connections)
+- **Band preparation and divisi helpers for probe detection.** (1 connections) — `src/pipeline/probe_detector/bands.py`
+- **Lookup and suppression against existing barlines in a staff band.** (1 connections) — `src/pipeline/probe_detector/existing.py`
+- **ndarray** (1 connections)
+- **Path** (1 connections)
+- **Core probe scan detection logic orchestrating submodules.** (1 connections) — `src/pipeline/probe_detector/__init__.py`
+- **Rescue logic for probe detection.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
+- **Rescue barlines in large gaps between detected barlines using relaxed threshold.** (1 connections) — `src/pipeline/probe_detector/rescue.py`
 - *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 23](Community_23.md) (25 shared connections)
-- [Community 30](Community_30.md) (13 shared connections)
-- [Community 99](Community_99.md) (5 shared connections)
-- [Community 244](Community_244.md) (4 shared connections)
-- [Community 20](Community_20.md) (4 shared connections)
-- [Community 115](Community_115.md) (3 shared connections)
-- [Community 4](Community_4.md) (2 shared connections)
-- [Community 26](Community_26.md) (2 shared connections)
-- [Community 32](Community_32.md) (1 shared connections)
-- [Community 294](Community_294.md) (1 shared connections)
-- [Community 184](Community_184.md) (1 shared connections)
+- [Community 107](Community_107.md) (22 shared connections)
+- [Community 87](Community_87.md) (10 shared connections)
+- [Community 155](Community_155.md) (8 shared connections)
+- [Community 64](Community_64.md) (5 shared connections)
+- [Community 5](Community_5.md) (5 shared connections)
+- [Community 271](Community_271.md) (4 shared connections)
+- [Community 60](Community_60.md) (4 shared connections)
+- [Community 245](Community_245.md) (3 shared connections)
+- [Community 18](Community_18.md) (2 shared connections)
+- [Community 204](Community_204.md) (2 shared connections)
+- [Community 156](Community_156.md) (1 shared connections)
+- [Community 218](Community_218.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/review_correction/server.py`
+- `src/pipeline/probe_detector/__init__.py`
+- `src/pipeline/probe_detector/bands.py`
+- `src/pipeline/probe_detector/existing.py`
+- `src/pipeline/probe_detector/rescue.py`
+- `src/pipeline/probe_detector/types.py`
 
 ## Audit Trail
 
-- EXTRACTED: 108 (92%)
-- INFERRED: 9 (8%)
+- EXTRACTED: 121 (98%)
+- INFERRED: 3 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,62 +1,63 @@
 # Community 79
 
-> 44 nodes · cohesion 0.11
+> 47 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **test_issue409_failure_contracts.py** (36 connections) — `tests/test_issue409_failure_contracts.py`
-- **load_json_boxes()** (31 connections) — `src/pipeline/steps/hybrid_consensus.py`
-- **ProfileHybridDetector** (19 connections) — `src/pipeline/detection/profile_sources.py`
-- **hybrid_consensus.py** (16 connections) — `src/pipeline/steps/hybrid_consensus.py`
-- **_load_bands_for_image()** (13 connections) — `src/pipeline/steps/probe_scan.py`
-- **apply_hybrid_consensus_filter()** (11 connections) — `src/pipeline/steps/hybrid_consensus.py`
-- **_engine()** (11 connections) — `tests/test_issue409_failure_contracts.py`
-- **parametrize** (10 connections)
-- **profile_sources.py** (9 connections) — `src/pipeline/detection/profile_sources.py`
-- **_image()** (9 connections) — `tests/test_issue409_failure_contracts.py`
-- **._generate_one_page_sources_in_process()** (7 connections) — `src/pipeline/detection/profile_sources.py`
-- **.run()** (7 connections) — `src/pipeline/detection/profile_sources.py`
-- **Any** (7 connections)
-- **Path** (7 connections)
-- **._generate_page_sources()** (6 connections) — `src/pipeline/detection/profile_sources.py`
-- **._current_detection_path()** (5 connections) — `src/pipeline/detection/profile_sources.py`
-- **test_batch_sr_failure_propagates_through_actual_batch_parent()** (5 connections) — `tests/test_issue409_failure_contracts.py`
-- **test_canonical_consensus_rejects_corrupt_homr_or_omr()** (5 connections) — `tests/test_issue409_failure_contracts.py`
-- **._source_page_worker()** (4 connections) — `src/pipeline/detection/profile_sources.py`
-- **._support_worker()** (4 connections) — `src/pipeline/detection/profile_sources.py`
-- **_load_json_boxes_tolerant()** (4 connections) — `src/pipeline/steps/hybrid_consensus.py`
-- **test_batch_mode_rejects_missing_null_invalid_before_heavy_work()** (4 connections) — `tests/test_issue409_failure_contracts.py`
-- **test_corrupt_required_rescue_seed_fails_job()** (4 connections) — `tests/test_issue409_failure_contracts.py`
-- **test_explicit_develop_modes_preserve_optional_compatibility()** (4 connections) — `tests/test_issue409_failure_contracts.py`
-- **test_explicit_develop_source_page_mode_remains_available()** (4 connections) — `tests/test_issue409_failure_contracts.py`
-- *... and 19 more nodes in this community*
+- **MMRProcessor** (68 connections) — `src/measure_numbering/mmr.py`
+- **object** (33 connections)
+- **._detect_number_with_evidence()** (14 connections) — `src/measure_numbering/mmr.py`
+- **._process_page_with_support()** (9 connections) — `src/measure_numbering/mmr.py`
+- **VariantOCR** (8 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
+- **.process_pages()** (7 connections) — `src/measure_numbering/mmr.py`
+- **._detect_number_with_evidence_once()** (6 connections) — `src/measure_numbering/mmr.py`
+- **._run_calibrated_shifted_staff_values()** (5 connections) — `src/measure_numbering/mmr.py`
+- **._aggregate_targeted_staff_results()** (4 connections) — `src/measure_numbering/mmr.py`
+- **._detect_number_with_evidence_j2()** (4 connections) — `src/measure_numbering/mmr.py`
+- **._should_veto_one_bar_rest()** (4 connections) — `src/measure_numbering/mmr.py`
+- **test_issue208_mmr_variant_aggregation.py** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
+- **test_detect_number_uses_best_scored_variant_not_first_valid_variant()** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
+- **test_detect_number_preserves_three_value_contract()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **test_detect_number_uses_max_one_bar_evidence_across_variants_not_sum()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **._count_high_confidence_one_bar_evidence()** (3 connections) — `src/measure_numbering/mmr.py`
+- **._draw_debug()** (3 connections) — `src/measure_numbering/mmr.py`
+- **._native_inset_bbox()** (3 connections) — `src/measure_numbering/mmr.py`
+- **._select_staff_value()** (3 connections) — `src/measure_numbering/mmr.py`
+- **._targeted_retry_candidate_acceptable()** (3 connections) — `src/measure_numbering/mmr.py`
+- **._valid_status()** (3 connections) — `src/measure_numbering/mmr.py`
+- **.test_malformed_connector_pair_metadata_is_ignored()** (3 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **test_count_one_bar_evidence_is_compatible_with_minimal_injected_ocr()** (3 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
+- **.test_narrow_measure_keeps_valid_staff_reading_in_masked_and_fallback_paths()** (3 connections) — `tests/test_mmr_ocr_heuristics.py`
+- **.test_narrow_measure_tie_preserves_admissible_leader()** (3 connections) — `tests/test_mmr_ocr_heuristics.py`
+- *... and 22 more nodes in this community*
 
 ## Relationships
 
-- [Community 154](Community_154.md) (14 shared connections)
-- [Community 22](Community_22.md) (7 shared connections)
-- [Community 81](Community_81.md) (6 shared connections)
-- [Community 91](Community_91.md) (5 shared connections)
-- [Community 60](Community_60.md) (5 shared connections)
-- [Community 37](Community_37.md) (5 shared connections)
-- [Community 75](Community_75.md) (4 shared connections)
-- [Community 46](Community_46.md) (4 shared connections)
-- [Community 159](Community_159.md) (3 shared connections)
-- [Community 63](Community_63.md) (3 shared connections)
-- [Community 64](Community_64.md) (2 shared connections)
-- [Community 0](Community_0.md) (2 shared connections)
+- [Community 44](Community_44.md) (18 shared connections)
+- [Community 42](Community_42.md) (17 shared connections)
+- [Community 74](Community_74.md) (12 shared connections)
+- [Community 112](Community_112.md) (7 shared connections)
+- [Community 286](Community_286.md) (7 shared connections)
+- [Community 66](Community_66.md) (4 shared connections)
+- [Community 110](Community_110.md) (3 shared connections)
+- [Community 116](Community_116.md) (3 shared connections)
+- [Community 28](Community_28.md) (2 shared connections)
+- [Community 25](Community_25.md) (2 shared connections)
+- [Community 9](Community_9.md) (2 shared connections)
+- [Community 90](Community_90.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/profile_sources.py`
-- `src/pipeline/steps/hybrid_consensus.py`
-- `src/pipeline/steps/probe_scan.py`
-- `tests/test_issue409_failure_contracts.py`
+- `src/measure_numbering/mmr.py`
+- `tests/test_issue197_system_grouping_connector_evidence.py`
+- `tests/test_issue208_mmr_variant_aggregation.py`
+- `tests/test_issue213_mmr_one_bar_veto.py`
+- `tests/test_mmr_ocr_heuristics.py`
 
 ## Audit Trail
 
-- EXTRACTED: 177 (97%)
-- INFERRED: 6 (3%)
+- EXTRACTED: 114 (70%)
+- INFERRED: 49 (30%)
 - AMBIGUOUS: 0 (0%)
 
 ---

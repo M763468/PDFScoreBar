@@ -1,32 +1,23 @@
 # Community 455
 
-> 7 nodes · cohesion 0.38
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **save_homr_results()** (13 connections) — `src/homr_runtime/reporting.py`
-- **save_debug_mask_overlay()** (4 connections) — `src/homr_runtime/reporting.py`
-- **save_debug_staff_overlay()** (4 connections) — `src/homr_runtime/reporting.py`
-- **ndarray** (3 connections)
-- **Path** (3 connections)
-- **BarlinePrediction** (1 connections)
-- **Saves Homr detection results (JSON and masks) to the specified directory.** (1 connections) — `src/homr_runtime/reporting.py`
+- **run_eval2_bulletproof.sh** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
+- **run_eval2_bulletproof.sh script** (1 connections) — `tools/repro_accuracy/run_eval2_bulletproof.sh`
 
 ## Relationships
 
-- [Community 49](Community_49.md) (4 shared connections)
-- [Community 15](Community_15.md) (3 shared connections)
-- [Community 181](Community_181.md) (2 shared connections)
-- [Community 91](Community_91.md) (2 shared connections)
-- [Community 1](Community_1.md) (2 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/homr_runtime/reporting.py`
+- `tools/repro_accuracy/run_eval2_bulletproof.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 21 (100%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

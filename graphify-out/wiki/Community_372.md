@@ -1,12 +1,12 @@
 # Community 372
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **docker_negative.py** (2 connections) — `tools/issue454/docker_negative.py`
-- **main()** (1 connections) — `tools/issue454/docker_negative.py`
-- **CPU-only Docker ownership, integrity, crash and cross-container flock checks.** (1 connections) — `tools/issue454/docker_negative.py`
+- **gpu_smoke.sh** (2 connections) — `scripts/gpu_smoke.sh`
+- **gpu_smoke.sh script** (2 connections) — `scripts/gpu_smoke.sh`
+- **usage()** (2 connections) — `scripts/gpu_smoke.sh`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/issue454/docker_negative.py`
+- `scripts/gpu_smoke.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

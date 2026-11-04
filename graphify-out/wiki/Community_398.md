@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **scripts/run_omr_dln_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
-- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
+- **issue-post-mortem/run.sh** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
+- **run.sh script** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/scripts/run_omr_dln_sweep.sh`
+- `.agents/skills/issue-post-mortem/run.sh`
 
 ## Audit Trail
 

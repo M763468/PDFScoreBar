@@ -1,27 +1,28 @@
 # Community 283
 
-> 6 nodes · cohesion 0.47
+> 7 nodes · cohesion 0.48
 
 ## Key Concepts
 
-- **load_boxes()** (4 connections) — `tools/gtfree_snap_peak.py`
-- **snap_boxes_to_peaks()** (4 connections) — `tools/gtfree_snap_peak.py`
-- **gtfree_snap_peak.py** (3 connections) — `tools/gtfree_snap_peak.py`
-- **main()** (3 connections) — `tools/gtfree_snap_peak.py`
-- **ndarray** (1 connections)
+- **structural_notehead_gaps.py** (5 connections) — `tools/structural_notehead_gaps.py`
+- **main()** (5 connections) — `tools/structural_notehead_gaps.py`
+- **build_predictions()** (3 connections) — `tools/structural_notehead_gaps.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_notehead_gaps.py`
+- **dedupe_x_centers()** (2 connections) — `tools/structural_notehead_gaps.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_notehead_gaps.py`
 - **Path** (1 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (2 shared connections)
+- [Community 64](Community_64.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/gtfree_snap_peak.py`
+- `tools/structural_notehead_gaps.py`
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 11 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

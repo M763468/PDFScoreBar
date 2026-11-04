@@ -1,34 +1,36 @@
 # Community 179
 
-> 13 nodes · cohesion 0.32
+> 14 nodes · cohesion 0.32
 
 ## Key Concepts
 
-- **run_homr_tuning.py** (10 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **main()** (8 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **append_step_log()** (4 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **current_jst()** (4 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **parse_args()** (4 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **load_num_predictions()** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
+- **run_union_notehead_geom_eval.py** (13 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **main()** (11 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **cluster_by_y_distance()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **draw_boxes()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **evaluate()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **geom_notehead_ratio_filter()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **load_notehead_mask()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **load_preds()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **ndarray** (4 connections)
+- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+- **estimate_staff_space()** (3 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
 - **Path** (3 connections)
-- **run_trial()** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **timestamp()** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **TrialResult** (3 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **ensure_python()** (2 connections) — `experiments/legacy/tools_archive/run_homr_tuning.py`
-- **datetime** (2 connections)
-- **Namespace** (1 connections)
+- **PageSpec** (2 connections) — `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (7 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_homr_tuning.py`
+- `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
 
 ## Audit Trail
 
-- EXTRACTED: 25 (100%)
+- EXTRACTED: 39 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

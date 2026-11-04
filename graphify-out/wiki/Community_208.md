@@ -1,36 +1,33 @@
 # Community 208
 
-> 11 nodes · cohesion 0.20
+> 12 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **addCorrectionItem()** (17 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **saveCorrectionType()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **operationLabel()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **queueMovementSave()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **replaceItemsForCurrentPage()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **saveCorrectionTypes()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **setDirty()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **currentOp()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **saveCorrectionPage()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **currentReason()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **saveDirtyTypes()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **staff_probe_scan.py** (9 connections) — `tools/staff_probe_scan.py`
+- **main()** (8 connections) — `tools/staff_probe_scan.py`
+- **ndarray** (6 connections)
+- **compute_scores()** (5 connections) — `tools/staff_probe_scan.py`
+- **draw_boxes()** (4 connections) — `tools/staff_probe_scan.py`
+- **extract_staff_bands()** (4 connections) — `tools/staff_probe_scan.py`
+- **find_staff_lines()** (4 connections) — `tools/staff_probe_scan.py`
+- **load_gt_boxes()** (4 connections) — `tools/staff_probe_scan.py`
+- **longest_run()** (3 connections) — `tools/staff_probe_scan.py`
+- **put_text_block()** (3 connections) — `tools/staff_probe_scan.py`
+- **rank_probes()** (2 connections) — `tools/staff_probe_scan.py`
+- **Path** (1 connections)
 
 ## Relationships
 
-- [Community 16](Community_16.md) (11 shared connections)
-- [Community 186](Community_186.md) (8 shared connections)
-- [Community 169](Community_169.md) (6 shared connections)
-- [Community 253](Community_253.md) (4 shared connections)
-- [Community 153](Community_153.md) (2 shared connections)
+- [Community 64](Community_64.md) (5 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_manual.js`
+- `tools/staff_probe_scan.py`
 
 ## Audit Trail
 
-- EXTRACTED: 42 (100%)
+- EXTRACTED: 29 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,57 +1,55 @@
 # Community 26
 
-> 49 nodes · cohesion 0.12
+> 22 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **validate_manual_correction_handoff()** (31 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **manual_correction_handoff.py** (27 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **test_manual_correction_handoff.py** (23 connections) — `tests/test_manual_correction_handoff.py`
-- **build_manual_gui_config()** (22 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **canonicalize_manual_correction_outputs()** (17 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_review_package()** (15 connections) — `tests/test_manual_correction_handoff.py`
-- **load_manual_correction_handoff()** (14 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **Path** (13 connections)
-- **ManualCorrectionHandoffError** (11 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **Any** (11 connections)
-- **_manual_output_paths()** (8 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_resolve_package_path()** (8 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_write_json()** (8 connections) — `tests/test_manual_correction_handoff.py`
-- **write_manual_gui_config()** (7 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_is_missing()** (6 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_validate_existing_path()** (6 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_read_json_object_if_exists()** (5 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **test_handoff_rejects_distinct_movement_review_outputs()** (5 connections) — `tests/test_manual_correction_handoff.py`
-- **_as_page_number()** (4 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_relative_for_gui()** (4 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_write_json_object()** (4 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **test_handoff_exposes_attached_movement_evidence_to_existing_gui()** (4 connections) — `tests/test_manual_correction_handoff.py`
-- **HandoffMode** (3 connections)
-- **_package_root()** (3 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- **_unique_existing_paths()** (3 connections) — `src/pipeline/review/manual_correction_handoff.py`
-- *... and 24 more nodes in this community*
+- **test_issue115_runtime_boundaries.py** (24 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **count_staff_crossings()** (9 connections) — `src/homr_runtime/filtering.py`
+- **filter_detections_by_notehead_proximity()** (9 connections) — `src/homr_runtime/filtering.py`
+- **TransformInfo** (8 connections) — `src/homr_runtime/types.py`
+- **local_import_targets()** (7 connections) — `tools/check_repository_surface.py`
+- **AST** (4 connections)
+- **test_filtering_preserves_prediction_identity_and_partition()** (3 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **ndarray** (2 connections)
+- **test_dense_dispatch_preserves_explicit_historical_profile()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_maintained_batch_workflow_uses_its_own_worker_and_backend()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_staff_crossings_count_contiguous_lines_and_clamp_to_image()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_surface_check_finds_lazy_runtime_leaks_but_ignores_external_modules()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_surface_check_resolves_relative_imports_and_package_initializers()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_transform_record_preserves_anisotropic_total_scale()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **BarlinePrediction** (1 connections)
+- **Counts the number of staff line crossings for a vertical barline candidate. A…** (1 connections) — `src/homr_runtime/filtering.py`
+- **Filters barline detections that are horizontally close to noteheads, which are…** (1 connections) — `src/homr_runtime/filtering.py`
+- **.total_scale()** (1 connections) — `src/homr_runtime/types.py`
+- **parametrize** (1 connections)
+- **test_batch_workflows_preserve_profile_detector_subclass_contract()** (1 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **test_legacy_heuristics_adapter_preserves_actual_consumer_patch_points()** (1 connections) — `tests/test_issue115_runtime_boundaries.py`
+- **Resolve source imports without importing modules or loading models.** (1 connections) — `tools/check_repository_surface.py`
 
 ## Relationships
 
-- [Community 32](Community_32.md) (11 shared connections)
-- [Community 35](Community_35.md) (7 shared connections)
-- [Community 44](Community_44.md) (5 shared connections)
-- [Community 17](Community_17.md) (4 shared connections)
-- [Community 112](Community_112.md) (3 shared connections)
-- [Community 4](Community_4.md) (3 shared connections)
-- [Community 23](Community_23.md) (3 shared connections)
-- [Community 59](Community_59.md) (3 shared connections)
-- [Community 103](Community_103.md) (2 shared connections)
+- [Community 38](Community_38.md) (11 shared connections)
+- [Community 1](Community_1.md) (5 shared connections)
+- [Community 154](Community_154.md) (3 shared connections)
+- [Community 71](Community_71.md) (3 shared connections)
+- [Community 83](Community_83.md) (2 shared connections)
+- [Community 140](Community_140.md) (1 shared connections)
+- [Community 170](Community_170.md) (1 shared connections)
+- [Community 47](Community_47.md) (1 shared connections)
+- [Community 183](Community_183.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/manual_correction_handoff.py`
-- `tests/test_manual_correction_handoff.py`
+- `src/homr_runtime/filtering.py`
+- `src/homr_runtime/types.py`
+- `tests/test_issue115_runtime_boundaries.py`
+- `tools/check_repository_surface.py`
 
 ## Audit Trail
 
-- EXTRACTED: 178 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 56 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

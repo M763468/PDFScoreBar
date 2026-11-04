@@ -1,29 +1,29 @@
 # Community 256
 
-> 8 nodes · cohesion 0.50
+> 8 nodes · cohesion 0.46
 
 ## Key Concepts
 
-- **musicxml_staff_count_infer.py** (6 connections) — `tools/musicxml_staff_count_infer.py`
-- **main()** (6 connections) — `tools/musicxml_staff_count_infer.py`
-- **load_gt_boxes()** (4 connections) — `tools/musicxml_staff_count_infer.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/musicxml_staff_count_infer.py`
-- **build_predictions()** (3 connections) — `tools/musicxml_staff_count_infer.py`
-- **count_measures()** (3 connections) — `tools/musicxml_staff_count_infer.py`
-- **extract_staff_bands()** (3 connections) — `tools/musicxml_staff_count_infer.py`
+- **render_detection_quality_overlay.py** (5 connections) — `tools/render_detection_quality_overlay.py`
+- **main()** (5 connections) — `tools/render_detection_quality_overlay.py`
+- **draw_boxes()** (3 connections) — `tools/render_detection_quality_overlay.py`
+- **load_boxes()** (3 connections) — `tools/render_detection_quality_overlay.py`
+- **load_detections()** (3 connections) — `tools/render_detection_quality_overlay.py`
+- **load_matches()** (3 connections) — `tools/render_detection_quality_overlay.py`
 - **Path** (3 connections)
+- **Color** (1 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/musicxml_staff_count_infer.py`
+- `tools/render_detection_quality_overlay.py`
 
 ## Audit Trail
 
-- EXTRACTED: 17 (100%)
+- EXTRACTED: 13 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

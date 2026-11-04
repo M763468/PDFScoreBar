@@ -1,10 +1,11 @@
 # Community 447
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **eval_omr_dln_measures.py** (0 connections) — `experiments/models/omr_dln/eval_omr_dln_measures.py`
+- **experiment_b.py** (1 connections) — `tools/issue194/experiment_b.py`
+- **analyze_scores()** (1 connections) — `tools/issue194/experiment_b.py`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `experiments/models/omr_dln/eval_omr_dln_measures.py`
+- `tools/issue194/experiment_b.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

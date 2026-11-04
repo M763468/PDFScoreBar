@@ -1,28 +1,29 @@
 # Community 261
 
-> 7 nodes · cohesion 0.29
+> 8 nodes · cohesion 0.46
 
 ## Key Concepts
 
-- **test_issue361_localization.py** (6 connections) — `tests/test_issue361_localization.py`
-- **Focused checks for the reviewer-facing English/Japanese language switch.** (1 connections) — `tests/test_issue361_localization.py`
-- **test_language_catalogs_have_the_same_nested_string_surface()** (1 connections) — `tests/test_issue361_localization.py`
-- **test_language_switch_rerenders_without_resetting_the_current_operation_or_target()** (1 connections) — `tests/test_issue361_localization.py`
-- **test_language_switch_updates_copy_and_keeps_user_entered_reason()** (1 connections) — `tests/test_issue361_localization.py`
-- **test_primary_dynamic_copy_is_backed_by_both_catalogs()** (1 connections) — `tests/test_issue361_localization.py`
-- **test_reviewer_copy_resolves_bare_feedback_keys_and_interpolates_values()** (1 connections) — `tests/test_issue361_localization.py`
+- **fn_probe_overlay_multi.py** (5 connections) — `tools/fn_probe_overlay_multi.py`
+- **main()** (5 connections) — `tools/fn_probe_overlay_multi.py`
+- **draw_box()** (4 connections) — `tools/fn_probe_overlay_multi.py`
+- **load_gt_boxes()** (4 connections) — `tools/fn_probe_overlay_multi.py`
+- **load_probe_scores()** (3 connections) — `tools/fn_probe_overlay_multi.py`
+- **put_text_block()** (3 connections) — `tools/fn_probe_overlay_multi.py`
+- **ndarray** (2 connections)
+- **Path** (2 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (2 shared connections)
 
 ## Source Files
 
-- `tests/test_issue361_localization.py`
+- `tools/fn_probe_overlay_multi.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 15 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

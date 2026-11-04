@@ -1,32 +1,27 @@
 # Community 232
 
-> 10 nodes · cohesion 0.38
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **structural_gap_fit.py** (8 connections) — `tools/structural_gap_fit.py`
-- **main()** (8 connections) — `tools/structural_gap_fit.py`
-- **load_omr_boxes()** (4 connections) — `tools/structural_gap_fit.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/structural_gap_fit.py`
-- **build_predictions()** (3 connections) — `tools/structural_gap_fit.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_gap_fit.py`
-- **dedupe_x_centers()** (2 connections) — `tools/structural_gap_fit.py`
-- **fit_positions()** (2 connections) — `tools/structural_gap_fit.py`
-- **group_bands_into_systems()** (2 connections) — `tools/structural_gap_fit.py`
-- **Path** (2 connections)
+- **diagnose_false_negatives.py** (4 connections) — `tools/diagnose_false_negatives.py`
+- **find_matches_for_gt()** (3 connections) — `tools/diagnose_false_negatives.py`
+- **main()** (3 connections) — `tools/diagnose_false_negatives.py`
+- **load_json_boxes()** (2 connections) — `tools/diagnose_false_negatives.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- [Community 27](Community_27.md) (1 shared connections)
+- [Community 75](Community_75.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/structural_gap_fit.py`
+- `tools/diagnose_false_negatives.py`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (86%)
+- INFERRED: 1 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

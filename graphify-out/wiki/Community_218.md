@@ -1,31 +1,33 @@
 # Community 218
 
-> 10 nodes · cohesion 0.36
+> 11 nodes · cohesion 0.49
 
 ## Key Concepts
 
-- **local_pr_validation.sh** (9 connections) — `scripts/local_pr_validation.sh`
-- **local_pr_validation.sh script** (6 connections) — `scripts/local_pr_validation.sh`
-- **classify_changes()** (3 connections) — `scripts/local_pr_validation.sh`
-- **add_unique_line()** (2 connections) — `scripts/local_pr_validation.sh`
-- **collect_changed_files()** (2 connections) — `scripts/local_pr_validation.sh`
-- **determine_base_ref()** (2 connections) — `scripts/local_pr_validation.sh`
-- **render_summary()** (2 connections) — `scripts/local_pr_validation.sh`
-- **resolve_base_candidate()** (2 connections) — `scripts/local_pr_validation.sh`
-- **run_and_capture()** (2 connections) — `scripts/local_pr_validation.sh`
-- **usage()** (2 connections) — `scripts/local_pr_validation.sh`
+- **TestProbeXDomainDetection** (10 connections) — `tests/test_probe_x_domain.py`
+- **._detect()** (8 connections) — `tests/test_probe_x_domain.py`
+- **._base_image()** (7 connections) — `tests/test_probe_x_domain.py`
+- **._staff_mask()** (5 connections) — `tests/test_probe_x_domain.py`
+- **.test_bounded_domain_prevents_margin_peak_from_consuming_candidate_budget()** (5 connections) — `tests/test_probe_x_domain.py`
+- **.test_staff_mask_domain_excludes_margin_candidate()** (5 connections) — `tests/test_probe_x_domain.py`
+- **.test_staff_mask_domain_reports_reduced_projected_width()** (4 connections) — `tests/test_probe_x_domain.py`
+- **ndarray** (3 connections)
+- **._centers()** (3 connections) — `tests/test_probe_x_domain.py`
+- **.test_default_mode_is_exactly_full_width()** (3 connections) — `tests/test_probe_x_domain.py`
+- **.test_missing_staff_span_falls_back_to_full_width_detection()** (3 connections) — `tests/test_probe_x_domain.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 87](Community_87.md) (1 shared connections)
+- [Community 103](Community_103.md) (1 shared connections)
 
 ## Source Files
 
-- `scripts/local_pr_validation.sh`
+- `tests/test_probe_x_domain.py`
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
+- EXTRACTED: 29 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

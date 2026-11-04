@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **check_gt_config.py** (1 connections) — `tools/check_gt_config.py`
-- **main()** (1 connections) — `tools/check_gt_config.py`
+- **detect_hbar_test.py** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
+- **detect_hbar()** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/check_gt_config.py`
+- `experiments/legacy/tools_archive/detect_hbar_test.py`
 
 ## Audit Trail
 

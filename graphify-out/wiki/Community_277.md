@@ -1,15 +1,16 @@
 # Community 277
 
-> 6 nodes · cohesion 0.73
+> 7 nodes · cohesion 0.57
 
 ## Key Concepts
 
-- **main()** (5 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
-- **prepare_incremental_hardpositive_dataset.py** (4 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
-- **Path** (4 connections)
-- **_copytree_copy()** (3 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
-- **_copytree_hardlink()** (3 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
-- **load_config_file()** (3 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
+- **main()** (5 connections) — `tools/gemini_candidate_review.py`
+- **gemini_candidate_review.py** (4 connections) — `tools/gemini_candidate_review.py`
+- **load_candidates()** (4 connections) — `tools/gemini_candidate_review.py`
+- **build_prompt()** (3 connections) — `tools/gemini_candidate_review.py`
+- **load_env_file()** (3 connections) — `tools/gemini_candidate_review.py`
+- **Path** (3 connections)
+- **Any** (2 connections)
 
 ## Relationships
 
@@ -17,11 +18,11 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
+- `tools/gemini_candidate_review.py`
 
 ## Audit Trail
 
-- EXTRACTED: 11 (100%)
+- EXTRACTED: 12 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

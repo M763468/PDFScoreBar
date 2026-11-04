@@ -1,34 +1,37 @@
 # Community 199
 
-> 12 nodes · cohesion 0.41
+> 13 nodes · cohesion 0.35
 
 ## Key Concepts
 
-- **variable_length_staff_probe.py** (10 connections) — `tools/variable_length_staff_probe.py`
-- **main()** (9 connections) — `tools/variable_length_staff_probe.py`
-- **ndarray** (8 connections)
-- **draw_staff_bounds()** (4 connections) — `tools/variable_length_staff_probe.py`
-- **extract_staff_bands()** (4 connections) — `tools/variable_length_staff_probe.py`
-- **find_staff_lines()** (4 connections) — `tools/variable_length_staff_probe.py`
-- **score_window()** (4 connections) — `tools/variable_length_staff_probe.py`
-- **binarize_for_scoring()** (3 connections) — `tools/variable_length_staff_probe.py`
-- **longest_run()** (3 connections) — `tools/variable_length_staff_probe.py`
-- **make_variants()** (3 connections) — `tools/variable_length_staff_probe.py`
-- **put_text_block()** (3 connections) — `tools/variable_length_staff_probe.py`
-- **score_to_rank()** (2 connections) — `tools/variable_length_staff_probe.py`
+- **musicxml_density_filter.py** (12 connections) — `tools/musicxml_density_filter.py`
+- **main()** (12 connections) — `tools/musicxml_density_filter.py`
+- **Path** (5 connections)
+- **barline_score()** (4 connections) — `tools/musicxml_density_filter.py`
+- **parse_musicxml()** (4 connections) — `tools/musicxml_density_filter.py`
+- **remove_by_core()** (4 connections) — `tools/musicxml_density_filter.py`
+- **assign_staff()** (3 connections) — `tools/musicxml_density_filter.py`
+- **compute_core_mask()** (3 connections) — `tools/musicxml_density_filter.py`
+- **ensure_dir()** (3 connections) — `tools/musicxml_density_filter.py`
+- **load_detections()** (3 connections) — `tools/musicxml_density_filter.py`
+- **load_json()** (3 connections) — `tools/musicxml_density_filter.py`
+- **ndarray** (3 connections)
+- **MeasureInfo** (2 connections) — `tools/musicxml_density_filter.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- [Community 27](Community_27.md) (3 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
+- [Community 75](Community_75.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/variable_length_staff_probe.py`
+- `tools/musicxml_density_filter.py`
 
 ## Audit Trail
 
-- EXTRACTED: 30 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 33 (97%)
+- INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **run_final_batch_comparison.py** (2 connections) — `tools/run_final_batch_comparison.py`
-- **main()** (2 connections) — `tools/run_final_batch_comparison.py`
-- **run_pipeline_for_all()** (2 connections) — `tools/run_final_batch_comparison.py`
+- **build_iter6_hard_samples.py** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
+- **extract_crop()** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
+- **main()** (2 connections) — `tools/cnn_classifier/build_iter6_hard_samples.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/run_final_batch_comparison.py`
+- `tools/cnn_classifier/build_iter6_hard_samples.py`
 
 ## Audit Trail
 

@@ -1,53 +1,58 @@
 # Community 114
 
-> 24 nodes · cohesion 0.20
+> 26 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **test_issue274_mmr_support_reuse.py** (31 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **_support_with_current()** (11 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **_page()** (8 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **Path** (8 connections)
-- **_FixedClassifier** (7 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **MonkeyPatch** (7 connections)
-- **_ScriptedProcessor** (7 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_alternate_can_veto_but_never_create_positive_override()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_handoff_uses_sidecar_not_original_homr_worker()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_manifest_and_detection_resolve_explicit_current_support()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_ocr_candidate_scoring_receives_processed_dimensions()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_phase_a_fallback_is_ocr_only_and_never_replaces_valid_primary()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_support_none_keeps_legacy_processor_path()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **_gate_support()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_implicit_start_changes_only_alternate_start_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_implicit_start_uses_system_minimum_base_and_mapped_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_near_staff_left_normal_measure_does_not_enable_alternate()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_support_mapping_handles_single_many_to_one_union_and_unmapped()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_support_preserves_phase_a_topology_numbers_and_normal_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **.__init__()** (3 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **.__init__()** (1 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **.predict()** (1 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **parametrize** (1 connections)
-- **._detect_number_with_evidence()** (1 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **review_correction/server.py** (32 connections) — `tools/review_correction/server.py`
+- **Path** (12 connections)
+- **ReviewHandler** (12 connections) — `tools/review_correction/server.py`
+- **.record_correction()** (12 connections) — `tools/review_correction/server.py`
+- **.do_POST()** (10 connections) — `tools/review_correction/server.py`
+- **.do_GET()** (9 connections) — `tools/review_correction/server.py`
+- **.__init__()** (9 connections) — `tools/review_correction/server.py`
+- **._resolve()** (7 connections) — `tools/review_correction/server.py`
+- **._context()** (6 connections) — `tools/review_correction/server.py`
+- **.output()** (6 connections) — `tools/review_correction/server.py`
+- **._declare_output()** (5 connections) — `tools/review_correction/server.py`
+- **.writable()** (5 connections) — `tools/review_correction/server.py`
+- **_atomic_write()** (4 connections) — `tools/review_correction/server.py`
+- **_inside()** (4 connections) — `tools/review_correction/server.py`
+- **_load_items()** (4 connections) — `tools/review_correction/server.py`
+- **.readable()** (4 connections) — `tools/review_correction/server.py`
+- **_load_boxes()** (3 connections) — `tools/review_correction/server.py`
+- **_payload()** (3 connections) — `tools/review_correction/server.py`
+- **._file()** (3 connections) — `tools/review_correction/server.py`
+- **._json()** (3 connections) — `tools/review_correction/server.py`
+- **._trusted_host()** (3 connections) — `tools/review_correction/server.py`
+- **._trusted_write()** (3 connections) — `tools/review_correction/server.py`
+- **main()** (2 connections) — `tools/review_correction/server.py`
+- **BaseHTTPRequestHandler** (1 connections)
+- **Save and publish its immutable checkpoint in one serialized transition.** (1 connections) — `tools/review_correction/server.py`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 14](Community_14.md) (8 shared connections)
-- [Community 18](Community_18.md) (3 shared connections)
-- [Community 219](Community_219.md) (3 shared connections)
-- [Community 150](Community_150.md) (3 shared connections)
-- [Community 220](Community_220.md) (3 shared connections)
-- [Community 12](Community_12.md) (3 shared connections)
-- [Community 45](Community_45.md) (3 shared connections)
-- [Community 77](Community_77.md) (2 shared connections)
+- [Community 7](Community_7.md) (20 shared connections)
+- [Community 126](Community_126.md) (9 shared connections)
+- [Community 89](Community_89.md) (5 shared connections)
+- [Community 2](Community_2.md) (4 shared connections)
+- [Community 45](Community_45.md) (4 shared connections)
+- [Community 150](Community_150.md) (4 shared connections)
+- [Community 21](Community_21.md) (3 shared connections)
+- [Community 49](Community_49.md) (3 shared connections)
+- [Community 113](Community_113.md) (2 shared connections)
+- [Community 68](Community_68.md) (1 shared connections)
+- [Community 193](Community_193.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue274_mmr_support_reuse.py`
+- `tools/review_correction/server.py`
 
 ## Audit Trail
 
-- EXTRACTED: 79 (94%)
-- INFERRED: 5 (6%)
+- EXTRACTED: 104 (95%)
+- INFERRED: 6 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

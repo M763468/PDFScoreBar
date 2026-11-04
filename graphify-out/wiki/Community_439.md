@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_bypass_eval_subset.py** (1 connections) — `tools/run_bypass_eval_subset.py`
-- **run_eval()** (1 connections) — `tools/run_bypass_eval_subset.py`
+- **visualize_crop_centers.py** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
+- **visualize_crop_centers()** (1 connections) — `tools/cnn_classifier/visualize_crop_centers.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/run_bypass_eval_subset.py`
+- `tools/cnn_classifier/visualize_crop_centers.py`
 
 ## Audit Trail
 

@@ -1,30 +1,30 @@
 # Community 246
 
-> 9 nodes · cohesion 0.42
+> 9 nodes · cohesion 0.22
 
 ## Key Concepts
 
-- **structural_omr_anchor_system.py** (7 connections) — `tools/structural_omr_anchor_system.py`
-- **main()** (7 connections) — `tools/structural_omr_anchor_system.py`
-- **load_omr_boxes()** (4 connections) — `tools/structural_omr_anchor_system.py`
-- **assign_boxes_to_bands()** (3 connections) — `tools/structural_omr_anchor_system.py`
-- **build_predictions()** (3 connections) — `tools/structural_omr_anchor_system.py`
-- **extract_staff_bands()** (3 connections) — `tools/structural_omr_anchor_system.py`
-- **dedupe_x_centers()** (2 connections) — `tools/structural_omr_anchor_system.py`
-- **group_bands_into_systems()** (2 connections) — `tools/structural_omr_anchor_system.py`
-- **Path** (2 connections)
+- **test_review_correction_client.py** (7 connections) — `tests/test_review_correction_client.py`
+- **test_user_adapter_keeps_async_state_contract()** (2 connections) — `tests/test_review_correction_client.py`
+- **parametrize** (1 connections)
+- **Exercise user state adapters with delayed saves and movement finalization.** (1 connections) — `tests/test_review_correction_client.py`
+- **test_apply_controls_survive_state_panel_refresh()** (1 connections) — `tests/test_review_correction_client.py`
+- **test_canvas_hit_testing_uses_rendered_size_for_both_axes()** (1 connections) — `tests/test_review_correction_client.py`
+- **test_compact_save_status_keeps_errors_visible_and_details_open_on_refresh()** (1 connections) — `tests/test_review_correction_client.py`
+- **test_rest_review_entry_includes_misses_and_unflagged_reads_without_rewriting_edits()** (1 connections) — `tests/test_review_correction_client.py`
+- **test_stale_numbering_preview_responses_cannot_restore_invalidated_results()** (1 connections) — `tests/test_review_correction_client.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/structural_omr_anchor_system.py`
+- `tests/test_review_correction_client.py`
 
 ## Audit Trail
 
-- EXTRACTED: 18 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

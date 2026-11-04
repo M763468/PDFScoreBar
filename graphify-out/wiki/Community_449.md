@@ -1,10 +1,11 @@
 # Community 449
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **conftest.py** (0 connections) — `tests/conftest.py`
+- **run_matrix.sh** (1 connections) — `tools/issue454/run_matrix.sh`
+- **run_matrix.sh script** (1 connections) — `tools/issue454/run_matrix.sh`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `tests/conftest.py`
+- `tools/issue454/run_matrix.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,29 +1,30 @@
 # Community 254
 
-> 8 nodes · cohesion 0.43
+> 9 nodes · cohesion 0.42
 
 ## Key Concepts
 
-- **reassess.py** (8 connections) — `tools/issue458/reassess.py`
-- **digest_file()** (3 connections) — `tools/issue458/reassess.py`
-- **frozen_source()** (3 connections) — `tools/issue458/reassess.py`
-- **inventory()** (3 connections) — `tools/issue458/reassess.py`
-- **main()** (3 connections) — `tools/issue458/reassess.py`
-- **cpu_snapshot()** (2 connections) — `tools/issue458/reassess.py`
-- **observe_host()** (2 connections) — `tools/issue458/reassess.py`
-- **Frozen reassessment matrix; never replaces the original failed contract.** (1 connections) — `tools/issue458/reassess.py`
+- **structural_omr_system_consensus.py** (7 connections) — `tools/structural_omr_system_consensus.py`
+- **main()** (7 connections) — `tools/structural_omr_system_consensus.py`
+- **load_omr_boxes()** (4 connections) — `tools/structural_omr_system_consensus.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_omr_system_consensus.py`
+- **build_predictions()** (3 connections) — `tools/structural_omr_system_consensus.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_omr_system_consensus.py`
+- **cluster_system_xs()** (2 connections) — `tools/structural_omr_system_consensus.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_omr_system_consensus.py`
+- **Path** (2 connections)
 
 ## Relationships
 
-- [Community 222](Community_222.md) (1 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/issue458/reassess.py`
+- `tools/structural_omr_system_consensus.py`
 
 ## Audit Trail
 
-- EXTRACTED: 13 (100%)
+- EXTRACTED: 18 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

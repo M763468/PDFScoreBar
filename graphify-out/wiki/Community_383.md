@@ -1,11 +1,12 @@
 # Community 383
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **visual-diff-viewer/run.sh** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
-- **run.sh script** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
+- **create_synthetic_image()** (2 connections) — `tools/create_synthetic_image.py`
+- **create_synthetic_image.py** (1 connections) — `tools/create_synthetic_image.py`
+- **Creates a synthetic image with a white background, one long vertical black line…** (1 connections) — `tools/create_synthetic_image.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `.agents/skills/visual-diff-viewer/run.sh`
+- `tools/create_synthetic_image.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

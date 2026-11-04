@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_image_classification.py** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
-- **main()** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
+- **barline_detector.py** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
+- **detect_barlines()** (1 connections) — `experiments/legacy/archive/opencv/barline_detector.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/analyze_image_classification.py`
+- `experiments/legacy/archive/opencv/barline_detector.py`
 
 ## Audit Trail
 

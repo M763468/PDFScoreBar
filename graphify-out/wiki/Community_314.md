@@ -1,26 +1,26 @@
 # Community 314
 
-> 5 nodes · cohesion 0.70
+> 5 nodes · cohesion 0.40
 
 ## Key Concepts
 
-- **load_gt_boxes()** (4 connections) — `tools/make_evidence_sheet.py`
-- **main()** (4 connections) — `tools/make_evidence_sheet.py`
-- **make_evidence_sheet.py** (3 connections) — `tools/make_evidence_sheet.py`
-- **put_text_block()** (2 connections) — `tools/make_evidence_sheet.py`
-- **Path** (2 connections)
+- **test_issue291_residual_downstream_review.py** (3 connections) — `tests/test_issue291_residual_downstream_review.py`
+- **test_resolve_recorded_path_rebases_workspace_path()** (2 connections) — `tests/test_issue291_residual_downstream_review.py`
+- **Path** (1 connections)
+- **test_issue291_residual_registry_matches_corrected_contract()** (1 connections) — `tests/test_issue291_residual_downstream_review.py`
+- **test_relevant_system_indices_selects_target_row()** (1 connections) — `tests/test_issue291_residual_downstream_review.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/make_evidence_sheet.py`
+- `tests/test_issue291_residual_downstream_review.py`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

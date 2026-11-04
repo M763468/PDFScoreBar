@@ -1,12 +1,12 @@
 # Community 376
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **find_nearby.py** (2 connections) — `tools/repro_accuracy/find_nearby.py`
-- **load_json()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
-- **main()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
+- **test_issue323_cli_wiring.py** (2 connections) — `tests/test_issue323_cli_wiring.py`
+- **test_make_targets_forward_canonical_contract_flags()** (1 connections) — `tests/test_issue323_cli_wiring.py`
+- **test_score_wrapper_contract_flags_reach_each_parser()** (1 connections) — `tests/test_issue323_cli_wiring.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/find_nearby.py`
+- `tests/test_issue323_cli_wiring.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

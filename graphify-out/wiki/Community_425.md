@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **debug_rest_candidates.py** (1 connections) — `tools/debug_rest_candidates.py`
-- **main()** (1 connections) — `tools/debug_rest_candidates.py`
+- **test_morphological_closing.py** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
+- **test()** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/debug_rest_candidates.py`
+- `experiments/legacy/tools_archive/test_morphological_closing.py`
 
 ## Audit Trail
 

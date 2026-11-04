@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_measures.py** (1 connections) — `tools/visualize_measures.py`
-- **visualize_measures()** (1 connections) — `tools/visualize_measures.py`
+- **crop_debug_image.py** (1 connections) — `tools/crop_debug_image.py`
+- **main()** (1 connections) — `tools/crop_debug_image.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/visualize_measures.py`
+- `tools/crop_debug_image.py`
 
 ## Audit Trail
 

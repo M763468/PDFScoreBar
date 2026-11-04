@@ -1,33 +1,32 @@
 # Community 200
 
-> 12 nodes · cohesion 0.35
+> 7 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **visualize_mmr_fp_fn.py** (9 connections) — `tools/visualize_mmr_fp_fn.py`
-- **main()** (7 connections) — `tools/visualize_mmr_fp_fn.py`
-- **load_configs()** (5 connections) — `tools/visualize_mmr_fp_fn.py`
-- **Path** (5 connections)
-- **visualize_page()** (4 connections) — `tools/visualize_mmr_fp_fn.py`
-- **draw_label()** (3 connections) — `tools/visualize_mmr_fp_fn.py`
-- **load_pred_overrides()** (3 connections) — `tools/visualize_mmr_fp_fn.py`
-- **load_rest_gt()** (3 connections) — `tools/visualize_mmr_fp_fn.py`
-- **flatten_measures()** (2 connections) — `tools/visualize_mmr_fp_fn.py`
-- **PageConfig** (2 connections) — `tools/visualize_mmr_fp_fn.py`
-- **parse_work_page()** (2 connections) — `tools/visualize_mmr_fp_fn.py`
-- **ImageDraw** (1 connections)
+- **save_homr_results()** (13 connections) — `src/homr_runtime/reporting.py`
+- **save_debug_mask_overlay()** (4 connections) — `src/homr_runtime/reporting.py`
+- **save_debug_staff_overlay()** (4 connections) — `src/homr_runtime/reporting.py`
+- **ndarray** (3 connections)
+- **Path** (3 connections)
+- **BarlinePrediction** (1 connections)
+- **Saves Homr detection results (JSON and masks) to the specified directory.** (1 connections) — `src/homr_runtime/reporting.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 47](Community_47.md) (4 shared connections)
+- [Community 38](Community_38.md) (3 shared connections)
+- [Community 214](Community_214.md) (2 shared connections)
+- [Community 70](Community_70.md) (2 shared connections)
+- [Community 43](Community_43.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/visualize_mmr_fp_fn.py`
+- `src/homr_runtime/reporting.py`
 
 ## Audit Trail
 
-- EXTRACTED: 23 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

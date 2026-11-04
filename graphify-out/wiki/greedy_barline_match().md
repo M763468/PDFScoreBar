@@ -2,7 +2,7 @@
 
 > God node · 118 connections · `src/common/barline_evaluation.py`
 
-**Community:** [Community 0](Community_0.md)
+**Community:** [Community 27](Community_27.md)
 
 ## Connections by Relation
 

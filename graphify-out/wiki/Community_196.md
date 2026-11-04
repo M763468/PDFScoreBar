@@ -1,34 +1,38 @@
 # Community 196
 
-> 12 nodes · cohesion 0.36
+> 7 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **notehead_filter_analysis.py** (9 connections) — `tools/notehead_filter_analysis.py`
-- **main()** (8 connections) — `tools/notehead_filter_analysis.py`
-- **ndarray** (6 connections)
-- **draw_boxes()** (4 connections) — `tools/notehead_filter_analysis.py`
-- **endpoint_overlap_detail()** (4 connections) — `tools/notehead_filter_analysis.py`
-- **load_boxes()** (4 connections) — `tools/notehead_filter_analysis.py`
-- **load_notehead_mask()** (4 connections) — `tools/notehead_filter_analysis.py`
-- **denoise_notehead_mask()** (3 connections) — `tools/notehead_filter_analysis.py`
-- **endpoint_overlap_ratio()** (3 connections) — `tools/notehead_filter_analysis.py`
-- **filter_notehead_components()** (3 connections) — `tools/notehead_filter_analysis.py`
-- **PageSpec** (2 connections) — `tools/notehead_filter_analysis.py`
-- **Path** (2 connections)
+- **distribution_job.py** (11 connections) — `docker/distribution_job.py`
+- **prepare_local_review()** (9 connections) — `docker/distribution_job.py`
+- **_is_usable_artifact_root_name()** (6 connections) — `src/pipeline/review/final_output.py`
+- **main()** (4 connections) — `docker/distribution_job.py`
+- **Path** (1 connections)
+- **Thin local command adapter for the existing v1 PDF engine.** (1 connections) — `docker/distribution_job.py`
+- **Bind a local user review to retained artifacts, preserving engine originals.** (1 connections) — `docker/distribution_job.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (4 shared connections)
+- [Community 0](Community_0.md) (4 shared connections)
+- [Community 41](Community_41.md) (3 shared connections)
+- [Community 73](Community_73.md) (2 shared connections)
+- [Community 48](Community_48.md) (2 shared connections)
+- [Community 1](Community_1.md) (2 shared connections)
+- [Community 30](Community_30.md) (1 shared connections)
+- [Community 150](Community_150.md) (1 shared connections)
+- [Community 45](Community_45.md) (1 shared connections)
+- [Community 49](Community_49.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/notehead_filter_analysis.py`
+- `docker/distribution_job.py`
+- `src/pipeline/review/final_output.py`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 24 (96%)
+- INFERRED: 1 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

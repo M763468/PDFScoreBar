@@ -1,65 +1,51 @@
 # Community 23
 
-> 51 nodes · cohesion 0.10
+> 49 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **test_review_correction_history.py** (34 connections) — `tests/test_review_correction_history.py`
-- **review_correction/server.py** (32 connections) — `tools/review_correction/server.py`
-- **test_issue441_mobilesheets_roundtrip.py** (23 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
-- **package_path()** (20 connections) — `tools/review_correction/history.py`
-- **encoded()** (18 connections) — `tools/review_correction/history.py`
-- **resume.py** (14 connections) — `tools/review_correction/resume.py`
-- **create_session()** (14 connections) — `tools/review_correction/resume.py`
-- **strip_returned_layer()** (13 connections) — `src/pipeline/review/number_layer.py`
-- **note_signature()** (12 connections) — `src/pipeline/review/number_layer.py`
-- **_pdf_package()** (12 connections) — `tests/test_review_correction_history.py`
-- **legacy.py** (12 connections) — `tools/review_correction/legacy.py`
-- **_checkpoint()** (11 connections) — `tests/test_review_correction_history.py`
-- **import_attempt()** (11 connections) — `tools/review_correction/legacy.py`
-- **state.py** (9 connections) — `tools/review_correction/state.py`
-- **test_legacy_import_rejects_changed_inputs_and_keeps_checkpoints()** (8 connections) — `tests/test_review_correction_history.py`
-- **list_attempts()** (8 connections) — `tools/review_correction/legacy.py`
-- **validate_attempt()** (8 connections) — `tools/review_correction/legacy.py`
-- **_digest()** (8 connections) — `tools/review_correction/state.py`
-- **sha()** (7 connections) — `src/pipeline/review/number_layer.py`
-- **test_product_resume_records_original_and_cleaned_pdf_and_preserves_test()** (7 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
-- **test_null_source_reference_preserves_correction_save_and_apply()** (7 connections) — `tests/test_review_correction_history.py`
-- **prepare_pdf()** (7 connections) — `tools/review_correction/resume.py`
-- **_returned()** (6 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
-- **test_remapped_xrefs_preserve_new_annotations_and_replace_only_old_numbers()** (6 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
-- **test_second_resume_uses_product_result_and_selected_session_checkpoint()** (6 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
-- *... and 26 more nodes in this community*
+- **acceptance.py** (42 connections) — `tools/review_correction/acceptance.py`
+- **Any** (32 connections)
+- **Path** (28 connections)
+- **run_single_correction()** (16 connections) — `tools/review_correction/acceptance.py`
+- **run_acceptance()** (14 connections) — `tools/review_correction/acceptance.py`
+- **run_no_correction_apply()** (13 connections) — `tools/review_correction/acceptance.py`
+- **freeze_plan()** (12 connections) — `tools/review_correction/acceptance.py`
+- **load_json()** (12 connections) — `tools/review_correction/acceptance.py`
+- **prepare()** (12 connections) — `tools/review_correction/acceptance.py`
+- **_copy_package()** (10 connections) — `tools/review_correction/acceptance.py`
+- **_result()** (10 connections) — `tools/review_correction/acceptance.py`
+- **run_stale_gate()** (10 connections) — `tools/review_correction/acceptance.py`
+- **_state()** (10 connections) — `tools/review_correction/acceptance.py`
+- **_apply()** (9 connections) — `tools/review_correction/acceptance.py`
+- **numbering_page()** (9 connections) — `tools/review_correction/acceptance.py`
+- **_prepare_source_context()** (9 connections) — `tools/review_correction/acceptance.py`
+- **expect_http()** (8 connections) — `tools/review_correction/acceptance.py`
+- **_request()** (8 connections) — `tools/review_correction/acceptance.py`
+- **start_app_session()** (8 connections) — `tools/review_correction/acceptance.py`
+- **verify_pdf_content()** (8 connections) — `tools/review_correction/acceptance.py`
+- **AppSession** (7 connections) — `tools/review_correction/acceptance.py`
+- **file_identity()** (7 connections) — `tools/review_correction/acceptance.py`
+- **_save()** (7 connections) — `tools/review_correction/acceptance.py`
+- **sha256()** (7 connections) — `tools/review_correction/acceptance.py`
+- **write_json()** (7 connections) — `tools/review_correction/acceptance.py`
+- *... and 24 more nodes in this community*
 
 ## Relationships
 
-- [Community 30](Community_30.md) (27 shared connections)
-- [Community 103](Community_103.md) (25 shared connections)
-- [Community 99](Community_99.md) (20 shared connections)
-- [Community 33](Community_33.md) (19 shared connections)
-- [Community 115](Community_115.md) (10 shared connections)
-- [Community 32](Community_32.md) (7 shared connections)
-- [Community 221](Community_221.md) (3 shared connections)
-- [Community 26](Community_26.md) (3 shared connections)
-- [Community 241](Community_241.md) (2 shared connections)
-- [Community 244](Community_244.md) (2 shared connections)
-- [Community 4](Community_4.md) (2 shared connections)
-- [Community 2](Community_2.md) (1 shared connections)
+- [Community 2](Community_2.md) (2 shared connections)
+- [Community 150](Community_150.md) (2 shared connections)
+- [Community 0](Community_0.md) (2 shared connections)
+- [Community 47](Community_47.md) (1 shared connections)
+- [Community 3](Community_3.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/review/number_layer.py`
-- `tests/test_issue441_mobilesheets_roundtrip.py`
-- `tests/test_review_correction_history.py`
-- `tools/review_correction/history.py`
-- `tools/review_correction/legacy.py`
-- `tools/review_correction/resume.py`
-- `tools/review_correction/server.py`
-- `tools/review_correction/state.py`
+- `tools/review_correction/acceptance.py`
 
 ## Audit Trail
 
-- EXTRACTED: 251 (99%)
+- EXTRACTED: 202 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

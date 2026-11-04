@@ -1,52 +1,53 @@
 # Community 29
 
-> 49 nodes · cohesion 0.17
+> 24 nodes · cohesion 0.23
 
 ## Key Concepts
 
-- **acceptance.py** (42 connections) — `tools/review_correction/acceptance.py`
-- **Any** (32 connections)
-- **Path** (28 connections)
-- **run_single_correction()** (16 connections) — `tools/review_correction/acceptance.py`
-- **run_acceptance()** (14 connections) — `tools/review_correction/acceptance.py`
-- **run_no_correction_apply()** (13 connections) — `tools/review_correction/acceptance.py`
-- **freeze_plan()** (12 connections) — `tools/review_correction/acceptance.py`
-- **load_json()** (12 connections) — `tools/review_correction/acceptance.py`
-- **prepare()** (12 connections) — `tools/review_correction/acceptance.py`
-- **_copy_package()** (10 connections) — `tools/review_correction/acceptance.py`
-- **_result()** (10 connections) — `tools/review_correction/acceptance.py`
-- **run_stale_gate()** (10 connections) — `tools/review_correction/acceptance.py`
-- **_state()** (10 connections) — `tools/review_correction/acceptance.py`
-- **_apply()** (9 connections) — `tools/review_correction/acceptance.py`
-- **numbering_page()** (9 connections) — `tools/review_correction/acceptance.py`
-- **_prepare_source_context()** (9 connections) — `tools/review_correction/acceptance.py`
-- **expect_http()** (8 connections) — `tools/review_correction/acceptance.py`
-- **_request()** (8 connections) — `tools/review_correction/acceptance.py`
-- **start_app_session()** (8 connections) — `tools/review_correction/acceptance.py`
-- **verify_pdf_content()** (8 connections) — `tools/review_correction/acceptance.py`
-- **AppSession** (7 connections) — `tools/review_correction/acceptance.py`
-- **file_identity()** (7 connections) — `tools/review_correction/acceptance.py`
-- **_save()** (7 connections) — `tools/review_correction/acceptance.py`
-- **sha256()** (7 connections) — `tools/review_correction/acceptance.py`
-- **write_json()** (7 connections) — `tools/review_correction/acceptance.py`
-- *... and 24 more nodes in this community*
+- **materialize_manual_correction_review_package()** (40 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **manual_correction_materializer.py** (19 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **ManualCorrectionMaterializerError** (12 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **Any** (11 connections)
+- **Path** (10 connections)
+- **_page_number_from_manifest()** (8 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_resolve_handoff_output_name()** (7 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_resolve_barlines_review_source()** (6 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_resolve_run_artifact()** (6 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_extract_review_barline_records()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_load_json_object()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_manifest_relative_base()** (5 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_is_engine_staged_pdf_path()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_load_json()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_require_inside()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_select_pages()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_write_json()** (4 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **_copy_run_artifact()** (3 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **ValueError** (1 connections)
+- **Materialize manual-correction review packages from pipeline run artifacts.** (1 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **Raised when a review package cannot be built from a pipeline run.** (1 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **Return the physical PDF page, independently of its selected-list position.** (1 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **Create a review manual-correction package from one pipeline run. Derived review…** (1 connections) — `src/pipeline/review/manual_correction_materializer.py`
+- **Recover the base directory used by relative paths recorded in a manifest.** (1 connections) — `src/pipeline/review/manual_correction_materializer.py`
 
 ## Relationships
 
-- [Community 4](Community_4.md) (2 shared connections)
-- [Community 30](Community_30.md) (2 shared connections)
-- [Community 2](Community_2.md) (2 shared connections)
-- [Community 49](Community_49.md) (1 shared connections)
-- [Community 40](Community_40.md) (1 shared connections)
+- [Community 128](Community_128.md) (19 shared connections)
+- [Community 14](Community_14.md) (3 shared connections)
+- [Community 172](Community_172.md) (3 shared connections)
+- [Community 0](Community_0.md) (2 shared connections)
+- [Community 56](Community_56.md) (2 shared connections)
+- [Community 49](Community_49.md) (2 shared connections)
+- [Community 7](Community_7.md) (2 shared connections)
+- [Community 41](Community_41.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/review_correction/acceptance.py`
+- `src/pipeline/review/manual_correction_materializer.py`
 
 ## Audit Trail
 
-- EXTRACTED: 202 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 98 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

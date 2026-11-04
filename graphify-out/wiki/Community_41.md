@@ -1,61 +1,61 @@
 # Community 41
 
-> 42 nodes · cohesion 0.08
+> 39 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **run()** (20 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **resolve_omr_dln_model_path()** (13 connections) — `src/common/model_artifacts.py`
-- **omr_dln_worker.py** (12 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **models/eval_omr_dln.py** (10 connections) — `experiments/models/eval_omr_dln.py`
-- **load_candidate()** (10 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **test_omr_dln_worker.py** (9 connections) — `tests/test_omr_dln_worker.py`
-- **omr_dln_model_missing_message()** (7 connections) — `src/common/model_artifacts.py`
-- **main()** (6 connections) — `experiments/models/eval_omr_dln.py`
-- **_Model** (6 connections) — `tests/test_omr_dln_worker.py`
-- **_TensorLike** (5 connections) — `tests/test_omr_dln_worker.py`
-- **resolve_precomputed_sr()** (4 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **test_runtime_worker_rejects_missing_precomputed_sr()** (4 connections) — `tests/test_omr_dln_worker.py`
-- **test_runtime_worker_resolves_model_from_repository_root()** (4 connections) — `tests/test_omr_dln_worker.py`
-- **test_runtime_worker_uses_precomputed_sr_and_returns_source_coordinates()** (4 connections) — `tests/test_omr_dln_worker.py`
-- **infer_barlines_from_measures()** (3 connections) — `experiments/models/eval_omr_dln.py`
-- **infer_barlines_from_measures()** (3 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **Path** (3 connections)
-- **Path** (3 connections)
-- **_Result** (3 connections) — `tests/test_omr_dln_worker.py`
-- **load_gt_boxes()** (2 connections) — `experiments/models/eval_omr_dln.py`
-- **parse_args()** (2 connections) — `experiments/models/eval_omr_dln.py`
-- **main()** (2 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **Any** (2 connections)
-- **_scale_to_source()** (2 connections) — `src/pipeline/detection/omr_dln_worker.py`
-- **test_omr_candidate_rejects_wrong_task()** (2 connections) — `tests/test_experiment_model_selection.py`
-- *... and 17 more nodes in this community*
+- **PipelineJobExecutor** (46 connections) — `src/pipeline/engine_executor.py`
+- **engine_executor.py** (35 connections) — `src/pipeline/engine_executor.py`
+- **._execute()** (30 connections) — `src/pipeline/engine_executor.py`
+- **JobResult** (18 connections) — `src/pipeline/engine_contract.py`
+- **InputSafetyError** (13 connections) — `src/pipeline/engine_input_safety.py`
+- **.execute_payload()** (11 connections) — `src/pipeline/engine_executor.py`
+- **Path** (11 connections)
+- **._early_failure()** (8 connections) — `src/pipeline/engine_executor.py`
+- **_error()** (7 connections) — `src/pipeline/engine_executor.py`
+- **Any** (7 connections)
+- **._artifacts()** (6 connections) — `src/pipeline/engine_executor.py`
+- **.__call__()** (6 connections) — `src/pipeline/engine_executor.py`
+- **._copy_review()** (6 connections) — `src/pipeline/engine_executor.py`
+- **._write_config()** (6 connections) — `src/pipeline/engine_executor.py`
+- **_map_error()** (5 connections) — `src/pipeline/engine_executor.py`
+- **.__init__()** (5 connections) — `src/pipeline/engine_executor.py`
+- **._dpi()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._ensure_handoff_output_name()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._final_builder()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._input_reference()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._load_config()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._provenance()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._review_builder()** (4 connections) — `src/pipeline/engine_executor.py`
+- **._runner()** (4 connections) — `src/pipeline/engine_executor.py`
+- **ProgressCallback** (4 connections)
+- *... and 14 more nodes in this community*
 
 ## Relationships
 
-- [Community 10](Community_10.md) (6 shared connections)
-- [Community 76](Community_76.md) (4 shared connections)
-- [Community 61](Community_61.md) (4 shared connections)
-- [Community 84](Community_84.md) (3 shared connections)
-- [Community 31](Community_31.md) (3 shared connections)
-- [Community 54](Community_54.md) (2 shared connections)
-- [Community 38](Community_38.md) (2 shared connections)
-- [Community 52](Community_52.md) (2 shared connections)
-- [Community 74](Community_74.md) (2 shared connections)
-- [Community 149](Community_149.md) (1 shared connections)
+- [Community 73](Community_73.md) (16 shared connections)
+- [Community 48](Community_48.md) (14 shared connections)
+- [Community 30](Community_30.md) (14 shared connections)
+- [Community 19](Community_19.md) (14 shared connections)
+- [Community 17](Community_17.md) (9 shared connections)
+- [Community 0](Community_0.md) (6 shared connections)
+- [Community 32](Community_32.md) (4 shared connections)
+- [Community 1](Community_1.md) (4 shared connections)
+- [Community 196](Community_196.md) (3 shared connections)
+- [Community 81](Community_81.md) (3 shared connections)
+- [Community 172](Community_172.md) (3 shared connections)
+- [Community 117](Community_117.md) (2 shared connections)
 
 ## Source Files
 
-- `experiments/models/eval_omr_dln.py`
-- `src/common/model_artifacts.py`
-- `src/pipeline/detection/omr_dln_worker.py`
-- `tests/test_experiment_model_selection.py`
-- `tests/test_omr_dln_worker.py`
+- `src/pipeline/engine_contract.py`
+- `src/pipeline/engine_executor.py`
+- `src/pipeline/engine_input_safety.py`
 
 ## Audit Trail
 
-- EXTRACTED: 95 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 173 (91%)
+- INFERRED: 17 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

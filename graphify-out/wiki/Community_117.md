@@ -1,46 +1,57 @@
 # Community 117
 
-> 23 nodes · cohesion 0.21
+> 22 nodes · cohesion 0.16
 
 ## Key Concepts
 
-- **eval_stage_e_contract.py** (17 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_prepare_eval_inputs()** (13 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **Path** (11 connections)
-- **main()** (8 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **Namespace** (6 connections)
-- **_stage_e_run_root()** (5 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_build_eval_args()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **build_parser()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_candidate_paths()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_canonical_mismatches()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_default_eval_inputs_dir()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_default_eval_output_dir()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **MissingStageEArtifactError** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_print_summary()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_scored_paths()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_selected_records()** (4 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_first_existing()** (3 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_materialize_file()** (3 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **_metric_matches()** (2 connections) — `tools/issue120/eval_stage_e_contract.py`
-- **Any** (1 connections)
-- **ArgumentParser** (1 connections)
-- **RuntimeError** (1 connections)
-- **Raised when the Stage E run root does not contain required artifacts.** (1 connections) — `tools/issue120/eval_stage_e_contract.py`
+- **run_pipeline()** (30 connections) — `src/pipeline/main.py`
+- **test_pipeline_telemetry.py** (22 connections) — `tests/test_pipeline_telemetry.py`
+- **_patch_minimal_pipeline()** (6 connections) — `tests/test_pipeline_telemetry.py`
+- **faults.py** (6 connections) — `tools/issue458/faults.py`
+- **_assert_input_validation_aborted()** (5 connections) — `tests/test_pipeline_telemetry.py`
+- **test_input_validation_does_not_complete_for_malformed_structured_input()** (5 connections) — `tests/test_pipeline_telemetry.py`
+- **test_input_validation_does_not_complete_when_external_images_are_missing()** (4 connections) — `tests/test_pipeline_telemetry.py`
+- **test_input_validation_does_not_complete_when_pdf_path_is_missing()** (4 connections) — `tests/test_pipeline_telemetry.py`
+- **main()** (3 connections) — `src/pipeline/main.py`
+- **test_resource_sampling_keeps_default_summary_in_run_directory()** (3 connections) — `tests/test_pipeline_telemetry.py`
+- **test_run_pipeline_default_path_does_not_construct_telemetry()** (3 connections) — `tests/test_pipeline_telemetry.py`
+- **test_run_pipeline_emits_terminal_failure_when_orchestrator_construction_fails()** (3 connections) — `tests/test_pipeline_telemetry.py`
+- **test_run_pipeline_emits_terminal_failure_without_swallowing_exception()** (3 connections) — `tests/test_pipeline_telemetry.py`
+- **test_run_pipeline_emits_terminal_success_and_summary()** (3 connections) — `tests/test_pipeline_telemetry.py`
+- **child()** (3 connections) — `tools/issue458/faults.py`
+- **main()** (2 connections) — `tools/issue458/faults.py`
+- **Path** (1 connections)
+- **ProgressCallback** (1 connections)
+- **CLI entry point for the pipeline.** (1 connections) — `src/pipeline/main.py`
+- **Entry point for running the full pipeline.** (1 connections) — `src/pipeline/main.py`
+- **parametrize** (1 connections)
+- **Real pipeline failure/publication checks using retained SR, without inference.** (1 connections) — `tools/issue458/faults.py`
 
 ## Relationships
 
-- [Community 127](Community_127.md) (3 shared connections)
-- [Community 128](Community_128.md) (3 shared connections)
+- [Community 17](Community_17.md) (12 shared connections)
+- [Community 14](Community_14.md) (5 shared connections)
+- [Community 86](Community_86.md) (5 shared connections)
+- [Community 32](Community_32.md) (4 shared connections)
+- [Community 40](Community_40.md) (2 shared connections)
+- [Community 135](Community_135.md) (2 shared connections)
+- [Community 122](Community_122.md) (2 shared connections)
+- [Community 41](Community_41.md) (2 shared connections)
+- [Community 99](Community_99.md) (1 shared connections)
+- [Community 69](Community_69.md) (1 shared connections)
+- [Community 48](Community_48.md) (1 shared connections)
+- [Community 154](Community_154.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/eval_stage_e_contract.py`
+- `src/pipeline/main.py`
+- `tests/test_pipeline_telemetry.py`
+- `tools/issue458/faults.py`
 
 ## Audit Trail
 
-- EXTRACTED: 59 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 74 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

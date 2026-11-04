@@ -1,11 +1,12 @@
 # Community 381
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **issue-post-mortem/run.sh** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
-- **run.sh script** (1 connections) — `.agents/skills/issue-post-mortem/run.sh`
+- **extract_final_hard_negatives.py** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
+- **extract_crop()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
+- **main()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `.agents/skills/issue-post-mortem/run.sh`
+- `tools/cnn_classifier/extract_final_hard_negatives.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

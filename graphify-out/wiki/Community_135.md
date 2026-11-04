@@ -1,47 +1,48 @@
 # Community 135
 
-> 21 nodes · cohesion 0.24
+> 21 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **draw()** (25 connections) — `tools/review_correction/app.js`
-- **pageValue()** (18 connections) — `tools/review_correction/app.js`
-- **deleteSelectedItem()** (14 connections) — `tools/review_correction/app.js`
-- **itemsForCurrentPage()** (13 connections) — `tools/review_correction/app.js`
-- **renderMovementRows()** (13 connections) — `tools/review_correction/app.js`
-- **renderMmrRows()** (11 connections) — `tools/review_correction/app.js`
-- **effectiveMmrState()** (10 connections) — `tools/review_correction/app.js`
-- **movementSystemsOnPage()** (8 connections) — `tools/review_correction/app.js`
-- **manualMmrMap()** (7 connections) — `tools/review_correction/app.js`
-- **measureKey()** (7 connections) — `tools/review_correction/app.js`
-- **movementStateAt()** (7 connections) — `tools/review_correction/app.js`
-- **baseMmrMap()** (6 connections) — `tools/review_correction/app.js`
-- **selectedMeasureKey()** (6 connections) — `tools/review_correction/app.js`
-- **updateActionButtons()** (6 connections) — `tools/review_correction/app.js`
-- **movementCandidateAt()** (5 connections) — `tools/review_correction/app.js`
-- **removeManualMmrForSelected()** (5 connections) — `tools/review_correction/app.js`
-- **replaceItemsForCurrentPage()** (4 connections) — `tools/review_correction/app.js`
-- **resolvedMovementAt()** (4 connections) — `tools/review_correction/app.js`
-- **movementReviewAt()** (3 connections) — `tools/review_correction/app.js`
-- **operationLabel()** (3 connections) — `tools/review_correction/app.js`
-- **movementEvidenceText()** (2 connections) — `tools/review_correction/app.js`
+- **run_stage_e_full_pipeline.py** (24 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **main()** (13 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_suppress_low_value_external_raw_log()** (8 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_filter_default_console_log()** (7 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Path** (7 connections)
+- **_summarize_console_log()** (5 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_low_value_external_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_progress_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_warning_or_error_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_load_optional_json()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_redirect_stdout_stderr_to_file()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_is_real_esrgan_tile_line()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_low_value_marker_keys()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_strip_low_value_suffix_from_progress_line()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_temporary_env()** (3 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **_env_flag_enabled()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Rewrite raw stdout/stderr with known low-value external chatter removed.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Write a bounded default console log while preserving raw stdout/stderr…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Redirect fd-level stdout/stderr so subprocess-heavy logs are kept in a file.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Temporarily set environment variables and restore their previous values.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Summarize captured stdout/stderr without loading the whole file into memory.** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Relationships
 
-- [Community 147](Community_147.md) (33 shared connections)
-- [Community 9](Community_9.md) (21 shared connections)
-- [Community 134](Community_134.md) (12 shared connections)
-- [Community 288](Community_288.md) (5 shared connections)
-- [Community 320](Community_320.md) (4 shared connections)
+- [Community 157](Community_157.md) (10 shared connections)
+- [Community 250](Community_250.md) (5 shared connections)
+- [Community 115](Community_115.md) (3 shared connections)
+- [Community 32](Community_32.md) (2 shared connections)
+- [Community 117](Community_117.md) (2 shared connections)
+- [Community 14](Community_14.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/review_correction/app.js`
+- `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 125 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 63 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

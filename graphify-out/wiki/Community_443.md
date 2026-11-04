@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **vram_monitor.sh** (1 connections) — `tools/vram_monitor.sh`
-- **vram_monitor.sh script** (1 connections) — `tools/vram_monitor.sh`
+- **extract_tp_crops.py** (1 connections) — `tools/extract_tp_crops.py`
+- **extract_crops()** (1 connections) — `tools/extract_tp_crops.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/vram_monitor.sh`
+- `tools/extract_tp_crops.py`
 
 ## Audit Trail
 

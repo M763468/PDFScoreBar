@@ -1,16 +1,16 @@
 # Community 269
 
-> 7 nodes · cohesion 0.43
+> 7 nodes · cohesion 0.52
 
 ## Key Concepts
 
-- **render_barline_boxes_overlay.py** (4 connections) — `tools/render_barline_boxes_overlay.py`
-- **main()** (4 connections) — `tools/render_barline_boxes_overlay.py`
-- **build_parser()** (3 connections) — `tools/render_barline_boxes_overlay.py`
-- **iter_bboxes()** (3 connections) — `tools/render_barline_boxes_overlay.py`
-- **parse_color()** (2 connections) — `tools/render_barline_boxes_overlay.py`
-- **ArgumentParser** (1 connections)
-- **Path** (1 connections)
+- **validate_metrics.py** (6 connections) — `experiments/fp_reduction/validate_metrics.py`
+- **main()** (5 connections) — `experiments/fp_reduction/validate_metrics.py`
+- **evaluate()** (3 connections) — `experiments/fp_reduction/validate_metrics.py`
+- **compute_iou()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
+- **draw_overlay()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
+- **load_boxes()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
+- **parse_args()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
 
 ## Relationships
 
@@ -18,11 +18,11 @@
 
 ## Source Files
 
-- `tools/render_barline_boxes_overlay.py`
+- `experiments/fp_reduction/validate_metrics.py`
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 11 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

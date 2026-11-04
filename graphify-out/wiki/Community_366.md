@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **create_synthetic_image()** (2 connections) — `tools/create_synthetic_image.py`
-- **create_synthetic_image.py** (1 connections) — `tools/create_synthetic_image.py`
-- **Creates a synthetic image with a white background, one long vertical black line…** (1 connections) — `tools/create_synthetic_image.py`
+- **add_measure_numbers()** (2 connections) — `experiments/legacy/archive/add_measure_numbers.py`
+- **add_measure_numbers.py** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
+- **Adds measure numbers to a score image based on a list of barline coordinates.…** (1 connections) — `experiments/legacy/archive/add_measure_numbers.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/create_synthetic_image.py`
+- `experiments/legacy/archive/add_measure_numbers.py`
 
 ## Audit Trail
 

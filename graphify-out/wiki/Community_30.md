@@ -1,60 +1,59 @@
 # Community 30
 
-> 48 nodes · cohesion 0.09
+> 49 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **test_review_correction_server.py** (30 connections) — `tests/test_review_correction_server.py`
-- **test_review_correction_application.py** (26 connections) — `tests/test_review_correction_application.py`
-- **_application()** (21 connections) — `tests/test_review_correction_application.py`
-- **_request()** (19 connections) — `tests/test_review_correction_server.py`
-- **create_server()** (15 connections) — `tools/review_correction/server.py`
-- **_handoff()** (13 connections) — `tests/test_review_correction_server.py`
-- **_fake_engine()** (12 connections) — `tests/test_review_correction_application.py`
-- **_load_saved_movement()** (6 connections) — `tests/test_review_correction_server.py`
-- **review_server()** (6 connections) — `tests/test_review_correction_server.py`
-- **test_end_to_end_review_save_apply_and_download_preserves_pdf_and_filename()** (5 connections) — `tests/test_review_correction_application.py`
-- **test_manual_movement_save_preserves_other_pages_and_rechecks_saved_bytes()** (5 connections) — `tests/test_review_correction_server.py`
-- **test_apply_http_rejects_path_substitution_and_exposes_only_own_result()** (4 connections) — `tests/test_review_correction_application.py`
-- **test_abandoned_history_requires_state_attestation_not_pdf_existence()** (4 connections) — `tests/test_review_correction_history.py`
-- **test_every_failed_and_successful_application_is_retained()** (4 connections) — `tests/test_review_correction_history.py`
-- **test_immutable_checkpoints_survive_restart_and_all_four_correction_types()** (4 connections) — `tests/test_review_correction_history.py`
-- **test_distinct_movement_paths_are_rejected_before_any_save_or_apply()** (4 connections) — `tests/test_review_correction_server.py`
-- **test_review_movement_export_uses_declared_package_paths()** (4 connections) — `tests/test_review_correction_server.py`
-- **_request_with_headers()** (3 connections) — `tests/test_review_correction_application.py`
-- **test_application_carries_handoff_output_name_into_apply_snapshot()** (3 connections) — `tests/test_review_correction_application.py`
-- **test_application_does_not_recover_generic_score_from_legacy_final_pdf()** (3 connections) — `tests/test_review_correction_application.py`
-- **test_application_recovers_name_from_existing_legacy_final_pdf()** (3 connections) — `tests/test_review_correction_application.py`
-- **test_apply_snapshots_inputs_and_records_exact_success()** (3 connections) — `tests/test_review_correction_application.py`
-- **test_failed_apply_and_pdf_generation_preserve_last_success()** (3 connections) — `tests/test_review_correction_application.py`
-- **test_startup_failure_after_begin_apply_is_recorded_and_retryable()** (3 connections) — `tests/test_review_correction_application.py`
-- **test_checkpoint_corruption_symlink_and_dependency_changes_fail_closed()** (3 connections) — `tests/test_review_correction_history.py`
-- *... and 23 more nodes in this community*
+- **EngineError** (25 connections) — `src/pipeline/engine_contract.py`
+- **JobStatus** (24 connections) — `src/pipeline/engine_contract.py`
+- **ErrorCategory** (22 connections) — `src/pipeline/engine_contract.py`
+- **test_job_lifecycle.py** (21 connections) — `tests/test_job_lifecycle.py`
+- **engine_lifecycle.py** (13 connections) — `src/pipeline/engine_lifecycle.py`
+- **CancellationToken** (13 connections) — `src/pipeline/engine_lifecycle.py`
+- **ExecutionControl** (12 connections) — `src/pipeline/engine_lifecycle.py`
+- **ExecutionDeadline** (12 connections) — `src/pipeline/engine_lifecycle.py`
+- **LifecycleControlError** (11 connections) — `src/pipeline/engine_lifecycle.py`
+- **classify_control_error()** (9 connections) — `src/pipeline/engine_lifecycle.py`
+- **JobCancelled** (9 connections) — `src/pipeline/engine_lifecycle.py`
+- **JobDeadlineExceeded** (9 connections) — `src/pipeline/engine_lifecycle.py`
+- **ValidatedPdfMetadata** (5 connections) — `src/pipeline/engine_input_safety.py`
+- **ValidatedPageMetadata** (4 connections) — `src/pipeline/engine_input_safety.py`
+- **.checkpoint()** (4 connections) — `src/pipeline/engine_lifecycle.py`
+- **.with_timeout()** (4 connections) — `src/pipeline/engine_lifecycle.py`
+- **.after()** (4 connections) — `src/pipeline/engine_lifecycle.py`
+- **test_explicit_cancellation_wins_when_deadline_is_also_expired()** (4 connections) — `tests/test_job_lifecycle.py`
+- **.__init__()** (3 connections) — `src/pipeline/engine_input_safety.py`
+- **Any** (3 connections)
+- **test_cancelled_maps_to_normative_v1_status_and_error()** (3 connections) — `tests/test_job_lifecycle.py`
+- **test_deadline_maps_to_failed_resource_error_and_retryable_hint()** (3 connections) — `tests/test_job_lifecycle.py`
+- **test_execution_control_raises_cancelled_with_stage_and_reason()** (3 connections) — `tests/test_job_lifecycle.py`
+- **test_execution_deadline_rejects_invalid_duration_and_clock_values()** (3 connections) — `tests/test_job_lifecycle.py`
+- **.to_dict()** (2 connections) — `src/pipeline/engine_input_safety.py`
+- *... and 24 more nodes in this community*
 
 ## Relationships
 
-- [Community 23](Community_23.md) (27 shared connections)
-- [Community 103](Community_103.md) (13 shared connections)
-- [Community 17](Community_17.md) (4 shared connections)
-- [Community 244](Community_244.md) (3 shared connections)
-- [Community 35](Community_35.md) (2 shared connections)
-- [Community 33](Community_33.md) (2 shared connections)
-- [Community 182](Community_182.md) (2 shared connections)
-- [Community 241](Community_241.md) (2 shared connections)
-- [Community 29](Community_29.md) (2 shared connections)
-- [Community 32](Community_32.md) (1 shared connections)
+- [Community 41](Community_41.md) (14 shared connections)
+- [Community 19](Community_19.md) (10 shared connections)
+- [Community 48](Community_48.md) (10 shared connections)
+- [Community 73](Community_73.md) (7 shared connections)
+- [Community 17](Community_17.md) (5 shared connections)
+- [Community 196](Community_196.md) (1 shared connections)
+- [Community 14](Community_14.md) (1 shared connections)
+- [Community 81](Community_81.md) (1 shared connections)
+- [Community 33](Community_33.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_review_correction_application.py`
-- `tests/test_review_correction_history.py`
-- `tests/test_review_correction_server.py`
-- `tools/review_correction/server.py`
+- `src/pipeline/engine_contract.py`
+- `src/pipeline/engine_input_safety.py`
+- `src/pipeline/engine_lifecycle.py`
+- `tests/test_job_lifecycle.py`
 
 ## Audit Trail
 
-- EXTRACTED: 147 (93%)
-- INFERRED: 11 (7%)
+- EXTRACTED: 122 (80%)
+- INFERRED: 31 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

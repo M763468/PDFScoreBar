@@ -1,27 +1,27 @@
 # Community 287
 
-> 6 nodes · cohesion 0.60
+> 6 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **main()** (5 connections) — `tools/render_pred_overlay_with_legend.py`
-- **render_pred_overlay_with_legend.py** (4 connections) — `tools/render_pred_overlay_with_legend.py`
-- **load_boxes()** (3 connections) — `tools/render_pred_overlay_with_legend.py`
-- **draw_boxes()** (2 connections) — `tools/render_pred_overlay_with_legend.py`
-- **put_text_block()** (2 connections) — `tools/render_pred_overlay_with_legend.py`
-- **Path** (2 connections)
+- **test_issue255_detector_dispatch_contract.py** (5 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **_dense_config()** (4 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **Path** (3 connections)
+- **test_dense_route_without_profile_reaches_dense_validation()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **test_exported_orchestrator_dispatches_dense_route()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
+- **test_verified_route_rejects_duplicate_image_stems_before_outputs_collide()** (3 connections) — `tests/test_issue255_detector_dispatch_contract.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 154](Community_154.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/render_pred_overlay_with_legend.py`
+- `tests/test_issue255_detector_dispatch_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 11 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,27 +1,23 @@
 # Community 456
 
-> 6 nodes · cohesion 0.53
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **apply_vertical_closing.py** (4 connections) — `tools/apply_vertical_closing.py`
-- **main()** (4 connections) — `tools/apply_vertical_closing.py`
-- **parse_args()** (3 connections) — `tools/apply_vertical_closing.py`
-- **resolve_output_path()** (3 connections) — `tools/apply_vertical_closing.py`
-- **Path** (2 connections)
-- **Namespace** (1 connections)
+- **run_bypass_eval_subset.py** (1 connections) — `tools/run_bypass_eval_subset.py`
+- **run_eval()** (1 connections) — `tools/run_bypass_eval_subset.py`
 
 ## Relationships
 
-- [Community 84](Community_84.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/apply_vertical_closing.py`
+- `tools/run_bypass_eval_subset.py`
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

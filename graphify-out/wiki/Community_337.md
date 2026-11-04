@@ -4,10 +4,10 @@
 
 ## Key Concepts
 
-- **find_numbering_file()** (3 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
-- **main()** (3 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
-- **build_rest_gt_config.py** (2 connections) — `tools/gt_relabel_gui/build_rest_gt_config.py`
-- **Path** (2 connections)
+- **audit_double_barline_overlaps.py** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **audit_file()** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **calculate_iou()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **main()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
 
 ## Relationships
 
@@ -15,7 +15,7 @@
 
 ## Source Files
 
-- `tools/gt_relabel_gui/build_rest_gt_config.py`
+- `experiments/cnn_classifier/audit_double_barline_overlaps.py`
 
 ## Audit Trail
 

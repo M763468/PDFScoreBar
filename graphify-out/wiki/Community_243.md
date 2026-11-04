@@ -1,33 +1,32 @@
 # Community 243
 
-> 9 nodes · cohesion 0.36
+> 10 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **probe_postfilter_analysis.py** (7 connections) — `tools/probe_postfilter_analysis.py`
-- **main()** (6 connections) — `tools/probe_postfilter_analysis.py`
-- **draw_boxes()** (4 connections) — `tools/probe_postfilter_analysis.py`
-- **load_boxes()** (4 connections) — `tools/probe_postfilter_analysis.py`
-- **match_box()** (4 connections) — `tools/probe_postfilter_analysis.py`
-- **summarize_fp()** (3 connections) — `tools/probe_postfilter_analysis.py`
-- **PageSpec** (2 connections) — `tools/probe_postfilter_analysis.py`
-- **ndarray** (1 connections)
-- **Path** (1 connections)
+- **structural_system_union_resample.py** (8 connections) — `tools/structural_system_union_resample.py`
+- **main()** (8 connections) — `tools/structural_system_union_resample.py`
+- **load_omr_boxes()** (4 connections) — `tools/structural_system_union_resample.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_system_union_resample.py`
+- **build_predictions()** (3 connections) — `tools/structural_system_union_resample.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_system_union_resample.py`
+- **dedupe_x_centers()** (2 connections) — `tools/structural_system_union_resample.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_system_union_resample.py`
+- **Path** (2 connections)
+- **resample_positions()** (2 connections) — `tools/structural_system_union_resample.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (4 shared connections)
-- [Community 0](Community_0.md) (1 shared connections)
-- [Community 73](Community_73.md) (1 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/probe_postfilter_analysis.py`
+- `tools/structural_system_union_resample.py`
 
 ## Audit Trail
 
-- EXTRACTED: 18 (95%)
-- INFERRED: 1 (5%)
+- EXTRACTED: 20 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

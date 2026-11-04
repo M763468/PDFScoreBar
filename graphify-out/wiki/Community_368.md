@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **export_failure_crops.py** (2 connections) — `tools/export_failure_crops.py`
-- **export_crops()** (2 connections) — `tools/export_failure_crops.py`
-- **main()** (2 connections) — `tools/export_failure_crops.py`
+- **analyze_fp_source.py** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_source.py`
+- **check_source()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_source.py`
+- **iou()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_source.py`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/export_failure_crops.py`
+- `experiments/legacy/investigation_20260102/analyze_fp_source.py`
 
 ## Audit Trail
 

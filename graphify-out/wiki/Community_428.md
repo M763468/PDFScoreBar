@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **prepare_rebuild_eval2.py** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
-- **prepare_eval2_rebuild()** (1 connections) — `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
+- **analyze_image_classification.py** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
+- **main()** (1 connections) — `experiments/phase5b_notehead_geom/analyze_image_classification.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
+- `experiments/phase5b_notehead_geom/analyze_image_classification.py`
 
 ## Audit Trail
 

@@ -1,12 +1,13 @@
 # Community 359
 
-> 3 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **test_issue323_cli_wiring.py** (2 connections) — `tests/test_issue323_cli_wiring.py`
-- **test_make_targets_forward_canonical_contract_flags()** (1 connections) — `tests/test_issue323_cli_wiring.py`
-- **test_score_wrapper_contract_flags_reach_each_parser()** (1 connections) — `tests/test_issue323_cli_wiring.py`
+- **resume_browser_acceptance.cjs** (3 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **{ chromium }** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **fs** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
+- **path** (1 connections) — `tools/review_correction/resume_browser_acceptance.cjs`
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `tests/test_issue323_cli_wiring.py`
+- `tools/review_correction/resume_browser_acceptance.cjs`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,65 +1,56 @@
 # Community 4
 
-> 79 nodes · cohesion 0.06
+> 72 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **test_movement_boundary_review.py** (17 connections) — `tests/test_movement_boundary_review.py`
-- **attach_movement_boundary_evidence()** (15 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **write_resolved_movement_boundaries()** (14 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **test_movement_boundary_candidates.py** (14 connections) — `tests/test_movement_boundary_candidates.py`
-- **review/movement_boundary_review.py** (12 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **test_movement_boundary_cli_provenance.py** (12 connections) — `tests/test_movement_boundary_cli_provenance.py`
-- **build_resolved_movement_boundaries()** (11 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **build_movement_boundary_evidence()** (10 connections) — `src/pipeline/movement_boundary_candidates.py`
-- **MovementBoundaryReviewError** (10 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **validate_movement_boundary_review()** (10 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **_build()** (10 connections) — `tests/test_movement_boundary_candidates.py`
-- **_evidence()** (9 connections) — `tests/test_movement_boundary_review.py`
-- **tools/movement_boundary_review.py** (9 connections) — `tools/movement_boundary_review.py`
-- **_export_from_handoff()** (9 connections) — `tools/movement_boundary_review.py`
-- **build_manual_movement_boundaries()** (8 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **Any** (8 connections)
-- **validate_movement_boundary_evidence()** (8 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **test_homr_barline_candidates.py** (8 connections) — `tests/test_homr_barline_candidates.py`
-- **_candidate()** (8 connections) — `tests/test_movement_boundary_review.py`
-- **test_export_covers_accepted_rejected_and_manual_boundary()** (7 connections) — `tests/test_movement_boundary_review.py`
-- **generate_movement_boundary_candidates.py** (7 connections) — `tools/generate_movement_boundary_candidates.py`
-- **movement_boundary_candidates.py** (6 connections) — `src/pipeline/movement_boundary_candidates.py`
-- **_load_json_object()** (6 connections) — `src/pipeline/review/movement_boundary_review.py`
-- **Path** (6 connections)
-- **test_export_rejects_unresolved_review_required_candidate()** (6 connections) — `tests/test_movement_boundary_review.py`
-- *... and 54 more nodes in this community*
+- **dense_probe_candidate.py** (52 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **DenseProbeCandidateConfig** (27 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **test_dense_probe_candidate_route.py** (25 connections) — `tests/test_dense_probe_candidate_route.py`
+- **run_dense_probe_candidate_route()** (20 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **Path** (17 connections)
+- **DenseProbeCandidatePaths** (16 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **config_from_yaml()** (14 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **resolve_paths()** (14 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **Any** (13 connections)
+- **build_route_provenance()** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **dense_probe_candidate_route.py** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate_route.py`
+- **run_issue36_generation_filter_compare()** (10 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **attach_route_provenance()** (9 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **cleanup_targets()** (8 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **load_json()** (8 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **config_from_args()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **detector_summary()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **run_candidate_comparison()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **run_scoring_eval_and_coverage()** (7 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **CommandRunner** (6 connections)
+- **build_score_eval_command()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **make_logged_command_runner()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **main()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate_route.py`
+- **run_probe_rescue_candidate_generation()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- **validate_inputs()** (6 connections) — `src/pipeline/detector_routes/dense_probe_candidate.py`
+- *... and 47 more nodes in this community*
 
 ## Relationships
 
-- [Community 25](Community_25.md) (6 shared connections)
-- [Community 26](Community_26.md) (3 shared connections)
-- [Community 29](Community_29.md) (2 shared connections)
-- [Community 182](Community_182.md) (2 shared connections)
-- [Community 103](Community_103.md) (2 shared connections)
+- [Community 159](Community_159.md) (3 shared connections)
+- [Community 14](Community_14.md) (2 shared connections)
 - [Community 32](Community_32.md) (2 shared connections)
-- [Community 23](Community_23.md) (2 shared connections)
-- [Community 17](Community_17.md) (2 shared connections)
-- [Community 12](Community_12.md) (2 shared connections)
-- [Community 33](Community_33.md) (1 shared connections)
-- [Community 52](Community_52.md) (1 shared connections)
+- [Community 18](Community_18.md) (2 shared connections)
+- [Community 60](Community_60.md) (1 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/movement_boundary_candidates.py`
-- `src/pipeline/review/movement_boundary_review.py`
-- `tests/test_homr_barline_candidates.py`
-- `tests/test_movement_boundary_candidates.py`
-- `tests/test_movement_boundary_cli_provenance.py`
-- `tests/test_movement_boundary_review.py`
-- `tools/generate_movement_boundary_candidates.py`
-- `tools/movement_boundary_review.py`
+- `src/pipeline/detector_routes/dense_probe_candidate.py`
+- `src/pipeline/detector_routes/dense_probe_candidate_route.py`
+- `tests/test_dense_probe_candidate_route.py`
+- `tools/issue120/run_issue36_dense_bands_then_issue53_eval.py`
 
 ## Audit Trail
 
-- EXTRACTED: 199 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 243 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

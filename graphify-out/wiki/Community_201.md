@@ -1,33 +1,33 @@
 # Community 201
 
-> 11 nodes · cohesion 0.38
+> 12 nodes · cohesion 0.52
 
 ## Key Concepts
 
-- **_orchestrator()** (9 connections) — `tests/test_detector_orchestrator_input_contract.py`
-- **test_detector_orchestrator_input_contract.py** (8 connections) — `tests/test_detector_orchestrator_input_contract.py`
-- **Path** (6 connections)
-- **test_dry_run_returns_contract_without_writing_manifest()** (4 connections) — `tests/test_detector_orchestrator_input_contract.py`
-- **test_run_detection_returns_persisted_contract()** (4 connections) — `tests/test_detector_orchestrator_input_contract.py`
-- **test_true_is_not_a_valid_path_override()** (4 connections) — `tests/test_detector_orchestrator_input_contract.py`
-- **test_orchestrator_records_fresh_upstream_contract()** (3 connections) — `tests/test_detector_orchestrator_input_contract.py`
-- **test_orchestrator_records_precomputed_candidate_contract()** (3 connections) — `tests/test_detector_orchestrator_input_contract.py`
-- **MonkeyPatch** (2 connections)
-- **DetectorOrchestrator** (1 connections)
-- **parametrize** (1 connections)
+- **diagnose_production_vs_fullwidth.py** (9 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **run()** (9 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **_load_json()** (7 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **Path** (7 connections)
+- **_box_list()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **_full_width_page_dirs()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **_host_path()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **_production_page_dirs()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **Any** (5 connections)
+- **_score_map()** (5 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **_normalize_box()** (4 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
+- **main()** (2 connections) — `experiments/issue43/diagnose_production_vs_fullwidth.py`
 
 ## Relationships
 
-- [Community 71](Community_71.md) (2 shared connections)
-- [Community 154](Community_154.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tests/test_detector_orchestrator_input_contract.py`
+- `experiments/issue43/diagnose_production_vs_fullwidth.py`
 
 ## Audit Trail
 
-- EXTRACTED: 24 (100%)
+- EXTRACTED: 34 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

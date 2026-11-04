@@ -1,64 +1,66 @@
 # Community 14
 
-> 65 nodes · cohesion 0.06
+> 54 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **MMRProcessor** (68 connections) — `src/measure_numbering/mmr.py`
-- **object** (33 connections)
-- **mmr.py** (14 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence()** (14 connections) — `src/measure_numbering/mmr.py`
-- **test_issue213_mmr_one_bar_veto.py** (11 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **OneEvidencePerVariantOCR** (11 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **._process_page_with_support()** (9 connections) — `src/measure_numbering/mmr.py`
-- **VariantOCR** (8 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **.process_pages()** (7 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence_once()** (6 connections) — `src/measure_numbering/mmr.py`
-- **._run_calibrated_shifted_staff_values()** (5 connections) — `src/measure_numbering/mmr.py`
-- **generate_numbering_overrides.py** (5 connections) — `tools/generate_numbering_overrides.py`
-- **._aggregate_targeted_staff_results()** (4 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence_j2()** (4 connections) — `src/measure_numbering/mmr.py`
-- **._should_veto_one_bar_rest()** (4 connections) — `src/measure_numbering/mmr.py`
-- **test_issue208_mmr_variant_aggregation.py** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **test_detect_number_uses_best_scored_variant_not_first_valid_variant()** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **_box()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_collect_one_bar_evidence_ignores_one_merged_into_multidigit()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_collect_one_bar_evidence_keeps_single_one_and_ignores_eleven()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_detect_number_preserves_three_value_contract()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_detect_number_uses_max_one_bar_evidence_across_variants_not_sum()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **test_one_bar_veto_targets_marginal_cnn_negative_ocr_score_only()** (4 connections) — `tests/test_issue213_mmr_one_bar_veto.py`
-- **main()** (4 connections) — `tools/generate_numbering_overrides.py`
-- **._count_high_confidence_one_bar_evidence()** (3 connections) — `src/measure_numbering/mmr.py`
-- *... and 40 more nodes in this community*
+- **pipeline/orchestrator.py** (59 connections) — `src/pipeline/orchestrator.py`
+- **get_nested()** (40 connections) — `src/pipeline/core/__init__.py`
+- **.run()** (29 connections) — `src/pipeline/orchestrator.py`
+- **main.py** (17 connections) — `src/pipeline/main.py`
+- **._run_pdf_to_images()** (12 connections) — `src/pipeline/orchestrator.py`
+- **filters.py** (11 connections) — `src/pipeline/steps/filters.py`
+- **._validate_input_prerequisites()** (10 connections) — `src/pipeline/orchestrator.py`
+- **resolve_barlines_and_masks_config()** (9 connections) — `src/pipeline/detection/utils.py`
+- **Path** (9 connections)
+- **Any** (8 connections)
+- **resolve_review_package_config()** (8 connections) — `src/pipeline/review/pipeline_review.py`
+- **resolve_page_filters()** (8 connections) — `src/pipeline/steps/filters.py`
+- **._load_cached_pdf_render_provenance()** (7 connections) — `src/pipeline/orchestrator.py`
+- **._review_package_config()** (7 connections) — `src/pipeline/orchestrator.py`
+- **pipeline_review.py** (7 connections) — `src/pipeline/review/pipeline_review.py`
+- **._materialize_review_package_if_requested()** (6 connections) — `src/pipeline/orchestrator.py`
+- **.run_base_numbering_and_barline_correction()** (6 connections) — `src/pipeline/orchestrator.py`
+- **.run_final_numbering_and_overlays()** (6 connections) — `src/pipeline/orchestrator.py`
+- **._should_persist_pdf_images()** (6 connections) — `src/pipeline/orchestrator.py`
+- **ReviewPackageConfig** (6 connections) — `src/pipeline/review/pipeline_review.py`
+- **validate_review_package_prerequisites()** (6 connections) — `src/pipeline/review/pipeline_review.py`
+- **is_blank_page()** (6 connections) — `src/pipeline/steps/filters.py`
+- **normalise_pages()** (5 connections) — `src/pdf_to_images.py`
+- **.__init__()** (5 connections) — `src/pipeline/orchestrator.py`
+- **._resolved_for_manifest()** (5 connections) — `src/pipeline/orchestrator.py`
+- *... and 29 more nodes in this community*
 
 ## Relationships
 
-- [Community 6](Community_6.md) (28 shared connections)
-- [Community 24](Community_24.md) (17 shared connections)
-- [Community 114](Community_114.md) (8 shared connections)
-- [Community 70](Community_70.md) (8 shared connections)
-- [Community 12](Community_12.md) (4 shared connections)
-- [Community 51](Community_51.md) (4 shared connections)
-- [Community 220](Community_220.md) (3 shared connections)
-- [Community 45](Community_45.md) (2 shared connections)
-- [Community 25](Community_25.md) (2 shared connections)
-- [Community 88](Community_88.md) (1 shared connections)
-- [Community 1](Community_1.md) (1 shared connections)
-- [Community 13](Community_13.md) (1 shared connections)
+- [Community 86](Community_86.md) (20 shared connections)
+- [Community 69](Community_69.md) (15 shared connections)
+- [Community 32](Community_32.md) (14 shared connections)
+- [Community 25](Community_25.md) (14 shared connections)
+- [Community 92](Community_92.md) (8 shared connections)
+- [Community 144](Community_144.md) (7 shared connections)
+- [Community 100](Community_100.md) (6 shared connections)
+- [Community 110](Community_110.md) (6 shared connections)
+- [Community 117](Community_117.md) (5 shared connections)
+- [Community 17](Community_17.md) (5 shared connections)
+- [Community 146](Community_146.md) (4 shared connections)
+- [Community 149](Community_149.md) (3 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/mmr.py`
-- `tests/test_issue197_system_grouping_connector_evidence.py`
-- `tests/test_issue208_mmr_variant_aggregation.py`
-- `tests/test_issue213_mmr_one_bar_veto.py`
-- `tests/test_mmr_ocr_heuristics.py`
-- `tools/generate_numbering_overrides.py`
+- `src/pdf_to_images.py`
+- `src/pipeline/core/__init__.py`
+- `src/pipeline/detection/utils.py`
+- `src/pipeline/main.py`
+- `src/pipeline/orchestrator.py`
+- `src/pipeline/review/pipeline_review.py`
+- `src/pipeline/steps/filters.py`
+- `src/pipeline/utils/images.py`
 
 ## Audit Trail
 
-- EXTRACTED: 152 (75%)
-- INFERRED: 50 (25%)
+- EXTRACTED: 251 (100%)
+- INFERRED: 1 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

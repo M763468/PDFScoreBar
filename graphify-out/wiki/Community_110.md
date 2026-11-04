@@ -1,53 +1,63 @@
 # Community 110
 
-> 24 nodes · cohesion 0.14
+> 28 nodes · cohesion 0.13
 
 ## Key Concepts
 
-- **test_engine_contract.py** (27 connections) — `tests/test_engine_contract.py`
-- **JobResult** (18 connections) — `src/pipeline/engine_contract.py`
-- **ArtifactDescriptor** (14 connections) — `src/pipeline/engine_contract.py`
-- **canonical_json()** (11 connections) — `src/pipeline/engine_contract.py`
-- **test_success_warning_review_required_and_failure_results()** (7 connections) — `tests/test_engine_contract.py`
-- **test_invalid_result_shapes_are_rejected()** (6 connections) — `tests/test_engine_contract.py`
-- **.from_json()** (5 connections) — `src/pipeline/engine_contract.py`
-- **_review_artifact()** (5 connections) — `tests/test_engine_contract.py`
-- **.from_json()** (4 connections) — `src/pipeline/engine_contract.py`
-- **.to_dict()** (4 connections) — `src/pipeline/engine_contract.py`
-- **_provenance()** (4 connections) — `tests/test_engine_contract.py`
-- **test_job_request_round_trip_is_deterministic_and_forward_compatible()** (4 connections) — `tests/test_engine_contract.py`
-- **test_malformed_corrections_and_failure_payloads_are_rejected()** (4 connections) — `tests/test_engine_contract.py`
-- **.assert_source_matches()** (3 connections) — `src/pipeline/engine_contract.py`
-- **.to_json()** (3 connections) — `src/pipeline/engine_contract.py`
-- **.to_json()** (3 connections) — `src/pipeline/engine_contract.py`
-- **test_corrections_map_current_operations_and_reject_stale_source()** (3 connections) — `tests/test_engine_contract.py`
-- **.to_dict()** (2 connections) — `src/pipeline/engine_contract.py`
-- **.to_json()** (2 connections) — `src/pipeline/engine_contract.py`
-- **test_artifact_relative_path_cannot_escape_package()** (2 connections) — `tests/test_engine_contract.py`
-- **test_canonical_json_rejects_nan()** (2 connections) — `tests/test_engine_contract.py`
-- **test_job_request_rejects_oversized_raw_page_list_before_deduplication()** (2 connections) — `tests/test_engine_contract.py`
-- **test_unknown_contract_version_is_rejected()** (2 connections) — `tests/test_engine_contract.py`
-- **Serialize a contract value deterministically and reject NaN/Infinity.** (1 connections) — `src/pipeline/engine_contract.py`
+- **phase_b_page001_acceptance.py** (23 connections) — `tools/issue264/phase_b_page001_acceptance.py`
+- **build_mmr_page_context()** (15 connections) — `src/pipeline/mmr_geometry_handoff.py`
+- **run()** (14 connections) — `tools/issue264/phase_b_page001_acceptance.py`
+- **build_manifest()** (12 connections) — `src/pipeline/core/manifest.py`
+- **build_numbering()** (10 connections) — `tools/issue264/phase_b_page001_acceptance.py`
+- **mmr_geometry_handoff.py** (8 connections) — `src/pipeline/mmr_geometry_handoff.py`
+- **manifest.py** (7 connections) — `src/pipeline/core/manifest.py`
+- **test_issue264_phase_b_manifest.py** (6 connections) — `tests/test_issue264_phase_b_manifest.py`
+- **target_manifest_entry()** (6 connections) — `tools/issue264/phase_b_page001_acceptance.py`
+- **test_issue264_phase_b_mmr_geometry.py** (5 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **test_mmr_handoff_reuses_current_x4_support_without_rebuilding_numbering()** (5 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **test_mmr_handoff_skips_excluded_or_missing_numbering_pages()** (5 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **test_manifest_records_mmr_geometry()** (4 connections) — `tests/test_issue264_phase_b_manifest.py`
+- **test_mmr_handoff_requires_declared_current_homr_staff_mask()** (4 connections) — `tests/test_issue264_phase_b_mmr_geometry.py`
+- **Any** (4 connections)
+- **Path** (4 connections)
+- **Path** (3 connections)
+- **override_triples()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
+- **physical_counts()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
+- **sha256()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
+- **test_acceptance_target_entry_supports_composite_stem()** (2 connections) — `tests/test_issue264_phase_b_manifest.py`
+- **MonkeyPatch** (2 connections)
+- **Any** (1 connections)
+- **Path** (1 connections)
+- **Any** (1 connections)
+- *... and 3 more nodes in this community*
 
 ## Relationships
 
-- [Community 72](Community_72.md) (25 shared connections)
-- [Community 63](Community_63.md) (10 shared connections)
-- [Community 80](Community_80.md) (10 shared connections)
-- [Community 19](Community_19.md) (6 shared connections)
-- [Community 34](Community_34.md) (4 shared connections)
-- [Community 111](Community_111.md) (2 shared connections)
-- [Community 297](Community_297.md) (1 shared connections)
+- [Community 32](Community_32.md) (8 shared connections)
+- [Community 14](Community_14.md) (6 shared connections)
+- [Community 112](Community_112.md) (6 shared connections)
+- [Community 10](Community_10.md) (6 shared connections)
+- [Community 28](Community_28.md) (4 shared connections)
+- [Community 9](Community_9.md) (3 shared connections)
+- [Community 55](Community_55.md) (3 shared connections)
+- [Community 79](Community_79.md) (3 shared connections)
+- [Community 100](Community_100.md) (3 shared connections)
+- [Community 146](Community_146.md) (3 shared connections)
+- [Community 69](Community_69.md) (3 shared connections)
+- [Community 92](Community_92.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_contract.py`
-- `tests/test_engine_contract.py`
+- `src/pipeline/core/manifest.py`
+- `src/pipeline/mmr_geometry_handoff.py`
+- `tests/test_issue264_phase_b_manifest.py`
+- `tests/test_issue264_phase_b_mmr_geometry.py`
+- `tools/issue264/phase_b_page001_acceptance.py`
 
 ## Audit Trail
 
-- EXTRACTED: 96 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 100 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

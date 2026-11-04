@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **create_gt_gui_config.py** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
-- **main()** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
+- **run_gt_rebuild_hybrid_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
+- **run_gt_rebuild_hybrid_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/create_gt_gui_config.py`
+- `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
 
 ## Audit Trail
 

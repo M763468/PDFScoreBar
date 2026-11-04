@@ -1,51 +1,52 @@
 # Community 94
 
-> 27 nodes · cohesion 0.16
+> 27 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **phase_c_acceptance_integrity.py** (16 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **validate_resume_contract()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Any** (10 connections)
-- **run_phase_c_mmr_regression_container.py** (10 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
-- **Path** (8 connections)
-- **stamp_source_report()** (8 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **require_source_non_index_gates()** (7 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **build_producer_contract()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_load_json()** (6 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **main()** (6 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
-- **_describe_file()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **source_non_index_gate_failures()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_verify_generated_artifacts()** (5 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_sha256_file()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **_write_json()** (4 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **main()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **parse_args()** (3 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **phase_c_current_homr_isolated.py** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
-- **run()** (3 connections) — `tools/issue264/phase_c_current_homr_isolated.py`
-- **Namespace** (1 connections)
-- **Require all source gates unrelated to historical index-addressed scoring.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Bind a completed, augmented source report to this invocation and producer…** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Allow --resume only for a completed run produced by the exact current contract.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Describe the revision/config/input bytes allowed to produce resumed artifacts.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Return failed source gates that cannot be superseded by geometry rebasing.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **build_detector_input_contract()** (17 connections) — `src/pipeline/detection/input_contract.py`
+- **test_issue255_production_detector_restoration.py** (14 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_detector_input_contract.py** (9 connections) — `tests/test_detector_input_contract.py`
+- **input_contract.py** (8 connections) — `src/pipeline/detection/input_contract.py`
+- **require_fresh_detector_input_contract()** (6 connections) — `src/pipeline/detection/input_contract.py`
+- **Path** (5 connections)
+- **_configured()** (4 connections) — `src/pipeline/detection/input_contract.py`
+- **_config()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_dense_inventory_uses_only_current_hybrid_and_profile_masks()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_dense_route_cnn_uses_manifest_original_coordinates_and_nms_false()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_verified_profile_is_selected_for_hybrid_detection()** (4 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **Any** (3 connections)
+- **test_falsey_override_values_are_unset()** (3 connections) — `tests/test_detector_input_contract.py`
+- **test_truthy_path_strings_select_precomputed_route()** (3 connections) — `tests/test_detector_input_contract.py`
+- **test_current_sr_worker_uses_verified_x4_settings()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **test_current_support_runs_sr_homr_omr_as_separate_phases()** (3 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **parametrize** (2 connections)
+- **test_cnn_bands_override_makes_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_empty_detection_config_is_fresh_upstream()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_fresh_guard_names_all_candidate_source_overrides()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_precomputed_probe_candidates_make_route_checkpoint_only()** (2 connections) — `tests/test_detector_input_contract.py`
+- **test_canonical_detector_config_uses_verified_restored_route()** (2 connections) — `tests/test_issue255_production_detector_restoration.py`
+- **Classify whether detector candidates come from fresh upstream or overrides. A…** (1 connections) — `src/pipeline/detection/input_contract.py`
+- **Match the truthiness gate used by the detector path resolvers.** (1 connections) — `src/pipeline/detection/input_contract.py`
+- **Return the authoritative candidate-source contract for one detector run.** (1 connections) — `src/pipeline/detection/input_contract.py`
 - *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [Community 145](Community_145.md) (10 shared connections)
-- [Community 157](Community_157.md) (5 shared connections)
-- [Community 138](Community_138.md) (2 shared connections)
+- [Community 154](Community_154.md) (7 shared connections)
+- [Community 111](Community_111.md) (4 shared connections)
+- [Community 72](Community_72.md) (3 shared connections)
+- [Community 214](Community_214.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue264/phase_c_acceptance_integrity.py`
-- `tools/issue264/phase_c_current_homr_isolated.py`
-- `tools/issue264/run_phase_c_mmr_regression_container.py`
+- `src/pipeline/detection/input_contract.py`
+- `tests/test_detector_input_contract.py`
+- `tests/test_issue255_production_detector_restoration.py`
 
 ## Audit Trail
 
-- EXTRACTED: 74 (100%)
+- EXTRACTED: 63 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

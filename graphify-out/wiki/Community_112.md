@@ -1,58 +1,54 @@
 # Community 112
 
-> 24 nodes · cohesion 0.24
+> 24 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **PipelineOrchestrator** (65 connections) — `src/pipeline/orchestrator.py`
-- **test_issue236_review_package_pipeline_connection.py** (24 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **_fake_pipeline_config()** (18 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **_patch_lightweight_pipeline_phases()** (8 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **Path** (5 connections)
-- **test_pipeline_connection_materializes_enabled_review_package()** (5 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_resolves_relative_review_root_from_run_dir()** (5 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_does_not_materialize_when_disabled()** (4 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_does_not_materialize_when_review_flag_missing()** (4 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_skips_user_excluded_pages_in_review_package()** (4 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_treats_null_overwrite_as_default_true()** (4 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_uses_absolute_review_root()** (4 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_manifest_uses_corrected_barlines_for_review_package()** (4 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **_write_json()** (4 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_allows_review_package_without_automatic_mmr()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_allows_review_package_without_overlay_step()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_connection_rejects_missing_base_numbering()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_manifest_keeps_raw_barlines_when_corrected_missing()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_review_package_forces_pdf_image_persistence()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_pipeline_without_review_package_allows_in_memory_pdf_images()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **test_review_package_example_config_is_parseable()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **_write_text()** (3 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
-- **._telemetry_progress()** (1 connections) — `src/pipeline/orchestrator.py`
-- **Orchestrates the different phases of the numbering pipeline.** (1 connections) — `src/pipeline/orchestrator.py`
+- **test_issue274_mmr_support_reuse.py** (31 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **_support_with_current()** (11 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **_page()** (8 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **Path** (8 connections)
+- **_FixedClassifier** (7 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **MonkeyPatch** (7 connections)
+- **_ScriptedProcessor** (7 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_alternate_can_veto_but_never_create_positive_override()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_handoff_uses_sidecar_not_original_homr_worker()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_manifest_and_detection_resolve_explicit_current_support()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_ocr_candidate_scoring_receives_processed_dimensions()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_phase_a_fallback_is_ocr_only_and_never_replaces_valid_primary()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_support_none_keeps_legacy_processor_path()** (5 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **_gate_support()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_implicit_start_changes_only_alternate_start_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_implicit_start_uses_system_minimum_base_and_mapped_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_near_staff_left_normal_measure_does_not_enable_alternate()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_support_mapping_handles_single_many_to_one_union_and_unmapped()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **test_support_preserves_phase_a_topology_numbers_and_normal_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **.__init__()** (3 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **.__init__()** (1 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **.predict()** (1 connections) — `tests/test_issue274_mmr_support_reuse.py`
+- **parametrize** (1 connections)
+- **._detect_number_with_evidence()** (1 connections) — `tests/test_issue274_mmr_support_reuse.py`
 
 ## Relationships
 
-- [Community 21](Community_21.md) (18 shared connections)
-- [Community 111](Community_111.md) (6 shared connections)
-- [Community 98](Community_98.md) (3 shared connections)
-- [Community 12](Community_12.md) (3 shared connections)
-- [Community 166](Community_166.md) (3 shared connections)
-- [Community 50](Community_50.md) (3 shared connections)
-- [Community 82](Community_82.md) (3 shared connections)
-- [Community 26](Community_26.md) (3 shared connections)
-- [Community 25](Community_25.md) (2 shared connections)
-- [Community 2](Community_2.md) (2 shared connections)
-- [Community 222](Community_222.md) (2 shared connections)
-- [Community 454](Community_454.md) (2 shared connections)
+- [Community 79](Community_79.md) (7 shared connections)
+- [Community 110](Community_110.md) (6 shared connections)
+- [Community 92](Community_92.md) (3 shared connections)
+- [Community 9](Community_9.md) (3 shared connections)
+- [Community 28](Community_28.md) (3 shared connections)
+- [Community 67](Community_67.md) (2 shared connections)
+- [Community 15](Community_15.md) (2 shared connections)
+- [Community 286](Community_286.md) (1 shared connections)
+- [Community 10](Community_10.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/orchestrator.py`
-- `tests/test_issue236_review_package_pipeline_connection.py`
+- `tests/test_issue274_mmr_support_reuse.py`
 
 ## Audit Trail
 
-- EXTRACTED: 116 (97%)
-- INFERRED: 3 (3%)
+- EXTRACTED: 79 (94%)
+- INFERRED: 5 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

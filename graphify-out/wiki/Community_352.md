@@ -1,12 +1,13 @@
 # Community 352
 
-> 3 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **docker_build.sh** (2 connections) — `scripts/docker_build.sh`
-- **cleanup()** (1 connections) — `scripts/docker_build.sh`
-- **docker_build.sh script** (1 connections) — `scripts/docker_build.sh`
+- **observe_processes.py** (3 connections) — `tools/issue447/observe_processes.py`
+- **main()** (2 connections) — `tools/issue447/observe_processes.py`
+- **snapshot()** (2 connections) — `tools/issue447/observe_processes.py`
+- **Read-only /proc and cgroup sampler for one dedicated benchmark container. Run…** (1 connections) — `tools/issue447/observe_processes.py`
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `scripts/docker_build.sh`
+- `tools/issue447/observe_processes.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

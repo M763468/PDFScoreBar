@@ -1,10 +1,11 @@
 # Community 452
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **history.js** (0 connections) — `tools/review_correction/history.js`
+- **populate_provisional_gt.py** (1 connections) — `tools/populate_provisional_gt.py`
+- **main()** (1 connections) — `tools/populate_provisional_gt.py`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `tools/review_correction/history.js`
+- `tools/populate_provisional_gt.py`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

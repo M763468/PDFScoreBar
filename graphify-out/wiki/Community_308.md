@@ -1,14 +1,14 @@
 # Community 308
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **experiment_c.py** (3 connections) — `tools/issue194/experiment_c.py`
-- **analyze_page()** (3 connections) — `tools/issue194/experiment_c.py`
-- **check_aligned_connection_sim()** (3 connections) — `tools/issue194/experiment_c.py`
-- **main()** (2 connections) — `tools/issue194/experiment_c.py`
-- **Simulate the vertical connectivity check at aligned positions.** (1 connections) — `tools/issue194/experiment_c.py`
+- **reconcile_metrics.py** (4 connections) — `experiments/fp_reduction/reconcile_metrics.py`
+- **main()** (4 connections) — `experiments/fp_reduction/reconcile_metrics.py`
+- **compute_iou()** (2 connections) — `experiments/fp_reduction/reconcile_metrics.py`
+- **load_boxes()** (2 connections) — `experiments/fp_reduction/reconcile_metrics.py`
+- **parse_args()** (2 connections) — `experiments/fp_reduction/reconcile_metrics.py`
 
 ## Relationships
 
@@ -16,11 +16,11 @@
 
 ## Source Files
 
-- `tools/issue194/experiment_c.py`
+- `experiments/fp_reduction/reconcile_metrics.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

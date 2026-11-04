@@ -1,18 +1,19 @@
 # Community 236
 
-> 9 nodes · cohesion 0.22
+> 10 nodes · cohesion 0.49
 
 ## Key Concepts
 
-- **test_review_correction_client.py** (7 connections) — `tests/test_review_correction_client.py`
-- **test_user_adapter_keeps_async_state_contract()** (2 connections) — `tests/test_review_correction_client.py`
-- **parametrize** (1 connections)
-- **Exercise user state adapters with delayed saves and movement finalization.** (1 connections) — `tests/test_review_correction_client.py`
-- **test_apply_controls_survive_state_panel_refresh()** (1 connections) — `tests/test_review_correction_client.py`
-- **test_canvas_hit_testing_uses_rendered_size_for_both_axes()** (1 connections) — `tests/test_review_correction_client.py`
-- **test_compact_save_status_keeps_errors_visible_and_details_open_on_refresh()** (1 connections) — `tests/test_review_correction_client.py`
-- **test_rest_review_entry_includes_misses_and_unflagged_reads_without_rewriting_edits()** (1 connections) — `tests/test_review_correction_client.py`
-- **test_stale_numbering_preview_responses_cannot_restore_invalidated_results()** (1 connections) — `tests/test_review_correction_client.py`
+- **run_compile_full68_variant.py** (7 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **_run_score()** (7 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **Path** (6 connections)
+- **_cache_snapshot()** (5 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **_write_variant_summary()** (5 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **main()** (4 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **_derive_config()** (3 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **Any** (3 connections)
+- **_worker_env()** (3 connections) — `tools/issue284/run_compile_full68_variant.py`
+- **Run one canonical full-68 Issue #284 variant with an explicit SR compile mode.…** (1 connections) — `tools/issue284/run_compile_full68_variant.py`
 
 ## Relationships
 
@@ -20,11 +21,11 @@
 
 ## Source Files
 
-- `tests/test_review_correction_client.py`
+- `tools/issue284/run_compile_full68_variant.py`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 22 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

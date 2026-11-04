@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **create_comprehensive_gt_config.py** (1 connections) — `tools/cnn_classifier/create_comprehensive_gt_config.py`
-- **main()** (1 connections) — `tools/cnn_classifier/create_comprehensive_gt_config.py`
+- **run_confirmed_union_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
+- **run_confirmed_union_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/create_comprehensive_gt_config.py`
+- `experiments/legacy/tools_archive/run_confirmed_union_eval.sh`
 
 ## Audit Trail
 

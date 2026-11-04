@@ -1,11 +1,12 @@
 # Community 384
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **debug_visualize_col.py** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
-- **main()** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
+- **debug_mask_alignment()** (2 connections) — `tools/debug_mask_alignment.py`
+- **debug_mask_alignment.py** (1 connections) — `tools/debug_mask_alignment.py`
+- **Visualizes the alignment between the original image and the mask. Draws the…** (1 connections) — `tools/debug_mask_alignment.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/debug_visualize_col.py`
+- `tools/debug_mask_alignment.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

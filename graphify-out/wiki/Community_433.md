@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **visualize_rest_rois.py** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
-- **main()** (1 connections) — `tools/mmr_training/visualize_rest_rois.py`
+- **test_numbering_preview.py** (1 connections) — `tests/test_numbering_preview.py`
+- **test_numbering_preview_uses_retained_artifact_consumer_without_mutating_package()** (1 connections) — `tests/test_numbering_preview.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/mmr_training/visualize_rest_rois.py`
+- `tests/test_numbering_preview.py`
 
 ## Audit Trail
 

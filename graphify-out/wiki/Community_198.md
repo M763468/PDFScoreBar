@@ -1,29 +1,31 @@
 # Community 198
 
-> 12 nodes · cohesion 0.36
+> 13 nodes · cohesion 0.31
 
 ## Key Concepts
 
-- **staff_probe_scan.py** (9 connections) — `tools/staff_probe_scan.py`
-- **main()** (8 connections) — `tools/staff_probe_scan.py`
-- **ndarray** (6 connections)
-- **compute_scores()** (5 connections) — `tools/staff_probe_scan.py`
-- **draw_boxes()** (4 connections) — `tools/staff_probe_scan.py`
-- **extract_staff_bands()** (4 connections) — `tools/staff_probe_scan.py`
-- **find_staff_lines()** (4 connections) — `tools/staff_probe_scan.py`
-- **load_gt_boxes()** (4 connections) — `tools/staff_probe_scan.py`
-- **longest_run()** (3 connections) — `tools/staff_probe_scan.py`
-- **put_text_block()** (3 connections) — `tools/staff_probe_scan.py`
-- **rank_probes()** (2 connections) — `tools/staff_probe_scan.py`
-- **Path** (1 connections)
+- **summarize_stage_c_seed_regen_outputs.py** (12 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **build_rows()** (9 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **main()** (5 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **PageSeedRegenRow** (4 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **render_markdown()** (4 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **write_csv()** (4 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **build_parser()** (3 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **load_count()** (3 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **Namespace** (2 connections)
+- **Path** (2 connections)
+- **safe_delta()** (2 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **safe_ratio()** (2 connections) — `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (5 shared connections)
+- [Community 159](Community_159.md) (4 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/staff_probe_scan.py`
+- `tools/issue120/summarize_stage_c_seed_regen_outputs.py`
 
 ## Audit Trail
 

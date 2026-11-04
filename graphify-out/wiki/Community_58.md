@@ -1,53 +1,57 @@
 # Community 58
 
-> 36 nodes · cohesion 0.17
+> 52 nodes · cohesion 0.09
 
 ## Key Concepts
 
-- **compare_full68_x_domain.py** (31 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **Path** (19 connections)
-- **run()** (15 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **Any** (14 connections)
-- **_run_downstream_variant()** (11 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **test_issue43_full68_harness.py** (10 connections) — `tests/test_issue43_full68_harness.py`
-- **_generate_current_upstream_manifest()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_validate_inventory()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_validate_upstream_manifest()** (9 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_load_json()** (7 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_build_comparison()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_compare_box_roots()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_source_commit()** (6 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_box_set()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_group_images_by_score()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_load_canonical_config()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_resolve_production_cnn()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_sha256()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_write_json()** (5 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_evaluation_args()** (4 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **test_upstream_manifest_accepts_same_page_stem_in_separate_scores()** (4 connections) — `tests/test_issue43_full68_harness.py`
-- **_accuracy_not_worse()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_box_files()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_canonical_images()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- **_copy_tree()** (3 connections) — `experiments/issue43/compare_full68_x_domain.py`
-- *... and 11 more nodes in this community*
+- **test_current_homr_worker.py** (29 connections) — `tests/test_current_homr_worker.py`
+- **homr_profile_compat.py** (24 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **install_current_homr_consumer_compat()** (22 connections) — `src/homr_runtime/api_compat.py`
+- **api_compat.py** (15 connections) — `src/homr_runtime/api_compat.py`
+- **build_processing_config_compat()** (15 connections) — `src/homr_runtime/api_compat.py`
+- **Any** (12 connections)
+- **install_homr_api_compat()** (12 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **Any** (8 connections)
+- **download_weights_compat_mode()** (7 connections) — `src/homr_runtime/api_compat.py`
+- **load_predictions_compat_mode()** (7 connections) — `src/homr_runtime/api_compat.py`
+- **_install_processing_config_compat()** (7 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **call_download_weights_compat()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **parse_staffs_compat_mode()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **processing_config_compat_mode()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **_required_positional_count()** (6 connections) — `src/homr_runtime/api_compat.py`
+- **_install_load_predictions_compat()** (6 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **call_load_predictions_compat()** (5 connections) — `src/homr_runtime/api_compat.py`
+- **call_parse_staffs_compat()** (5 connections) — `src/homr_runtime/api_compat.py`
+- **_original_consumer_callable()** (4 connections) — `src/homr_runtime/api_compat.py`
+- **_inject_gpu_keyword_for_signature()** (4 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **_install_parse_staffs_compat()** (4 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **_install_segnet_cache_compat()** (4 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **main()** (4 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **_run_entrypoint()** (4 connections) — `src/pipeline/detection/homr_profile_compat.py`
+- **_sanitize_generate_xml_staffs()** (3 connections) — `src/homr_runtime/api_compat.py`
+- *... and 27 more nodes in this community*
 
 ## Relationships
 
-- [Community 98](Community_98.md) (2 shared connections)
-- [Community 123](Community_123.md) (2 shared connections)
-- [Community 68](Community_68.md) (2 shared connections)
-- [Community 116](Community_116.md) (2 shared connections)
-- [Community 154](Community_154.md) (2 shared connections)
+- [Community 43](Community_43.md) (13 shared connections)
+- [Community 263](Community_263.md) (6 shared connections)
+- [Community 70](Community_70.md) (5 shared connections)
+- [Community 214](Community_214.md) (4 shared connections)
+- [Community 111](Community_111.md) (3 shared connections)
+- [Community 3](Community_3.md) (2 shared connections)
+- [Community 180](Community_180.md) (1 shared connections)
+- [Community 79](Community_79.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/issue43/compare_full68_x_domain.py`
-- `tests/test_issue43_full68_harness.py`
+- `src/homr_runtime/api_compat.py`
+- `src/pipeline/detection/homr_profile_compat.py`
+- `tests/test_current_homr_worker.py`
 
 ## Audit Trail
 
-- EXTRACTED: 119 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 141 (92%)
+- INFERRED: 13 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

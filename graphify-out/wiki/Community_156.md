@@ -1,39 +1,64 @@
 # Community 156
 
-> 16 nodes · cohesion 0.18
+> 31 nodes · cohesion 0.12
 
 ## Key Concepts
 
-- **stage_e_dense_full_pipeline.py** (11 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **DenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **reconstruct_stage_e_dense_route()** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **StageEDenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Path** (4 connections)
-- **regenerate_dense_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **regenerate_issue53_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **.from_dense()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **.issue53_root()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Freshly reconstructed dense route inputs.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **Compatibility shim for the historical Stage E dense route module. New code…** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Historical Stage E artifact view with legacy field access.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Legacy name for Stage E Issue53-style probe-rescue candidates.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Compatibility wrapper for the historical Stage E route-root keyword.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Compatibility wrapper for the historical Issue53-style rescue name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **Compatibility wrapper for the historical Stage E route name.** (1 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **cnn_scoring.py** (40 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **run_cnn_scoring_batch()** (29 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **_score_directory()** (22 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **unified_recipe.py** (9 connections) — `tools/repro_accuracy/unified_recipe.py`
+- **verify_sr_bypass_filtering.py** (8 connections) — `tools/verify_sr_bypass_filtering.py`
+- **GPUNormalize** (7 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **batch_re_evaluate_bench.py** (7 connections) — `tools/batch_re_evaluate_bench.py`
+- **verify_repro_batch_final.py** (7 connections) — `tools/repro_accuracy/verify_repro_batch_final.py`
+- **apply_nms()** (6 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **Path** (6 connections)
+- **_write_scoring_results()** (6 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **run_batch_verification()** (5 connections) — `tools/batch_re_evaluate_bench.py`
+- **main()** (5 connections) — `tools/repro_accuracy/unified_recipe.py`
+- **main()** (5 connections) — `tools/repro_accuracy/verify_repro_batch_final.py`
+- **main()** (5 connections) — `tools/verify_sr_bypass_filtering.py`
+- **_compute_bbox_ink_center_x()** (4 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **Any** (4 connections)
+- **_center_crop()** (3 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **_crop_size_from_bbox()** (2 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **ndarray** (2 connections)
+- **test_scoring_preserves_raw_scores_and_default_behavior()** (2 connections) — `tests/test_staff_strokes.py`
+- **find_bench_dirs()** (2 connections) — `tools/batch_re_evaluate_bench.py`
+- **parse_bench_name()** (2 connections) — `tools/batch_re_evaluate_bench.py`
+- **get_gt_boxes()** (2 connections) — `tools/repro_accuracy/verify_repro_batch_final.py`
+- **load_json()** (2 connections) — `tools/repro_accuracy/verify_repro_batch_final.py`
+- *... and 6 more nodes in this community*
 
 ## Relationships
 
-- [Community 116](Community_116.md) (10 shared connections)
+- [Community 27](Community_27.md) (19 shared connections)
+- [Community 101](Community_101.md) (17 shared connections)
+- [Community 18](Community_18.md) (10 shared connections)
+- [Community 59](Community_59.md) (8 shared connections)
+- [Community 81](Community_81.md) (5 shared connections)
+- [Community 40](Community_40.md) (5 shared connections)
+- [Community 60](Community_60.md) (4 shared connections)
+- [Community 72](Community_72.md) (3 shared connections)
+- [Community 181](Community_181.md) (3 shared connections)
+- [Community 155](Community_155.md) (2 shared connections)
+- [Community 271](Community_271.md) (2 shared connections)
+- [Community 69](Community_69.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/dense_full_pipeline.py`
-- `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- `src/pipeline/steps/cnn_scoring.py`
+- `tests/test_staff_strokes.py`
+- `tools/batch_re_evaluate_bench.py`
+- `tools/repro_accuracy/unified_recipe.py`
+- `tools/repro_accuracy/verify_repro_batch_final.py`
+- `tools/verify_sr_bypass_filtering.py`
 
 ## Audit Trail
 
-- EXTRACTED: 30 (94%)
-- INFERRED: 2 (6%)
+- EXTRACTED: 142 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

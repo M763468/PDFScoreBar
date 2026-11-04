@@ -1,11 +1,12 @@
 # Community 390
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **analyze_fps_enhanced.py** (1 connections) — `experiments/fp_reduction/analyze_fps_enhanced.py`
-- **enhanced_analysis()** (1 connections) — `experiments/fp_reduction/analyze_fps_enhanced.py`
+- **issue454/run_experiment.py** (2 connections) — `tools/issue454/run_experiment.py`
+- **main()** (1 connections) — `tools/issue454/run_experiment.py`
+- **Launch a frozen Issue #447 experiment without changing production configuration.** (1 connections) — `tools/issue454/run_experiment.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_fps_enhanced.py`
+- `tools/issue454/run_experiment.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

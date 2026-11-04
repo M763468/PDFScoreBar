@@ -1,78 +1,64 @@
 # Community 0
 
-> 113 nodes · cohesion 0.04
+> 83 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **greedy_barline_match()** (118 connections) — `src/common/barline_evaluation.py`
-- **barline_evaluation.py** (82 connections) — `src/common/barline_evaluation.py`
-- **is_barline_match()** (27 connections) — `src/common/barline_evaluation.py`
-- **metrics.py** (24 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **barline_iou()** (19 connections) — `src/common/barline_geometry.py`
-- **barline_vertical_overlap()** (16 connections) — `src/common/barline_geometry.py`
-- **center_distance_x()** (13 connections) — `src/common/barline_evaluation.py`
-- **barline_geometry.py** (12 connections) — `src/common/barline_geometry.py`
-- **load_ground_truth_boxes()** (11 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **apply_left_margin_exclusion()** (9 connections) — `src/common/barline_evaluation.py`
-- **expand_barline_box()** (9 connections) — `src/common/barline_geometry.py`
-- **visualize_remaining_fn_v2.py** (9 connections) — `tools/visualize_remaining_fn_v2.py`
-- **get_barline_match_rank()** (8 connections) — `src/common/barline_evaluation.py`
-- **ImageMetrics** (8 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **common/__init__.py** (6 connections) — `src/common/__init__.py`
-- **compute_metrics()** (6 connections) — `src/homr_eval_scripts/core/metrics.py`
-- **verify_pipeline_accuracy.py** (6 connections) — `tools/repro_accuracy/verify_pipeline_accuracy.py`
-- **tune_hybrid_detector.py** (5 connections) — `experiments/fp_reduction/tune_hybrid_detector.py`
-- **main()** (5 connections) — `experiments/models/eval_grounding_dino.py`
-- **compare_sr_all.py** (5 connections) — `tools/compare_sr_all.py`
-- **debug_greedy_match.py** (5 connections) — `tools/debug_greedy_match.py`
-- **main()** (5 connections) — `tools/debug_greedy_match.py`
-- **evaluate_and_visualize.py** (5 connections) — `tools/evaluate_and_visualize.py`
-- **debug_matches.py** (5 connections) — `tools/repro_accuracy/debug_matches.py`
-- **verify_cnn_scored.py** (5 connections) — `tools/repro_accuracy/verify_cnn_scored.py`
-- *... and 88 more nodes in this community*
+- **materialize_corrected_final_outputs()** (39 connections) — `src/pipeline/review/final_output.py`
+- **final_output.py** (28 connections) — `src/pipeline/review/final_output.py`
+- **replay_phase_c.py** (20 connections) — `tools/issue413/replay_phase_c.py`
+- **_sanitize_output_name()** (16 connections) — `src/pipeline/review/final_output.py`
+- **replay()** (16 connections) — `tools/issue413/replay_phase_c.py`
+- **test_issue413_replay_audit.py** (15 connections) — `tests/test_issue413_replay_audit.py`
+- **test_corrected_final_output.py** (14 connections) — `tests/test_corrected_final_output.py`
+- **CorrectedFinalOutputError** (13 connections) — `src/pipeline/review/final_output.py`
+- **Any** (13 connections)
+- **_render_final_page_image()** (13 connections) — `src/pipeline/review/final_output.py`
+- **_setup_final_output_fixture()** (12 connections) — `tests/test_corrected_final_output.py`
+- **test_final_pdf_page_size.py** (10 connections) — `tests/test_final_pdf_page_size.py`
+- **_row_label_records()** (9 connections) — `src/pipeline/review/final_output.py`
+- **records_from_run()** (9 connections) — `src/pipeline/review/number_layer.py`
+- **verify_pdf_images()** (9 connections) — `tools/issue413/replay_phase_c.py`
+- **canonical_input_hashes()** (8 connections) — `tools/issue413/replay_phase_c.py`
+- **Path** (8 connections)
+- **_draw_row_start_labels()** (7 connections) — `src/pipeline/review/final_output.py`
+- **_first_page_payload()** (7 connections) — `src/pipeline/review/final_output.py`
+- **Path** (7 connections)
+- **_resolve_package_path()** (7 connections) — `src/pipeline/review/final_output.py`
+- **verify_input_hashes()** (7 connections) — `tools/issue413/replay_phase_c.py`
+- **_derive_output_name()** (6 connections) — `src/pipeline/review/final_output.py`
+- **_load_json_object()** (6 connections) — `src/pipeline/review/final_output.py`
+- **_physical_page_size()** (6 connections) — `src/pipeline/review/final_output.py`
+- *... and 58 more nodes in this community*
 
 ## Relationships
 
-- [Community 31](Community_31.md) (23 shared connections)
-- [Community 154](Community_154.md) (21 shared connections)
-- [Community 108](Community_108.md) (18 shared connections)
-- [Community 137](Community_137.md) (13 shared connections)
-- [Community 73](Community_73.md) (12 shared connections)
-- [Community 106](Community_106.md) (11 shared connections)
-- [Community 11](Community_11.md) (10 shared connections)
-- [Community 78](Community_78.md) (6 shared connections)
-- [Community 39](Community_39.md) (5 shared connections)
-- [Community 107](Community_107.md) (5 shared connections)
-- [Community 127](Community_127.md) (5 shared connections)
+- [Community 32](Community_32.md) (9 shared connections)
+- [Community 11](Community_11.md) (8 shared connections)
+- [Community 41](Community_41.md) (6 shared connections)
+- [Community 196](Community_196.md) (4 shared connections)
 - [Community 49](Community_49.md) (4 shared connections)
+- [Community 172](Community_172.md) (3 shared connections)
+- [Community 51](Community_51.md) (3 shared connections)
+- [Community 56](Community_56.md) (2 shared connections)
+- [Community 23](Community_23.md) (2 shared connections)
+- [Community 29](Community_29.md) (2 shared connections)
+- [Community 45](Community_45.md) (2 shared connections)
+- [Community 268](Community_268.md) (2 shared connections)
 
 ## Source Files
 
-- `experiments/fp_reduction/tune_hybrid_detector.py`
-- `experiments/models/eval_grounding_dino.py`
-- `experiments/models/eval_yolo_world.py`
-- `src/common/__init__.py`
-- `src/common/barline_evaluation.py`
-- `src/common/barline_geometry.py`
-- `src/homr_eval_scripts/core/metrics.py`
-- `tests/test_distribution_surface.py`
-- `tools/analyze_fp_heights.py`
-- `tools/cnn_classifier/create_fp_dataset.py`
-- `tools/cnn_classifier/identify_iter6_hard_samples.py`
-- `tools/compare_sr_all.py`
-- `tools/debug_greedy_match.py`
-- `tools/diagnostics/visualize_error_crops.py`
-- `tools/eval_existing_json.py`
-- `tools/evaluate_and_visualize.py`
-- `tools/inspect_gt_dupes.py`
-- `tools/inspect_gt_image.py`
-- `tools/repro_accuracy/debug_matches.py`
-- `tools/repro_accuracy/verify_cnn_scored.py`
+- `src/pipeline/review/final_output.py`
+- `src/pipeline/review/number_layer.py`
+- `tests/test_corrected_final_output.py`
+- `tests/test_final_pdf_page_size.py`
+- `tests/test_issue413_replay_audit.py`
+- `tools/issue413/replay_phase_c.py`
 
 ## Audit Trail
 
-- EXTRACTED: 417 (98%)
-- INFERRED: 10 (2%)
+- EXTRACTED: 263 (98%)
+- INFERRED: 5 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

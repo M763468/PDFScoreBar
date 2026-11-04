@@ -1,40 +1,37 @@
 # Community 169
 
-> 15 nodes · cohesion 0.25
+> 15 nodes · cohesion 0.29
 
 ## Key Concepts
 
-- **draw()** (21 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **itemsForCurrentPage()** (13 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **renderMovementRows()** (11 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **drawMovementMarker()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementStateAt()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementSystemsOnPage()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **systemBounds()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementCandidateAt()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **drawBox()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **drawLabel()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **imgToCanvas()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **resolvedMovementAt()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **measureDisplayLabel()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementReviewAt()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementEvidenceText()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **analysis_overlays.py** (14 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **main()** (12 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **cluster_by_y_distance()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **draw_boxes()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **geom_notehead_ratio_filter()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **load_notehead_mask()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **load_preds()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **ndarray** (4 connections)
+- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **classify_margin()** (3 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **estimate_staff_space()** (3 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **evaluate()** (3 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
+- **Path** (3 connections)
+- **PageSpec** (2 connections) — `experiments/phase5b_notehead_geom/analysis_overlays.py`
 
 ## Relationships
 
-- [Community 186](Community_186.md) (17 shared connections)
-- [Community 16](Community_16.md) (16 shared connections)
-- [Community 253](Community_253.md) (8 shared connections)
-- [Community 208](Community_208.md) (6 shared connections)
-- [Community 153](Community_153.md) (1 shared connections)
+- [Community 64](Community_64.md) (8 shared connections)
+- [Community 27](Community_27.md) (4 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_manual.js`
+- `experiments/phase5b_notehead_geom/analysis_overlays.py`
 
 ## Audit Trail
 
-- EXTRACTED: 74 (100%)
+- EXTRACTED: 42 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

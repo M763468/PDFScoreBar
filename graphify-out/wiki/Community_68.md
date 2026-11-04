@@ -1,65 +1,55 @@
 # Community 68
 
-> 49 nodes · cohesion 0.08
+> 41 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **dense_orchestrator.py** (40 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **DetectorOrchestrator** (25 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **test_issue315_production_model_artifact_contract.py** (15 connections) — `tests/test_issue315_production_model_artifact_contract.py`
-- **_resolve_verified_cnn_artifact()** (14 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **.run_detection()** (12 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **get_cnn_apply_nms()** (10 connections) — `src/pipeline/detection/config.py`
-- **Path** (10 connections)
-- **detection/config.py** (9 connections) — `src/pipeline/detection/config.py`
-- **split_score_page_from_composite_stem()** (8 connections) — `src/pipeline/core/__init__.py`
-- **Path** (8 connections)
-- **get_probe_x_domain_kwargs()** (7 connections) — `src/pipeline/detection/config.py`
-- **._run_cnn_scoring()** (7 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **._run_dense_route()** (7 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **._write_dense_inventory()** (6 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **Any** (6 connections)
-- **.__init__()** (5 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **run_detection_step()** (5 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **_validate_verified_cnn_manifest()** (5 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **_write_test_manifest()** (5 connections) — `tests/test_issue315_production_model_artifact_contract.py`
-- **._record_input_contract()** (4 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **_score_page()** (4 connections) — `src/pipeline/detection/dense_orchestrator.py`
-- **test_detection_config.py** (4 connections) — `tests/test_detection_config.py`
-- **test_verified_stage_e_fails_loud_on_cached_hash_mismatch()** (4 connections) — `tests/test_issue315_production_model_artifact_contract.py`
-- **test_verified_stage_e_fails_loud_when_cached_artifact_is_missing()** (4 connections) — `tests/test_issue315_production_model_artifact_contract.py`
-- **test_verified_stage_e_resolves_matching_cached_artifact()** (4 connections) — `tests/test_issue315_production_model_artifact_contract.py`
-- *... and 24 more nodes in this community*
+- **lease()** (22 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **test_sr_compiler_cache.py** (21 connections) — `tests/test_sr_compiler_cache.py`
+- **current_sr_batch_worker.py** (16 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **_run()** (13 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **sr_compiler_cache.py** (10 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **runtime_identity()** (10 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **validate_compiler_counters()** (7 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **_items()** (6 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **_load_request()** (4 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **Path** (4 connections)
+- **digest()** (4 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **PermissionError** (3 connections)
+- **_sha256()** (3 connections) — `src/pipeline/detection/current_sr_batch_worker.py`
+- **inventory()** (3 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **_private()** (3 connections) — `src/pipeline/detection/sr_compiler_cache.py`
+- **Path** (3 connections)
+- **_contend()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **_crash()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **test_compiled_cache_event_accepted()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **test_concurrent_job_rejected()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **test_process_crash_leaves_dirty_and_releases_lock()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **test_unknown_or_partial_compilation_rejected()** (3 connections) — `tests/test_sr_compiler_cache.py`
+- **Any** (2 connections)
+- **parametrize** (2 connections)
+- **root()** (2 connections) — `tests/test_sr_compiler_cache.py`
+- *... and 16 more nodes in this community*
 
 ## Relationships
 
-- [Community 61](Community_61.md) (13 shared connections)
-- [Community 10](Community_10.md) (12 shared connections)
-- [Community 154](Community_154.md) (10 shared connections)
-- [Community 92](Community_92.md) (7 shared connections)
-- [Community 75](Community_75.md) (6 shared connections)
-- [Community 60](Community_60.md) (5 shared connections)
-- [Community 13](Community_13.md) (5 shared connections)
-- [Community 76](Community_76.md) (4 shared connections)
-- [Community 87](Community_87.md) (3 shared connections)
-- [Community 37](Community_37.md) (3 shared connections)
-- [Community 71](Community_71.md) (2 shared connections)
-- [Community 53](Community_53.md) (2 shared connections)
+- [Community 35](Community_35.md) (9 shared connections)
+- [Community 111](Community_111.md) (5 shared connections)
+- [Community 69](Community_69.md) (3 shared connections)
+- [Community 130](Community_130.md) (1 shared connections)
+- [Community 114](Community_114.md) (1 shared connections)
+- [Community 11](Community_11.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/core/__init__.py`
-- `src/pipeline/detection/config.py`
-- `src/pipeline/detection/dense_orchestrator.py`
-- `tests/test_detection_config.py`
-- `tests/test_experiment_model_selection.py`
-- `tests/test_issue315_production_model_artifact_contract.py`
-- `tests/test_probe_x_domain.py`
+- `src/pipeline/detection/current_sr_batch_worker.py`
+- `src/pipeline/detection/sr_compiler_cache.py`
+- `tests/test_sr_compiler_cache.py`
 
 ## Audit Trail
 
-- EXTRACTED: 172 (98%)
-- INFERRED: 4 (2%)
+- EXTRACTED: 96 (95%)
+- INFERRED: 5 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

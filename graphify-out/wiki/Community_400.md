@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_gt_rebuild_eval.sh** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
-- **run_gt_rebuild_eval.sh script** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
+- **visual-diff-viewer/run.sh** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
+- **run.sh script** (1 connections) — `.agents/skills/visual-diff-viewer/run.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
+- `.agents/skills/visual-diff-viewer/run.sh`
 
 ## Audit Trail
 

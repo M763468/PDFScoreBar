@@ -1,12 +1,13 @@
 # Community 350
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **analyze_fp_cause.py** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
-- **analyze_fp()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
-- **center_dist()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
+- **global_batch_mmr_eval.py** (3 connections) — `tools/global_batch_mmr_eval.py`
+- **main()** (3 connections) — `tools/global_batch_mmr_eval.py`
+- **process_page()** (3 connections) — `tools/global_batch_mmr_eval.py`
+- **run_command()** (3 connections) — `tools/global_batch_mmr_eval.py`
 
 ## Relationships
 
@@ -14,11 +15,11 @@
 
 ## Source Files
 
-- `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
+- `tools/global_batch_mmr_eval.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 6 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,12 +1,12 @@
 # Community 367
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **debug_mask_alignment()** (2 connections) — `tools/debug_mask_alignment.py`
-- **debug_mask_alignment.py** (1 connections) — `tools/debug_mask_alignment.py`
-- **Visualizes the alignment between the original image and the mask. Draws the…** (1 connections) — `tools/debug_mask_alignment.py`
+- **analyze_fp_cause.py** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
+- **analyze_fp()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
+- **center_dist()** (2 connections) — `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/debug_mask_alignment.py`
+- `experiments/legacy/investigation_20260102/analyze_fp_cause.py`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

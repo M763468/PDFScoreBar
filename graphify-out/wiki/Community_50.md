@@ -1,65 +1,49 @@
 # Community 50
 
-> 39 nodes · cohesion 0.10
+> 37 nodes · cohesion 0.16
 
 ## Key Concepts
 
-- **MeasureNumberingPipeline** (54 connections) — `src/measure_numbering/pipeline.py`
-- **load_image()** (26 connections) — `src/pipeline/utils/images.py`
-- **phase_b_page001_acceptance.py** (23 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **numbering_phases.py** (14 connections) — `src/pipeline/steps/numbering_phases.py`
-- **run()** (14 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **.process_page()** (11 connections) — `src/measure_numbering/pipeline.py`
-- **NumberingPhaseServices** (10 connections) — `src/pipeline/steps/numbering_phases.py`
-- **run_final_numbering_and_overlays()** (10 connections) — `src/pipeline/steps/numbering_phases.py`
-- **build_numbering()** (10 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **run_base_numbering_and_barline_correction()** (9 connections) — `src/pipeline/steps/numbering_phases.py`
-- **cli.py** (8 connections) — `src/measure_numbering/cli.py`
-- **render_overlay()** (8 connections) — `src/measure_numbering/cli.py`
-- **run_mmr_batch_detection()** (8 connections) — `src/pipeline/steps/numbering_phases.py`
-- **main()** (6 connections) — `src/measure_numbering/cli.py`
-- **test_issue264_phase_b_manifest.py** (6 connections) — `tests/test_issue264_phase_b_manifest.py`
-- **target_manifest_entry()** (6 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **._connector_evidence_staves()** (5 connections) — `src/measure_numbering/pipeline.py`
-- **.run_sequential()** (4 connections) — `src/measure_numbering/pipeline.py`
-- **Path** (4 connections)
-- **Any** (4 connections)
-- **Path** (4 connections)
-- **._image_to_connector_mask()** (3 connections) — `src/measure_numbering/pipeline.py`
-- **Any** (3 connections)
-- **Path** (3 connections)
-- **override_triples()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- *... and 14 more nodes in this community*
+- **run_full68_pair_host.py** (28 connections) — `tools/issue284/run_full68_pair_host.py`
+- **main()** (16 connections) — `tools/issue284/run_full68_pair_host.py`
+- **Path** (16 connections)
+- **RuntimeError** (10 connections)
+- **checked()** (9 connections) — `tools/issue284/run_full68_pair_host.py`
+- **test_issue284_full68_pair_host.py** (8 connections) — `tests/test_issue284_full68_pair_host.py`
+- **checkout_exact()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **git_commit()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_docker_runtime()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **run_variant()** (8 connections) — `tools/issue284/run_full68_pair_host.py`
+- **capture()** (7 connections) — `tools/issue284/run_full68_pair_host.py`
+- **restore_checkout()** (7 connections) — `tools/issue284/run_full68_pair_host.py`
+- **parse_windows_free_bytes()** (6 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_clean()** (6 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_s_free_space()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_workspace_mount()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **restore_target()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **validate_run_tag()** (5 connections) — `tools/issue284/run_full68_pair_host.py`
+- **require_host_uid_write_access()** (4 connections) — `tools/issue284/run_full68_pair_host.py`
+- **s_free_gib()** (4 connections) — `tools/issue284/run_full68_pair_host.py`
+- **stage_candidate_runner()** (4 connections) — `tools/issue284/run_full68_pair_host.py`
+- **test_validate_run_tag_accepts_safe_values()** (3 connections) — `tests/test_issue284_full68_pair_host.py`
+- **test_validate_run_tag_rejects_unsafe_values()** (3 connections) — `tests/test_issue284_full68_pair_host.py`
+- **container_path()** (3 connections) — `tools/issue284/run_full68_pair_host.py`
+- **docker_container_info()** (3 connections) — `tools/issue284/run_full68_pair_host.py`
+- *... and 12 more nodes in this community*
 
 ## Relationships
 
-- [Community 8](Community_8.md) (19 shared connections)
-- [Community 21](Community_21.md) (9 shared connections)
-- [Community 42](Community_42.md) (8 shared connections)
-- [Community 12](Community_12.md) (8 shared connections)
-- [Community 18](Community_18.md) (7 shared connections)
-- [Community 32](Community_32.md) (6 shared connections)
-- [Community 144](Community_144.md) (5 shared connections)
-- [Community 183](Community_183.md) (4 shared connections)
-- [Community 69](Community_69.md) (4 shared connections)
-- [Community 107](Community_107.md) (4 shared connections)
-- [Community 154](Community_154.md) (4 shared connections)
-- [Community 155](Community_155.md) (3 shared connections)
+- [Community 150](Community_150.md) (1 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/cli.py`
-- `src/measure_numbering/pipeline.py`
-- `src/pipeline/steps/numbering_phases.py`
-- `src/pipeline/utils/images.py`
-- `tests/test_issue197_system_grouping_connector_evidence.py`
-- `tests/test_issue264_phase_b_manifest.py`
-- `tools/issue264/phase_b_page001_acceptance.py`
+- `tests/test_issue284_full68_pair_host.py`
+- `tools/issue284/run_full68_pair_host.py`
 
 ## Audit Trail
 
-- EXTRACTED: 182 (91%)
-- INFERRED: 18 (9%)
+- EXTRACTED: 107 (97%)
+- INFERRED: 3 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

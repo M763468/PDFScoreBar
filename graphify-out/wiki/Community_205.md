@@ -1,20 +1,21 @@
 # Community 205
 
-> 11 nodes · cohesion 0.27
+> 12 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **test_issue459_adoption_v2.py** (9 connections) — `tests/test_issue459_adoption_v2.py`
-- **blocks()** (6 connections) — `tests/test_issue459_adoption_v2.py`
-- **test_decision_never_treats_missing_gate_as_pass()** (2 connections) — `tests/test_issue459_adoption_v2.py`
-- **test_improvement_inside_noise_fails_noise_gate()** (2 connections) — `tests/test_issue459_adoption_v2.py`
-- **test_negligible_improvement_fails_floor()** (2 connections) — `tests/test_issue459_adoption_v2.py`
-- **test_one_regressed_block_fails_direction_gate()** (2 connections) — `tests/test_issue459_adoption_v2.py`
-- **test_performance_gates_pass_reproducible_improvement()** (2 connections) — `tests/test_issue459_adoption_v2.py`
-- **test_performance_gates_require_three_complete_blocks()** (2 connections) — `tests/test_issue459_adoption_v2.py`
-- **parametrize** (1 connections)
-- **test_memory_gate_limits()** (1 connections) — `tests/test_issue459_adoption_v2.py`
-- **test_omr_process_count_distinguishes_entrypoints()** (1 connections) — `tests/test_issue459_adoption_v2.py`
+- **AcceptanceRunnerTests** (10 connections) — `tests/test_review_acceptance.py`
+- **test_review_acceptance.py** (2 connections) — `tests/test_review_acceptance.py`
+- **.test_candidate_commit_accepts_explicit_identity_without_git()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_candidate_commit_requires_operator_identity_without_git()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_candidate_commit_uses_checkout_when_git_lookup_succeeds()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_movement_evidence_fields_survive_focused_package_subset()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_numbering_helpers_count_measures_and_preserve_visible_values()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_only_existing_manifest_paths_are_rebased_and_rewrite_is_recorded()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_prepare_rejects_missing_candidate_commit_before_creating_evidence()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_source_context_copies_numbering_base_without_touching_retained_source()** (1 connections) — `tests/test_review_acceptance.py`
+- **.test_state_snapshot_retains_current_and_last_successful_result_fields()** (1 connections) — `tests/test_review_acceptance.py`
+- **Small deterministic checks for Issue #397 preparation helpers.** (1 connections) — `tests/test_review_acceptance.py`
 
 ## Relationships
 
@@ -22,11 +23,11 @@
 
 ## Source Files
 
-- `tests/test_issue459_adoption_v2.py`
+- `tests/test_review_acceptance.py`
 
 ## Audit Trail
 
-- EXTRACTED: 15 (100%)
+- EXTRACTED: 11 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

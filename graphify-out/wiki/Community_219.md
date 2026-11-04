@@ -1,40 +1,36 @@
 # Community 219
 
-> 10 nodes · cohesion 0.22
+> 11 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **describe_connector_artifacts()** (18 connections) — `src/common/connector_artifacts.py`
-- **build_manifest()** (12 connections) — `src/pipeline/core/manifest.py`
-- **manifest.py** (7 connections) — `src/pipeline/core/manifest.py`
-- **test_manifest_records_mmr_geometry()** (4 connections) — `tests/test_issue264_phase_b_manifest.py`
-- **Any** (1 connections)
-- **Describe the connector source actually available to numbering.** (1 connections) — `src/common/connector_artifacts.py`
-- **Any** (1 connections)
-- **Path** (1 connections)
-- **MonkeyPatch** (1 connections)
-- **Path** (1 connections)
+- **addCorrectionItem()** (17 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **saveCorrectionType()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **operationLabel()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **queueMovementSave()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **replaceItemsForCurrentPage()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **saveCorrectionTypes()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **setDirty()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **currentOp()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **saveCorrectionPage()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **currentReason()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **saveDirtyTypes()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
 
 ## Relationships
 
-- [Community 45](Community_45.md) (10 shared connections)
-- [Community 150](Community_150.md) (3 shared connections)
-- [Community 21](Community_21.md) (3 shared connections)
-- [Community 50](Community_50.md) (3 shared connections)
-- [Community 114](Community_114.md) (3 shared connections)
-- [Community 157](Community_157.md) (2 shared connections)
-- [Community 47](Community_47.md) (2 shared connections)
-- [Community 164](Community_164.md) (1 shared connections)
+- [Community 12](Community_12.md) (11 shared connections)
+- [Community 195](Community_195.md) (8 shared connections)
+- [Community 175](Community_175.md) (6 shared connections)
+- [Community 262](Community_262.md) (4 shared connections)
+- [Community 158](Community_158.md) (2 shared connections)
 
 ## Source Files
 
-- `src/common/connector_artifacts.py`
-- `src/pipeline/core/manifest.py`
-- `tests/test_issue264_phase_b_manifest.py`
+- `tools/gt_relabel_gui/app_manual.js`
 
 ## Audit Trail
 
-- EXTRACTED: 37 (100%)
+- EXTRACTED: 42 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

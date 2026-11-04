@@ -1,38 +1,40 @@
 # Community 192
 
-> 12 nodes · cohesion 0.26
+> 13 nodes · cohesion 0.45
 
 ## Key Concepts
 
-- **candidate_generation.py** (9 connections) — `src/pipeline/detector_routes/candidate_generation.py`
-- **_run_one()** (9 connections) — `src/pipeline/detector_routes/candidate_generation.py`
-- **test_probe_x_domain_route.py** (6 connections) — `tests/test_probe_x_domain_route.py`
-- **_load_boxes()** (3 connections) — `src/pipeline/detector_routes/candidate_generation.py`
-- **main()** (3 connections) — `src/pipeline/detector_routes/candidate_generation.py`
-- **parse_args()** (3 connections) — `src/pipeline/detector_routes/candidate_generation.py`
-- **Path** (2 connections)
-- **test_dense_probe_rescue_forwards_x_domain_without_changing_y_band_source()** (2 connections) — `tests/test_probe_x_domain_route.py`
-- **test_inventory_generation_loads_staff_mask_for_row_stats_x_domain()** (2 connections) — `tests/test_probe_x_domain_route.py`
-- **_normalize_name()** (1 connections) — `src/pipeline/detector_routes/candidate_generation.py`
-- **Any** (1 connections)
-- **Namespace** (1 connections)
+- **TestIssue197SystemGroupingConnectorEvidence** (17 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.make_staff_pair()** (12 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.make_barlines()** (10 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.make_connection_image()** (8 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_connector_density_schema_is_accepted()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_connector_evidence_rescues_near_threshold_false_split()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_high_alignment_connection_with_explicit_no_connector_is_guarded()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_low_alignment_connection_with_explicit_no_connector_is_guarded()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_low_alignment_connection_without_connector_evidence_keeps_legacy_merge()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_near_threshold_pair_is_not_rescued_without_connector_evidence()** (5 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_connector_evidence_rescues_with_image_without_internal_bridge()** (4 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_pipeline_page_image_fallback_can_generate_connector_evidence()** (4 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
+- **.test_positive_only_fallback_omits_absent_pairs()** (3 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
 
 ## Relationships
 
-- [Community 116](Community_116.md) (3 shared connections)
-- [Community 100](Community_100.md) (2 shared connections)
-- [Community 37](Community_37.md) (2 shared connections)
-- [Community 154](Community_154.md) (1 shared connections)
+- [Community 15](Community_15.md) (9 shared connections)
+- [Community 100](Community_100.md) (4 shared connections)
+- [Community 67](Community_67.md) (2 shared connections)
+- [Community 79](Community_79.md) (1 shared connections)
+- [Community 76](Community_76.md) (1 shared connections)
+- [Community 10](Community_10.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detector_routes/candidate_generation.py`
-- `tests/test_probe_x_domain_route.py`
+- `tests/test_issue197_system_grouping_connector_evidence.py`
 
 ## Audit Trail
 
-- EXTRACTED: 25 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 44 (83%)
+- INFERRED: 9 (17%)
 - AMBIGUOUS: 0 (0%)
 
 ---

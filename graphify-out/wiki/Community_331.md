@@ -1,13 +1,14 @@
 # Community 331
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **batch_verify_numbering.py** (3 connections) — `tools/batch_verify_numbering.py`
-- **process_page()** (3 connections) — `tools/batch_verify_numbering.py`
-- **main()** (2 connections) — `tools/batch_verify_numbering.py`
-- **run_command()** (2 connections) — `tools/batch_verify_numbering.py`
+- **organize_mmr_errors.py** (4 connections) — `tools/organize_mmr_errors.py`
+- **organize_errors()** (4 connections) — `tools/organize_mmr_errors.py`
+- **load_model()** (2 connections) — `tools/organize_mmr_errors.py`
+- **map_global_index_to_coords()** (2 connections) — `tools/organize_mmr_errors.py`
+- **predict_crop()** (2 connections) — `tools/organize_mmr_errors.py`
 
 ## Relationships
 
@@ -15,11 +16,11 @@
 
 ## Source Files
 
-- `tools/batch_verify_numbering.py`
+- `tools/organize_mmr_errors.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_gt_rebuild_hybrid_eval.sh** (1 connections) — `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
-- **run_gt_rebuild_hybrid_eval.sh script** (1 connections) — `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
+- **analyze_clusters.py** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
+- **analyze_clusters()** (1 connections) — `experiments/fp_reduction/analyze_clusters.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/run_gt_rebuild_hybrid_eval.sh`
+- `experiments/fp_reduction/analyze_clusters.py`
 
 ## Audit Trail
 

@@ -1,43 +1,40 @@
 # Community 153
 
-> 17 nodes · cohesion 0.16
+> 17 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **loadPage()** (14 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **renderPageList()** (7 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **fetchJSON()** (6 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadMmr()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadMovementEvidence()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **switchPage()** (5 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **displayPageNumber()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **displayPageNumberFor()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadCorrections()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadNumbering()** (4 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **loadBarlines()** (3 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **barlinePathFromPage()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **mmrPathFromPage()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **movementEvidenceCandidateId()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **normalizeMmrRecords()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **resetView()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
-- **waitForMovementSaves()** (2 connections) — `tools/gt_relabel_gui/app_manual.js`
+- **analyze_and_visualize_all_errors.py** (12 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **analyze_page()** (6 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **main()** (6 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **TestDataset** (6 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **barline_iou()** (4 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **box_dist()** (3 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **get_fp_candidates()** (3 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **box_center()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **get_model()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **get_transform()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **load_gt_and_preds()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **load_metadata()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **parse_original_index_from_path()** (2 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **Dataset** (1 connections)
+- **.__getitem__()** (1 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **.__init__()** (1 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
+- **.__len__()** (1 connections) — `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
 
 ## Relationships
 
-- [Community 16](Community_16.md) (18 shared connections)
-- [Community 186](Community_186.md) (4 shared connections)
-- [Community 253](Community_253.md) (4 shared connections)
-- [Community 208](Community_208.md) (2 shared connections)
-- [Community 169](Community_169.md) (1 shared connections)
+- [Community 309](Community_309.md) (1 shared connections)
+- [Community 64](Community_64.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_manual.js`
+- `experiments/cnn_classifier/analyze_and_visualize_all_errors.py`
 
 ## Audit Trail
 
-- EXTRACTED: 51 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 27 (93%)
+- INFERRED: 2 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

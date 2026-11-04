@@ -1,13 +1,14 @@
 # Community 322
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **audit_double_barline_overlaps.py** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
-- **audit_file()** (3 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
-- **calculate_iou()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
-- **main()** (2 connections) — `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- **experiment_a.py** (4 connections) — `tools/issue194/experiment_a.py`
+- **main()** (4 connections) — `tools/issue194/experiment_a.py`
+- **analyze_system_first_measure()** (2 connections) — `tools/issue194/experiment_a.py`
+- **load_numbering_base()** (2 connections) — `tools/issue194/experiment_a.py`
+- **simulate_guards()** (2 connections) — `tools/issue194/experiment_a.py`
 
 ## Relationships
 
@@ -15,11 +16,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+- `tools/issue194/experiment_a.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

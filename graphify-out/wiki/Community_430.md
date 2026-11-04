@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **experiment_b.py** (1 connections) — `tools/issue194/experiment_b.py`
-- **analyze_scores()** (1 connections) — `tools/issue194/experiment_b.py`
+- **validate_issue264_phase_c_mmr.sh** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
+- **validate_issue264_phase_c_mmr.sh script** (1 connections) — `scripts/validate_issue264_phase_c_mmr.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/issue194/experiment_b.py`
+- `scripts/validate_issue264_phase_c_mmr.sh`
 
 ## Audit Trail
 

@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **render_candidate_filter_overlay.py** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
-- **_load_boxes()** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
-- **main()** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
-- **parse_args()** (3 connections) — `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
-- **Namespace** (1 connections)
-- **Path** (1 connections)
+- **batch_gen_numbering_for_all.py** (4 connections) — `tools/batch_gen_numbering_for_all.py`
+- **ensure_numbering_json()** (4 connections) — `tools/batch_gen_numbering_for_all.py`
+- **main()** (2 connections) — `tools/batch_gen_numbering_for_all.py`
+- **run_command()** (2 connections) — `tools/batch_gen_numbering_for_all.py`
+- **Gen numbering_initial.json.** (1 connections) — `tools/batch_gen_numbering_for_all.py`
+- **# NOTE: mask_root structure is brittle.** (1 connections) — `tools/batch_gen_numbering_for_all.py`
 
 ## Relationships
 
@@ -17,7 +17,7 @@
 
 ## Source Files
 
-- `tools/verification/gt_preparation/render_candidate_filter_overlay.py`
+- `tools/batch_gen_numbering_for_all.py`
 
 ## Audit Trail
 

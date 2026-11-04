@@ -1,46 +1,44 @@
 # Community 129
 
-> 21 nodes · cohesion 0.22
+> 16 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **inspect_stage_d_artifact_layout.py** (20 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **inspect_layout()** (8 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **shape()** (8 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **PageLayoutRow** (6 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **resolve_pair()** (6 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **write_reports()** (6 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **Path** (5 connections)
-- **resolve_filename()** (5 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **load_json()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **main()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **render_markdown()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **write_csv()** (4 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **build_parser()** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **FileShape** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **normalize_box()** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **payload_items()** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **Any** (3 connections)
-- **Namespace** (3 connections)
-- **ResolvedPair** (3 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **safe_delta()** (2 connections) — `tools/issue120/inspect_stage_d_artifact_layout.py`
-- **ArgumentParser** (1 connections)
+- **test_issue447_profiling_tools.py** (18 connections) — `tests/test_issue447_profiling_tools.py`
+- **select_process_samples()** (7 connections) — `tools/issue447/analyze.py`
+- **batched_enhance()** (5 connections) — `tools/issue447/component_poc.py`
+- **is_source_worker()** (5 connections) — `tools/issue447/deepening_analyze.py`
+- **parametrize** (3 connections)
+- **test_batched_tiles_preserve_edge_padding_channel_order_and_cpu_stitch()** (3 connections) — `tests/test_issue447_profiling_tools.py`
+- **test_host_timeline_assigns_same_source_intervals_for_both_entrypoints()** (3 connections) — `tests/test_issue447_profiling_tools.py`
+- **test_source_worker_entrypoint_distinguishes_reuse_parent_and_support()** (3 connections) — `tests/test_issue447_profiling_tools.py`
+- **test_host_timeline_does_not_correlate_unaligned_gpu_or_epoch_clocks()** (2 connections) — `tests/test_issue447_profiling_tools.py`
+- **test_legacy_process_samples_require_explicit_matching_run()** (2 connections) — `tests/test_issue447_profiling_tools.py`
+- **test_process_sample_selection_prefers_run_local_over_legacy()** (2 connections) — `tests/test_issue447_profiling_tools.py`
+- **Geometry guards for the isolated tile-batching experiment, without GPU/model…** (1 connections) — `tests/test_issue447_profiling_tools.py`
+- **test_source_checks_accepts_alternate_score_folder()** (1 connections) — `tests/test_issue447_profiling_tools.py`
+- **Keep observations attached to their run; legacy evidence requires opt-in.** (1 connections) — `tools/issue447/analyze.py`
+- **Same padding/FP16/uint8/CPU-stitch contract; batch only equal-shaped tiles.** (1 connections) — `tools/issue447/component_poc.py`
+- **Recognize sampled top-level source entrypoints, excluding nested support. The…** (1 connections) — `tools/issue447/deepening_analyze.py`
 
 ## Relationships
 
-- [Community 128](Community_128.md) (6 shared connections)
-- [Community 146](Community_146.md) (4 shared connections)
-- [Community 127](Community_127.md) (1 shared connections)
-- [Community 109](Community_109.md) (1 shared connections)
+- [Community 96](Community_96.md) (6 shared connections)
+- [Community 315](Community_315.md) (5 shared connections)
+- [Community 171](Community_171.md) (3 shared connections)
+- [Community 279](Community_279.md) (2 shared connections)
 
 ## Source Files
 
-- `tools/issue120/inspect_stage_d_artifact_layout.py`
+- `tests/test_issue447_profiling_tools.py`
+- `tools/issue447/analyze.py`
+- `tools/issue447/component_poc.py`
+- `tools/issue447/deepening_analyze.py`
 
 ## Audit Trail
 
-- EXTRACTED: 54 (93%)
-- INFERRED: 4 (7%)
+- EXTRACTED: 37 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

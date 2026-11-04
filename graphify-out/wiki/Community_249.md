@@ -1,17 +1,18 @@
 # Community 249
 
-> 8 nodes · cohesion 0.39
+> 9 nodes · cohesion 0.44
 
 ## Key Concepts
 
-- **extract_crop()** (5 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
-- **find_image_for_scored_file()** (4 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
-- **main()** (4 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
-- **extract_fps_by_score_range.py** (3 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- **main()** (6 connections) — `tools/issue120/attach_eval_provenance.py`
+- **attach_eval_provenance.py** (5 connections) — `tools/issue120/attach_eval_provenance.py`
+- **load_json()** (4 connections) — `tools/issue120/attach_eval_provenance.py`
+- **write_json()** (4 connections) — `tools/issue120/attach_eval_provenance.py`
+- **build_parser()** (3 connections) — `tools/issue120/attach_eval_provenance.py`
+- **default_provenance()** (3 connections) — `tools/issue120/attach_eval_provenance.py`
+- **Any** (3 connections)
 - **Path** (3 connections)
-- **ndarray** (1 connections)
-- **Extract a square crop centered on the bounding box.** (1 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
-- **Find the corresponding image file for a scored JSON.** (1 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
@@ -19,11 +20,11 @@
 
 ## Source Files
 
-- `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- `tools/issue120/attach_eval_provenance.py`
 
 ## Audit Trail
 
-- EXTRACTED: 11 (100%)
+- EXTRACTED: 16 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

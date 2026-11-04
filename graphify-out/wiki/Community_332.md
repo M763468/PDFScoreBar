@@ -1,13 +1,14 @@
 # Community 332
 
-> 4 nodes · cohesion 0.67
+> 5 nodes · cohesion 0.70
 
 ## Key Concepts
 
-- **recipe_references()** (3 connections) — `tools/check_makefile_references.py`
-- **check_makefile_references.py** (2 connections) — `tools/check_makefile_references.py`
-- **main()** (2 connections) — `tools/check_makefile_references.py`
-- **Path** (1 connections)
+- **reconstruct()** (4 connections) — `tools/reconstruct_detection_results.py`
+- **reconstruct_detection_results.py** (3 connections) — `tools/reconstruct_detection_results.py`
+- **load_json()** (3 connections) — `tools/reconstruct_detection_results.py`
+- **bboxes_match()** (2 connections) — `tools/reconstruct_detection_results.py`
+- **Path** (2 connections)
 
 ## Relationships
 
@@ -15,11 +16,11 @@
 
 ## Source Files
 
-- `tools/check_makefile_references.py`
+- `tools/reconstruct_detection_results.py`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 7 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

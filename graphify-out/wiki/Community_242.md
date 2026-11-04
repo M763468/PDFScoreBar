@@ -1,30 +1,31 @@
 # Community 242
 
-> 9 nodes · cohesion 0.44
+> 10 nodes · cohesion 0.38
 
 ## Key Concepts
 
-- **probe_fn_analysis.py** (6 connections) — `tools/probe_fn_analysis.py`
-- **main()** (6 connections) — `tools/probe_fn_analysis.py`
-- **load_boxes()** (4 connections) — `tools/probe_fn_analysis.py`
-- **load_staff_mask()** (4 connections) — `tools/probe_fn_analysis.py`
-- **ndarray** (3 connections)
-- **select_peaks()** (3 connections) — `tools/probe_fn_analysis.py`
-- **staff_bands_from_mask()** (3 connections) — `tools/probe_fn_analysis.py`
-- **PageSpec** (2 connections) — `tools/probe_fn_analysis.py`
+- **structural_gap_fit.py** (8 connections) — `tools/structural_gap_fit.py`
+- **main()** (8 connections) — `tools/structural_gap_fit.py`
+- **load_omr_boxes()** (4 connections) — `tools/structural_gap_fit.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_gap_fit.py`
+- **build_predictions()** (3 connections) — `tools/structural_gap_fit.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_gap_fit.py`
+- **dedupe_x_centers()** (2 connections) — `tools/structural_gap_fit.py`
+- **fit_positions()** (2 connections) — `tools/structural_gap_fit.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_gap_fit.py`
 - **Path** (2 connections)
 
 ## Relationships
 
-- [Community 31](Community_31.md) (1 shared connections)
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/probe_fn_analysis.py`
+- `tools/structural_gap_fit.py`
 
 ## Audit Trail
 
-- EXTRACTED: 17 (100%)
+- EXTRACTED: 20 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

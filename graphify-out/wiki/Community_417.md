@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **analyze_divisi_logic.py** (1 connections) — `tools/analyze_divisi_logic.py`
-- **main()** (1 connections) — `tools/analyze_divisi_logic.py`
+- **run_gt_rebuild_eval.sh** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
+- **run_gt_rebuild_eval.sh script** (1 connections) — `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/analyze_divisi_logic.py`
+- `experiments/legacy/tmp_archive/run_gt_rebuild_eval.sh`
 
 ## Audit Trail
 

@@ -1,14 +1,15 @@
 # Community 292
 
-> 5 nodes · cohesion 0.70
+> 6 nodes · cohesion 0.73
 
 ## Key Concepts
 
-- **diagnose_alignment.py** (4 connections) — `experiments/fp_reduction/diagnose_alignment.py`
-- **main()** (4 connections) — `experiments/fp_reduction/diagnose_alignment.py`
-- **draw_boxes()** (2 connections) — `experiments/fp_reduction/diagnose_alignment.py`
-- **load_boxes()** (2 connections) — `experiments/fp_reduction/diagnose_alignment.py`
-- **parse_args()** (2 connections) — `experiments/fp_reduction/diagnose_alignment.py`
+- **main()** (5 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
+- **prepare_incremental_hardpositive_dataset.py** (4 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
+- **Path** (4 connections)
+- **_copytree_copy()** (3 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
+- **_copytree_hardlink()** (3 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
+- **load_config_file()** (3 connections) — `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
 
 ## Relationships
 
@@ -16,11 +17,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/diagnose_alignment.py`
+- `tools/cnn_classifier/prepare_incremental_hardpositive_dataset.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 11 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

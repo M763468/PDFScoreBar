@@ -1,33 +1,32 @@
 # Community 221
 
-> 10 nodes · cohesion 0.42
+> 11 nodes · cohesion 0.36
 
 ## Key Concepts
 
-- **verify_remaining_review.py** (12 connections) — `tools/issue441/verify_remaining_review.py`
-- **verify()** (7 connections) — `tools/issue441/verify_remaining_review.py`
-- **_number_font_signature()** (6 connections) — `src/pipeline/review/number_layer.py`
-- **require()** (5 connections) — `tools/issue441/verify_remaining_review.py`
-- **restart_only()** (5 connections) — `tools/issue441/verify_remaining_review.py`
-- **check_restart()** (4 connections) — `tools/issue441/verify_remaining_review.py`
-- **numbers()** (3 connections) — `tools/issue441/verify_remaining_review.py`
-- **sha()** (3 connections) — `tools/issue441/verify_remaining_review.py`
-- **main()** (1 connections) — `tools/issue441/verify_remaining_review.py`
-- **Rescore #441 legacy/four-type/repeated-resume evidence; publish counts only.** (1 connections) — `tools/issue441/verify_remaining_review.py`
+- **inventory_tracked_artifacts.py** (8 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **main()** (6 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **build_parser()** (4 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **classify_path()** (4 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **ClassifiedPath** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **git_ls_files()** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **Path** (3 connections)
+- **render_markdown()** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **summarize()** (3 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **markdown_table_cell()** (2 connections) — `tools/issue120/inventory_tracked_artifacts.py`
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- [Community 33](Community_33.md) (6 shared connections)
-- [Community 23](Community_23.md) (3 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `src/pipeline/review/number_layer.py`
-- `tools/issue441/verify_remaining_review.py`
+- `tools/issue120/inventory_tracked_artifacts.py`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
+- EXTRACTED: 20 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

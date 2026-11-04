@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_matrix.sh** (1 connections) — `tools/issue454/run_matrix.sh`
-- **run_matrix.sh script** (1 connections) — `tools/issue454/run_matrix.sh`
+- **homr_eval_scripts/segnet_cache.py** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
+- **Compatibility alias for the production-owned Segnet cache.** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/issue454/run_matrix.sh`
+- `src/homr_eval_scripts/segnet_cache.py`
 
 ## Audit Trail
 

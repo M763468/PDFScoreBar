@@ -1,61 +1,52 @@
 # Community 6
 
-> 72 nodes · cohesion 0.05
+> 70 nodes · cohesion 0.03
 
 ## Key Concepts
 
-- **MMROCREngine** (68 connections) — `src/measure_numbering/mmr.py`
-- **test_issue212_mmr_unmasked_fallback.py** (19 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **MaskedEmptyUnmaskedNumberOCR** (12 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **CurrentEmptyLeftWideNumberOCR** (11 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **_processor()** (11 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **MaskedNumberUnmaskedDifferentNumberOCR** (9 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **test_pipeline_numbering_mmr_provider.py** (9 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
-- **RaisesOnEmptyCropOCR** (8 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **.collect_one_bar_evidence()** (7 connections) — `src/measure_numbering/mmr.py`
-- **ndarray** (6 connections)
-- **_box()** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **CurrentEmptyLeftWideLowScoreOCR** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **MaskedEmptyUnmaskedLowScoreOCR** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **._candidate_items()** (5 connections) — `src/measure_numbering/mmr.py`
-- **._hbar_mask_geometry()** (4 connections) — `src/measure_numbering/mmr.py`
-- **.mask_hbar_candidates_calibrated()** (4 connections) — `src/measure_numbering/mmr.py`
-- **._preprocess_geometry()** (4 connections) — `src/measure_numbering/mmr.py`
-- **.preprocess_variant()** (4 connections) — `src/measure_numbering/mmr.py`
-- **.select_best_candidate()** (4 connections) — `src/measure_numbering/mmr.py`
-- **test_run_mmr_batch_updates_default_engine_in_place()** (4 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
-- **.predict()** (3 connections) — `src/measure_numbering/mmr.py`
-- **._extract_numeric_candidates()** (3 connections) — `src/measure_numbering/mmr.py`
-- **._has_blacklisted_text()** (3 connections) — `src/measure_numbering/mmr.py`
-- **.mask_hbar_candidates()** (3 connections) — `src/measure_numbering/mmr.py`
-- **.rotate_image()** (3 connections) — `src/measure_numbering/mmr.py`
-- *... and 47 more nodes in this community*
+- **review_correction/app.js** (140 connections) — `tools/review_correction/app.js`
+- **pointInImageBox()** (4 connections) — `tools/review_correction/app.js`
+- **pickSystem()** (3 connections) — `tools/review_correction/app.js`
+- **setMode()** (3 connections) — `tools/review_correction/app.js`
+- **startRestCountReview()** (3 connections) — `tools/review_correction/app.js`
+- **unresolvedMovementSuggestionCount()** (3 connections) — `tools/review_correction/app.js`
+- **movementReviewKey()** (2 connections) — `tools/review_correction/app.js`
+- **pickBarline()** (2 connections) — `tools/review_correction/app.js`
+- **pickMeasure()** (2 connections) — `tools/review_correction/app.js`
+- **releaseTransientInteraction()** (2 connections) — `tools/review_correction/app.js`
+- **updatePanControl()** (2 connections) — `tools/review_correction/app.js`
+- **addItemBtn** (1 connections) — `tools/review_correction/app.js`
+- **allMovementEvidenceCandidates** (1 connections) — `tools/review_correction/app.js`
+- **barlines** (1 connections) — `tools/review_correction/app.js`
+- **baseMmrOverrides** (1 connections) — `tools/review_correction/app.js`
+- **blurActiveControl()** (1 connections) — `tools/review_correction/app.js`
+- **canvas** (1 connections) — `tools/review_correction/app.js`
+- **canvasPoint()** (1 connections) — `tools/review_correction/app.js`
+- **canvasToImg()** (1 connections) — `tools/review_correction/app.js`
+- **correctionsByType** (1 connections) — `tools/review_correction/app.js`
+- **ctx** (1 connections) — `tools/review_correction/app.js`
+- **deleteItemBtn** (1 connections) — `tools/review_correction/app.js`
+- **dirtyStatus** (1 connections) — `tools/review_correction/app.js`
+- **dirtyTypes** (1 connections) — `tools/review_correction/app.js`
+- **drawModeBtn** (1 connections) — `tools/review_correction/app.js`
+- *... and 45 more nodes in this community*
 
 ## Relationships
 
-- [Community 14](Community_14.md) (28 shared connections)
-- [Community 70](Community_70.md) (7 shared connections)
-- [Community 24](Community_24.md) (7 shared connections)
-- [Community 51](Community_51.md) (4 shared connections)
-- [Community 12](Community_12.md) (4 shared connections)
-- [Community 50](Community_50.md) (3 shared connections)
-- [Community 13](Community_13.md) (3 shared connections)
-- [Community 25](Community_25.md) (2 shared connections)
-- [Community 126](Community_126.md) (2 shared connections)
-- [Community 113](Community_113.md) (2 shared connections)
+- [Community 137](Community_137.md) (22 shared connections)
+- [Community 151](Community_151.md) (21 shared connections)
+- [Community 138](Community_138.md) (21 shared connections)
+- [Community 303](Community_303.md) (6 shared connections)
+- [Community 335](Community_335.md) (5 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/mmr.py`
-- `tests/test_issue212_mmr_unmasked_fallback.py`
-- `tests/test_mmr_ocr_heuristics.py`
-- `tests/test_pipeline_numbering_mmr_provider.py`
-- `tools/issue264/phase_c_fixture_rebase.py`
+- `tools/review_correction/app.js`
 
 ## Audit Trail
 
-- EXTRACTED: 158 (84%)
-- INFERRED: 31 (16%)
+- EXTRACTED: 149 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

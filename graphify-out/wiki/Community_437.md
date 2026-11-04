@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **reorganize_seeds.py** (1 connections) — `tools/repro_accuracy/reorganize_seeds.py`
-- **main()** (1 connections) — `tools/repro_accuracy/reorganize_seeds.py`
+- **create_gt_gui_config.py** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
+- **main()** (1 connections) — `tools/cnn_classifier/create_gt_gui_config.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/repro_accuracy/reorganize_seeds.py`
+- `tools/cnn_classifier/create_gt_gui_config.py`
 
 ## Audit Trail
 

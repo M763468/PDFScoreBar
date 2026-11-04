@@ -1,27 +1,32 @@
 # Community 271
 
-> 6 nodes · cohesion 0.47
+> 7 nodes · cohesion 0.43
 
 ## Key Concepts
 
-- **patch_homr_onnx_provider.py** (4 connections) — `docker/patch_homr_onnx_provider.py`
-- **replace_one_of()** (3 connections) — `docker/patch_homr_onnx_provider.py`
-- **main()** (2 connections) — `docker/patch_homr_onnx_provider.py`
-- **Path** (2 connections)
-- **replace_exact()** (2 connections) — `docker/patch_homr_onnx_provider.py`
-- **Patch the pinned HOMR ONNX provider options used in the Docker image. Issue…** (1 connections) — `docker/patch_homr_onnx_provider.py`
+- **staff_bands_from_mask()** (12 connections) — `src/pipeline/probe_detector/bands.py`
+- **TestStaffBandsFromMask** (4 connections) — `tests/test_probe_bands.py`
+- **test_probe_bands.py** (3 connections) — `tests/test_probe_bands.py`
+- **_append_if_staff_like()** (2 connections) — `src/pipeline/probe_detector/bands.py`
+- **.test_line_like_short_nonstaff_fragments_are_filtered_out()** (2 connections) — `tests/test_probe_bands.py`
+- **.test_line_like_staff_mask_segments_are_merged_into_staff_bands()** (2 connections) — `tests/test_probe_bands.py`
+- **.test_region_like_staff_mask_is_not_over_merged()** (2 connections) — `tests/test_probe_bands.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 103](Community_103.md) (4 shared connections)
+- [Community 156](Community_156.md) (2 shared connections)
+- [Community 18](Community_18.md) (2 shared connections)
+- [Community 87](Community_87.md) (1 shared connections)
 
 ## Source Files
 
-- `docker/patch_homr_onnx_provider.py`
+- `src/pipeline/probe_detector/bands.py`
+- `tests/test_probe_bands.py`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 18 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

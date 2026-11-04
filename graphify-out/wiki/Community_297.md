@@ -1,28 +1,29 @@
 # Community 297
 
-> 5 nodes · cohesion 0.40
+> 6 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **JobExecutor** (4 connections) — `src/pipeline/engine_contract.py`
-- **.__call__()** (4 connections) — `src/pipeline/engine_contract.py`
-- **Protocol** (1 connections)
-- **ProgressCallback** (1 connections)
-- **Direct Python boundary for CLI and worker/service adapters.** (1 connections) — `src/pipeline/engine_contract.py`
+- **deleteSelected()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **runAutoDedup()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **setDirty()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **syncTypeSelect()** (4 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **updateStats()** (4 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **updateDirtyStatus()** (3 connections) — `tools/gt_relabel_gui/app_gt.js`
 
 ## Relationships
 
-- [Community 72](Community_72.md) (1 shared connections)
-- [Community 80](Community_80.md) (1 shared connections)
-- [Community 110](Community_110.md) (1 shared connections)
+- [Community 22](Community_22.md) (6 shared connections)
+- [Community 188](Community_188.md) (4 shared connections)
+- [Community 234](Community_234.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/engine_contract.py`
+- `tools/gt_relabel_gui/app_gt.js`
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 19 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

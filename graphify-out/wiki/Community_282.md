@@ -1,29 +1,28 @@
 # Community 282
 
-> 6 nodes · cohesion 0.47
+> 7 nodes · cohesion 0.43
 
 ## Key Concepts
 
-- **deleteSelected()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **runAutoDedup()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **setDirty()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **syncTypeSelect()** (4 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **updateStats()** (4 connections) — `tools/gt_relabel_gui/app_gt.js`
-- **updateDirtyStatus()** (3 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **render_barline_boxes_overlay.py** (4 connections) — `tools/render_barline_boxes_overlay.py`
+- **main()** (4 connections) — `tools/render_barline_boxes_overlay.py`
+- **build_parser()** (3 connections) — `tools/render_barline_boxes_overlay.py`
+- **iter_bboxes()** (3 connections) — `tools/render_barline_boxes_overlay.py`
+- **parse_color()** (2 connections) — `tools/render_barline_boxes_overlay.py`
+- **ArgumentParser** (1 connections)
+- **Path** (1 connections)
 
 ## Relationships
 
-- [Community 28](Community_28.md) (6 shared connections)
-- [Community 176](Community_176.md) (4 shared connections)
-- [Community 224](Community_224.md) (2 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/gt_relabel_gui/app_gt.js`
+- `tools/render_barline_boxes_overlay.py`
 
 ## Audit Trail
 
-- EXTRACTED: 19 (100%)
+- EXTRACTED: 9 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

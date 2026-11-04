@@ -1,12 +1,13 @@
 # Community 357
 
-> 3 nodes · cohesion 1.00
+> 4 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **setup_local_worktree_links.sh** (2 connections) — `scripts/setup_local_worktree_links.sh`
-- **setup_local_worktree_links.sh script** (2 connections) — `scripts/setup_local_worktree_links.sh`
-- **usage()** (2 connections) — `scripts/setup_local_worktree_links.sh`
+- **browser_acceptance.cjs** (3 connections) — `tools/review_correction/browser_acceptance.cjs`
+- **{ chromium }** (1 connections) — `tools/review_correction/browser_acceptance.cjs`
+- **fs** (1 connections) — `tools/review_correction/browser_acceptance.cjs`
+- **path** (1 connections) — `tools/review_correction/browser_acceptance.cjs`
 
 ## Relationships
 
@@ -14,7 +15,7 @@
 
 ## Source Files
 
-- `scripts/setup_local_worktree_links.sh`
+- `tools/review_correction/browser_acceptance.cjs`
 
 ## Audit Trail
 

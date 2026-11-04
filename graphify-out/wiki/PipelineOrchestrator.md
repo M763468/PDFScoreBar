@@ -2,7 +2,7 @@
 
 > God node · 65 connections · `src/pipeline/orchestrator.py`
 
-**Community:** [Community 112](Community_112.md)
+**Community:** [Community 86](Community_86.md)
 
 ## Connections by Relation
 

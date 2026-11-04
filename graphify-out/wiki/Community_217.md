@@ -1,32 +1,33 @@
 # Community 217
 
-> 10 nodes · cohesion 0.29
+> 11 nodes · cohesion 0.20
 
 ## Key Concepts
 
-- **page10_qualitative.py** (5 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **main()** (5 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **apply_filter()** (3 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **cluster_by_y_distance()** (3 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **create_debug_overlay()** (3 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **estimate_staff_space()** (3 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **Simple clustering by Y-distance** (1 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **Estimate staff space from row spacing** (1 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **Apply consistency filter** (1 connections) — `experiments/fp_reduction/page10_qualitative.py`
-- **Create debug visualization** (1 connections) — `experiments/fp_reduction/page10_qualitative.py`
+- **test_mmr_rapidocr_provider.py** (7 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **_DummySession** (4 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **_DummyRapidOCR** (2 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **.__init__()** (2 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **.get_providers()** (2 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **.__init__()** (1 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **test_auto_keeps_default_constructor_when_cuda_provider_is_unavailable()** (1 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **test_auto_uses_cuda_kwargs_when_cuda_provider_is_available()** (1 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **test_cpu_mode_keeps_default_constructor_even_when_cuda_is_available()** (1 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **test_cuda_mode_warns_when_cuda_provider_is_not_confirmed()** (1 connections) — `tests/test_mmr_rapidocr_provider.py`
+- **test_normalize_rapidocr_provider_rejects_unknown_mode()** (1 connections) — `tests/test_mmr_rapidocr_provider.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 9](Community_9.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/fp_reduction/page10_qualitative.py`
+- `tests/test_mmr_rapidocr_provider.py`
 
 ## Audit Trail
 
-- EXTRACTED: 13 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 11 (92%)
+- INFERRED: 1 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

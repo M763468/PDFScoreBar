@@ -1,16 +1,17 @@
 # Community 257
 
-> 7 nodes · cohesion 0.52
+> 8 nodes · cohesion 0.39
 
 ## Key Concepts
 
-- **validate_metrics.py** (6 connections) — `experiments/fp_reduction/validate_metrics.py`
-- **main()** (5 connections) — `experiments/fp_reduction/validate_metrics.py`
-- **evaluate()** (3 connections) — `experiments/fp_reduction/validate_metrics.py`
-- **compute_iou()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
-- **draw_overlay()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
-- **load_boxes()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
-- **parse_args()** (2 connections) — `experiments/fp_reduction/validate_metrics.py`
+- **extract_crop()** (5 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- **find_image_for_scored_file()** (4 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- **main()** (4 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- **extract_fps_by_score_range.py** (3 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- **Path** (3 connections)
+- **ndarray** (1 connections)
+- **Extract a square crop centered on the bounding box.** (1 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
+- **Find the corresponding image file for a scored JSON.** (1 connections) — `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
 
 ## Relationships
 
@@ -18,7 +19,7 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/validate_metrics.py`
+- `experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py`
 
 ## Audit Trail
 

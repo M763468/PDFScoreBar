@@ -1,31 +1,32 @@
 # Community 225
 
-> 10 nodes · cohesion 0.40
+> 11 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **evaluate_compile_full68_ab.py** (7 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
-- **main()** (6 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
-- **_load_json()** (5 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
-- **_variant()** (5 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
-- **Any** (3 connections)
-- **_score_view()** (3 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
-- **_git_changed_paths()** (2 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
-- **_git_is_ancestor()** (2 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **structural_stem_peak_select.py** (8 connections) — `tools/structural_stem_peak_select.py`
+- **main()** (8 connections) — `tools/structural_stem_peak_select.py`
+- **load_omr_boxes()** (4 connections) — `tools/structural_stem_peak_select.py`
+- **assign_boxes_to_bands()** (3 connections) — `tools/structural_stem_peak_select.py`
+- **build_predictions()** (3 connections) — `tools/structural_stem_peak_select.py`
+- **extract_staff_bands()** (3 connections) — `tools/structural_stem_peak_select.py`
+- **select_top_peaks()** (3 connections) — `tools/structural_stem_peak_select.py`
+- **dedupe_x_centers()** (2 connections) — `tools/structural_stem_peak_select.py`
+- **group_bands_into_systems()** (2 connections) — `tools/structural_stem_peak_select.py`
 - **Path** (2 connections)
-- **Evaluate the final Issue #284 eager-vs-compile canonical full-68 A/B. The…** (1 connections) — `tools/issue284/evaluate_compile_full68_ab.py`
+- **ndarray** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 64](Community_64.md) (3 shared connections)
 
 ## Source Files
 
-- `tools/issue284/evaluate_compile_full68_ab.py`
+- `tools/structural_stem_peak_select.py`
 
 ## Audit Trail
 
-- EXTRACTED: 18 (100%)
+- EXTRACTED: 21 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

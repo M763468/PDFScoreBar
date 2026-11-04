@@ -1,12 +1,12 @@
 # Community 364
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **extract_final_hard_negatives.py** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
-- **extract_crop()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
-- **main()** (2 connections) — `tools/cnn_classifier/extract_final_hard_negatives.py`
+- **visualize_ground_truth()** (2 connections) — `experiments/gemini/visualize_ground_truth.py`
+- **visualize_ground_truth.py** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
+- **Draws ground truth data on the image and saves it.** (1 connections) — `experiments/gemini/visualize_ground_truth.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/cnn_classifier/extract_final_hard_negatives.py`
+- `experiments/gemini/visualize_ground_truth.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

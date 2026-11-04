@@ -1,11 +1,12 @@
 # Community 397
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **analyze_divisi.py** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
-- **analyze_divisi()** (1 connections) — `experiments/legacy/investigation_20260102/analyze_divisi.py`
+- **sort_measures.py** (2 connections) — `tools/sort_measures.py`
+- **group_and_sort_measures()** (2 connections) — `tools/sort_measures.py`
+- **main()** (2 connections) — `tools/sort_measures.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/legacy/investigation_20260102/analyze_divisi.py`
+- `tools/sort_measures.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

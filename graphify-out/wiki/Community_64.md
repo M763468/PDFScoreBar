@@ -1,63 +1,64 @@
 # Community 64
 
-> 34 nodes · cohesion 0.12
+> 43 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **homr_profile.py** (13 connections) — `src/pipeline/detection/homr_profile.py`
-- **run_homr_profile()** (12 connections) — `src/pipeline/detection/maintained_profile.py`
-- **run_with_logging()** (11 connections) — `src/pipeline/core/__init__.py`
-- **run_homr_profile()** (11 connections) — `src/pipeline/detection/homr_profile.py`
-- **load_homr_profile()** (10 connections) — `src/pipeline/detection/homr_profile.py`
-- **validate_profile_runtime()** (10 connections) — `src/pipeline/detection/profile_contract.py`
-- **profile_hybrid.py** (10 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **maintained_profile.py** (9 connections) — `src/pipeline/detection/maintained_profile.py`
-- **load_profile_manifest()** (9 connections) — `src/pipeline/detection/profile_contract.py`
-- **test_homr_profile.py** (9 connections) — `tests/test_homr_profile.py`
-- **build_profile_command()** (7 connections) — `src/pipeline/detection/homr_profile.py`
-- **profile_contract.py** (6 connections) — `src/pipeline/detection/profile_contract.py`
-- **build_profile_environment()** (5 connections) — `src/pipeline/detection/homr_profile.py`
-- **Any** (4 connections)
-- **Any** (3 connections)
-- **_required_commit()** (3 connections) — `src/pipeline/detection/profile_contract.py`
-- **test_profile_command_rejects_one_sr_path_for_multiple_images()** (3 connections) — `tests/test_homr_profile.py`
-- **test_profile_command_uses_isolated_python_and_precomputed_sr()** (3 connections) — `tests/test_homr_profile.py`
-- **test_profile_environment_prioritizes_pinned_sources()** (3 connections) — `tests/test_homr_profile.py`
-- **test_subprocess_utils.py** (3 connections) — `tests/test_subprocess_utils.py`
-- **Path** (2 connections)
-- **Path** (2 connections)
-- **test_maintained_original_profile_is_immutable_and_original_space()** (2 connections) — `tests/test_homr_profile.py`
-- **test_stage_e_verified_profile_is_pinned_and_artifact_free()** (2 connections) — `tests/test_homr_profile.py`
-- **test_maintained_backend_rejects_historical_execution_without_loading_it()** (2 connections) — `tests/test_issue115_runtime_boundaries.py`
-- *... and 9 more nodes in this community*
+- **_Box** (294 connections) — `tests/test_omr_dln_worker.py`
+- **trace_stage_analysis.py** (9 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
+- **hybrid_omr_dln_union.py** (9 connections) — `tools/hybrid_omr_dln_union.py`
+- **summarize_omr_union.py** (8 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **main()** (8 connections) — `tools/hybrid_omr_dln_union.py`
+- **main()** (7 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
+- **main()** (6 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **generate_image_review.py** (6 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **main()** (6 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **has_match()** (5 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
+- **compute_metrics()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **load_gt_boxes()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **load_homr_boxes()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **load_omr_boxes()** (4 connections) — `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- **build_union_inputs.py** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **load_homr_boxes()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **load_omr_boxes()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **main()** (4 connections) — `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- **load_gt()** (4 connections) — `experiments/phase5b_notehead_geom/generate_image_review.py`
+- **load_boxes()** (4 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
+- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
+- **choose_representative()** (4 connections) — `tools/hybrid_omr_dln_union.py`
+- **cluster_boxes()** (4 connections) — `tools/hybrid_omr_dln_union.py`
+- **filter_by_staff_mask()** (4 connections) — `tools/hybrid_omr_dln_union.py`
+- **load_homr_boxes()** (4 connections) — `tools/hybrid_omr_dln_union.py`
+- *... and 18 more nodes in this community*
 
 ## Relationships
 
-- [Community 53](Community_53.md) (4 shared connections)
-- [Community 75](Community_75.md) (4 shared connections)
-- [Community 76](Community_76.md) (4 shared connections)
-- [Community 46](Community_46.md) (3 shared connections)
-- [Community 163](Community_163.md) (3 shared connections)
-- [Community 91](Community_91.md) (2 shared connections)
-- [Community 1](Community_1.md) (2 shared connections)
-- [Community 79](Community_79.md) (2 shared connections)
-- [Community 98](Community_98.md) (1 shared connections)
+- [Community 5](Community_5.md) (37 shared connections)
+- [Community 27](Community_27.md) (20 shared connections)
+- [Community 75](Community_75.md) (19 shared connections)
+- [Community 109](Community_109.md) (10 shared connections)
+- [Community 101](Community_101.md) (10 shared connections)
+- [Community 60](Community_60.md) (10 shared connections)
+- [Community 124](Community_124.md) (9 shared connections)
+- [Community 160](Community_160.md) (9 shared connections)
+- [Community 177](Community_177.md) (8 shared connections)
+- [Community 169](Community_169.md) (8 shared connections)
+- [Community 62](Community_62.md) (8 shared connections)
+- [Community 179](Community_179.md) (7 shared connections)
 
 ## Source Files
 
-- `src/pipeline/core/__init__.py`
-- `src/pipeline/detection/homr_profile.py`
-- `src/pipeline/detection/maintained_profile.py`
-- `src/pipeline/detection/profile_contract.py`
-- `src/pipeline/detection/profile_hybrid.py`
-- `tests/test_homr_profile.py`
-- `tests/test_issue115_runtime_boundaries.py`
-- `tests/test_subprocess_utils.py`
+- `experiments/phase5b_b1_1_omrdln_sweep/summarize_omr_union.py`
+- `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- `experiments/phase5b_notehead_geom/generate_image_review.py`
+- `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
+- `tests/test_omr_dln_worker.py`
+- `tools/hybrid_omr_dln_union.py`
 
 ## Audit Trail
 
-- EXTRACTED: 95 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 372 (99%)
+- INFERRED: 3 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

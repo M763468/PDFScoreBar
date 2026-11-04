@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **run_full68_mmr_reuse_logged.sh** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
-- **run_full68_mmr_reuse_logged.sh script** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
+- **core/predictor.py** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
+- **Module alias preserving predictor monkeypatch and class identity for old…** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/issue274/run_full68_mmr_reuse_logged.sh`
+- `src/homr_eval_scripts/core/predictor.py`
 
 ## Audit Trail
 

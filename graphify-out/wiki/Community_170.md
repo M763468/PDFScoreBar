@@ -1,38 +1,39 @@
 # Community 170
 
-> 15 nodes · cohesion 0.32
+> 11 nodes · cohesion 0.27
 
 ## Key Concepts
 
-- **run_stage_c_seed_regen_then_eval.py** (13 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **main()** (9 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **validate_candidate_coverage()** (8 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **Namespace** (5 connections)
-- **write_json()** (5 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **assert_candidate_coverage()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **build_parser()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **load_json()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **Any** (4 connections)
-- **run_regeneration()** (4 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **build_stage_b_cmd()** (3 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **Path** (3 connections)
-- **run_command()** (3 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **validate_inputs()** (3 connections) — `tools/issue120/run_stage_c_seed_regen_then_eval.py`
-- **ArgumentParser** (1 connections)
+- **end_barlines.py** (11 connections) — `src/homr_runtime/end_barlines.py`
+- **recover_end_barlines()** (10 connections) — `src/homr_runtime/end_barlines.py`
+- **core/heuristics.py** (9 connections) — `src/homr_eval_scripts/core/heuristics.py`
+- **_scan_vertical_line()** (5 connections) — `src/homr_runtime/end_barlines.py`
+- **_cluster_by_y_centers()** (3 connections) — `src/homr_runtime/end_barlines.py`
+- **ndarray** (2 connections)
+- **Alias runtime patch points while retaining historical diagnostic exports.** (1 connections) — `src/homr_eval_scripts/core/heuristics.py`
+- **homr_eval_scripts/core/__init__.py** (1 connections) — `src/homr_eval_scripts/core/__init__.py`
+- **BarlinePrediction** (1 connections)
+- **Path** (1 connections)
+- **Recover barlines at staff ends without changing existing geometry settings.** (1 connections) — `src/homr_runtime/end_barlines.py`
 
 ## Relationships
 
-- [Community 146](Community_146.md) (4 shared connections)
-- [Community 127](Community_127.md) (1 shared connections)
+- [Community 38](Community_38.md) (7 shared connections)
+- [Community 83](Community_83.md) (5 shared connections)
+- [Community 26](Community_26.md) (1 shared connections)
+- [Community 47](Community_47.md) (1 shared connections)
+- [Community 64](Community_64.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/issue120/run_stage_c_seed_regen_then_eval.py`
+- `src/homr_eval_scripts/core/__init__.py`
+- `src/homr_eval_scripts/core/heuristics.py`
+- `src/homr_runtime/end_barlines.py`
 
 ## Audit Trail
 
-- EXTRACTED: 39 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 27 (90%)
+- INFERRED: 3 (10%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,70 +1,61 @@
 # Community 8
 
-> 70 nodes · cohesion 0.08
+> 68 nodes · cohesion 0.07
 
 ## Key Concepts
 
-- **MeasureNumberer** (60 connections) — `src/measure_numbering/numbering.py`
-- **Score** (60 connections) — `src/measure_numbering/types.py`
-- **System** (53 connections) — `src/measure_numbering/types.py`
-- **Page** (39 connections) — `src/measure_numbering/types.py`
-- **test_issue257_mmr_page_rebase.py** (34 connections) — `tests/test_issue257_mmr_page_rebase.py`
-- **score_to_dict()** (31 connections) — `src/measure_numbering/types.py`
-- **test_issue413_system_identity.py** (22 connections) — `tests/test_issue413_system_identity.py`
-- **measure_numbering/numbering.py** (20 connections) — `src/measure_numbering/numbering.py`
-- **.number_system()** (15 connections) — `src/measure_numbering/numbering.py`
-- **test_numbering_overrides.py** (13 connections) — `tests/test_numbering_overrides.py`
-- **test_issue217_empty_system_output_contract.py** (10 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **test_measure_numbering_numbering.py** (10 connections) — `tests/test_measure_numbering_numbering.py`
-- **test_empty_reviewed_output_removes_source_reset_from_corrected_numbering()** (10 connections) — `tests/test_reviewed_movement_apply.py`
-- **Measure** (9 connections) — `src/measure_numbering/types.py`
-- **test_actual_model_outputs_preserve_every_voice_and_shared_boundaries()** (9 connections) — `tests/test_issue218_multistaff_system_grouping.py`
-- **music()** (9 connections) — `tests/test_issue413_system_identity.py`
-- **test_visibility_uses_constructed_measures_not_barline_count_or_stale_measures()** (9 connections) — `tests/test_issue413_system_identity.py`
-- **test_real_manual_precedence_then_numbering_with_empty_system_and_terminal_rest()** (9 connections) — `tests/test_issue415_numbering_audit.py`
-- **.make_numbered_system()** (8 connections) — `tests/test_issue217_empty_system_output_contract.py`
-- **_FakeNumberingPipeline** (8 connections) — `tests/test_issue257_mmr_page_rebase.py`
-- **test_issue268_numberer_boundary_reset_precedes_existing_set_number_override()** (8 connections) — `tests/test_issue257_mmr_page_rebase.py`
-- **test_empty_predictions_and_multiple_pages_preserve_continuity()** (8 connections) — `tests/test_issue413_system_identity.py`
-- **test_overrides_address_same_physical_system_as_compact_json()** (8 connections) — `tests/test_issue413_system_identity.py`
-- **test_real_manual_span_and_movement_reset_keep_page_identity()** (8 connections) — `tests/test_issue415_numbering_audit.py`
-- **test_develop_numbering_overlay_and_cli_entrypoint_remain_available()** (8 connections) — `tests/test_probe_helpers.py`
-- *... and 45 more nodes in this community*
+- **model_artifacts.py** (39 connections) — `src/common/model_artifacts.py`
+- **resolve_model_artifact()** (28 connections) — `src/common/model_artifacts.py`
+- **load_model_artifact_manifest()** (26 connections) — `src/common/model_artifacts.py`
+- **test_model_artifacts.py** (22 connections) — `tests/test_model_artifacts.py`
+- **Path** (16 connections)
+- **materialize_model_artifact()** (14 connections) — `src/common/model_artifacts.py`
+- **test_issue329_model_artifact_contract.py** (13 connections) — `tests/test_issue329_model_artifact_contract.py`
+- **verify_model_artifact()** (12 connections) — `src/common/model_artifacts.py`
+- **get_model_cache_root()** (10 connections) — `src/common/model_artifacts.py`
+- **import_model_artifact()** (10 connections) — `src/common/model_artifacts.py`
+- **model_artifact_path()** (10 connections) — `src/common/model_artifacts.py`
+- **_write_manifest()** (10 connections) — `tests/test_model_artifacts.py`
+- **main()** (9 connections) — `src/common/model_artifacts.py`
+- **ModelArtifactManifest** (9 connections) — `src/common/model_artifacts.py`
+- **ModelArtifactError** (8 connections) — `src/common/model_artifacts.py`
+- **ModelArtifactIntegrityError** (8 connections) — `src/common/model_artifacts.py`
+- **ModelArtifactManifestError** (8 connections) — `src/common/model_artifacts.py`
+- **ModelArtifactMissingError** (7 connections) — `src/common/model_artifacts.py`
+- **sha256_file()** (7 connections) — `src/common/model_artifacts.py`
+- **verify_model_artifact_for_manifest()** (6 connections) — `src/common/model_artifacts.py`
+- **_require_text()** (5 connections) — `src/common/model_artifacts.py`
+- **Path** (5 connections)
+- **test_silent_byte_replacement_under_same_version_fails_integrity()** (5 connections) — `tests/test_issue329_model_artifact_contract.py`
+- **test_version_and_digest_update_registers_new_selected_bytes()** (5 connections) — `tests/test_issue329_model_artifact_contract.py`
+- **_find_project_root()** (4 connections) — `src/common/model_artifacts.py`
+- *... and 43 more nodes in this community*
 
 ## Relationships
 
-- [Community 18](Community_18.md) (83 shared connections)
-- [Community 77](Community_77.md) (38 shared connections)
-- [Community 50](Community_50.md) (19 shared connections)
-- [Community 69](Community_69.md) (18 shared connections)
-- [Community 42](Community_42.md) (17 shared connections)
-- [Community 25](Community_25.md) (14 shared connections)
-- [Community 56](Community_56.md) (10 shared connections)
-- [Community 12](Community_12.md) (10 shared connections)
-- [Community 182](Community_182.md) (8 shared connections)
-- [Community 32](Community_32.md) (6 shared connections)
-- [Community 105](Community_105.md) (5 shared connections)
-- [Community 13](Community_13.md) (4 shared connections)
+- [Community 40](Community_40.md) (18 shared connections)
+- [Community 154](Community_154.md) (7 shared connections)
+- [Community 145](Community_145.md) (7 shared connections)
+- [Community 78](Community_78.md) (5 shared connections)
+- [Community 54](Community_54.md) (4 shared connections)
+- [Community 35](Community_35.md) (3 shared connections)
+- [Community 101](Community_101.md) (3 shared connections)
+- [Community 202](Community_202.md) (2 shared connections)
+- [Community 16](Community_16.md) (2 shared connections)
+- [Community 11](Community_11.md) (2 shared connections)
+- [Community 80](Community_80.md) (1 shared connections)
+- [Community 57](Community_57.md) (1 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/numbering.py`
-- `src/measure_numbering/types.py`
-- `tests/test_issue217_empty_system_output_contract.py`
-- `tests/test_issue218_multistaff_system_grouping.py`
-- `tests/test_issue257_mmr_page_rebase.py`
-- `tests/test_issue413_system_identity.py`
-- `tests/test_issue415_numbering_audit.py`
-- `tests/test_measure_numbering_numbering.py`
-- `tests/test_numbering_geometry_scale.py`
-- `tests/test_numbering_overrides.py`
-- `tests/test_probe_helpers.py`
-- `tests/test_reviewed_movement_apply.py`
+- `src/common/model_artifacts.py`
+- `tests/test_issue329_model_artifact_contract.py`
+- `tests/test_model_artifacts.py`
 
 ## Audit Trail
 
-- EXTRACTED: 422 (94%)
-- INFERRED: 25 (6%)
+- EXTRACTED: 218 (100%)
+- INFERRED: 1 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

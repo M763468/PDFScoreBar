@@ -1,13 +1,13 @@
 # Community 339
 
-> 4 nodes · cohesion 0.67
+> 4 nodes · cohesion 0.83
 
 ## Key Concepts
 
-- **ensure_dir()** (3 connections) — `tools/mmr_training/extract_rest_rois.py`
-- **extract_rest_rois.py** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
-- **main()** (2 connections) — `tools/mmr_training/extract_rest_rois.py`
-- **Path** (1 connections)
+- **visualize_errors_only.py** (3 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
+- **main()** (3 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
+- **compute_iou()** (2 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
+- **find_gt_file()** (2 connections) — `experiments/cnn_classifier/visualize_errors_only.py`
 
 ## Relationships
 
@@ -15,11 +15,11 @@
 
 ## Source Files
 
-- `tools/mmr_training/extract_rest_rois.py`
+- `experiments/cnn_classifier/visualize_errors_only.py`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

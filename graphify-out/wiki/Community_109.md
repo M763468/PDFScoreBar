@@ -1,55 +1,51 @@
 # Community 109
 
-> 24 nodes · cohesion 0.16
+> 25 nodes · cohesion 0.19
 
 ## Key Concepts
 
-- **span()** (18 connections) — `src/pipeline/perf_trace.py`
-- **current_sr_worker.py** (13 connections) — `src/pipeline/detection/current_sr_worker.py`
-- **perf_trace.py** (13 connections) — `src/pipeline/perf_trace.py`
-- **set_context()** (13 connections) — `src/pipeline/perf_trace.py`
-- **run()** (11 connections) — `src/pipeline/detection/current_sr_worker.py`
-- **record()** (6 connections) — `src/pipeline/perf_trace.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/current_sr_worker.py`
-- **Any** (4 connections)
-- **main()** (3 connections) — `src/pipeline/detection/current_sr_worker.py`
-- **Path** (3 connections)
-- **_sha256()** (3 connections) — `src/pipeline/detection/current_sr_worker.py`
-- **_cpu_seconds()** (3 connections) — `src/pipeline/perf_trace.py`
-- **enabled()** (3 connections) — `src/pipeline/perf_trace.py`
-- **reset_context()** (3 connections) — `src/pipeline/perf_trace.py`
-- **_sync_cuda()** (3 connections) — `src/pipeline/perf_trace.py`
-- **_trace_path()** (3 connections) — `src/pipeline/perf_trace.py`
-- **Token** (2 connections)
-- **Any** (1 connections)
-- **Generate one current x4 SR image without loading HOMR or CNN models.** (1 connections) — `src/pipeline/detection/current_sr_worker.py`
-- **Path** (1 connections)
-- **Opt-in, process-safe performance spans for dense pipeline attribution. The…** (1 connections) — `src/pipeline/perf_trace.py`
-- **Record a span and close it correctly on exceptions. CUDA spans synchronize…** (1 connections) — `src/pipeline/perf_trace.py`
-- **Synchronize CUDA when available and report whether it was used.** (1 connections) — `src/pipeline/perf_trace.py`
-- **Set run/page/role metadata for spans in the current execution context.** (1 connections) — `src/pipeline/perf_trace.py`
+- **evaluate_barline_rules.py** (28 connections) — `tools/evaluate_barline_rules.py`
+- **main()** (18 connections) — `tools/evaluate_barline_rules.py`
+- **_metrics()** (8 connections) — `tools/evaluate_barline_rules.py`
+- **Path** (8 connections)
+- **greedy_match_by_rule()** (7 connections) — `tools/evaluate_barline_rules.py`
+- **_measure_count_for_boxes()** (6 connections) — `tools/evaluate_barline_rules.py`
+- **barline_ioa()** (5 connections) — `tools/evaluate_barline_rules.py`
+- **_measure_iou_2d()** (5 connections) — `tools/evaluate_barline_rules.py`
+- **_measure_local_kpis()** (5 connections) — `tools/evaluate_barline_rules.py`
+- **_box_area()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **_intersection_area()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **load_gt_boxes()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **parse_scored_context()** (4 connections) — `tools/evaluate_barline_rules.py`
+- **center_distance_x()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **find_gt_file()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_find_staff_mask_for_eval2_page()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **load_config_file()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **load_fn_det_classification()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_rule_accept()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **RuleResult** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_x_iou()** (3 connections) — `tools/evaluate_barline_rules.py`
+- **_extract_measures()** (2 connections) — `tools/evaluate_barline_rules.py`
+- **_rule_rank()** (2 connections) — `tools/evaluate_barline_rules.py`
+- **_rule_specs()** (2 connections) — `tools/evaluate_barline_rules.py`
+- **Parse score/page context from scored JSON path.** (1 connections) — `tools/evaluate_barline_rules.py`
 
 ## Relationships
 
-- [Community 46](Community_46.md) (6 shared connections)
-- [Community 84](Community_84.md) (5 shared connections)
-- [Community 294](Community_294.md) (5 shared connections)
-- [Community 22](Community_22.md) (4 shared connections)
-- [Community 50](Community_50.md) (2 shared connections)
-- [Community 92](Community_92.md) (2 shared connections)
-- [Community 144](Community_144.md) (1 shared connections)
-- [Community 129](Community_129.md) (1 shared connections)
-- [Community 66](Community_66.md) (1 shared connections)
+- [Community 64](Community_64.md) (10 shared connections)
+- [Community 27](Community_27.md) (5 shared connections)
+- [Community 10](Community_10.md) (5 shared connections)
+- [Community 100](Community_100.md) (4 shared connections)
+- [Community 75](Community_75.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/detection/current_sr_worker.py`
-- `src/pipeline/perf_trace.py`
+- `tools/evaluate_barline_rules.py`
 
 ## Audit Trail
 
-- EXTRACTED: 69 (97%)
-- INFERRED: 2 (3%)
+- EXTRACTED: 77 (95%)
+- INFERRED: 4 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

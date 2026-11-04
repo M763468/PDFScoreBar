@@ -1,10 +1,11 @@
 # Community 448
 
-> 1 nodes · cohesion 1.00
+> 2 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **pdfscore-pipeline** (0 connections) — `pyproject.toml`
+- **run_full68_mmr_reuse_logged.sh** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
+- **run_full68_mmr_reuse_logged.sh script** (1 connections) — `tools/issue274/run_full68_mmr_reuse_logged.sh`
 
 ## Relationships
 
@@ -12,11 +13,11 @@
 
 ## Source Files
 
-- `pyproject.toml`
+- `tools/issue274/run_full68_mmr_reuse_logged.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 0 (0%)
+- EXTRACTED: 1 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

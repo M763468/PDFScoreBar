@@ -1,33 +1,38 @@
 # Community 197
 
-> 12 nodes · cohesion 0.32
+> 13 nodes · cohesion 0.35
 
 ## Key Concepts
 
-- **split_double_barlines.py** (11 connections) — `tools/split_double_barlines.py`
-- **process_file()** (9 connections) — `tools/split_double_barlines.py`
-- **_resolve_min_split_width()** (3 connections) — `tools/split_double_barlines.py`
-- **_should_split()** (3 connections) — `tools/split_double_barlines.py`
-- **_estimate_unit_size_from_bbox_height()** (2 connections) — `tools/split_double_barlines.py`
-- **_extract_bbox()** (2 connections) — `tools/split_double_barlines.py`
-- **extract_peaks()** (2 connections) — `tools/split_double_barlines.py`
-- **get_image_path()** (2 connections) — `tools/split_double_barlines.py`
-- **load_json()** (2 connections) — `tools/split_double_barlines.py`
-- **main()** (2 connections) — `tools/split_double_barlines.py`
-- **save_json()** (2 connections) — `tools/split_double_barlines.py`
-- **visualize_split()** (2 connections) — `tools/split_double_barlines.py`
+- **summarize_stage_c_filter_drop_reasons.py** (14 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **main()** (8 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **replay_page()** (7 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **make_rules()** (5 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **render_markdown()** (5 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **load_inventory()** (4 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **PageFilterReasonRow** (4 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **write_csv()** (4 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **build_parser()** (3 connections) — `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
+- **Any** (3 connections)
+- **Path** (3 connections)
+- **Namespace** (2 connections)
+- **ArgumentParser** (1 connections)
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 81](Community_81.md) (3 shared connections)
+- [Community 165](Community_165.md) (2 shared connections)
+- [Community 159](Community_159.md) (2 shared connections)
+- [Community 60](Community_60.md) (1 shared connections)
+- [Community 39](Community_39.md) (1 shared connections)
 
 ## Source Files
 
-- `tools/split_double_barlines.py`
+- `tools/issue120/summarize_stage_c_filter_drop_reasons.py`
 
 ## Audit Trail
 
-- EXTRACTED: 21 (100%)
+- EXTRACTED: 36 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

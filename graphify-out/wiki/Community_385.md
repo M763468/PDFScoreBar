@@ -1,11 +1,12 @@
 # Community 385
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **analyze_bad_tps.py** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
-- **analyze_bad_tps()** (1 connections) — `experiments/fp_reduction/analyze_bad_tps.py`
+- **export_failure_crops.py** (2 connections) — `tools/export_failure_crops.py`
+- **export_crops()** (2 connections) — `tools/export_failure_crops.py`
+- **main()** (2 connections) — `tools/export_failure_crops.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_bad_tps.py`
+- `tools/export_failure_crops.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

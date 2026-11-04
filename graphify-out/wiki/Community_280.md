@@ -1,15 +1,16 @@
 # Community 280
 
-> 6 nodes · cohesion 0.60
+> 7 nodes · cohesion 0.48
 
 ## Key Concepts
 
-- **coordinate_annotator.py** (5 connections) — `tools/coordinate_annotator.py`
-- **main()** (4 connections) — `tools/coordinate_annotator.py`
-- **draw_annotations()** (3 connections) — `tools/coordinate_annotator.py`
-- **mouse_callback()** (3 connections) — `tools/coordinate_annotator.py`
-- **save_annotations()** (2 connections) — `tools/coordinate_annotator.py`
-- **LEGACY: use tools/gt_relabel_gui (gt-editor mode) for new GT creation.** (1 connections) — `tools/coordinate_annotator.py`
+- **load_json()** (4 connections) — `tools/issue94/normalize_mmr_expected_overrides.py`
+- **main()** (4 connections) — `tools/issue94/normalize_mmr_expected_overrides.py`
+- **map_global_index_to_coords()** (4 connections) — `tools/issue94/normalize_mmr_expected_overrides.py`
+- **normalize_mmr_expected_overrides.py** (3 connections) — `tools/issue94/normalize_mmr_expected_overrides.py`
+- **Any** (2 connections)
+- **Path** (2 connections)
+- **Returns a list mapping global_index -> (system_idx, measure_idx)** (1 connections) — `tools/issue94/normalize_mmr_expected_overrides.py`
 
 ## Relationships
 
@@ -17,12 +18,12 @@
 
 ## Source Files
 
-- `tools/coordinate_annotator.py`
+- `tools/issue94/normalize_mmr_expected_overrides.py`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (89%)
-- INFERRED: 1 (11%)
+- EXTRACTED: 10 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

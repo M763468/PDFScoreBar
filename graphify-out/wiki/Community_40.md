@@ -1,54 +1,61 @@
 # Community 40
 
-> 43 nodes · cohesion 0.12
+> 35 nodes · cohesion 0.14
 
 ## Key Concepts
 
-- **homr_evaluator.py** (69 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **run_evaluation()** (41 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Path** (26 connections)
-- **ImageMetrics** (12 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **AggregateMetrics** (10 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **compute_candidate_stats()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_metrics_json()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_readme()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **compute_transform_info()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **ensure_dir()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **export_measure_grid_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **resolve_clusters_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **resolve_tight_duplicates_dry_run()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **save_homr_results()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **compute_and_save_gap_stats()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **Namespace** (5 connections)
-- **timestamp_jst()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_compare_md()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_metrics_csv()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **write_run_config()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **aggregate_metrics()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **choose_run_id()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **current_jst()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **load_ground_truth_mapping()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **parse_args()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- *... and 18 more nodes in this community*
+- **test_experiment_model_selection.py** (35 connections) — `tests/test_experiment_model_selection.py`
+- **model_validation_mode()** (23 connections) — `src/pipeline/detection/model_selection.py`
+- **resolve_omr_model()** (21 connections) — `src/pipeline/detection/model_selection.py`
+- **model_selection.py** (19 connections) — `src/pipeline/detection/model_selection.py`
+- **resolve_cnn_candidate()** (15 connections) — `src/pipeline/detection/model_selection.py`
+- **model_observation()** (14 connections) — `src/pipeline/detection/model_selection.py`
+- **validate_cnn_candidate()** (10 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **_candidate_config()** (10 connections) — `tests/test_experiment_model_selection.py`
+- **_comparison_check()** (7 connections) — `src/pipeline/detection/model_selection.py`
+- **main()** (6 connections) — `src/pipeline/detection/model_selection.py`
+- **Any** (6 connections)
+- **Path** (6 connections)
+- **_select_device()** (6 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **_file()** (5 connections) — `src/pipeline/detection/model_selection.py`
+- **parametrize** (5 connections)
+- **test_candidate_loader_accepts_supported_architectures_and_checks_io()** (4 connections) — `tests/test_experiment_model_selection.py`
+- **test_candidate_routes_are_rejected_before_standard_dispatch()** (4 connections) — `tests/test_experiment_model_selection.py`
+- **test_candidate_run_records_current_hashes_and_rejects_mid_run_changes()** (4 connections) — `tests/test_experiment_model_selection.py`
+- **test_missing_explicit_candidate_never_falls_back_to_manifest()** (4 connections) — `tests/test_experiment_model_selection.py`
+- **test_supported_candidate_route_dispatch_preserves_selection()** (4 connections) — `tests/test_experiment_model_selection.py`
+- **device** (3 connections)
+- **test_candidate_device_must_be_explicit_supported_value()** (3 connections) — `tests/test_experiment_model_selection.py`
+- **test_candidate_loader_rejects_incompatible_head()** (3 connections) — `tests/test_experiment_model_selection.py`
+- **test_candidate_runs_use_explicit_path_threshold_and_device()** (3 connections) — `tests/test_experiment_model_selection.py`
+- **test_comparison_freezes_observed_bytes_only_when_requested()** (3 connections) — `tests/test_experiment_model_selection.py`
+- *... and 10 more nodes in this community*
 
 ## Relationships
 
-- [Community 108](Community_108.md) (41 shared connections)
-- [Community 143](Community_143.md) (25 shared connections)
-- [Community 97](Community_97.md) (7 shared connections)
-- [Community 0](Community_0.md) (3 shared connections)
-- [Community 84](Community_84.md) (3 shared connections)
-- [Community 1](Community_1.md) (2 shared connections)
-- [Community 29](Community_29.md) (1 shared connections)
+- [Community 8](Community_8.md) (18 shared connections)
+- [Community 154](Community_154.md) (11 shared connections)
+- [Community 78](Community_78.md) (8 shared connections)
+- [Community 101](Community_101.md) (5 shared connections)
+- [Community 156](Community_156.md) (5 shared connections)
+- [Community 111](Community_111.md) (4 shared connections)
+- [Community 16](Community_16.md) (4 shared connections)
+- [Community 80](Community_80.md) (4 shared connections)
+- [Community 14](Community_14.md) (3 shared connections)
+- [Community 28](Community_28.md) (2 shared connections)
+- [Community 187](Community_187.md) (2 shared connections)
+- [Community 117](Community_117.md) (2 shared connections)
 
 ## Source Files
 
-- `src/homr_eval_scripts/homr_evaluator.py`
+- `src/pipeline/detection/model_selection.py`
+- `src/pipeline/steps/cnn_scoring.py`
+- `tests/test_experiment_model_selection.py`
 
 ## Audit Trail
 
-- EXTRACTED: 181 (94%)
-- INFERRED: 12 (6%)
+- EXTRACTED: 156 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

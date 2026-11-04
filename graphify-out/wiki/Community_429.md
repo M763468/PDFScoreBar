@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **tools/__init__.py** (1 connections) — `tools/__init__.py`
-- **Tooling scripts package.** (1 connections) — `tools/__init__.py`
+- **validate_issue264_phase_b.sh** (1 connections) — `scripts/validate_issue264_phase_b.sh`
+- **validate_issue264_phase_b.sh script** (1 connections) — `scripts/validate_issue264_phase_b.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `tools/__init__.py`
+- `scripts/validate_issue264_phase_b.sh`
 
 ## Audit Trail
 

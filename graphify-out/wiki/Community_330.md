@@ -1,13 +1,14 @@
 # Community 330
 
-> 4 nodes · cohesion 0.83
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **batch_debug_ocr.py** (3 connections) — `tools/batch_debug_ocr.py`
-- **process_page()** (3 connections) — `tools/batch_debug_ocr.py`
-- **main()** (2 connections) — `tools/batch_debug_ocr.py`
-- **run_command()** (2 connections) — `tools/batch_debug_ocr.py`
+- **augment_dataset()** (3 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **overlay_text()** (3 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **generate_text_noise.py** (2 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **Reads Positive samples (train/1), generates augmented versions with text, and…** (1 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
+- **Overlays random text on the image, avoiding the exact center (where H-Bar…** (1 connections) — `tools/mmr_training/augmentation/generate_text_noise.py`
 
 ## Relationships
 
@@ -15,7 +16,7 @@
 
 ## Source Files
 
-- `tools/batch_debug_ocr.py`
+- `tools/mmr_training/augmentation/generate_text_noise.py`
 
 ## Audit Trail
 

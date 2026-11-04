@@ -1,14 +1,15 @@
 # Community 296
 
-> 5 nodes · cohesion 0.70
+> 6 nodes · cohesion 0.47
 
 ## Key Concepts
 
-- **main()** (4 connections) — `experiments/legacy/tools_archive/experiment_rest_ocr.py`
-- **run_ocr()** (4 connections) — `experiments/legacy/tools_archive/experiment_rest_ocr.py`
-- **experiment_rest_ocr.py** (2 connections) — `experiments/legacy/tools_archive/experiment_rest_ocr.py`
-- **Path** (2 connections)
-- **RapidOCR** (2 connections)
+- **evaluate_rest_detection()** (4 connections) — `tools/evaluate_rest_detection.py`
+- **evaluate_rest_detection.py** (3 connections) — `tools/evaluate_rest_detection.py`
+- **map_global_index_to_coords()** (3 connections) — `tools/evaluate_rest_detection.py`
+- **load_json()** (2 connections) — `tools/evaluate_rest_detection.py`
+- **Returns a list mapping global_index -> (system_idx, measure_idx)** (1 connections) — `tools/evaluate_rest_detection.py`
+- **Evaluates MMR detection with stage separation and robustness to index shifts.** (1 connections) — `tools/evaluate_rest_detection.py`
 
 ## Relationships
 
@@ -16,7 +17,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/experiment_rest_ocr.py`
+- `tools/evaluate_rest_detection.py`
 
 ## Audit Trail
 

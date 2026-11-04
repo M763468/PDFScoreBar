@@ -1,29 +1,31 @@
 # Community 250
 
-> 8 nodes · cohesion 0.36
+> 9 nodes · cohesion 0.31
 
 ## Key Concepts
 
-- **analyze_measure_grid.py** (4 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
-- **analyze_measure_grid()** (4 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
-- **compute_gap_stats()** (3 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
-- **load_metrics()** (3 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
-- **solve_dp()** (3 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
-- **Load ground truth indices.** (1 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
-- **Compute and print gap stats for a subset of candidates.** (1 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
-- **Find optimal subsequence of candidates. candidates: list of dicts (x_center,…** (1 connections) — `experiments/fp_reduction/analyze_measure_grid.py`
+- **CapturedProgressMirror** (10 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._drain_once()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._mirror_line()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.stop()** (4 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.__init__()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **._run()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.summary()** (2 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **.start()** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
+- **Mirror selected captured fd-level lines to the original console while retaining…** (1 connections) — `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 135](Community_135.md) (5 shared connections)
+- [Community 157](Community_157.md) (3 shared connections)
 
 ## Source Files
 
-- `experiments/fp_reduction/analyze_measure_grid.py`
+- `tools/issue120/run_stage_e_full_pipeline.py`
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
+- EXTRACTED: 19 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

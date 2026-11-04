@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **detect_hbar_test.py** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
-- **detect_hbar()** (1 connections) — `experiments/legacy/tools_archive/detect_hbar_test.py`
+- **debug_visualize_col.py** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
+- **main()** (1 connections) — `experiments/cnn_classifier/debug_visualize_col.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/detect_hbar_test.py`
+- `experiments/cnn_classifier/debug_visualize_col.py`
 
 ## Audit Trail
 

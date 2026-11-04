@@ -1,14 +1,14 @@
 # Community 313
 
-> 5 nodes · cohesion 0.60
+> 5 nodes · cohesion 0.50
 
 ## Key Concepts
 
-- **visualize_mmr_errors.py** (4 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **main()** (3 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **draw_thick_rectangle()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **get_ttf_font()** (2 connections) — `tools/issue94/visualize_mmr_errors.py`
-- **MMR Error Visualization and Inspection Tool (Local Diagnostics for Issue #94)…** (1 connections) — `tools/issue94/visualize_mmr_errors.py`
+- **run_hybrid_batch.py** (3 connections) — `tools/run_hybrid_batch.py`
+- **homr_eval_scripts/__init__.py** (2 connections) — `src/homr_eval_scripts/__init__.py`
+- **main()** (2 connections) — `tools/run_hybrid_batch.py`
+- **run_command()** (2 connections) — `tools/run_hybrid_batch.py`
+- **Homr evaluation tooling package.** (1 connections) — `src/homr_eval_scripts/__init__.py`
 
 ## Relationships
 
@@ -16,11 +16,12 @@
 
 ## Source Files
 
-- `tools/issue94/visualize_mmr_errors.py`
+- `src/homr_eval_scripts/__init__.py`
+- `tools/run_hybrid_batch.py`
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,55 +1,54 @@
 # Community 51
 
-> 39 nodes · cohesion 0.15
+> 37 nodes · cohesion 0.15
 
 ## Key Concepts
 
-- **audit_positive_geometry_disagreements.py** (37 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **Any** (22 connections)
-- **run()** (20 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **run_legacy()** (20 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_RecordingRapidOCR** (12 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_build_rebased_gt()** (8 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_apply_projection()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_index()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_load_json()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_skip()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **slice_one_measure()** (7 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_counterfactual_probe()** (6 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **test_issue274_positive_geometry_audit.py** (5 connections) — `tests/test_issue274_positive_geometry_audit.py`
-- **_legacy_page_inputs()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_probe_view()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_production_exact_replay()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **Path** (5 connections)
-- **_write_json()** (5 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_classify_change()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_raw_candidates()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_score()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_state()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_view_differs()** (4 connections) — `tools/issue274/audit_positive_geometry_disagreements.py`
-- **_payload()** (3 connections) — `tests/test_issue274_positive_geometry_audit.py`
-- **test_slice_one_measure_does_not_mutate_inputs()** (3 connections) — `tests/test_issue274_positive_geometry_audit.py`
-- *... and 14 more nodes in this community*
+- **test_issue415_numbering_audit.py** (40 connections) — `tests/test_issue415_numbering_audit.py`
+- **audit_numbering.py** (14 connections) — `tools/issue415/audit_numbering.py`
+- **audit_pages()** (14 connections) — `tools/issue415/audit_numbering.py`
+- **materialized_path()** (10 connections) — `tools/issue415/audit_numbering.py`
+- **entry()** (9 connections) — `tests/test_issue415_numbering_audit.py`
+- **audit_retained()** (9 connections) — `tools/issue415/audit_numbering.py`
+- **audit_row_samples()** (9 connections) — `tools/issue415/audit_numbering.py`
+- **main()** (9 connections) — `tools/issue415/audit_numbering.py`
+- **verify_consumers()** (9 connections) — `tools/issue415/audit_numbering.py`
+- **Path** (8 connections)
+- **skip()** (6 connections) — `tests/test_issue415_numbering_audit.py`
+- **digest()** (6 connections) — `tools/issue415/audit_numbering.py`
+- **read()** (6 connections) — `tools/issue415/audit_numbering.py`
+- **test_zero_skip_recognition_false_positive_still_fails_quality_gate()** (5 connections) — `tests/test_issue415_numbering_audit.py`
+- **index_overrides()** (5 connections) — `tools/issue415/audit_numbering.py`
+- **page()** (4 connections) — `tests/test_issue415_numbering_audit.py`
+- **test_correct_recognition_wrong_application_and_empty_page_continuity()** (4 connections) — `tests/test_issue415_numbering_audit.py`
+- **test_reset_masks_difference_but_cannot_mask_wrong_reset_target_number()** (4 connections) — `tests/test_issue415_numbering_audit.py`
+- **test_terminal_rest_and_cross_page_application_separate_from_gt()** (4 connections) — `tests/test_issue415_numbering_audit.py`
+- **test_zero_fixture_false_positive_is_not_hidden_by_event_only_scoring()** (4 connections) — `tests/test_issue415_numbering_audit.py`
+- **correctness_failed()** (4 connections) — `tools/issue415/audit_numbering.py`
+- **integer()** (4 connections) — `tools/issue415/audit_numbering.py`
+- **resolve()** (4 connections) — `tools/issue415/audit_numbering.py`
+- **parametrize** (3 connections)
+- **test_audit_rejects_missing_duplicate_and_invalid_event_targets()** (3 connections) — `tests/test_issue415_numbering_audit.py`
+- *... and 12 more nodes in this community*
 
 ## Relationships
 
-- [Community 12](Community_12.md) (9 shared connections)
-- [Community 70](Community_70.md) (4 shared connections)
-- [Community 6](Community_6.md) (4 shared connections)
-- [Community 14](Community_14.md) (4 shared connections)
-- [Community 138](Community_138.md) (3 shared connections)
-- [Community 113](Community_113.md) (3 shared connections)
-- [Community 82](Community_82.md) (3 shared connections)
+- [Community 10](Community_10.md) (12 shared connections)
+- [Community 0](Community_0.md) (3 shared connections)
+- [Community 34](Community_34.md) (2 shared connections)
+- [Community 67](Community_67.md) (1 shared connections)
+- [Community 15](Community_15.md) (1 shared connections)
+- [Community 1](Community_1.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue274_positive_geometry_audit.py`
-- `tools/issue274/audit_positive_geometry_disagreements.py`
+- `tests/test_issue415_numbering_audit.py`
+- `tools/issue415/audit_numbering.py`
 
 ## Audit Trail
 
-- EXTRACTED: 136 (98%)
-- INFERRED: 3 (2%)
+- EXTRACTED: 119 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

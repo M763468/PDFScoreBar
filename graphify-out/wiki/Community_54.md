@@ -1,49 +1,58 @@
 # Community 54
 
-> 36 nodes · cohesion 0.13
+> 30 nodes · cohesion 0.10
 
 ## Key Concepts
 
-- **test_docker_runtime_contract.py** (37 connections) — `tests/test_docker_runtime_contract.py`
-- **Path** (22 connections)
-- **_load_image_resolver_module()** (12 connections) — `tests/test_docker_runtime_contract.py`
-- **_load_runtime_contract_module()** (10 connections) — `tests/test_docker_runtime_contract.py`
-- **_run_make_with_fake_docker()** (7 connections) — `tests/test_docker_runtime_contract.py`
-- **test_preflight_reports_non_object_distribution_metadata()** (4 connections) — `tests/test_docker_runtime_contract.py`
-- **parametrize** (3 connections)
-- **test_default_image_resolution_reuses_matching_local_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_docker_clean_full_removes_container_then_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_docker_clean_removes_only_the_canonical_container()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_explicit_image_override_is_not_substituted()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_full_cleanup_distinguishes_absence_from_docker_error()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_legacy_fingerprint_only_starts_recognized_contract_images()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_matching_source_still_requires_runtime_contract_match()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_omr_dln_model_accepts_explicit_external_asset()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_preflight_rejects_tampered_distribution_provenance()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_production_preflight_checks_maintained_provenance_without_historical_assets()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_runtime_contract_mismatch_defers_rebuild_classification()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_steps()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_runtime_fingerprint_normalizes_legacy_and_current_source_provenance_steps()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_source_fingerprint_detects_source_config_and_checkpoint_drift()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_source_only_mismatch_reuses_requested_runtime_compatible_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_stale_topic_base_does_not_reuse_older_matching_image()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **test_temporary_build_does_not_clean_or_retag_canonical()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- **_write_fake_docker()** (3 connections) — `tests/test_docker_runtime_contract.py`
-- *... and 11 more nodes in this community*
+- **apply_advanced_sr()** (17 connections) — `src/common/preprocessing.py`
+- **preprocessing.py** (15 connections) — `src/common/preprocessing.py`
+- **models/eval_omr_dln.py** (10 connections) — `experiments/models/eval_omr_dln.py`
+- **omr_dln_model_missing_message()** (7 connections) — `src/common/model_artifacts.py`
+- **_RealESRGANTileLogFilter** (7 connections) — `src/common/preprocessing.py`
+- **main()** (6 connections) — `experiments/models/eval_omr_dln.py`
+- **_perf_span()** (4 connections) — `src/common/preprocessing.py`
+- **_suppress_realesrgan_tile_logs()** (4 connections) — `src/common/preprocessing.py`
+- **infer_barlines_from_measures()** (3 connections) — `experiments/models/eval_omr_dln.py`
+- **apply_super_resolution()** (3 connections) — `src/common/preprocessing.py`
+- **apply_vertical_closing()** (3 connections) — `src/common/preprocessing.py`
+- **ndarray** (3 connections)
+- **._write_line()** (3 connections) — `src/common/preprocessing.py`
+- **load_gt_boxes()** (2 connections) — `experiments/models/eval_omr_dln.py`
+- **parse_args()** (2 connections) — `experiments/models/eval_omr_dln.py`
+- **_env_flag_enabled()** (2 connections) — `src/common/preprocessing.py`
+- **Any** (2 connections)
+- **.flush()** (2 connections) — `src/common/preprocessing.py`
+- **.__init__()** (2 connections) — `src/common/preprocessing.py`
+- **.write()** (2 connections) — `src/common/preprocessing.py`
+- **test_generic_sr_tolerant_import_contract_stays_explicit()** (2 connections) — `tests/test_issue409_failure_contracts.py`
+- **# TODO: If batching, pre-computed SR needs to be a mapping or directory.** (1 connections) — `experiments/models/eval_omr_dln.py`
+- **Loads ground truth barlines.** (1 connections) — `experiments/models/eval_omr_dln.py`
+- **Converts measure bounding boxes into barline bounding boxes. A measure (x1, y1,…** (1 connections) — `experiments/models/eval_omr_dln.py`
+- **Explain how to provide the only supported OMR-DLN measure detector weight.** (1 connections) — `src/common/model_artifacts.py`
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [Community 174](Community_174.md) (3 shared connections)
-- [Community 41](Community_41.md) (2 shared connections)
-- [Community 10](Community_10.md) (1 shared connections)
+- [Community 111](Community_111.md) (5 shared connections)
+- [Community 8](Community_8.md) (4 shared connections)
+- [Community 3](Community_3.md) (3 shared connections)
+- [Community 70](Community_70.md) (3 shared connections)
+- [Community 202](Community_202.md) (2 shared connections)
+- [Community 80](Community_80.md) (2 shared connections)
+- [Community 35](Community_35.md) (2 shared connections)
+- [Community 81](Community_81.md) (2 shared connections)
+- [Community 230](Community_230.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_docker_runtime_contract.py`
+- `experiments/models/eval_omr_dln.py`
+- `src/common/model_artifacts.py`
+- `src/common/preprocessing.py`
+- `tests/test_issue409_failure_contracts.py`
 
 ## Audit Trail
 
-- EXTRACTED: 88 (100%)
+- EXTRACTED: 67 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

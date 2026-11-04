@@ -1,61 +1,67 @@
 # Community 11
 
-> 39 nodes · cohesion 0.10
+> 64 nodes · cohesion 0.08
 
 ## Key Concepts
 
-- **score_candidates_batch.py** (31 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **run_scoring_batch()** (21 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **process_dir()** (13 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **split_wide_candidates()** (11 connections) — `src/pipeline/utils/wide_split_utils.py`
-- **verify_sr_levels_with_v12.py** (9 connections) — `tools/verify_sr_levels_with_v12.py`
-- **reproduce_issue44_validation.py** (8 connections) — `tools/reproduce_issue44_validation.py`
-- **filter_by_staff_overlap()** (7 connections) — `src/pipeline/steps/filters.py`
-- **Path** (7 connections)
-- **wide_split_utils.py** (6 connections) — `src/pipeline/utils/wide_split_utils.py`
-- **run_test()** (6 connections) — `tools/verify_sr_levels_with_v12.py`
-- **evaluate_full_rescue_v1.py** (5 connections) — `experiments/issue53_probe_rescue/evaluate_full_rescue_v1.py`
-- **estimate_unit_size_from_box_height()** (5 connections) — `src/pipeline/utils/wide_split_utils.py`
-- **main()** (5 connections) — `tools/reproduce_issue44_validation.py`
-- **extract_x_profile_peaks()** (4 connections) — `src/pipeline/utils/wide_split_utils.py`
-- **_compute_bbox_ink_center_x()** (4 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **GPUNormalize** (4 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **main()** (4 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **parse_eval2_context()** (4 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **_resolve_model_path()** (4 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **run_full_evaluation()** (3 connections) — `experiments/issue53_probe_rescue/evaluate_full_rescue_v1.py`
-- **_clip_box()** (3 connections) — `src/pipeline/utils/wide_split_utils.py`
-- **_build_parser()** (3 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **_find_candidate_dirs()** (3 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **load_config_file()** (3 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- **resolve_image_path()** (3 connections) — `tools/cnn_classifier/score_candidates_batch.py`
-- *... and 14 more nodes in this community*
+- **write_number_layer()** (36 connections) — `src/pipeline/review/number_layer.py`
+- **fixture()** (31 connections) — `tests/test_issue441_annotated_layer.py`
+- **number_layer.py** (25 connections) — `src/pipeline/review/number_layer.py`
+- **sha()** (20 connections) — `tools/issue441/phase0_probe.py`
+- **AnnotatedNumberLayerTests** (15 connections) — `tests/test_issue441_annotated_layer.py`
+- **test_issue441_annotated_layer.py** (14 connections) — `tests/test_issue441_annotated_layer.py`
+- **strip_returned_layer()** (13 connections) — `src/pipeline/review/number_layer.py`
+- **note_signature()** (12 connections) — `src/pipeline/review/number_layer.py`
+- **crop_label_layer.py** (12 connections) — `tools/issue441/crop_label_layer.py`
+- **verify_remaining_review.py** (12 connections) — `tools/issue441/verify_remaining_review.py`
+- **_validate_saved_output()** (11 connections) — `src/pipeline/review/number_layer.py`
+- **NumberLayerValidationError** (10 connections) — `src/pipeline/review/number_layer.py`
+- **refine_annotated_layout.py** (9 connections) — `tools/issue441/refine_annotated_layout.py`
+- **main()** (7 connections) — `tools/issue441/refine_annotated_layout.py`
+- **verify()** (7 connections) — `tools/issue441/verify_remaining_review.py`
+- **digit_ink_bounds()** (6 connections) — `src/pipeline/review/number_layer.py`
+- **find_placement()** (6 connections) — `src/pipeline/review/number_layer.py`
+- **_number_font_signature()** (6 connections) — `src/pipeline/review/number_layer.py`
+- **pix_array()** (6 connections) — `src/pipeline/review/number_layer.py`
+- **distance_to_staff_start()** (5 connections) — `src/pipeline/review/number_layer.py`
+- **ValueError** (5 connections)
+- **test_return_with_unnumbered_page_preserves_annotations_and_rejects_background_change()** (5 connections) — `tests/test_issue441_mobilesheets_roundtrip.py`
+- **compare_placement()** (5 connections) — `tools/issue441/refine_annotated_layout.py`
+- **require()** (5 connections) — `tools/issue441/verify_remaining_review.py`
+- **restart_only()** (5 connections) — `tools/issue441/verify_remaining_review.py`
+- *... and 39 more nodes in this community*
 
 ## Relationships
 
-- [Community 154](Community_154.md) (19 shared connections)
-- [Community 0](Community_0.md) (10 shared connections)
-- [Community 106](Community_106.md) (6 shared connections)
-- [Community 21](Community_21.md) (3 shared connections)
-- [Community 259](Community_259.md) (3 shared connections)
-- [Community 173](Community_173.md) (3 shared connections)
-- [Community 31](Community_31.md) (2 shared connections)
-- [Community 151](Community_151.md) (2 shared connections)
-- [Community 79](Community_79.md) (2 shared connections)
+- [Community 7](Community_7.md) (22 shared connections)
+- [Community 150](Community_150.md) (10 shared connections)
+- [Community 20](Community_20.md) (9 shared connections)
+- [Community 0](Community_0.md) (8 shared connections)
+- [Community 1](Community_1.md) (4 shared connections)
+- [Community 8](Community_8.md) (2 shared connections)
+- [Community 45](Community_45.md) (1 shared connections)
+- [Community 49](Community_49.md) (1 shared connections)
+- [Community 73](Community_73.md) (1 shared connections)
+- [Community 76](Community_76.md) (1 shared connections)
+- [Community 2](Community_2.md) (1 shared connections)
+- [Community 145](Community_145.md) (1 shared connections)
 
 ## Source Files
 
-- `experiments/issue53_probe_rescue/evaluate_full_rescue_v1.py`
-- `src/pipeline/steps/filters.py`
-- `src/pipeline/utils/wide_split_utils.py`
-- `tools/cnn_classifier/score_candidates_batch.py`
-- `tools/reproduce_issue44_validation.py`
-- `tools/verify_sr_levels_with_v12.py`
+- `src/pipeline/review/number_layer.py`
+- `tests/test_engine_service_readiness.py`
+- `tests/test_issue218_multistaff_system_grouping.py`
+- `tests/test_issue441_annotated_layer.py`
+- `tests/test_issue441_mobilesheets_roundtrip.py`
+- `tools/issue441/crop_label_layer.py`
+- `tools/issue441/phase0_probe.py`
+- `tools/issue441/refine_annotated_layout.py`
+- `tools/issue441/verify_remaining_review.py`
 
 ## Audit Trail
 
-- EXTRACTED: 122 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 213 (96%)
+- INFERRED: 8 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

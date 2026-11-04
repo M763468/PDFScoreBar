@@ -1,42 +1,36 @@
 # Community 140
 
-> 19 nodes · cohesion 0.28
+> 13 nodes · cohesion 0.24
 
 ## Key Concepts
 
-- **summarize_nms_policy_evidence.py** (12 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **load_case()** (11 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **Path** (8 connections)
-- **test_issue142_nms_policy_evidence.py** (7 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **write_markdown()** (7 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **load_json()** (6 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **write_json()** (6 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **build_parser()** (5 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **main()** (5 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **_measure_count_summary()** (5 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **test_write_outputs_preserve_missing_measure_count_status()** (4 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **_nms_from_provenance()** (4 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **NmsEvidenceCase** (4 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **parse_case_arg()** (3 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **test_load_case_reports_detector_and_measure_count_separately()** (2 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **test_load_case_tolerates_missing_detector_metrics()** (2 connections) — `tests/test_issue142_nms_policy_evidence.py`
-- **format_nullable()** (2 connections) — `tools/issue120/summarize_nms_policy_evidence.py`
-- **Any** (2 connections)
-- **ArgumentParser** (1 connections)
+- **compute_candidate_stats()** (6 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **export_measure_grid_candidates()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **BarlinePrediction** (5 connections)
+- **Path** (5 connections)
+- **resolve_clusters_dry_run()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **resolve_tight_duplicates_dry_run()** (5 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **compute_and_save_gap_stats()** (4 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **ndarray** (4 connections)
+- **Phase 12: Tight Duplicate Merging (Dry Run). Groups candidates on same staff…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Dry-run implementation of Cluster Resolution Heuristic. Groups barline…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Phase 13: Export data for Measure Grid Consistency (DP) validation. Saves…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Computes and saves statistics for each candidate barline to a CSV file. Stats…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
+- **Computes horizontal gaps between adjacent barlines on the same staff/system and…** (1 connections) — `src/homr_eval_scripts/core/diagnostics.py`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [Community 38](Community_38.md) (5 shared connections)
+- [Community 26](Community_26.md) (1 shared connections)
 
 ## Source Files
 
-- `tests/test_issue142_nms_policy_evidence.py`
-- `tools/issue120/summarize_nms_policy_evidence.py`
+- `src/homr_eval_scripts/core/diagnostics.py`
 
 ## Audit Trail
 
-- EXTRACTED: 47 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 25 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

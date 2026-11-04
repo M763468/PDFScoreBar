@@ -1,50 +1,49 @@
 # Community 104
 
-> 25 nodes · cohesion 0.23
+> 26 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **render_residual_downstream_review.py** (22 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **render_case()** (17 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **Path** (10 connections)
-- **main()** (9 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **normalize_box()** (8 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **Any** (8 connections)
-- **load_json()** (6 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **boxes_from_gt()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **boxes_from_predictions()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **numbering_map_from_variant()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **prediction_map_from_manifest()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **relevant_system_indices()** (5 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **OSError** (4 connections)
-- **case_artifact_map_from_root()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **draw_box()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **numbering_map_from_root()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **one_page_numbering()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **prediction_map_from_root()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **resolve_recorded_path()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **system_measure_records()** (4 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **intersects()** (3 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **letterbox()** (3 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **union_crop()** (3 connections) — `tools/issue291/render_residual_downstream_review.py`
-- **ndarray** (2 connections)
-- **ResidualCase** (2 connections) — `tools/issue291/render_residual_downstream_review.py`
+- **check()** (17 connections) — `tools/verification/check_doc_translations.py`
+- **TranslationChecks** (15 connections) — `tests/test_doc_translations.py`
+- **.write_translation()** (8 connections) — `tests/test_doc_translations.py`
+- **check_doc_translations.py** (6 connections) — `tools/verification/check_doc_translations.py`
+- **.commit_source()** (5 connections) — `tests/test_doc_translations.py`
+- **prose()** (5 connections) — `tools/verification/check_doc_translations.py`
+- **test_doc_translations.py** (4 connections) — `tests/test_doc_translations.py`
+- **.test_changed_commit_source_requires_stale_marker()** (4 connections) — `tests/test_doc_translations.py`
+- **.test_unrelated_commit_does_not_invalidate_source()** (4 connections) — `tests/test_doc_translations.py`
+- **local_links()** (4 connections) — `tools/verification/check_doc_translations.py`
+- **Path** (4 connections)
+- **.git()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_invalid_state_and_identity()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_missing_links_in_either_direction()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_missing_original_and_path_escape()** (3 connections) — `tests/test_doc_translations.py`
+- **.test_unavailable_commit_does_not_certify_sync()** (3 connections) — `tests/test_doc_translations.py`
+- **main()** (3 connections) — `tools/verification/check_doc_translations.py`
+- **.setUp()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_fenced_metadata_and_links_are_examples()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_missing_record()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_same_pr_stale_digest()** (2 connections) — `tests/test_doc_translations.py`
+- **.test_valid_pair()** (2 connections) — `tests/test_doc_translations.py`
+- **Small, dependency-free regression fixtures for translation provenance checks.** (1 connections) — `tests/test_doc_translations.py`
+- **Check translation references and provenance using only the Python standard…** (1 connections) — `tools/verification/check_doc_translations.py`
+- **Exclude fenced examples so sample metadata is not treated as a real record.** (1 connections) — `tools/verification/check_doc_translations.py`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
-- [Community 31](Community_31.md) (7 shared connections)
-- [Community 0](Community_0.md) (3 shared connections)
-- [Community 27](Community_27.md) (1 shared connections)
-- [Community 13](Community_13.md) (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `tools/issue291/render_residual_downstream_review.py`
+- `tests/test_doc_translations.py`
+- `tools/verification/check_doc_translations.py`
 
 ## Audit Trail
 
-- EXTRACTED: 78 (96%)
-- INFERRED: 3 (4%)
+- EXTRACTED: 54 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

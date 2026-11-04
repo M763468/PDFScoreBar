@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **homr_eval_scripts/segnet_cache.py** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
-- **Compatibility alias for the production-owned Segnet cache.** (1 connections) — `src/homr_eval_scripts/segnet_cache.py`
+- **scripts/run_omr_dln_sweep.sh** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
+- **run_omr_dln_sweep.sh script** (1 connections) — `experiments/legacy/scripts/run_omr_dln_sweep.sh`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `src/homr_eval_scripts/segnet_cache.py`
+- `experiments/legacy/scripts/run_omr_dln_sweep.sh`
 
 ## Audit Trail
 

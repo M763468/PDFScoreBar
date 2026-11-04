@@ -1,12 +1,12 @@
 # Community 375
 
-> 3 nodes · cohesion 1.00
+> 3 nodes · cohesion 0.67
 
 ## Key Concepts
 
-- **render_staff_context_sheet.py** (2 connections) — `tools/render_staff_context_sheet.py`
-- **main()** (2 connections) — `tools/render_staff_context_sheet.py`
-- **put_text_block()** (2 connections) — `tools/render_staff_context_sheet.py`
+- **generate_issue218.py** (2 connections) — `tests/fixtures/system_grouping/generate_issue218.py`
+- **generate()** (1 connections) — `tests/fixtures/system_grouping/generate_issue218.py`
+- **Generate the original, synthetic 3div./4div. score excerpts for Issue #218. Run…** (1 connections) — `tests/fixtures/system_grouping/generate_issue218.py`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/render_staff_context_sheet.py`
+- `tests/fixtures/system_grouping/generate_issue218.py`
 
 ## Audit Trail
 
-- EXTRACTED: 3 (100%)
+- EXTRACTED: 2 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

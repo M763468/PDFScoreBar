@@ -1,11 +1,12 @@
 # Community 393
 
-> 2 nodes · cohesion 1.00
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **execute_phase5b_homr.sh** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
-- **execute_phase5b_homr.sh script** (1 connections) — `experiments/fp_reduction/execute_phase5b_homr.sh`
+- **find_nearby.py** (2 connections) — `tools/repro_accuracy/find_nearby.py`
+- **load_json()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
+- **main()** (2 connections) — `tools/repro_accuracy/find_nearby.py`
 
 ## Relationships
 
@@ -13,11 +14,11 @@
 
 ## Source Files
 
-- `experiments/fp_reduction/execute_phase5b_homr.sh`
+- `tools/repro_accuracy/find_nearby.py`
 
 ## Audit Trail
 
-- EXTRACTED: 1 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

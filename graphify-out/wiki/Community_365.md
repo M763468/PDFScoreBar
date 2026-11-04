@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **convert_eval2_pdfs.py** (2 connections) — `tools/convert_eval2_pdfs.py`
-- **convert_pdf()** (2 connections) — `tools/convert_eval2_pdfs.py`
-- **main()** (2 connections) — `tools/convert_eval2_pdfs.py`
+- **run_full68_x_domain_ab.sh** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
+- **run_full68_x_domain_ab.sh script** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
+- **usage()** (2 connections) — `experiments/issue43/run_full68_x_domain_ab.sh`
 
 ## Relationships
 
@@ -14,7 +14,7 @@
 
 ## Source Files
 
-- `tools/convert_eval2_pdfs.py`
+- `experiments/issue43/run_full68_x_domain_ab.sh`
 
 ## Audit Trail
 

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **test_morphological_closing.py** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
-- **test()** (1 connections) — `experiments/legacy/tools_archive/test_morphological_closing.py`
+- **analyze_gaps.py** (1 connections) — `experiments/fp_reduction/analyze_gaps.py`
+- **analyze_gaps()** (1 connections) — `experiments/fp_reduction/analyze_gaps.py`
 
 ## Relationships
 
@@ -13,7 +13,7 @@
 
 ## Source Files
 
-- `experiments/legacy/tools_archive/test_morphological_closing.py`
+- `experiments/fp_reduction/analyze_gaps.py`
 
 ## Audit Trail
 

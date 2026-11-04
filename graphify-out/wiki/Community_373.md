@@ -1,12 +1,12 @@
 # Community 373
 
-> 3 nodes · cohesion 0.67
+> 3 nodes · cohesion 1.00
 
 ## Key Concepts
 
-- **issue454/run_experiment.py** (2 connections) — `tools/issue454/run_experiment.py`
-- **main()** (1 connections) — `tools/issue454/run_experiment.py`
-- **Launch a frozen Issue #447 experiment without changing production configuration.** (1 connections) — `tools/issue454/run_experiment.py`
+- **respond_to_pr_review.sh** (2 connections) — `scripts/respond_to_pr_review.sh`
+- **respond_to_pr_review.sh script** (2 connections) — `scripts/respond_to_pr_review.sh`
+- **usage()** (2 connections) — `scripts/respond_to_pr_review.sh`
 
 ## Relationships
 
@@ -14,11 +14,11 @@
 
 ## Source Files
 
-- `tools/issue454/run_experiment.py`
+- `scripts/respond_to_pr_review.sh`
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

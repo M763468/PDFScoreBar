@@ -1,35 +1,30 @@
 # Community 203
 
-> 11 nodes · cohesion 0.33
+> 6 nodes · cohesion 0.33
 
 ## Key Concepts
 
-- **trace_stage_analysis.py** (9 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **main()** (7 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **has_match()** (5 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **load_boxes()** (4 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **row_filter()** (4 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **cluster_by_y_distance()** (3 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **match_indices()** (3 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **page3_known_fp_filter()** (3 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **PageSpec** (2 connections) — `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
-- **Path** (2 connections)
-- **ndarray** (1 connections)
+- **compute_candidate_stats()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **filter_detections_by_notehead_proximity()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **count_staff_crossings()** (5 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Counts the number of staff line crossings for a vertical barline candidate. A…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Computes and saves statistics for each candidate barline to a CSV file. Stats…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Filters barline detections that are horizontally close to noteheads, which are…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 
 ## Relationships
 
-- [Community 31](Community_31.md) (5 shared connections)
-- [Community 0](Community_0.md) (1 shared connections)
-- [Community 148](Community_148.md) (1 shared connections)
+- [Community 3](Community_3.md) (6 shared connections)
+- [Community 152](Community_152.md) (3 shared connections)
+- [Community 131](Community_131.md) (3 shared connections)
 
 ## Source Files
 
-- `experiments/phase5b_notehead_geom/trace_stage_analysis.py`
+- `src/homr_eval_scripts/homr_evaluator.py`
 
 ## Audit Trail
 
-- EXTRACTED: 24 (96%)
-- INFERRED: 1 (4%)
+- EXTRACTED: 17 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

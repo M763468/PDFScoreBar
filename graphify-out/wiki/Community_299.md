@@ -1,14 +1,15 @@
 # Community 299
 
-> 5 nodes · cohesion 0.50
+> 6 nodes · cohesion 0.60
 
 ## Key Concepts
 
-- **run_hybrid_batch.py** (3 connections) — `tools/run_hybrid_batch.py`
-- **homr_eval_scripts/__init__.py** (2 connections) — `src/homr_eval_scripts/__init__.py`
-- **main()** (2 connections) — `tools/run_hybrid_batch.py`
-- **run_command()** (2 connections) — `tools/run_hybrid_batch.py`
-- **Homr evaluation tooling package.** (1 connections) — `src/homr_eval_scripts/__init__.py`
+- **export_review_evidence.py** (5 connections) — `tools/issue441/export_review_evidence.py`
+- **main()** (4 connections) — `tools/issue441/export_review_evidence.py`
+- **digest()** (3 connections) — `tools/issue441/export_review_evidence.py`
+- **verify_code()** (3 connections) — `tools/issue441/export_review_evidence.py`
+- **read()** (2 connections) — `tools/issue441/export_review_evidence.py`
+- **Publish an allowlisted metadata snapshot, never private score/correction data.…** (1 connections) — `tools/issue441/export_review_evidence.py`
 
 ## Relationships
 
@@ -16,12 +17,11 @@
 
 ## Source Files
 
-- `src/homr_eval_scripts/__init__.py`
-- `tools/run_hybrid_batch.py`
+- `tools/issue441/export_review_evidence.py`
 
 ## Audit Trail
 
-- EXTRACTED: 5 (100%)
+- EXTRACTED: 9 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

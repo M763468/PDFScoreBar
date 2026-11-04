@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **reconstruct()** (4 connections) — `tools/reconstruct_detection_results.py`
-- **reconstruct_detection_results.py** (3 connections) — `tools/reconstruct_detection_results.py`
-- **load_json()** (3 connections) — `tools/reconstruct_detection_results.py`
-- **bboxes_match()** (2 connections) — `tools/reconstruct_detection_results.py`
-- **Path** (2 connections)
+- **analyze_mmr_errors.py** (4 connections) — `tools/analyze_mmr_errors.py`
+- **analyze_all_processed()** (4 connections) — `tools/analyze_mmr_errors.py`
+- **load_model()** (2 connections) — `tools/analyze_mmr_errors.py`
+- **map_global_index_to_coords()** (2 connections) — `tools/analyze_mmr_errors.py`
+- **predict_crop()** (2 connections) — `tools/analyze_mmr_errors.py`
 
 ## Relationships
 
@@ -16,7 +16,7 @@
 
 ## Source Files
 
-- `tools/reconstruct_detection_results.py`
+- `tools/analyze_mmr_errors.py`
 
 ## Audit Trail
 

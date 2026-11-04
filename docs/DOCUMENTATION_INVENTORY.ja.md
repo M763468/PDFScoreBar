@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"1c75ee04aa05437bfe57695a068c85c111d61d2a825b9b2bb760315ac3f2d66a"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"933770ce73ac72195de838a4da4a67011db261f45c2f47659b5cca51fb707c9a"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `1c75ee04aa05437bfe57695a068c85c111d61d2a825b9b2bb760315ac3f2d66a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `933770ce73ac72195de838a4da4a67011db261f45c2f47659b5cca51fb707c9a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 
@@ -140,8 +140,8 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 
 - **範囲限定の契約は自動的に古くなるわけではありません。** `ISSUE120_EVALUATION_CONTRACT.md`、`ISSUE120_ARTIFACT_RETENTION.md`、`ISSUE158_DENSE_ROUTE_NAMING.md`、`ISSUE162_PIPELINE_LOGGING_TAXONOMY.md` は、英語の Issue 限定のリファレンスです。現在の利用者を確認し、必要な契約を範囲を保ったまま選んで翻訳してください。
 - **凍結された履歴:** `TWO_HOMR_MILESTONE.md`、`REPOSITORY_SURFACE_INVENTORY.md`、`DEVELOPMENT_LOG.md`、`DEVLOG_MEASURE_NUMBERING.md`、`ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`、`ISSUE363_RUNTIME_DEPENDENCY_REVIEW.md` は英語の履歴・参照の記録です。`ISSUE44_ITER7_FINAL_REPORT.md` は日本語です。一括の翻訳は必要ありません。
-- **Issue の設計と実験:** `refactors/**`、`dev/ISSUE441_*.md`、`releases/issue410/**` は、個別に権威とライフサイクルをレビューする必要があり、自動的に現在の設計へ昇格するものではありません。#441 と #410 の記録は日本語が中心です。`refactors/**` は主に英語で、日本語の混在した記録（特に #94 と rebuild plan）を含みます。作業中のタスクがその証拠を必要とする場合にだけ、履歴索引を通じて読んでください。
-  これらの記録の一部、特に `dev/ISSUE441_*.md` は、記録したコマンドの一部としてマシン固有の絶対パスを含みます。これらは過去の証拠であり、再利用する手順ではありません。#488 では証拠を書き換えず、そのまま残しました。
+- **Issue の設計と実験:** `refactors/**`、`history/ISSUE441_*.md`、`releases/issue410/**` は、個別に権威とライフサイクルをレビューする必要があり、自動的に現在の設計へ昇格するものではありません。#441 と #410 の記録は日本語が中心です。`refactors/**` は主に英語で、日本語の混在した記録（特に #94 と rebuild plan）を含みます。作業中のタスクがその証拠を必要とする場合にだけ、履歴索引を通じて読んでください。
+  これらの記録の一部、特に `history/ISSUE441_*.md` は、記録したコマンドの一部としてマシン固有の絶対パスを含みます。これらは過去の証拠であり、再利用する手順ではありません。#488 では証拠を書き換えず、そのまま残しました。
 - **把握しているレビューの必要:** #226–#229 の文書は、自らが最終的に常設の利用者・運用文書へ移行することを記述しています。retire する前に、残っている固有の契約を確認してください。`ai-workflow/RUNNER_DESIGN.md` は `docs/refactors/` の下にタスクの束を必須としており、現在の `AGENTS.md` / `ai-workflow/WORKFLOW.md` と矛盾します。#482 で非推奨とし、翻訳していません。これらはレビュー項目であり、ランタイムの修正ではありません。
 - **アーカイブ・非推奨:** `archive/**`、`ai-workflow/AI_AGENT_STRATEGY_2026.md`、`ai-workflow/LONG_HORIZON_WORKFLOW.md` は過去の案内として残すもので、翻訳の前提条件ではありません。`ai-workflow/templates/task/**` は任意の英語のテンプレートで、必須のタスク準備ではありません。
 - **機械可読なものと生成物:** JSON/YAML の契約、例、モデルの manifest、config、`graphify-out/**` は、文章の翻訳の対象ではありません。キー、パス、ハッシュ、スキーマの値を保ってください。それらの説明の文書は翻訳します。ローカライズした機械向けの契約を作ったり、配布の選定を黙って広げたりしないでください。
@@ -173,7 +173,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 
 **更新しなかったもの。** 追跡対象の `graphify-out/**` は生成物であり、`ai-workflow/GRAPHIFY.md` に従って次に更新されるまで旧パスを含みます。過去の Issue／PR の本文や外部からの `blob/<branch>/docs/<name>` へのリンクは、`develop` 上では解決できなくなります。コミットを固定したリンクは引き続き解決できます。新しい場所はこの表で探してください。古い本文は書き換えません。
 
-**保留したもの。** すでに `dev/` の下にある Issue 限定の記録（`dev/ISSUE441_*.md`、`dev/issue441/`、`dev/historical_stage_phase_naming_audit.md`）と、既存の `performance/`、`refactors/` の領域は、直下の再編の対象外でした。これらを `history/` へ移す場合は、Epic #446 の下で別に判断します。
+**後続の判断（#496）。** #441 の Markdown 記録と #160 の命名監査は `dev/` から `history/` に移しました。#441 の evidence は記録済みの出力先を保つため `dev/issue441/evidence/` に残します。[配置監査](history/ISSUE496_PLACEMENT_AUDIT.md)を参照してください。既存の `performance/` と `refactors/` は目的別の役割を維持します。
 
 ## 履歴の案内と retire のルール
 

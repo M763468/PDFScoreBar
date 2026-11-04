@@ -26,7 +26,7 @@ old PDF presence does not establish success. Repeated resumes use a flat session
 under the original review, with checkpoint state and numbering ownership resolved separately.
 Checkpoint IDs and session IDs are local artifact identities;
 they do not add a public service/job API. See
-[`dev/ISSUE441_PRODUCT_INTEGRATION.md`](../dev/ISSUE441_PRODUCT_INTEGRATION.md).
+[`history/ISSUE441_PRODUCT_INTEGRATION.md`](../history/ISSUE441_PRODUCT_INTEGRATION.md).
 The exact selection and develop-only boundary are in
 [`MINIMAL_MAINLINE_SURFACE.md`](../MINIMAL_MAINLINE_SURFACE.md); user operation is in
 [`USER_GUIDE.md`](../USER_GUIDE.md). Shared barline geometry lives in

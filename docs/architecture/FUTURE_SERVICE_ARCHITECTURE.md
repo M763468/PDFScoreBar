@@ -78,7 +78,7 @@ Pre-checkpoint inputs can now be imported with reproduced source/correction iden
 and a resumed session can produce another independent resume under the original registry.
 Storage adapters must preserve the original identity as provenance while assigning the
 restored state its own current identity; input import alone is not successful application.
-See [`dev/ISSUE441_PRODUCT_INTEGRATION.md`](../dev/ISSUE441_PRODUCT_INTEGRATION.md).
+See [`history/ISSUE441_PRODUCT_INTEGRATION.md`](../history/ISSUE441_PRODUCT_INTEGRATION.md).
 
 Current correction semantics include, as applicable to the current workflow:
 

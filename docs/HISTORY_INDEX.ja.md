@@ -1,10 +1,10 @@
 # PDFScoreBar 履歴索引
 
-<!-- translation: {"original":"HISTORY_INDEX.md","source":{"sha256":"55eb189d33e967cedba5927afc78c969d924519bb41eb4465d149f2c43c5aaec"},"state":"reviewed"} -->
+<!-- translation: {"original":"HISTORY_INDEX.md","source":{"sha256":"a6576d3219b8fd586b21f3ae9d18ec3921f9043a28e535b3c92723164d8c231d"},"state":"reviewed"} -->
 
 [English / 原文](HISTORY_INDEX.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `55eb189d33e967cedba5927afc78c969d924519bb41eb4465d149f2c43c5aaec`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `a6576d3219b8fd586b21f3ae9d18ec3921f9043a28e535b3c92723164d8c231d`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この文書はナビゲーションの層であり、2つ目の情報の正本ではありません。
 
@@ -176,6 +176,12 @@ Issue #268 は利用とリセットの意味を所有します。Issue #333 は�
 - [`docs/contracts/corrected_final_output.ja.md`](contracts/corrected_final_output.ja.md)
 
 現在の挙動については、現在のソースと現在の利用者向け文書を使います。
+
+### レビュー再開と過去の命名（#441 / #160）
+
+- [Issue #441 のレビューと証拠の入口](history/ISSUE441_REVIEW.md)と[製品統合の記録](history/ISSUE441_PRODUCT_INTEGRATION.md)は #441 / PR #445 の調査記録です。現在の挙動はソースとテストを参照してください。
+- [Issue #160 の命名監査](history/historical_stage_phase_naming_audit.md)は過去の Stage/Phase の境界を記録します。
+- [配置監査と旧・新パス](history/ISSUE496_PLACEMENT_AUDIT.md)に移動と保持した証拠を説明します。
 
 ### 開発の運用 / AI のワークフロー
 

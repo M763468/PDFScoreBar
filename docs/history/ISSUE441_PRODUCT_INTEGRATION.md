@@ -48,9 +48,9 @@ annotation-only往復は新しい記録で検証済みとし、他の形式・�
 
 ## 今回の検証
 
-コードの固定情報は[公開検証スナップショット](issue441/evidence/product_integration_snapshot.json)、
-テスト出力は[回帰テスト](issue441/evidence/product-regression-tests.txt)と
-[fast tests](issue441/evidence/product-fast-tests.txt)で確認できる。
+コードの固定情報は[公開検証スナップショット](../dev/issue441/evidence/product_integration_snapshot.json)、
+テスト出力は[回帰テスト](../dev/issue441/evidence/product-regression-tests.txt)と
+[fast tests](../dev/issue441/evidence/product-fast-tests.txt)で確認できる。
 基点は `1431feb2935008d93c263dcd73b8da95469637a6`。公開JSONに今回の変更ファイルのSHA-256を記録する。
 
 実データはIssueで提供された15ページPDF（SHA-256

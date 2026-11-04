@@ -37,4 +37,4 @@ available. Confirm the requested scope and data-safety constraints first.
 ## References
 
 - `docs/ai-workflow/GRAPHIFY.md`
-- `docs/PIPELINE_ARCHITECTURE.md`
+- `docs/architecture/PIPELINE_ARCHITECTURE.md`

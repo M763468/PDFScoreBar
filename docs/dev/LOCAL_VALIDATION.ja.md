@@ -1,10 +1,10 @@
 # ローカル検証環境
 
-<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"19d9e14ccec3da0c890971efbb608ac17a1338354d0a49aa74e92cceed82144c"},"state":"reviewed"} -->
+<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"ec8d7387b0dd01e18a7d5ffa16d7b3fc8f9981716814d95a1abb42f573f04371"},"state":"reviewed"} -->
 
 [English / 原文](LOCAL_VALIDATION.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `19d9e14ccec3da0c890971efbb608ac17a1338354d0a49aa74e92cceed82144c`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `ec8d7387b0dd01e18a7d5ffa16d7b3fc8f9981716814d95a1abb42f573f04371`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 アクティブな Issue ワークツリーに対して必要なチェックを実行できる環境を選択してください。
 このガイドは [Validation Policy](VALIDATION_POLICY.md) の検証レベルと併せて使用します。以前に確認されたツールやコンテナは検証の手がかりにすぎず、現在も存在することや互換性があることを保証するものではありません。本番イメージや他のワークツリーで使用されているコンテナはそのまま維持してください。
@@ -26,7 +26,7 @@
 4. 実行時の UID/GID、および各出力ディレクトリと既存ログへの書き込みアクセス権。
 5. Docker、`gh`、およびコマンドが必要とするサンドボックス権限の利用可否。許可された経路が拒否された場合は、正確なコマンドとエラーを記録し、可能な場合は別の利用可能な環境を使用してください。
 
-パイプラインを使用する場合は、さらにアクティブなワークツリーに対してイメージを解決し、[Environment & Tooling](../ENVIRONMENTS.md) に記載されている本番用の事前確認を実行してください。ツールの利用可否プローブは、アプリケーション受け入れテストの合格とはみなされません。実際のチェック結果は、[エビデンス規則](VALIDATION_POLICY.md#validation-status-and-evidence)に従って Passed、Failed、Blocked、または Not run として報告してください。
+パイプラインを使用する場合は、さらにアクティブなワークツリーに対してイメージを解決し、[Environment & Tooling](ENVIRONMENTS.md) に記載されている本番用の事前確認を実行してください。ツールの利用可否プローブは、アプリケーション受け入れテストの合格とはみなされません。実際のチェック結果は、[エビデンス規則](VALIDATION_POLICY.md#validation-status-and-evidence)に従って Passed、Failed、Blocked、または Not run として報告してください。
 
 ## ワークツリーとマウントの規約
 
@@ -183,4 +183,4 @@ Playwright/Chromium イメージはブラウザランナーであり、本番イ
 
 ## ローカルデータとナビゲーション
 
-データセット、ログ、モデル、およびキャッシュは、実用上可能な限り Issue ソースワークツリーの外に保持してください。シンボリックリンクと明示的な Docker マウントのルールについては、[`local_worktree_data.ja.md`](local_worktree_data.ja.md) を参照してください（リンク先がコンテナ内にマウントされていない限り、Docker はホスト専用のシンボリックリンクを辿ることができません）。保守対象のイメージ、アセットの所有権、およびランタイムの互換性については、[Environment & Tooling](../ENVIRONMENTS.md) を参照してください。ワークツリーおよび検証コマンドは本ファイルが管轄します。リンク先のドキュメントではこれらの手順を重複して記載せず、ここを参照するようにしてください。
+データセット、ログ、モデル、およびキャッシュは、実用上可能な限り Issue ソースワークツリーの外に保持してください。シンボリックリンクと明示的な Docker マウントのルールについては、[`local_worktree_data.ja.md`](local_worktree_data.ja.md) を参照してください（リンク先がコンテナ内にマウントされていない限り、Docker はホスト専用のシンボリックリンクを辿ることができません）。保守対象のイメージ、アセットの所有権、およびランタイムの互換性については、[Environment & Tooling](ENVIRONMENTS.md) を参照してください。ワークツリーおよび検証コマンドは本ファイルが管轄します。リンク先のドキュメントではこれらの手順を重複して記載せず、ここを参照するようにしてください。

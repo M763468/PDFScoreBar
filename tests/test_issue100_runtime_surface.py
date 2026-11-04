@@ -48,9 +48,9 @@ def test_production_omr_worker_is_under_src() -> None:
     [
         "tools/movement_boundary_review.py",
         "src/pipeline/review/movement_boundary_review.py",
-        "docs/ENGINE_JOB_LIFECYCLE.md",
-        "docs/ENGINE_INPUT_SAFETY.md",
-        "docs/ENGINE_TELEMETRY.md",
+        "docs/contracts/ENGINE_JOB_LIFECYCLE.md",
+        "docs/contracts/ENGINE_INPUT_SAFETY.md",
+        "docs/contracts/ENGINE_TELEMETRY.md",
     ],
 )
 def test_surface_checker_rejects_missing_review_and_engine_contract_files(

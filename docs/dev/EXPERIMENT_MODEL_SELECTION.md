@@ -5,8 +5,8 @@
 CNNとOMR-DLN候補は、既存configの明示パスで試せる。
 探索のたびにversion/SHA/provenanceを登録したり、production manifestを編集したりする必要はない。
 
-現行productionの正規契約は [モデル契約](../MODEL_ARTIFACT_CONTRACT.md)、
-[モデル登録手順](../MODEL_ARTIFACTS.md)、[検証方針](VALIDATION_POLICY.md) を参照する。
+現行productionの正規契約は [モデル契約](../contracts/MODEL_ARTIFACT_CONTRACT.md)、
+[モデル登録手順](MODEL_ARTIFACTS.md)、[検証方針](VALIDATION_POLICY.md) を参照する。
 
 ## 検証の段階
 
@@ -118,7 +118,7 @@ config、baseline、metric、semantic gate、tolerance、seedを評価前に固�
    operator-suppliedモデルは取得/import契約とlicense境界を維持する。
 3. image-owned asset/runtimeに影響すればimageをbuildする。canonical preflight/GPU smoke、
    必要なaccuracy/semantic評価、engineと配布provenanceの検証を行う。
-4. mainへのrelease昇格は [ブランチ方針](../BRANCH_POLICY.md) に従う。古いcache/rollback assetは自動削除しない。
+4. mainへのrelease昇格は [ブランチ方針](BRANCH_POLICY.md) に従う。古いcache/rollback assetは自動削除しない。
 
 missing/corrupt候補はpath/checkpointを修正する。shape/task/device不適合は対応形式で作成し直す。
 比較hash不一致はモデルか比較対象が変わったことを意味するため、既存の比較結果を上書きして合格扱いにしない。
@@ -130,7 +130,7 @@ runtime mismatchはbase/image provenanceを比較して適合imageを選び、�
 #398 / PR #401はproductionと歴史的Stage-E componentの分離を定めた。本書の探索・比較モードもこれらのproduction契約を維持する。
 過去のGPU/精度結果は、新しい候補の検証結果とは分けて扱う。
 現行Dockerfile/profileはHOMR commit `457e7c6518a10ba755db2e60883419e56c4d7369` を固定する。
-選択資産とarchive hashは[モデル契約](../MODEL_ARTIFACT_CONTRACT.ja.md)を参照する。
+選択資産とarchive hashは[モデル契約](../contracts/MODEL_ARTIFACT_CONTRACT.ja.md)を参照する。
 
 本書の探索・比較モードは #448 / [PR #451](https://github.com/M763468/PDFScoreBar/pull/451) で導入した。
 当初の別selection manifest/専用runner案と独立実装Issue #450は、

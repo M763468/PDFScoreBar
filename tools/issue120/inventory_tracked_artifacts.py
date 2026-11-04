@@ -198,7 +198,7 @@ def render_markdown(summary: dict[str, dict[str, object]]) -> str:
         "Generated artifacts should be removed from Git or moved under ignored `logs/` paths."
     )
     lines.append(
-        "Retained Issue #120 fixtures require an explicit rationale in `docs/ISSUE120_ARTIFACT_RETENTION.md`."
+        "Retained Issue #120 fixtures require an explicit rationale in `docs/history/ISSUE120_ARTIFACT_RETENTION.md`."
     )
     return "\n".join(lines)
 

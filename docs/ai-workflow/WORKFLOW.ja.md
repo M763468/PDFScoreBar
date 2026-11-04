@@ -1,10 +1,10 @@
 # AIを活用した開発のワークフロー
 
-<!-- translation: {"original":"WORKFLOW.md","source":{"sha256":"05cf3955f75cae8303df842df11f9ba591584ffb2973dc52f709b0e67569aa24"},"state":"reviewed"} -->
+<!-- translation: {"original":"WORKFLOW.md","source":{"sha256":"ed624ed9202aa7d2dad5007c714963e1dcce92ae8fa0d38a378d8e8ddec0d4e4"},"state":"reviewed"} -->
 
 [English / 原文](WORKFLOW.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `05cf3955f75cae8303df842df11f9ba591584ffb2973dc52f709b0e67569aa24`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `ed624ed9202aa7d2dad5007c714963e1dcce92ae8fa0d38a378d8e8ddec0d4e4`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この文書は、`AGENTS.md` を中心とした、リポジトリの軽量なワークフローを説明します。第二の指示体系ではなく、特定のモデル、Skill、オーケストレーションの層を必要としません。
 
@@ -24,7 +24,7 @@
 
 1. 具体的なタスクと範囲を特定します。
 2. そのタスクに必要なソース、文書、履歴だけを確認します。
-3. 通常の作業では `develop` からブランチを作ります。`docs/BRANCH_POLICY.md` を参照してください。
+3. 通常の作業では `develop` からブランチを作ります。`docs/dev/BRANCH_POLICY.md` を参照してください。
 4. タスクを満たす、最小限で一貫した変更を実装します。
 5. `docs/dev/VALIDATION_POLICY.md` から検証を選びます。
 6. 差分を確認し、範囲の逸脱や、意図しない config・依存関係・評価の変更がないか確かめます。

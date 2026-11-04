@@ -23,34 +23,34 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/REPOSITORY_SURFACE_INVENTORY.md` | #230 development-repository audit and #100 input | historical/reference | retain for lineage; its old present-tense paths do not define the current extraction set |
 | `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 minimum executable selection and machine-readable drift definition | canonical/current for extraction | use as the single explanation and exact file list for the distributed runtime subset; per-candidate #409 acceptance evidence moved to `docs/releases/issue409/ACCEPTANCE_HISTORY.md` (#484) |
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
-| `docs/PIPELINE_ARCHITECTURE.md` / `.ja.md` | reader-oriented current production architecture | canonical/current (English original); Japanese reviewed | pipeline components, data flow, execution order and module responsibilities; precise contracts moved to reference |
-| `docs/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | production implementation reference | current/reference (English original); Japanese reviewed | detailed detector/numbering contracts and historical compatibility rationale; read from the architecture overview |
-| `docs/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
-| `docs/ENGINE_JOB_CONTRACT.md` / `.ja.md` | versioned one-job engine caller contract | current/reference (English original); Japanese reviewed | normative v1 serialized boundary and compatibility/correction semantics; `PipelineJobExecutor` is the reference adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
-| `docs/ENGINE_JOB_LIFECYCLE.md` / `.ja.md` | #337 one-job lifecycle contract | current/reference (English original); Japanese reviewed | v1 lifecycle requirements and reusable control helpers; #337 audit is historical, while cancellation/deadline integration remains pending |
-| `docs/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 untrusted-PDF safety contract | current/reference (English original); Japanese reviewed | implemented bounded preflight and safe errors; hard quotas/process-tree/network isolation remain future worker requirements |
-| `docs/ENGINE_TELEMETRY.md` / `.ja.md` | #339 structured progress/resource telemetry contract | current/reference (English original); Japanese reviewed | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
-| `docs/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 reference executor and compatibility gates | current/reference (English original); Japanese reviewed | supported succeeded/failed publication boundary; direct v1 corrections, lifecycle controls and public-service isolation remain outside current support |
-| `docs/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
-| `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
-| `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
+| `docs/architecture/PIPELINE_ARCHITECTURE.md` / `.ja.md` | reader-oriented current production architecture | canonical/current (English original); Japanese reviewed | pipeline components, data flow, execution order and module responsibilities; precise contracts moved to reference |
+| `docs/architecture/PIPELINE_ARCHITECTURE_REFERENCE.md` / `.ja.md` | production implementation reference | current/reference (English original); Japanese reviewed | detailed detector/numbering contracts and historical compatibility rationale; read from the architecture overview |
+| `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
+| `docs/contracts/ENGINE_JOB_CONTRACT.md` / `.ja.md` | versioned one-job engine caller contract | current/reference (English original); Japanese reviewed | normative v1 serialized boundary and compatibility/correction semantics; `PipelineJobExecutor` is the reference adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
+| `docs/contracts/ENGINE_JOB_LIFECYCLE.md` / `.ja.md` | #337 one-job lifecycle contract | current/reference (English original); Japanese reviewed | v1 lifecycle requirements and reusable control helpers; #337 audit is historical, while cancellation/deadline integration remains pending |
+| `docs/contracts/ENGINE_INPUT_SAFETY.md` / `.ja.md` | #338 untrusted-PDF safety contract | current/reference (English original); Japanese reviewed | implemented bounded preflight and safe errors; hard quotas/process-tree/network isolation remain future worker requirements |
+| `docs/contracts/ENGINE_TELEMETRY.md` / `.ja.md` | #339 structured progress/resource telemetry contract | current/reference (English original); Japanese reviewed | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
+| `docs/contracts/ENGINE_SERVICE_READINESS.md` / `.ja.md` | #340 reference executor and compatibility gates | current/reference (English original); Japanese reviewed | supported succeeded/failed publication boundary; direct v1 corrections, lifecycle controls and public-service isolation remain outside current support |
+| `docs/history/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
+| `docs/dev/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
+| `docs/dev/BRANCH_POLICY.md` | branch policy | current/reference | keep |
 | `docs/dev/VALIDATION_POLICY.md` | validation policy | current/reference | keep |
-| `docs/REGRESSION_TEST_WORKFLOW.md` | regression workflow | current/reference | keep |
-| `docs/GT_PREPARATION_POLICY.md` | GT policy | current/reference | keep |
-| `docs/BARLINE_MATCHER.md` | matching/evaluation rules | current/reference | keep |
-| `docs/SCRIPT_MANAGEMENT.md` | script placement/lifecycle policy | current/reference | keep compact; historical move/delete ledger belongs in #45 / PR #184 |
-| `docs/manual_correction_review_package.md` | internal review handoff | current/reference | keep |
-| `docs/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against source when modifying output workflow |
+| `docs/dev/REGRESSION_TEST_WORKFLOW.md` | regression workflow | current/reference | keep |
+| `docs/dev/GT_PREPARATION_POLICY.md` | GT policy | current/reference | keep |
+| `docs/contracts/BARLINE_MATCHER.md` | matching/evaluation rules | current/reference | keep |
+| `docs/dev/SCRIPT_MANAGEMENT.md` | script placement/lifecycle policy | current/reference | keep compact; historical move/delete ledger belongs in #45 / PR #184 |
+| `docs/dev/manual_correction_review_package.md` | internal review handoff | current/reference | keep |
+| `docs/contracts/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against source when modifying output workflow |
 | `docs/ai-workflow/GRAPHIFY.md` | Graphify operation | current/reference | keep |
 | `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep |
 | `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable architecture changes |
 | `docs/PIPELINE_DATAFLOW.md`, `docs/FULL_PIPELINE_README.md`, `docs/best_configuration_summary.md` | obsolete current-guide narratives | retired | removed in earlier cleanup; recover through Git history |
 | `docs/CNN_RETRAINING_GUIDE.md` | #44-era FP active-learning / ResNet18 plan | retired | historical core moved to #44; current verified CNN is #296 / PR #310 plus source/config/tests |
 | `docs/performance_comparison.md` | dated Phase 1–6 performance narrative | retired | benchmark ledger distilled into #78; later performance lineage is in #281–#294 |
-| `docs/DEVELOPMENT_LOG.md` | project-origin / pre-Issue history | historical/reference | compressed to a short legacy milestone ledger; exact old execution diary is Git-history only |
+| `docs/history/DEVELOPMENT_LOG.md` | project-origin / pre-Issue history | historical/reference | compressed to a short legacy milestone ledger; exact old execution diary is Git-history only |
 | `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | retired | durable early experiment ledger moved to Issue #44; current verified CNN is #296 / PR #310 plus source/config/tests |
-| `docs/DEVLOG_MEASURE_NUMBERING.md` | early numbering/MMR development history | historical/reference | compressed to a short legacy milestone ledger; current/scoped MMR analysis is `docs/refactors/issue94/MMR_CURRENT_STATE.md` and Issue #94 |
-| top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
+| `docs/history/DEVLOG_MEASURE_NUMBERING.md` | early numbering/MMR development history | historical/reference | compressed to a short legacy milestone ledger; current/scoped MMR analysis is `docs/refactors/issue94/MMR_CURRENT_STATE.md` and Issue #94 |
+| `docs/history/ISSUE*.md` (top-level before #492) | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | audit individually; keep current scoped contracts, retire temporary handoff/task-control bundles after distillation |
 | `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retired | important #25/#60/#70 results moved to their Issue threads; active-looking task-control copies removed |
 | `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and decisions are recoverable elsewhere |
@@ -92,29 +92,29 @@ when translating. Historical and scoped records follow the exclusions below.
 | [README.md](README.md) | canonical/current | EN | [JA reviewed](README.ja.md) | P1 |
 | [DOCUMENTATION_INVENTORY.md](DOCUMENTATION_INVENTORY.md) | canonical/current | EN | [JA reviewed](DOCUMENTATION_INVENTORY.ja.md); #488 | P1 |
 | [DOCUMENTATION_LANGUAGE_POLICY.md](DOCUMENTATION_LANGUAGE_POLICY.md) | current/reference; translation and documentation maintenance rules | EN | [JA reviewed](DOCUMENTATION_LANGUAGE_POLICY.ja.md); #489 | P1 |
-| [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
-| [PIPELINE_ARCHITECTURE_REFERENCE.md](PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
-| [ENGINE_JOB_CONTRACT.md](ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_JOB_LIFECYCLE.md](ENGINE_JOB_LIFECYCLE.md) | current/reference | EN / [JA](ENGINE_JOB_LIFECYCLE.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_INPUT_SAFETY.md](ENGINE_INPUT_SAFETY.md) | current/reference | EN / [JA](ENGINE_INPUT_SAFETY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_TELEMETRY.md](ENGINE_TELEMETRY.md) | current/reference | EN / [JA](ENGINE_TELEMETRY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [ENGINE_SERVICE_READINESS.md](ENGINE_SERVICE_READINESS.md) | current/reference | EN / [JA](ENGINE_SERVICE_READINESS.ja.md) | reviewed; #463 implementation/meaning review | P1 |
-| [MODEL_ARTIFACT_CONTRACT.md](MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
-| [MODEL_ARTIFACTS.md](MODEL_ARTIFACTS.md) | current/reference | EN / [JA](MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
-| [ENVIRONMENTS.md](ENVIRONMENTS.md) | current/reference | EN / [JA](ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [PIPELINE_ARCHITECTURE.md](architecture/PIPELINE_ARCHITECTURE.md) | canonical/current overview | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE.ja.md); #456 review completed | P1 |
+| [PIPELINE_ARCHITECTURE_REFERENCE.md](architecture/PIPELINE_ARCHITECTURE_REFERENCE.md) | current implementation-level reference | EN | [JA full reviewed](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md); #456 review completed | P1 |
+| [ENGINE_JOB_CONTRACT.md](contracts/ENGINE_JOB_CONTRACT.md) | current/reference | EN / [JA](contracts/ENGINE_JOB_CONTRACT.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_JOB_LIFECYCLE.md](contracts/ENGINE_JOB_LIFECYCLE.md) | current/reference | EN / [JA](contracts/ENGINE_JOB_LIFECYCLE.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_INPUT_SAFETY.md](contracts/ENGINE_INPUT_SAFETY.md) | current/reference | EN / [JA](contracts/ENGINE_INPUT_SAFETY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_TELEMETRY.md](contracts/ENGINE_TELEMETRY.md) | current/reference | EN / [JA](contracts/ENGINE_TELEMETRY.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [ENGINE_SERVICE_READINESS.md](contracts/ENGINE_SERVICE_READINESS.md) | current/reference | EN / [JA](contracts/ENGINE_SERVICE_READINESS.ja.md) | reviewed; #463 implementation/meaning review | P1 |
+| [MODEL_ARTIFACT_CONTRACT.md](contracts/MODEL_ARTIFACT_CONTRACT.md) | current/reference | EN / [JA](contracts/MODEL_ARTIFACT_CONTRACT.ja.md) | reviewed | P1 |
+| [MODEL_ARTIFACTS.md](dev/MODEL_ARTIFACTS.md) | current/reference | EN / [JA](dev/MODEL_ARTIFACTS.ja.md) | reviewed | P1 |
+| [ENVIRONMENTS.md](dev/ENVIRONMENTS.md) | current/reference | EN / [JA](dev/ENVIRONMENTS.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [USER_GUIDE.md](USER_GUIDE.md) | current/reference | EN | [JA reviewed](USER_GUIDE.ja.md) | P1 |
-| [manual_correction_review_package.md](manual_correction_review_package.md) | current/reference | EN | [JA reviewed](manual_correction_review_package.ja.md) | P1 |
-| [BRANCH_POLICY.md](BRANCH_POLICY.md) | current/reference | EN / [JA](BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
+| [manual_correction_review_package.md](dev/manual_correction_review_package.md) | current/reference | EN | [JA reviewed](dev/manual_correction_review_package.ja.md) | P1 |
+| [BRANCH_POLICY.md](dev/BRANCH_POLICY.md) | current/reference | EN / [JA](dev/BRANCH_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/VALIDATION_POLICY.md](dev/VALIDATION_POLICY.md) | current/reference | EN / [JA](dev/VALIDATION_POLICY.ja.md) | reviewed; #465 translation and meaning review | P1 |
 | [dev/LOCAL_VALIDATION.md](dev/LOCAL_VALIDATION.md) | current/reference | EN / [JA](dev/LOCAL_VALIDATION.ja.md) | reviewed; #465 translation and meaning review | P1 |
-| [USER_CORRECTION_BOUNDARY.md](USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](USER_CORRECTION_BOUNDARY.ja.md) | P2 |
-| [corrected_final_output.md](corrected_final_output.md) | current/reference | EN | [JA reviewed](corrected_final_output.ja.md) | P2 |
-| [MOVEMENT_BOUNDARY_CONTRACT.md](MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | [JA reviewed](MOVEMENT_BOUNDARY_CONTRACT.ja.md); #477 currency review | P2 |
-| [NUMBERING_GEOMETRY_CONTRACT.md](NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | [JA reviewed](NUMBERING_GEOMETRY_CONTRACT.ja.md); #477 currency review | P2 |
-| [GT_PREPARATION_POLICY.md](GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
-| [BARLINE_MATCHER.md](BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](BARLINE_MATCHER.ja.md); #475 currency review | P2 |
-| [MAKEFILE_SURFACE.md](MAKEFILE_SURFACE.md) | current/reference | EN / [JA](MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
-| [REGRESSION_TEST_WORKFLOW.md](REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
+| [USER_CORRECTION_BOUNDARY.md](contracts/USER_CORRECTION_BOUNDARY.md) | current/reference | EN | [JA reviewed](contracts/USER_CORRECTION_BOUNDARY.ja.md) | P2 |
+| [corrected_final_output.md](contracts/corrected_final_output.md) | current/reference | EN | [JA reviewed](contracts/corrected_final_output.ja.md) | P2 |
+| [MOVEMENT_BOUNDARY_CONTRACT.md](contracts/MOVEMENT_BOUNDARY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md); #477 currency review | P2 |
+| [NUMBERING_GEOMETRY_CONTRACT.md](contracts/NUMBERING_GEOMETRY_CONTRACT.md) | current/reference | EN | [JA reviewed](contracts/NUMBERING_GEOMETRY_CONTRACT.ja.md); #477 currency review | P2 |
+| [GT_PREPARATION_POLICY.md](dev/GT_PREPARATION_POLICY.md) | current/reference | EN | [JA reviewed](dev/GT_PREPARATION_POLICY.ja.md); #475 currency review | P2 |
+| [BARLINE_MATCHER.md](contracts/BARLINE_MATCHER.md) | current/reference | EN | [JA reviewed](contracts/BARLINE_MATCHER.ja.md); #475 currency review | P2 |
+| [MAKEFILE_SURFACE.md](dev/MAKEFILE_SURFACE.md) | current/reference | EN / [JA](dev/MAKEFILE_SURFACE.ja.md) | reviewed; #465 translation and meaning review | P2 |
+| [REGRESSION_TEST_WORKFLOW.md](dev/REGRESSION_TEST_WORKFLOW.md) | current/reference | EN / [JA](dev/REGRESSION_TEST_WORKFLOW.ja.md) | reviewed; #465 translation and meaning review | P2 |
 | [dev/MMR_RAPIDOCR_PROVIDER.md](dev/MMR_RAPIDOCR_PROVIDER.md) | current/reference | EN | [JA reviewed](dev/MMR_RAPIDOCR_PROVIDER.ja.md); #477 currency review | P2 |
 | [dev/REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md) | current/reference | EN | [JA reviewed](dev/REVIEW_ACCEPTANCE.ja.md); #480 currency review | P2 |
 | [dev/PR_SLICE_VALIDATION.md](dev/PR_SLICE_VALIDATION.md) | current/reference | EN | [JA reviewed](dev/PR_SLICE_VALIDATION.ja.md); #480 currency review | P2 |
@@ -123,14 +123,14 @@ when translating. Historical and scoped records follow the exclusions below.
 | [agent-skills/EVAL.md](agent-skills/EVAL.md) | current/reference | EN | [JA reviewed](agent-skills/EVAL.ja.md); #482 | P2 |
 | [dev/CONFIGURATION_REFERENCE.md](dev/CONFIGURATION_REFERENCE.md) | current/reference; canonical config keys and values guarded in PR CI by `tests/test_configuration_reference.py` | EN | [JA reviewed](dev/CONFIGURATION_REFERENCE.ja.md); #486 | P2 |
 | [dev/EXPERIMENT_MODEL_SELECTION.md](dev/EXPERIMENT_MODEL_SELECTION.md) | current/reference | JA | [EN reviewed](dev/EXPERIMENT_MODEL_SELECTION.en.md); #475 | P1 |
-| [SCRIPT_MANAGEMENT.md](SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](SCRIPT_MANAGEMENT.en.md) | P2 |
+| [SCRIPT_MANAGEMENT.md](dev/SCRIPT_MANAGEMENT.md) | current/reference | JA (designated original, #480) | [EN reviewed](dev/SCRIPT_MANAGEMENT.en.md) | P2 |
 | [ai-workflow/README.md](ai-workflow/README.md) | current/reference | EN | [JA reviewed](ai-workflow/README.ja.md); #482 | P2 |
 | [ai-workflow/WORKFLOW.md](ai-workflow/WORKFLOW.md) | current/reference | EN | [JA reviewed](ai-workflow/WORKFLOW.ja.md); #482 | P2 |
 | [ai-workflow/GRAPHIFY.md](ai-workflow/GRAPHIFY.md) | current/reference | EN | [JA reviewed](ai-workflow/GRAPHIFY.ja.md); #482 | P2 |
 | [ai-workflow/CODEX_GEMINI_COLLAB.md](ai-workflow/CODEX_GEMINI_COLLAB.md) | current/reference | EN | [JA reviewed](ai-workflow/CODEX_GEMINI_COLLAB.ja.md); #482 | P2 |
 | [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | [JA reviewed](ai-workflow/LABELS.ja.md); #482 | P2 |
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
-| [FUTURE_SERVICE_ARCHITECTURE.md](FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
+| [FUTURE_SERVICE_ARCHITECTURE.md](architecture/FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |
@@ -182,6 +182,61 @@ need arises. #488 decided not to relocate documents into new directories: the En
 Japanese indexes reach every current document, while moving files would change existing
 links, tool references and the distribution manifest without a demonstrated reader benefit.
 Whether new design layers are needed is reviewed separately (#489).
+#492 re-evaluated that decision because indexes alone did not make the GitHub `docs/`
+listing readable, and moved role groups as recorded in the next section. The #488 record is
+kept as the decision at that time.
+
+## Directory layout and #492 reorganization
+
+Before #492 the `docs/` root held 66 Markdown files (plus the manifest JSON) that mixed
+entry points, current architecture, engine/model contracts, developer procedures, frozen
+Issue records and legacy ledgers; `docs/**` held 160 Markdown files counting each language
+separately (`develop` at `c70c5f6d`). #492 moved 53 root Markdown files into role directories
+with `git mv`, keeping each original with its counterparts. The root now holds 13 Markdown
+files plus the manifest JSON. The moves neither added nor removed files; the `docs/**` total
+became 165 only because #459 / PR #493 added five records under `performance/`. Moving a
+file does not change its classification above: the future architecture stays a roadmap, and
+Issue-scoped contracts under `history/` keep their scoped authority.
+
+| Location | Role | Files moved or kept by #492 |
+| --- | --- | --- |
+| `docs/` root | entry, navigation, inventory and distribution contract | kept: `README`, `USER_GUIDE`, `MINIMAL_MAINLINE_SURFACE` (`.md` / `.ja.md` / `.json`), `DOCUMENTATION_INVENTORY`, `DOCUMENTATION_LANGUAGE_POLICY`, `HISTORY_INDEX`, `REPOSITORY_SURFACE_INVENTORY.md` |
+| `architecture/` | current architecture overview and reference; explicitly future architecture | `PIPELINE_ARCHITECTURE`, `PIPELINE_ARCHITECTURE_REFERENCE`, `FUTURE_SERVICE_ARCHITECTURE.md` |
+| `contracts/` | current engine, model, output, numbering, correction-boundary and matcher contracts | `ENGINE_JOB_CONTRACT`, `ENGINE_JOB_LIFECYCLE`, `ENGINE_INPUT_SAFETY`, `ENGINE_TELEMETRY`, `ENGINE_SERVICE_READINESS`, `MODEL_ARTIFACT_CONTRACT`, `corrected_final_output`, `NUMBERING_GEOMETRY_CONTRACT`, `MOVEMENT_BOUNDARY_CONTRACT`, `USER_CORRECTION_BOUNDARY`, `BARLINE_MATCHER` |
+| `dev/` (existing) | developer and operator procedures and policies | added `BRANCH_POLICY`, `ENVIRONMENTS`, `MAKEFILE_SURFACE`, `REGRESSION_TEST_WORKFLOW`, `SCRIPT_MANAGEMENT` (`.md` / `.en.md`), `GT_PREPARATION_POLICY`, `MODEL_ARTIFACTS`, `manual_correction_review_package` |
+| `history/` | frozen Issue-scoped records and legacy ledgers | `ISSUE44_ITER7_FINAL_REPORT.md`, `ISSUE120_EVALUATION_CONTRACT.md`, `ISSUE120_ARTIFACT_RETENTION.md`, `ISSUE158_DENSE_ROUTE_NAMING.md`, `ISSUE162_PIPELINE_LOGGING_TAXONOMY.md`, `ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`, `ISSUE363_RUNTIME_DEPENDENCY_REVIEW.md`, `DEVELOPMENT_LOG.md`, `DEVLOG_MEASURE_NUMBERING.md`, `TWO_HOMR_MILESTONE.md` |
+| `ai-workflow/`, `agent-skills/`, `performance/`, `refactors/`, `releases/`, `archive/` | existing areas | unchanged |
+
+Unless a single file is named, each name covers its `.md` / `.ja.md` pair. The old path of
+every moved file is `docs/<name>`; the new path is `docs/<location>/<name>`.
+
+**Kept at the root.** `README` is the documentation entry. `USER_GUIDE` and
+`MINIMAL_MAINLINE_SURFACE` (including the JSON read by `tools/check_repository_surface.py`,
+the distribution tools and their tests) are distribution entries and contracts.
+`DOCUMENTATION_INVENTORY`, `DOCUMENTATION_LANGUAGE_POLICY` and `HISTORY_INDEX` are the
+navigation and maintenance layer that `AGENTS.md` and the indexes point to.
+`REPOSITORY_SURFACE_INVENTORY.md` is a repository-wide audit consumed by the manifest's
+`reference_checks`; it is not a `docs/history/` record of one Issue.
+
+**References updated with the move.** All relative Markdown links and fragments; `docs/...`
+path mentions in tracked Markdown, `AGENTS.md`, `.gemini/GEMINI.md`, the PR template, the
+Graphify skill, `data/README.md`, `scripts/docker_container_preflight.sh`,
+`tools/issue120/inventory_tracked_artifacts.py`; the engine-contract entries in
+`documentation_patterns` and the advisory `documentation_audiences` in `MINIMAL_MAINLINE_SURFACE.json`;
+and the tests that name moved files. Apart from this inventory, the language policy and the
+documentation guide, originals changed only in link paths; their
+counterparts received the same path changes and refreshed `same PR` SHA-256 identities.
+No runtime, distribution selection, or translation state changed.
+
+**Not updated.** Tracked `graphify-out/**` is generated output and still names old paths
+until its next refresh under `ai-workflow/GRAPHIFY.md`. Past Issue/PR bodies and external
+links to `blob/<branch>/docs/<name>` no longer resolve on `develop`; commit-pinned links
+still resolve. Use this table to find the new location; old bodies are not rewritten.
+
+**Deferred.** Issue-scoped records already under `dev/` (`dev/ISSUE441_*.md`,
+`dev/issue441/`, `dev/historical_stage_phase_naming_audit.md`) and the existing
+`performance/` and `refactors/` areas were outside the root reorganization. Move them to
+`history/` only through a separate decision under Epic #446.
 
 ## Historical navigation and retirement rule
 
@@ -206,13 +261,13 @@ over retaining chat transcripts or copying the same result into another summary 
 
 ## Frozen #274 milestone versus current production
 
-`docs/TWO_HOMR_MILESTONE.md` deliberately preserves the accepted #274 / PR #279 comparison contract. That comparison used the Issue #44 / PR #57 Iter 7 final-rescue CNN artifact at:
+`docs/history/TWO_HOMR_MILESTONE.md` deliberately preserves the accepted #274 / PR #279 comparison contract. That comparison used the Issue #44 / PR #57 Iter 7 final-rescue CNN artifact at:
 
 ```text
 logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
 ```
 
-`docs/ISSUE44_ITER7_FINAL_REPORT.md` remains the reconstruction procedure for **that historical comparison checkpoint**. This does not mean Iter 7 is the current production CNN.
+`docs/history/ISSUE44_ITER7_FINAL_REPORT.md` remains the reconstruction procedure for **that historical comparison checkpoint**. This does not mean Iter 7 is the current production CNN.
 
 The verified dense production route was later refreshed in Issue #296 / PR #310 to the current-producer candidate-aligned EfficientNet-B0 D27 checkpoint and validation-selected threshold. Current source/tests and `configs/dense_full_pipeline.yaml` are authoritative for the active production model contract.
 

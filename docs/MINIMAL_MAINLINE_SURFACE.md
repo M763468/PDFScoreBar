@@ -12,7 +12,7 @@ source identity, dirty status, and each shipped file's hash.
 
 This selection was defined by Issues #100 and #409 and first promoted to `main` through
 #410 (release candidate RC4, PR #442). Changes on `develop` reach `main` only through a later
-release promotion under the [branch policy](BRANCH_POLICY.md). The acceptance evidence for
+release promotion under the [branch policy](dev/BRANCH_POLICY.md). The acceptance evidence for
 each historical candidate size is kept in
 [the #409 acceptance history](releases/issue409/ACCEPTANCE_HISTORY.md).
 

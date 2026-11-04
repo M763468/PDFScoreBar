@@ -159,7 +159,7 @@ MMRを直しただけで小節線/resetの問題も解決したとは扱わな�
 
 ## branch・候補生成・promotionの設計
 
-[branch policy](../../BRANCH_POLICY.md)に従い、準備コード/docsはdevelop向けtopic branchで扱う。
+[branch policy](../../dev/BRANCH_POLICY.md)に従い、準備コード/docsはdevelop向けtopic branchで扱う。
 配布candidateには**versioned/ephemeralな`release/<cycle>-rc<N>`**を使う。
 固定された候補ごとに証拠を結び付け、検証中の候補を上書きしない運用とする。
 

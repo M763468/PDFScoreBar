@@ -28,11 +28,15 @@ only when a concrete future need arises; do not create another instruction hiera
 ## Paths and navigation
 
 Preserve existing original paths. Place translations beside the original using `.ja.md`
-for Japanese or `.en.md` for English: `PIPELINE_ARCHITECTURE.md` pairs with
-`PIPELINE_ARCHITECTURE.ja.md`; `dev/EXPERIMENT_MODEL_SELECTION.md` pairs with
+for Japanese or `.en.md` for English: `architecture/PIPELINE_ARCHITECTURE.md` pairs with
+`architecture/PIPELINE_ARCHITECTURE.ja.md`; `dev/EXPERIMENT_MODEL_SELECTION.md` pairs with
 `dev/EXPERIMENT_MODEL_SELECTION.en.md`. This also applies to root documents, except
 the excluded `AGENTS.md`.
-Do not move originals into a new directory hierarchy merely to translate them.
+Do not move originals into a new directory hierarchy merely to translate them. A move made
+for information structure, such as the #492 role-based layout recorded in the
+[documentation inventory](DOCUMENTATION_INVENTORY.md#directory-layout-and-492-reorganization),
+is a separate decision: move each original together with its counterparts, keep the
+designated original language and state, and update links and source identities in the same PR.
 
 Add reciprocal language links once both files exist. Link to the matching-language target
 when available; otherwise link to the original and label its language and untranslated
@@ -83,7 +87,7 @@ full evaluation. A link check does not establish command execution or runtime co
 Preserve machine-readable contracts and the exact distribution manifest. Adding a
 translation to `develop` does not include it in `main` or a minimal release. Distribution
 changes require a separate scoped decision and relevant validation. Bulk historical
-translation, physical reorganization and new design layers are separate Epic decisions.
+translation, further physical reorganization and new design layers are separate Epic decisions.
 
 ## Repeatable static check
 

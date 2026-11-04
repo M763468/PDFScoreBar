@@ -116,7 +116,9 @@ def test_docker_build_verifies_selected_realesrgan_release_bytes() -> None:
 
 
 def test_inventory_documents_all_canonical_model_families() -> None:
-    inventory = (PROJECT_ROOT / "docs" / "MODEL_ARTIFACT_CONTRACT.md").read_text(encoding="utf-8")
+    inventory = (PROJECT_ROOT / "docs" / "contracts" / "MODEL_ARTIFACT_CONTRACT.md").read_text(
+        encoding="utf-8"
+    )
 
     for identity in (
         "barline-cnn",

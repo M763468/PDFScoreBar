@@ -671,17 +671,17 @@
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "docs/ENGINE_JOB_LIFECYCLE.md",
+      "pattern": "docs/contracts/ENGINE_JOB_LIFECYCLE.md",
       "role": "normative one-job lifecycle contract",
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "docs/ENGINE_INPUT_SAFETY.md",
+      "pattern": "docs/contracts/ENGINE_INPUT_SAFETY.md",
       "role": "normative engine input safety contract",
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "docs/ENGINE_TELEMETRY.md",
+      "pattern": "docs/contracts/ENGINE_TELEMETRY.md",
       "role": "normative engine telemetry contract",
       "include_in_runtime_bundle": false
     }
@@ -979,13 +979,13 @@
     ],
     "developer": [
       "docs/*.md",
+      "docs/architecture/**",
+      "docs/contracts/**",
       "docs/dev/**",
       "docs/ai-workflow/**"
     ],
     "historical_investigation": [
       "docs/refactors/**",
-      "docs/issue*",
-      "docs/ISSUE*",
       "docs/history/**"
     ]
   },

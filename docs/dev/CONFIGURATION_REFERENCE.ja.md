@@ -1,10 +1,10 @@
 # パイプラインの設定と実行入口のリファレンス
 
-<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"54e4b2675e261b6063e8c44e524a57c781e75791b1b8d30f58f1beeb1d65e472"},"state":"reviewed"} -->
+<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"e95dd9fe237113686de44cf4fd9563c478b0d675cca18aaf346f5a9863b794aa"},"state":"reviewed"} -->
 
 [English / 原文](CONFIGURATION_REFERENCE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `54e4b2675e261b6063e8c44e524a57c781e75791b1b8d30f58f1beeb1d65e472`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `e95dd9fe237113686de44cf4fd9563c478b0d675cca18aaf346f5a9863b794aa`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 このリファレンスは、開発用パイプラインの起動方法と、正規の本番設定 `configs/dense_full_pipeline.yaml` の各キーが何を制御するかをまとめたものです。現在のソースの挙動を説明するもので、既定値を変えたり新しい設定を定めたりはしません。PR検証ワークフローで実行する `tests/test_configuration_reference.py` は、正規の設定のキーが本書または英語の原文のキーの表にない場合、複数回記載されている場合、記載した値が正規の値と異なる場合に失敗します。意味の列は検査しません。
 
@@ -17,7 +17,7 @@
 | `python3 docker/distribution.py build / preflight / run / review` | 配布パッケージの利用者 | [利用者ガイド](../USER_GUIDE.ja.md)を参照してください。 |
 | `bash scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke] [--pipeline-only]` | 開発者 | Docker ランタイムの契約を検証し、指定した config（既定は `configs/smoke_test.yaml`）を実行します。環境変数: `DOCKER_IMAGE`、`DOCKER_EXTRA_ARGS`、`PDFSCORE_SR_COMPILER_CACHE`、`PDFSCOREBAR_MODEL_CACHE`、`OMR_DLN_MODEL_PATH`。 |
 | `python -m src.pipeline.main --config PATH [options]` | 開発者（準備済みの環境内） | パイプラインを直接実行します。マウントとイメージの来歴は呼び出し側の責任です。 |
-| `make <target>` | 開発者 | [Makefile サーフェス](../MAKEFILE_SURFACE.ja.md)を参照してください。 |
+| `make <target>` | 開発者 | [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)を参照してください。 |
 
 ### `src.pipeline.main` のオプション
 
@@ -107,7 +107,7 @@
 | `detection.candidate_filter_kwargs.paper_threshold` | `200` | 受け入れ済みの候補フィルタのパラメータ。 |
 | `detection.candidate_filter_kwargs.min_paper_overlap_ratio` | `0.6` | 受け入れ済みの候補フィルタのパラメータ。 |
 | `detection.candidate_filter_kwargs.min_staff_overlap_ratio` | `0.02` | 受け入れ済みの候補フィルタのパラメータ。 |
-| `detection.cnn_model_manifest` | `models/barline_cnn/manifest.json` | 選定済みの CNN モデルの manifest。[モデル資産の契約](../MODEL_ARTIFACT_CONTRACT.ja.md)を参照してください。 |
+| `detection.cnn_model_manifest` | `models/barline_cnn/manifest.json` | 選定済みの CNN モデルの manifest。[モデル資産の契約](../contracts/MODEL_ARTIFACT_CONTRACT.ja.md)を参照してください。 |
 | `detection.cnn_threshold` | `0.4965248107910156` | CNN の採用閾値。本番モードでは manifest と一致する必要があります。 |
 | `detection.cnn_apply_nms` | `false` | CNN のスコアリングでの NMS（受け入れ済みの既定は無効）。 |
 | `detection.divisi_rescue` | `true` | 受け入れ済みの救済のスイッチ。 |
@@ -155,7 +155,7 @@
 | `detection.model_validation`、`detection.cnn_model_path`、`detection.cnn_device`、`detection.omr_dln_model_path`、`detection.omr_dln_device`、`detection.model_sha256` | [開発用モデルの選定](EXPERIMENT_MODEL_SELECTION.md) |
 | その他の `detection.source_concurrency` の設定 | [source の並行処理](../performance/issue458-source-concurrency.md) |
 | `mmr.rapidocr_provider` | [MMR RapidOCR のプロバイダモード](MMR_RAPIDOCR_PROVIDER.ja.md) |
-| `inputs.movement_boundaries` | [楽章境界の契約](../MOVEMENT_BOUNDARY_CONTRACT.ja.md) |
-| `outputs.review` | [手動補正のレビューパッケージ](../manual_correction_review_package.ja.md) |
+| `inputs.movement_boundaries` | [楽章境界の契約](../contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md) |
+| `outputs.review` | [手動補正のレビューパッケージ](manual_correction_review_package.ja.md) |
 
 `inputs.pdf_path`、`inputs.barline_overrides`、`inputs.measure_overrides`、`mmr.debug_root` など、ソースが読むその他のキーは、個別の所有文書のない開発用の入力です。使う前に、それを読むソースを確認してください。

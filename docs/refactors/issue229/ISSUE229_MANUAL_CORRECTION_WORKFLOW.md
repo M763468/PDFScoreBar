@@ -15,7 +15,7 @@ This document records the design outcome for #229. It intentionally does not imp
 
 This file is an issue-scoped design handoff, not the permanent home for user documentation.
 
-After the user-facing review/correction workflow is implemented and accepted, the stable parts of this design should move into formal documentation such as the root `README.md`, `docs/ENVIRONMENTS.md`, a future user guide, or a standing correction-workflow document. At that point, this issue-specific file and its `docs/README.md` index entry should be removed.
+After the user-facing review/correction workflow is implemented and accepted, the stable parts of this design should move into formal documentation such as the root `README.md`, `docs/dev/ENVIRONMENTS.md`, a future user guide, or a standing correction-workflow document. At that point, this issue-specific file and its `docs/README.md` index entry should be removed.
 
 Permanent repository behavior must not depend on a document whose only discoverable name is tied to a completed issue number.
 

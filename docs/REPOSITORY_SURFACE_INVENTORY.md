@@ -45,7 +45,7 @@ make run-pipeline CONFIG=<config.yaml>
 ```
 
 The canonical runtime image is `pdfscore_pipeline_gpu`; current environment details are owned by
-`docs/ENVIRONMENTS.md`.
+`docs/dev/ENVIRONMENTS.md`.
 
 There is currently no installed `pdfscorebar` console script in `pyproject.toml`. The old
 `pdfscorebar run/correct/apply-corrections` direction in Issue #226-#229 design records is therefore
@@ -57,10 +57,10 @@ The final/review/debug concepts remain valid, but callers should depend on seman
 than internal run-directory details.
 
 - Normal correction operation is the config-first review-package flow documented in
-  `docs/manual_correction_review_package.md`.
+  `docs/dev/manual_correction_review_package.md`.
 - The supported user GUI is `tools/review_correction/server.py`; it starts from
   `review/manual_correction_input.json` and enforces the same-package handoff. See
-  `docs/USER_CORRECTION_BOUNDARY.md` for its separation from GT/developer tooling.
+  `docs/contracts/USER_CORRECTION_BOUNDARY.md` for its separation from GT/developer tooling.
 - Issue #383 retired the legacy arbitrary-path manual-config builder; the supported GUI route begins
   from the package-local review handoff above.
 - Final output remains the clean score-numbered PDF; review/debug geometry and correction provenance
@@ -80,7 +80,7 @@ current review-package/apply flow remains the concrete correction execution path
 
 Future HTTP/API, queue, database, object-store, authentication, billing, persistence, and other
 service/control-plane implementation concerns are not repository-surface requirements for
-PDFScoreBar. `docs/FUTURE_SERVICE_ARCHITECTURE.md` deliberately permits those concerns to live in
+PDFScoreBar. `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` deliberately permits those concerns to live in
 another repository.
 
 ## Top-level inventory
@@ -88,7 +88,7 @@ another repository.
 | Area | Classification | Surface role | Action / boundary |
 | --- | --- | --- | --- |
 | `README.md`, `AGENTS.md`, `pyproject.toml` | KEEP | repository/runtime metadata and operating rules | Keep concise and current. Do not add a console-script contract until one is implemented. |
-| `Makefile` | KEEP | maintained runtime/developer/validation entrypoint | Use `docs/MAKEFILE_SURFACE.md`; do not re-audit #369 here. Historical Issue #120 targets are reproduction surface, not general entrypoints. |
+| `Makefile` | KEEP | maintained runtime/developer/validation entrypoint | Use `docs/dev/MAKEFILE_SURFACE.md`; do not re-audit #369 here. Historical Issue #120 targets are reproduction surface, not general entrypoints. |
 | `.github/**` | KEEP | CI, Issue/PR templates | Keep while referenced by current repository workflow. |
 | `.agents/**`, `.gemini/GEMINI.md` | KEEP | repository developer/agent tooling | Not end-user API. Root Makefile currently exposes several `.agents/skills/**` helpers. |
 | `Dockerfile`, `docker/**` | KEEP | canonical runtime build and runtime contract | Current Docker surface. |
@@ -169,13 +169,13 @@ document-by-document classification here.
 For repository-surface purposes:
 
 - canonical/current and current/reference docs are KEEP;
-- `docs/FUTURE_SERVICE_ARCHITECTURE.md` is KEEP as an explicitly future responsibility boundary;
+- `docs/architecture/FUTURE_SERVICE_ARCHITECTURE.md` is KEEP as an explicitly future responsibility boundary;
 - Issue/refactor docs are ARCHIVE only when they retain a scoped contract or unique evidence;
 - completed task-control/handoff prose with no unique durable content is REMOVE under the #280
   retirement rule;
 - `docs/refactors/issue226/**` through `issue229/**` are historical/scoped design records, not a
   second current CLI/runtime source of truth;
-- `docs/manual_correction_review_package.md` is the current correction operating guide.
+- `docs/dev/manual_correction_review_package.md` is the current correction operating guide.
 
 Issue #230 also found stale current-facing wording left after PR #376: the documentation index and
 durable documentation inventory still described the production executor adapter as not yet wired.

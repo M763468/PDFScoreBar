@@ -1,16 +1,16 @@
 # Development model exploration, fixed comparison, and production selection
 
-<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"628226aee13b762e405fe475eb3630d76fb2273a748be4a6b140674687d792e1"},"state":"reviewed"} -->
+<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"a4c37e44712a82d71f7139798fdfe2f1bcdd9d3673ece62025686c8ce2c66308"},"state":"reviewed"} -->
 
 [日本語 / Original](EXPERIMENT_MODEL_SELECTION.md) (Japanese original)
 
-Translation source: same PR / SHA-256 `628226aee13b762e405fe475eb3630d76fb2273a748be4a6b140674687d792e1`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
+Translation source: same PR / SHA-256 `a4c37e44712a82d71f7139798fdfe2f1bcdd9d3673ece62025686c8ce2c66308`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
 
 CNN and OMR-DLN candidates can be tried through explicit paths in an existing config.
 You do not need to register a version/SHA/provenance or edit the production manifest for each exploration.
 
-For the canonical current production contract, see the [model artifact contract](../MODEL_ARTIFACT_CONTRACT.md),
-the [model registration procedure](../MODEL_ARTIFACTS.md), and the [validation policy](VALIDATION_POLICY.md).
+For the canonical current production contract, see the [model artifact contract](../contracts/MODEL_ARTIFACT_CONTRACT.md),
+the [model registration procedure](MODEL_ARTIFACTS.md), and the [validation policy](VALIDATION_POLICY.md).
 
 ## Validation modes
 
@@ -122,7 +122,7 @@ Comparison mode stops on a missing hash or a changed checkpoint. Results after a
    For operator-supplied models, keep the acquisition/import contract and license boundary.
 3. If image-owned assets/runtime are affected, build the image. Run the canonical preflight/GPU smoke,
    the required accuracy/semantic evaluation, and engine and distribution provenance validation.
-4. Release promotion to main follows the [branch policy](../BRANCH_POLICY.md). Old cache/rollback assets are not deleted automatically.
+4. Release promotion to main follows the [branch policy](BRANCH_POLICY.md). Old cache/rollback assets are not deleted automatically.
 
 For a missing/corrupt candidate, fix the path/checkpoint. For a shape/task/device mismatch, recreate it in a supported format.
 A comparison hash mismatch means the model or comparison target changed; do not overwrite an existing comparison result and treat it as passed.
@@ -134,7 +134,7 @@ For a runtime mismatch, compare base/image provenance to choose a compatible ima
 and #398 / PR #401 separated production from historical Stage-E components. The exploration and comparison modes in this document keep these production contracts.
 Past GPU/accuracy results are treated separately from the validation results of a new candidate.
 The current Dockerfile/profile pins HOMR commit `457e7c6518a10ba755db2e60883419e56c4d7369`.
-For selected assets and archive hashes, see the [model artifact contract](../MODEL_ARTIFACT_CONTRACT.md).
+For selected assets and archive hashes, see the [model artifact contract](../contracts/MODEL_ARTIFACT_CONTRACT.md).
 
 The exploration and comparison modes in this document were introduced in #448 / [PR #451](https://github.com/M763468/PDFScoreBar/pull/451).
 The initial proposal of a separate selection manifest/dedicated runner and the standalone implementation Issue #450 were

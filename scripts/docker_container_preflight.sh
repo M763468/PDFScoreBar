@@ -151,7 +151,7 @@ for name in "${required_modules[@]}"; do
       cat >&2 <<EOF
 Required validation module is missing: pytest
 The production runtime intentionally does not include pytest. Use the documented
-pdfscore_pipeline_pytest_dev pattern in docs/ENVIRONMENTS.md and install pytest there once,
+pdfscore_pipeline_pytest_dev pattern in docs/dev/ENVIRONMENTS.md and install pytest there once,
 then rerun this preflight before executing repository tests.
 EOF
     else

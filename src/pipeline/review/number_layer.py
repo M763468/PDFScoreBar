@@ -20,15 +20,18 @@ import numpy as np
 from PIL import Image
 
 from src.pipeline.review.final_output import (
+    STAFF_LINE_WINDOW_FRACTIONS,
     _first_page_payload,
     _resolve_package_path,
     _row_label_records,
+    first_five_line_run,
 )
 
 ZOOM = 2
 WHITE_FLOOR = 250
 MARKER = "issue441.experimental.row_numbers.v1"
 FONT_POINTS = 9.0
+STAFF_LINE_CLEARANCE_POINTS = 1.0
 
 
 class NumberLayerValidationError(ValueError):
@@ -112,7 +115,36 @@ def distance_to_staff_start(rect, staff):
     return math.hypot(dx, dy)
 
 
-def find_placement(page, pixels, text, staff, previous_top, occupied, font_points=FONT_POINTS):
+def locate_top_staff_lines(page, staff):
+    """Return the printed five-line span inside a detected staff bbox, or None.
+
+    The detected bbox can include notes above the staff, which would make the
+    distance between a label and the staff vary by row. Annotations are excluded
+    so handwriting cannot change the anchor.
+    """
+    margin = staff.height * 0.25
+    # Narrower windows tolerate scan skew; wider windows tolerate clefs and notes.
+    for fraction in STAFF_LINE_WINDOW_FRACTIONS:
+        clip = fitz.Rect(
+            staff.x0,
+            staff.y0 - margin,
+            staff.x0 + staff.width * fraction,
+            staff.y1 + margin,
+        )
+        clip &= page.rect
+        if clip.is_empty:
+            continue
+        pix = page.get_pixmap(matrix=fitz.Matrix(ZOOM, ZOOM), clip=clip, alpha=False, annots=False)
+        samples = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+        run = first_five_line_run((samples.min(axis=2) < 160).mean(axis=1))
+        if run is not None:
+            return clip.y0 + run[0] / ZOOM, clip.y0 + run[1] / ZOOM
+    return None
+
+
+def find_placement(
+    page, pixels, text, staff, previous_top, occupied, font_points=FONT_POINTS, slot_clearance=0.0
+):
     unit = staff.height
     gap = max(0.75, min(1.5, unit * 0.025))
     note_boxes = [a.rect for a in page.annots() or []]
@@ -137,6 +169,10 @@ def find_placement(page, pixels, text, staff, previous_top, occupied, font_point
             abs(r.x1 - (staff.x0 - gap)),
         )
     )
+    # A fixed preferred slot keeps labels aligned; nearby slots are only for blocked rows.
+    slot_x = max(min_x, min(max_x, preferred_x - slot_clearance))
+    slot_y = min(max_y, max(min_y, preferred_y - slot_clearance))
+    candidates.insert(0, fitz.Rect(slot_x, slot_y, slot_x + width, slot_y + height))
     for rect in candidates:
         # Keep the label above or to the left of the staff, never inside it.
         if rect.x1 > staff.x0 - gap and rect.y1 > staff.y0 - gap:
@@ -286,6 +322,8 @@ def write_number_layer(
             pixels = pix_array(page)
             if not np.array_equal(pixels, pix_array(reference)):
                 raise ValueError("Layer removal did not recover original annotated PDF")
+            # PyMuPDF otherwise adds its q/Q wrapper streams during the first insertion.
+            page.wrap_contents()
             contents = page.get_contents()
             current = {"source_contents": contents, "number_streams": [], "labels": []}
             occupied = []
@@ -300,9 +338,21 @@ def write_number_layer(
                     x1 * sx - page.cropbox.x0,
                     y1 * sy - page.cropbox.y0,
                 )
+                lines = locate_top_staff_lines(page, staff)
+                anchor_kind = "staff_lines" if lines else "staff_bbox"
+                if lines:
+                    staff = fitz.Rect(staff.x0, lines[0], staff.x1, lines[1])
                 text = str(row["row_start_measure_number"])
                 rect, size, baseline, padded, origin_x = find_placement(
-                    page, pixels, text, staff, previous_top, occupied, font_points
+                    page,
+                    pixels,
+                    text,
+                    staff,
+                    previous_top,
+                    occupied,
+                    font_points,
+                    # Clears the printed line width when anchored on actual staff lines.
+                    slot_clearance=STAFF_LINE_CLEARANCE_POINTS if lines else 0.0,
                 )
                 before = page.get_contents()
                 page.insert_text(
@@ -323,6 +373,7 @@ def write_number_layer(
                         "rect": list(rect),
                         "font_size": size,
                         "staff_start": [staff.x0, staff.y0],
+                        "staff_anchor": anchor_kind,
                         "distance_to_staff_start_points": distance_to_staff_start(rect, staff),
                     }
                 )

@@ -262,6 +262,7 @@ class CorrectionApplication:
             )
             layer_identity = {}
             if resume:
+                from src.pipeline.review.final_output import _derive_output_name
                 from src.pipeline.review.number_layer import records_from_run, write_number_layer
                 from tools.review_correction.history import package_path
 
@@ -277,7 +278,10 @@ class CorrectionApplication:
                         raise ValueError("Normalized annotated background changed after resume")
                 final_dir = run / "final"
                 final_dir.mkdir(exist_ok=True)
-                numbered = final_dir / "annotated_score_numbered.pdf"
+                output_name = _derive_output_name(
+                    None, json.loads(snapshot_handoff.read_text(encoding="utf-8"))
+                )
+                numbered = final_dir / f"{output_name}_score_numbered.pdf"
                 write_number_layer(
                     annotated, annotated, records_from_run(snapshot_handoff, run), numbered
                 )

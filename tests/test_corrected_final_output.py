@@ -2,11 +2,13 @@ import json
 from pathlib import Path
 
 import fitz
+import numpy as np
 import pytest
 from PIL import Image
 
 from src.pipeline.review.final_output import (
     CorrectedFinalOutputError,
+    _draw_row_start_labels,
     materialize_corrected_final_outputs,
 )
 
@@ -314,3 +316,59 @@ def test_materialize_corrected_final_outputs_requires_corrected_numbering(tmp_pa
             handoff_path=handoff_path,
             corrected_run_dir=corrected_run,
         )
+
+
+def test_row_labels_use_one_physical_size_and_stay_near_printed_staff_line():
+    image = Image.new("RGB", (1000, 1000), "white")
+    pixels = np.asarray(image).copy()
+    for top in (200, 600):
+        for line in range(5):
+            y = top + line * 12
+            pixels[y : y + 2, 200:950] = 0
+    # A note above the first staff inflates its detected bbox; the second is tight.
+    pixels[120:130, 400:420] = 0
+    records = [
+        {
+            "row_start_measure_number": 1,
+            "row_bbox": [200, 120, 950, 400],
+            "top_staff_bbox": [200, 120, 950, 250],
+        },
+        {
+            "row_start_measure_number": 123,
+            "row_bbox": [200, 600, 950, 800],
+            "top_staff_bbox": [200, 598, 950, 650],
+        },
+    ]
+    source = Image.fromarray(pixels)
+
+    output = _draw_row_start_labels(source, records, pixels_per_point=2.0)
+
+    assert {record["label_font_size"] for record in records} == {18}
+    assert {record["label_anchor"] for record in records} == {"staff_lines"}
+    assert {record["placement"] for record in records} == {"primary_left_gutter"}
+    gaps = [top - record["label_bbox"][3] for record, top in zip(records, (200, 600), strict=True)]
+    assert max(gaps) - min(gaps) <= 1
+    assert all(0 < gap <= 8 for gap in gaps)
+    assert all(record["label_bbox"][2] < 200 for record in records)
+    # Clear-space placement must not paint over printed score ink.
+    assert (np.asarray(output)[pixels.min(axis=2) == 0] == 0).all()
+
+
+def test_row_label_moves_to_clear_space_without_erasing_score_ink():
+    pixels = np.full((600, 600, 3), 255, dtype=np.uint8)
+    for line in range(5):
+        y = 300 + line * 12
+        pixels[y : y + 2, 200:580] = 0
+    pixels[270:298, 165:198] = 0  # Printed ink occupies the preferred slot.
+    records = [
+        {
+            "row_start_measure_number": 7,
+            "row_bbox": [200, 300, 580, 350],
+            "top_staff_bbox": [200, 300, 580, 350],
+        }
+    ]
+
+    output = _draw_row_start_labels(Image.fromarray(pixels), records, pixels_per_point=2.0)
+
+    assert records[0]["placement"] == "nearby_clear_space"
+    assert (np.asarray(output)[pixels.min(axis=2) == 0] == 0).all()

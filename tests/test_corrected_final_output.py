@@ -372,3 +372,41 @@ def test_row_label_moves_to_clear_space_without_erasing_score_ink():
 
     assert records[0]["placement"] == "nearby_clear_space"
     assert (np.asarray(output)[pixels.min(axis=2) == 0] == 0).all()
+
+
+def test_row_label_without_clear_space_fails_instead_of_erasing_score_ink():
+    # Ink covers the whole search area around the slot, but the rest of the page is blank.
+    pixels = np.full((600, 600, 3), 255, dtype=np.uint8)
+    pixels[200:350, 100:300] = 0
+    source = Image.fromarray(pixels)
+    records = [
+        {
+            "page_id": "page_001",
+            "row_id": "row_001",
+            "row_start_measure_number": 7,
+            "row_bbox": [200, 300, 580, 350],
+            "top_staff_bbox": [200, 300, 580, 350],
+        }
+    ]
+
+    with pytest.raises(CorrectedFinalOutputError, match=r"page_001: no safe 9pt .* label 7"):
+        _draw_row_start_labels(source, records, pixels_per_point=2.0)
+
+    assert np.array_equal(np.asarray(source), pixels)
+
+
+def test_materialize_corrected_final_outputs_writes_no_pdf_without_safe_label_placement(tmp_path):
+    handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
+    source_image = tmp_path / "original_run" / "review" / "pages" / "page_001" / "source.png"
+    Image.new("RGB", (300, 200), "black").save(source_image)
+    final_root = tmp_path / "final"
+
+    with pytest.raises(CorrectedFinalOutputError, match="no safe"):
+        materialize_corrected_final_outputs(
+            handoff_path=handoff_path,
+            corrected_run_dir=corrected_run,
+            final_root=final_root,
+            review_root=tmp_path / "review",
+        )
+
+    assert not list(final_root.glob("*.pdf"))

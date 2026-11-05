@@ -338,15 +338,6 @@ def _load_label_font(size: int) -> ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
-def _text_size(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.ImageFont,
-) -> tuple[int, int]:
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
-
-
 def _draw_row_start_labels(
     image: Image.Image, records: list[dict[str, Any]], *, pixels_per_point: float
 ) -> Image.Image:
@@ -397,17 +388,16 @@ def _draw_row_start_labels(
             ((slot_x + dx, slot_y + dy) for dx, dy in offsets if clear(slot_x + dx, slot_y + dy)),
             None,
         )
-        if found is not None:
-            x, y = found
-            record["placement"] = (
-                "primary_left_gutter" if found == (slot_x, slot_y) else "nearby_clear_space"
+        if found is None:
+            # Never paint over the score to make room for a label.
+            raise CorrectedFinalOutputError(
+                f"{record['page_id']}: no safe {_LABEL_FONT_POINTS:g}pt placement for row-start "
+                f"label {text} ({record['row_id']}) near staff top {anchor_y:.0f}px"
             )
-        else:
-            x = int(max(2, min(width - text_w - 2, slot_x)))
-            y = int(max(2, min(height - text_h - 2, slot_y)))
-            record["placement"] = "slot_with_halo"
-            halo = max(3, font_size // 10)
-            draw.rectangle((x - halo, y - halo, x + text_w + halo, y + text_h + halo), fill="white")
+        x, y = found
+        record["placement"] = (
+            "primary_left_gutter" if found == (slot_x, slot_y) else "nearby_clear_space"
+        )
         draw.text((x - ink_left, y - ink_top), text, fill="black", font=font)
         record["label_font_size"] = font_size
         record["label_bbox"] = [x, y, x + text_w, y + text_h]

@@ -16,6 +16,7 @@ from test_review_correction_server import (
 )
 
 from tools.review_correction import application
+from tools.review_correction.application import CorrectionApplication
 from tools.review_correction.history import digest, encoded
 from tools.review_correction.resume import create_session
 from tools.review_correction.server import ReviewPackage
@@ -369,7 +370,7 @@ def test_abandoned_history_requires_state_attestation_not_pdf_existence(tmp_path
     assert [r["status"] for r in recovered] == ["succeeded", "interrupted"]
 
 
-def _legacy_attempt(app, number=1):
+def _legacy_attempt(app, number=1, manifest=None):
     import shutil
 
     package = app.package
@@ -384,7 +385,7 @@ def _legacy_attempt(app, number=1):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
     data = json.loads(package.handoff_path.read_text())
-    data["source_manifest"] = str(package.root.parent / "manifest.json")
+    data["source_manifest"] = str(manifest or package.root.parent / "manifest.json")
     (review / "manual_correction_input.json").write_bytes(encoded(data))
     (attempt / "consumed_inputs.json").write_bytes(encoded(identity))
     return attempt, identity
@@ -448,3 +449,106 @@ def test_legacy_import_rejects_changed_inputs_and_keeps_checkpoints(tmp_path, ch
     with app.package.history.transaction(), pytest.raises(ValueError):
         import_attempt(app.package, "attempt_0001")
     assert app.package.history.list() == before
+
+
+def _prepared_legacy_job(tmp_path):
+    """Build a job the way `distribution.py review` saw it before output_name existed."""
+    from docker.distribution_job import prepare_local_review
+
+    handoff = _handoff(tmp_path)
+    job = handoff.parent.parent
+    payload = json.loads(handoff.read_text())
+    # Non-ASCII content pins the byte-exact serialization used by the adapter.
+    payload.update(source_job_id="job-one", source_title="交響曲第4番")
+    handoff.write_text(json.dumps(payload))
+    retained = job / ".engine-retained/runs/job-one/manifest.json"
+    retained.parent.mkdir(parents=True)
+    retained.write_text(
+        json.dumps(
+            {
+                "run_dir": "/results/job-one/.engine-work/runs/job-one",
+                "config": {"inputs": {}, "steps": {}, "outputs": {}},
+            }
+        )
+    )
+    prepare_local_review(job)
+    app = CorrectionApplication(ReviewPackage(handoff), handoff)
+    app.package.record_correction(0, "barline_construction", [])
+    attempt, identity = _legacy_attempt(
+        app, manifest="/results/job-one/.engine-retained/runs/job-one/local_manifest.json"
+    )
+    return handoff, job, attempt, identity
+
+
+def _reopen_with_recovered_name(handoff, job):
+    """Repeat the launcher preparation once final/ can provide the output name."""
+    from docker.distribution_job import prepare_local_review
+
+    (job / "final").mkdir()
+    (job / "final/Festival_Overture_score_numbered.pdf").write_bytes(b"%PDF-1.4\nexample")
+    digest_after = prepare_local_review(job)
+    assert json.loads(handoff.read_text())["output_name"] == "Festival_Overture"
+    assert prepare_local_review(job) == digest_after
+    return ReviewPackage(handoff)
+
+
+def test_legacy_import_survives_review_recovering_output_name(tmp_path):
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    handoff, job, attempt, identity = _prepared_legacy_job(tmp_path)
+    package = _reopen_with_recovered_name(handoff, job)
+    assert list_attempts(package) == [
+        {"id": attempt.name, "available": True, "status": "saved_inputs_only"}
+    ]
+    with package.history.transaction():
+        checkpoint = import_attempt(package, attempt.name)
+    saved = package.history.get(checkpoint)
+    assert saved["origin"]["original_identity"] == identity
+    assert saved["identity"]["corrections_identity"] == identity["corrections_identity"]
+    # The tolerance is read-only: the prepared handoff keeps the recovered name.
+    assert json.loads(handoff.read_text())["output_name"] == "Festival_Overture"
+
+
+@pytest.mark.parametrize(
+    ("changed", "error"),
+    [
+        ("source", "Legacy source artifacts changed"),
+        ("corrections", "Legacy corrections changed after application"),
+        ("handoff_body", "Legacy handoff does not match the original review"),
+        ("saved_name", "Legacy handoff does not match the original review"),
+        ("manifest", "Legacy source identity cannot be reproduced"),
+    ],
+)
+def test_legacy_import_with_recovered_name_rejects_real_changes(tmp_path, changed, error):
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    handoff, job, attempt, _ = _prepared_legacy_job(tmp_path)
+    saved_handoff = attempt / "input_review/manual_correction_input.json"
+    if changed == "source":
+        (handoff.parent / "pages/page_001/source.png").write_bytes(b"changed")
+    elif changed == "corrections":
+        sink = next(
+            path for rel, path in ReviewPackage(saved_handoff).writes.items() if "barline" in rel
+        )
+        sink.write_bytes(
+            encoded({"correction_type": "barline_construction", "items": [{"page": 0, "x": 100}]})
+        )
+    elif changed == "manifest":
+        retained = job / ".engine-retained/runs/job-one/manifest.json"
+        retained.write_text(json.dumps({**json.loads(retained.read_text()), "changed": True}))
+    package = _reopen_with_recovered_name(handoff, job)
+    if changed == "handoff_body":
+        payload = json.loads(handoff.read_text())
+        payload["source_title"] = "別の曲"
+        handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    elif changed == "saved_name":
+        # A name saved in the attempt is real content, not the launcher's later addition.
+        payload = json.loads(saved_handoff.read_text())
+        payload["output_name"] = "Other_Name"
+        saved_handoff.write_bytes(encoded(payload))
+    package = ReviewPackage(handoff)
+    before = package.history.list()
+    assert list_attempts(package)[0]["error"] == error
+    with package.history.transaction(), pytest.raises(ValueError, match=error):
+        import_attempt(package, attempt.name)
+    assert package.history.list() == before

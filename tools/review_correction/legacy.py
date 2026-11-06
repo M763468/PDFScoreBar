@@ -14,6 +14,21 @@ from tools.review_correction.history import digest, encoded, package_path
 ATTEMPT = re.compile(r"attempt_[0-9]{4,}\Z")
 
 
+def _handoff_as_saved(handoff_path, saved_handoff):
+    """Undo only the output_name that local review preparation recovers from final/.
+
+    prepare_local_review appends the name to the prepared handoff in place, after the
+    attempt recorded that file's digest. Return the payload and exact bytes as they
+    were then; the caller's source identity check still proves those bytes match.
+    """
+    data = handoff_path.read_bytes()
+    current = json.loads(data)
+    if "output_name" not in current or "output_name" in saved_handoff:
+        return current, data
+    del current["output_name"]
+    return current, (json.dumps(current, indent=2, ensure_ascii=False) + "\n").encode()
+
+
 def validate_attempt(package, name):
     from tools.review_correction.server import ReviewPackage
     from tools.review_correction.state import _digest
@@ -43,8 +58,8 @@ def validate_attempt(package, name):
             package.readable(relative).read_bytes()
         ):
             raise ValueError("Legacy source artifacts changed")
-    original_handoff = json.loads(package.handoff_path.read_text())
     saved_handoff = json.loads(handoff.read_text())
+    original_handoff, original_bytes = _handoff_as_saved(package.handoff_path, saved_handoff)
     original_body = {k: v for k, v in original_handoff.items() if k != "source_manifest"}
     saved_body = {k: v for k, v in saved_handoff.items() if k != "source_manifest"}
     if original_body != saved_body or saved_handoff.get("resume"):
@@ -58,7 +73,7 @@ def validate_attempt(package, name):
     if declared != manifest and declared.parts[-4:] != manifest.parts[-4:]:
         raise ValueError("Legacy retained manifest layout does not match")
     sources = {rel: digest(path.read_bytes()) for rel, path in snapshot.state.source_paths.items()}
-    sources["manual_correction_input.json"] = digest(package.handoff_path.read_bytes())
+    sources["manual_correction_input.json"] = digest(original_bytes)
     sources["source_manifest"] = digest(manifest.read_bytes())
     if _digest(sources) != consumed["source_identity"]:
         raise ValueError("Legacy source identity cannot be reproduced")

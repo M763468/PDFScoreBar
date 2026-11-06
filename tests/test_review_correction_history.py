@@ -3,7 +3,7 @@
 import base64
 import json
 from pathlib import Path
-from threading import Event
+from threading import Event, Thread
 
 import fitz
 import pytest
@@ -15,10 +15,12 @@ from test_review_correction_server import (
     review_server,  # noqa: F401
 )
 
+from src.pipeline.review.final_output import _derive_output_name
 from tools.review_correction import application
+from tools.review_correction.application import CorrectionApplication
 from tools.review_correction.history import digest, encoded
 from tools.review_correction.resume import create_session
-from tools.review_correction.server import ReviewPackage
+from tools.review_correction.server import ReviewPackage, create_server
 
 
 def _pdf_package(tmp_path):
@@ -373,7 +375,7 @@ def test_abandoned_history_requires_state_attestation_not_pdf_existence(tmp_path
     assert [r["status"] for r in recovered] == ["succeeded", "interrupted"]
 
 
-def _legacy_attempt(app, number=1):
+def _legacy_attempt(app, number=1, manifest=None):
     import shutil
 
     package = app.package
@@ -388,8 +390,9 @@ def _legacy_attempt(app, number=1):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
     data = json.loads(package.handoff_path.read_text())
-    data["source_manifest"] = str(package.root.parent / "manifest.json")
-    (review / "manual_correction_input.json").write_bytes(encoded(data))
+    data["source_manifest"] = str(manifest or package.root.parent / "manifest.json")
+    # Pre-checkpoint applications saved this exact form, keeping the handoff's key order.
+    (review / "manual_correction_input.json").write_text(json.dumps(data, indent=2) + "\n")
     (attempt / "consumed_inputs.json").write_bytes(encoded(identity))
     return attempt, identity
 
@@ -452,3 +455,255 @@ def test_legacy_import_rejects_changed_inputs_and_keeps_checkpoints(tmp_path, ch
     with app.package.history.transaction(), pytest.raises(ValueError):
         import_attempt(app.package, "attempt_0001")
     assert app.package.history.list() == before
+
+
+def _prepared_legacy_job(tmp_path, saved_name=None):
+    """Build a job as `distribution.py review` prepared it when the attempt was saved."""
+    from docker.distribution_job import prepare_local_review
+
+    handoff = _handoff(tmp_path)
+    job = handoff.parent.parent
+    source = tmp_path / "original.pdf"
+    with fitz.open() as doc:
+        page = doc.new_page(width=200, height=260)
+        page.draw_line((60, 100), (180, 100))
+        doc.save(source)
+        page.get_pixmap().save(handoff.parent / "pages/page_001/source.png")
+    payload = json.loads(handoff.read_text())
+    # Non-ASCII content pins the byte-exact serialization used by the adapter.
+    payload.update(source_job_id="job-one", source_title="交響曲第4番")
+    if saved_name is not None:
+        payload["output_name"] = saved_name
+    handoff.write_text(json.dumps(payload))
+    retained = job / ".engine-retained/runs/job-one/manifest.json"
+    retained.parent.mkdir(parents=True)
+    retained.write_text(
+        json.dumps(
+            {
+                "run_dir": "/results/job-one/.engine-work/runs/job-one",
+                "config": {"inputs": {}, "steps": {}, "outputs": {}},
+                "pages": [
+                    {
+                        "source_reference": {
+                            "source_page": 0,
+                            "source_document": {
+                                "path": str(source),
+                                "sha256": digest(source.read_bytes()),
+                            },
+                        }
+                    }
+                ],
+            }
+        )
+    )
+    prepare_local_review(job)
+    app = CorrectionApplication(ReviewPackage(handoff), handoff)
+    app.package.record_correction(0, "barline_construction", [])
+    attempt, identity = _legacy_attempt(
+        app, manifest="/results/job-one/.engine-retained/runs/job-one/local_manifest.json"
+    )
+    return handoff, job, attempt, identity
+
+
+def _reopen_with_recovered_name(handoff, job):
+    """Repeat the launcher preparation once final/ can provide the output name."""
+    from docker.distribution_job import prepare_local_review
+
+    (job / "final").mkdir()
+    (job / "final/Festival_Overture_score_numbered.pdf").write_bytes(b"%PDF-1.4\nexample")
+    prepared = prepare_local_review(job)
+    assert json.loads(handoff.read_text())["output_name"] == "Festival_Overture"
+    assert prepare_local_review(job) == prepared
+    return ReviewPackage(handoff)
+
+
+def _set_job_output_name(handoff, name):
+    """Change only the job's optional name, in the form the launcher preparation writes."""
+    payload = json.loads(handoff.read_text())
+    if name is None:
+        payload.pop("output_name", None)
+    else:
+        payload["output_name"] = name
+    handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+
+
+def _tree_bytes(root):
+    return {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
+DEFAULT_NAME = _derive_output_name(None, {})
+
+
+@pytest.mark.parametrize(
+    ("saved", "current", "expected"),
+    [
+        (None, None, DEFAULT_NAME),
+        (None, "Recovered", "Recovered"),
+        (None, ".", DEFAULT_NAME),
+        ("Saved", "Saved", "Saved"),
+        ("Saved", "Changed", "Saved"),
+        ("Saved", None, "Saved"),
+        (".", "Recovered", "Recovered"),
+        (".", None, DEFAULT_NAME),
+    ],
+)
+def test_legacy_import_output_name_matrix(tmp_path, saved, current, expected):
+    """Only the job's name differs: importable, unchanged inputs, documented name priority."""
+    from docker.distribution_job import prepare_local_review
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    handoff, job, attempt, identity = _prepared_legacy_job(tmp_path, saved)
+    _set_job_output_name(handoff, current)
+    # Re-preparing a job that is not missing its name, or has no final/, keeps the bytes.
+    assert prepare_local_review(job) == prepare_local_review(job)
+    assert json.loads(handoff.read_text()).get("output_name") == current
+    package = ReviewPackage(handoff)
+    assert list_attempts(package) == [
+        {"id": attempt.name, "available": True, "status": "saved_inputs_only"}
+    ]
+    job_handoff = handoff.read_bytes()
+    saved_files = _tree_bytes(attempt)
+    with package.history.transaction():
+        checkpoint = import_attempt(package, attempt.name)
+    assert handoff.read_bytes() == job_handoff
+    assert _tree_bytes(attempt) == saved_files
+    value = package.history.get(checkpoint)
+    assert value["origin"]["original_identity"] == identity
+    assert value["identity"]["corrections_identity"] == identity["corrections_identity"]
+    # Importing saved inputs never certifies that the old PDF generation succeeded.
+    assert package.state.snapshot()["package"]["last_successful_result"] is None
+    pdf = (tmp_path / "original.pdf").read_bytes()
+    session = create_session(package, checkpoint, pdf)
+    resumed = json.loads(
+        (job / f"review/resumed_sessions/{session}/review/manual_correction_input.json").read_text()
+    )
+    assert _derive_output_name(None, resumed) == expected
+
+
+def test_legacy_import_survives_review_recovering_output_name(tmp_path):
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    handoff, job, attempt, identity = _prepared_legacy_job(tmp_path)
+    package = _reopen_with_recovered_name(handoff, job)
+    assert list_attempts(package) == [
+        {"id": attempt.name, "available": True, "status": "saved_inputs_only"}
+    ]
+    with package.history.transaction():
+        checkpoint = import_attempt(package, attempt.name)
+    saved = package.history.get(checkpoint)
+    assert saved["origin"]["original_identity"] == identity
+    assert saved["identity"]["corrections_identity"] == identity["corrections_identity"]
+    assert json.loads(handoff.read_text())["output_name"] == "Festival_Overture"
+    restored = tmp_path / "restored/review"
+    package.history.materialize(checkpoint, restored)
+    payload = json.loads((restored / "manual_correction_input.json").read_text())
+    assert _derive_output_name(None, payload) == "Festival_Overture"
+
+
+def test_imported_checkpoint_resumes_without_rechecking_the_legacy_attempt(tmp_path):
+    import shutil
+
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    handoff, job, attempt, _ = _prepared_legacy_job(tmp_path, "Saved")
+    package = ReviewPackage(handoff)
+    with package.history.transaction():
+        checkpoint = import_attempt(package, attempt.name)
+    manifest = package.history.root / "checkpoints" / checkpoint / "checkpoint.json"
+    stored = manifest.read_bytes()
+    # A later job name neither rewrites the imported checkpoint nor creates another one.
+    _set_job_output_name(handoff, "Changed")
+    package = ReviewPackage(handoff)
+    with package.history.transaction():
+        assert import_attempt(package, attempt.name) == checkpoint
+    assert manifest.read_bytes() == stored
+    # Resume relies on the checkpoint's own integrity, not on the original attempt files.
+    shutil.rmtree(attempt)
+    assert list_attempts(package) == []
+    pdf = (tmp_path / "original.pdf").read_bytes()
+    session = create_session(package, checkpoint, pdf)
+    resumed = json.loads(
+        (job / f"review/resumed_sessions/{session}/review/manual_correction_input.json").read_text()
+    )
+    assert resumed["output_name"] == "Saved"
+    # The ordinary resume correspondence check still applies to imported checkpoints.
+    with fitz.open() as doc:
+        doc.new_page(width=200, height=260).draw_circle((100, 100), 40)
+        unknown = doc.tobytes()
+    with pytest.raises(ValueError, match="does not match"):
+        create_session(package, checkpoint, unknown)
+
+
+def test_unverifiable_attempt_does_not_block_opening_the_review(tmp_path):
+    handoff, _, attempt, _ = _prepared_legacy_job(tmp_path)
+    (attempt / "input_review/pages/page_001/source.png").write_bytes(b"changed")
+    server = create_server(handoff, port=0)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        assert _request(server, "GET", "/")[0] == 200
+        assert _request(server, "GET", "/api/pages")[0] == 200
+        status, body = _request(server, "GET", "/api/checkpoints")
+        assert status == 200
+        row = json.loads(body)["legacy_attempts"][0]
+        assert (row["available"], row["status"]) == (False, "unverified")
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+@pytest.mark.parametrize(
+    ("changed", "saved_name", "error"),
+    [
+        ("source", None, "Legacy source artifacts changed"),
+        ("corrections", None, "Legacy corrections changed after application"),
+        ("handoff_body", None, "Legacy handoff does not match the original review"),
+        ("manifest", None, "Legacy source identity cannot be reproduced"),
+        # The attempt's own saved name is covered by the identity it recorded.
+        ("saved_name", None, "Legacy source identity cannot be reproduced"),
+        ("saved_name_equal_to_job", None, "Legacy source identity cannot be reproduced"),
+        ("saved_name", "Saved", "Legacy source identity cannot be reproduced"),
+        ("saved_name_removed", "Saved", "Legacy source identity cannot be reproduced"),
+    ],
+)
+def test_legacy_import_with_recovered_name_rejects_real_changes(
+    tmp_path, changed, saved_name, error
+):
+    from tools.review_correction.legacy import import_attempt, list_attempts
+
+    handoff, job, attempt, _ = _prepared_legacy_job(tmp_path, saved_name)
+    saved_handoff = attempt / "input_review/manual_correction_input.json"
+    if changed == "source":
+        (handoff.parent / "pages/page_001/source.png").write_bytes(b"changed")
+    elif changed == "corrections":
+        sink = next(
+            path for rel, path in ReviewPackage(saved_handoff).writes.items() if "barline" in rel
+        )
+        sink.write_bytes(
+            encoded({"correction_type": "barline_construction", "items": [{"page": 0, "x": 100}]})
+        )
+    elif changed == "manifest":
+        retained = job / ".engine-retained/runs/job-one/manifest.json"
+        retained.write_text(json.dumps({**json.loads(retained.read_text()), "changed": True}))
+    if saved_name is None:
+        _reopen_with_recovered_name(handoff, job)
+    if changed == "handoff_body":
+        payload = json.loads(handoff.read_text())
+        payload["source_title"] = "別の曲"
+        handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    elif changed.startswith("saved_name"):
+        payload = json.loads(saved_handoff.read_text())
+        if changed == "saved_name_removed":
+            del payload["output_name"]
+        elif changed == "saved_name_equal_to_job":
+            payload["output_name"] = "Festival_Overture"
+        else:
+            payload["output_name"] = "Other_Name"
+        saved_handoff.write_text(json.dumps(payload, indent=2) + "\n")
+    package = ReviewPackage(handoff)
+    before = package.history.list()
+    assert list_attempts(package)[0]["error"] == error
+    with package.history.transaction(), pytest.raises(ValueError, match=error):
+        import_attempt(package, attempt.name)
+    assert package.history.list() == before

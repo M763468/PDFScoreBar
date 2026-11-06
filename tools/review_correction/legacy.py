@@ -14,6 +14,33 @@ from tools.review_correction.history import digest, encoded, package_path
 ATTEMPT = re.compile(r"attempt_[0-9]{4,}\Z")
 
 
+def _handoff_as_saved(current, current_bytes, saved_handoff):
+    """Compatibility adapter: rebuild the handoff bytes a legacy attempt recorded.
+
+    Only for pre-checkpoint attempts, whose consumed_inputs.json hashes the whole handoff
+    file, and only when the job's output_name differs from the saved one. Those attempts
+    saved the handoff with its original key order, changing only source_manifest. The
+    prepared job file used prepare_local_review's serialization, reproduced here.
+
+    The result is not trusted on its own: the caller accepts it only if it reproduces the
+    recorded source identity. See docs/contracts/corrected_final_output.md.
+    """
+    if current.get("output_name") == saved_handoff.get("output_name"):
+        return current_bytes
+    rebuilt = {**saved_handoff, "source_manifest": current.get("source_manifest")}
+    return (json.dumps(rebuilt, indent=2, ensure_ascii=False) + "\n").encode()
+
+
+def _imported_output_name(saved_handoff, current):
+    """Prefer the attempt's valid name, then the job's; None leaves the default rules."""
+    from src.pipeline.review.final_output import _sanitize_output_name
+
+    for name in (saved_handoff.get("output_name"), current.get("output_name")):
+        if isinstance(name, str) and _sanitize_output_name(name, fallback=""):
+            return name
+    return None
+
+
 def validate_attempt(package, name):
     from tools.review_correction.server import ReviewPackage
     from tools.review_correction.state import _digest
@@ -43,10 +70,14 @@ def validate_attempt(package, name):
             package.readable(relative).read_bytes()
         ):
             raise ValueError("Legacy source artifacts changed")
-    original_handoff = json.loads(package.handoff_path.read_text())
+    current_bytes = package.handoff_path.read_bytes()
+    original_handoff = json.loads(current_bytes)
     saved_handoff = json.loads(handoff.read_text())
-    original_body = {k: v for k, v in original_handoff.items() if k != "source_manifest"}
-    saved_body = {k: v for k, v in saved_handoff.items() if k != "source_manifest"}
+    # output_name alone never disqualifies an attempt; its saved value stays covered by
+    # the source identity check below. All other handoff content must match here.
+    excluded = {"source_manifest", "output_name"}
+    original_body = {k: v for k, v in original_handoff.items() if k not in excluded}
+    saved_body = {k: v for k, v in saved_handoff.items() if k not in excluded}
     if original_body != saved_body or saved_handoff.get("resume"):
         raise ValueError("Legacy handoff does not match the original review")
     manifest = _resolve_source_manifest_path(original_handoff, package.root)
@@ -58,7 +89,9 @@ def validate_attempt(package, name):
     if declared != manifest and declared.parts[-4:] != manifest.parts[-4:]:
         raise ValueError("Legacy retained manifest layout does not match")
     sources = {rel: digest(path.read_bytes()) for rel, path in snapshot.state.source_paths.items()}
-    sources["manual_correction_input.json"] = digest(package.handoff_path.read_bytes())
+    sources["manual_correction_input.json"] = digest(
+        _handoff_as_saved(original_handoff, current_bytes, saved_handoff)
+    )
     sources["source_manifest"] = digest(manifest.read_bytes())
     if _digest(sources) != consumed["source_identity"]:
         raise ValueError("Legacy source identity cannot be reproduced")
@@ -131,6 +164,10 @@ def import_attempt(package, name):
         payload = json.loads(snapshot.handoff_path.read_text())
         payload.pop("source_artifact_root", None)
         payload["source_manifest"] = str(manifest)
+        # A resumed session has no final/ to recover from, so the checkpoint keeps the name.
+        output_name = _imported_output_name(payload, json.loads(package.handoff_path.read_text()))
+        if output_name is not None:
+            payload["output_name"] = output_name
         (review / "manual_correction_input.json").write_bytes(encoded(payload))
         from tools.review_correction.server import ReviewPackage
 

@@ -2,11 +2,13 @@ import json
 from pathlib import Path
 
 import fitz
+import numpy as np
 import pytest
 from PIL import Image
 
 from src.pipeline.review.final_output import (
     CorrectedFinalOutputError,
+    _draw_row_start_labels,
     materialize_corrected_final_outputs,
 )
 
@@ -314,3 +316,97 @@ def test_materialize_corrected_final_outputs_requires_corrected_numbering(tmp_pa
             handoff_path=handoff_path,
             corrected_run_dir=corrected_run,
         )
+
+
+def test_row_labels_use_one_physical_size_and_stay_near_printed_staff_line():
+    image = Image.new("RGB", (1000, 1000), "white")
+    pixels = np.asarray(image).copy()
+    for top in (200, 600):
+        for line in range(5):
+            y = top + line * 12
+            pixels[y : y + 2, 200:950] = 0
+    # A note above the first staff inflates its detected bbox; the second is tight.
+    pixels[120:130, 400:420] = 0
+    records = [
+        {
+            "row_start_measure_number": 1,
+            "row_bbox": [200, 120, 950, 400],
+            "top_staff_bbox": [200, 120, 950, 250],
+        },
+        {
+            "row_start_measure_number": 123,
+            "row_bbox": [200, 600, 950, 800],
+            "top_staff_bbox": [200, 598, 950, 650],
+        },
+    ]
+    source = Image.fromarray(pixels)
+
+    output = _draw_row_start_labels(source, records, pixels_per_point=2.0)
+
+    assert {record["label_font_size"] for record in records} == {18}
+    assert {record["label_anchor"] for record in records} == {"staff_lines"}
+    assert {record["placement"] for record in records} == {"primary_left_gutter"}
+    gaps = [top - record["label_bbox"][3] for record, top in zip(records, (200, 600), strict=True)]
+    assert max(gaps) - min(gaps) <= 1
+    assert all(0 < gap <= 8 for gap in gaps)
+    assert all(record["label_bbox"][2] < 200 for record in records)
+    # Clear-space placement must not paint over printed score ink.
+    assert (np.asarray(output)[pixels.min(axis=2) == 0] == 0).all()
+
+
+def test_row_label_moves_to_clear_space_without_erasing_score_ink():
+    pixels = np.full((600, 600, 3), 255, dtype=np.uint8)
+    for line in range(5):
+        y = 300 + line * 12
+        pixels[y : y + 2, 200:580] = 0
+    pixels[270:298, 165:198] = 0  # Printed ink occupies the preferred slot.
+    records = [
+        {
+            "row_start_measure_number": 7,
+            "row_bbox": [200, 300, 580, 350],
+            "top_staff_bbox": [200, 300, 580, 350],
+        }
+    ]
+
+    output = _draw_row_start_labels(Image.fromarray(pixels), records, pixels_per_point=2.0)
+
+    assert records[0]["placement"] == "nearby_clear_space"
+    assert (np.asarray(output)[pixels.min(axis=2) == 0] == 0).all()
+
+
+def test_row_label_without_clear_space_fails_instead_of_erasing_score_ink():
+    # Ink covers the whole search area around the slot, but the rest of the page is blank.
+    pixels = np.full((600, 600, 3), 255, dtype=np.uint8)
+    pixels[200:350, 100:300] = 0
+    source = Image.fromarray(pixels)
+    records = [
+        {
+            "page_id": "page_001",
+            "row_id": "row_001",
+            "row_start_measure_number": 7,
+            "row_bbox": [200, 300, 580, 350],
+            "top_staff_bbox": [200, 300, 580, 350],
+        }
+    ]
+
+    with pytest.raises(CorrectedFinalOutputError, match=r"page_001: no safe 9pt .* label 7"):
+        _draw_row_start_labels(source, records, pixels_per_point=2.0)
+
+    assert np.array_equal(np.asarray(source), pixels)
+
+
+def test_materialize_corrected_final_outputs_writes_no_pdf_without_safe_label_placement(tmp_path):
+    handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
+    source_image = tmp_path / "original_run" / "review" / "pages" / "page_001" / "source.png"
+    Image.new("RGB", (300, 200), "black").save(source_image)
+    final_root = tmp_path / "final"
+
+    with pytest.raises(CorrectedFinalOutputError, match="no safe"):
+        materialize_corrected_final_outputs(
+            handoff_path=handoff_path,
+            corrected_run_dir=corrected_run,
+            final_root=final_root,
+            review_root=tmp_path / "review",
+        )
+
+    assert not list(final_root.glob("*.pdf"))

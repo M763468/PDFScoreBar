@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import fitz
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 _LABEL_FONT_CANDIDATES = (
@@ -20,9 +21,12 @@ _LABEL_FONT_CANDIDATES = (
     "Arial Bold.ttf",
     "Arial.ttf",
 )
-_LABEL_FONT_STAFF_HEIGHT_RATIO = 0.28
-_LABEL_FONT_MIN_SIZE = 18
-_LABEL_FONT_MAX_SIZE = 96
+_LABEL_FONT_POINTS = 9.0
+_LABEL_GAP_POINTS = 1.75
+_LABEL_SEARCH_POINTS = 12.0
+_LABEL_DARK_THRESHOLD = 160
+STAFF_LINE_COVERAGE = 0.5
+STAFF_LINE_WINDOW_FRACTIONS = (0.2, 0.1, 0.05)
 
 
 class CorrectedFinalOutputError(ValueError):
@@ -291,25 +295,38 @@ def _row_label_records(
     return records
 
 
-def _font_size_for_staff_height(staff_height: float) -> int:
-    size = round(staff_height * _LABEL_FONT_STAFF_HEIGHT_RATIO)
-    return max(_LABEL_FONT_MIN_SIZE, min(_LABEL_FONT_MAX_SIZE, int(size)))
+def first_five_line_run(coverage: np.ndarray) -> tuple[float, float] | None:
+    """Return first and last row of the first evenly spaced five-line run."""
+    groups: list[list[int]] = []
+    for row in np.flatnonzero(coverage >= STAFF_LINE_COVERAGE):
+        if groups and row - groups[-1][-1] <= 1:
+            groups[-1].append(int(row))
+        else:
+            groups.append([int(row)])
+    lines = [float(np.mean(group)) for group in groups]
+    for index in range(len(lines) - 4):
+        run = lines[index : index + 5]
+        gaps = np.diff(run)
+        if gaps.min() >= 2 and gaps.max() <= gaps.min() * 1.25:
+            return run[0], run[-1]
+    return None
 
 
-def _page_label_font_size(records: list[dict[str, Any]]) -> int:
-    staff_heights = sorted(
-        max(1.0, float(record["top_staff_bbox"][3]) - float(record["top_staff_bbox"][1]))
-        for record in records
-    )
-    if not staff_heights:
-        return _LABEL_FONT_MIN_SIZE
-
-    mid = len(staff_heights) // 2
-    if len(staff_heights) % 2 == 0:
-        median_staff_height = (staff_heights[mid - 1] + staff_heights[mid]) / 2.0
-    else:
-        median_staff_height = staff_heights[mid]
-    return _font_size_for_staff_height(median_staff_height)
+def _top_staff_line_y(dark: np.ndarray, staff: list[float]) -> float | None:
+    """Locate the printed top staff line; detected bboxes can include high notes."""
+    x0, y0, x1, y1 = staff
+    margin = (y1 - y0) * 0.25
+    top = max(0, int(y0 - margin))
+    bottom = min(dark.shape[0], int(y1 + margin))
+    for fraction in STAFF_LINE_WINDOW_FRACTIONS:
+        right = min(dark.shape[1], int(x0 + (x1 - x0) * fraction))
+        left = max(0, int(x0))
+        if right <= left or bottom <= top:
+            continue
+        run = first_five_line_run(dark[top:bottom, left:right].mean(axis=1))
+        if run is not None:
+            return top + run[0]
+    return None
 
 
 def _load_label_font(size: int) -> ImageFont.ImageFont:
@@ -321,47 +338,70 @@ def _load_label_font(size: int) -> ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
-def _text_size(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.ImageFont,
-) -> tuple[int, int]:
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
-
-
-def _draw_row_start_labels(image: Image.Image, records: list[dict[str, Any]]) -> Image.Image:
+def _draw_row_start_labels(
+    image: Image.Image, records: list[dict[str, Any]], *, pixels_per_point: float
+) -> Image.Image:
     output = image.convert("RGB").copy()
     draw = ImageDraw.Draw(output)
-    width, _height = output.size
-    font_size = _page_label_font_size(records)
+    width, height = output.size
+    # Physical size is fixed for the whole document, independent of staff bboxes.
+    font_size = max(8, round(_LABEL_FONT_POINTS * pixels_per_point))
     font = _load_label_font(font_size)
+    dark = np.asarray(output).min(axis=2) < _LABEL_DARK_THRESHOLD
+    gap = max(1, round(_LABEL_GAP_POINTS * pixels_per_point))
+    padding = max(1, round(0.75 * pixels_per_point))
+    step = max(1, round(pixels_per_point))
+    reach = round(_LABEL_SEARCH_POINTS * pixels_per_point)
 
     for record in records:
         text = str(record["row_start_measure_number"])
         top_staff = record["top_staff_bbox"]
-        row_bbox = record["row_bbox"]
-        text_w, text_h = _text_size(draw, text, font)
-        label_gap = max(6, font_size // 6, int((row_bbox[3] - row_bbox[1]) * 0.035))
-        x = int(max(2, min(width - text_w - 2, row_bbox[0] - label_gap - text_w)))
-        y = int(max(2, top_staff[1] - text_h - label_gap))
-        if y <= 2:
-            y = int(max(2, top_staff[1] + label_gap))
-            record["placement"] = "inside_left_fallback"
-        else:
-            record["placement"] = "primary_left_gutter"
+        row_left = record["row_bbox"][0]
+        staff_top = _top_staff_line_y(dark, top_staff)
+        record["label_anchor"] = "staff_lines" if staff_top is not None else "staff_bbox"
+        anchor_y = staff_top if staff_top is not None else top_staff[1]
+        ink_left, ink_top, ink_right, ink_bottom = draw.textbbox((0, 0), text, font=font)
+        text_w, text_h = ink_right - ink_left, ink_bottom - ink_top
+        slot_x = int(row_left - gap - text_w)
+        slot_y = int(anchor_y - gap - text_h)
 
-        halo_padding = max(3, font_size // 10)
-        halo_bbox = (
-            x - halo_padding,
-            y - halo_padding,
-            x + text_w + halo_padding,
-            y + text_h + halo_padding,
+        def clear(x: int, y: int) -> bool:
+            if x - padding < 0 or y - padding < 0:
+                return False
+            if x + text_w + padding > width or y + text_h + padding > height:
+                return False
+            # Stay above or left of the staff, never inside it.
+            if x + text_w > row_left - gap and y + text_h > anchor_y - gap:
+                return False
+            box = dark[y - padding : y + text_h + padding, x - padding : x + text_w + padding]
+            return not box.any()
+
+        offsets = sorted(
+            (
+                (dx, dy)
+                for dx in range(-reach, reach + 1, step)
+                for dy in range(-reach, reach + 1, step)
+            ),
+            key=lambda value: (value[0] ** 2 + value[1] ** 2, abs(value[1])),
         )
-        draw.rectangle(halo_bbox, fill="white")
-        draw.text((x, y), text, fill="black", font=font)
+        found = next(
+            ((slot_x + dx, slot_y + dy) for dx, dy in offsets if clear(slot_x + dx, slot_y + dy)),
+            None,
+        )
+        if found is None:
+            # Never paint over the score to make room for a label.
+            raise CorrectedFinalOutputError(
+                f"{record['page_id']}: no safe {_LABEL_FONT_POINTS:g}pt placement for row-start "
+                f"label {text} ({record['row_id']}) near staff top {anchor_y:.0f}px"
+            )
+        x, y = found
+        record["placement"] = (
+            "primary_left_gutter" if found == (slot_x, slot_y) else "nearby_clear_space"
+        )
+        draw.text((x - ink_left, y - ink_top), text, fill="black", font=font)
         record["label_font_size"] = font_size
         record["label_bbox"] = [x, y, x + text_w, y + text_h]
+        dark[y : y + text_h, x : x + text_w] = True
 
     return output
 
@@ -372,6 +412,7 @@ def _render_final_page_image(
     numbering_path: Path,
     page_id: str,
     page_number: int,
+    page_width_points: float,
 ) -> tuple[Image.Image, list[dict[str, Any]]]:
     numbering_payload = _load_json_object(numbering_path, description=f"{page_id}.numbering_final")
     page_payload = _first_page_payload(numbering_payload, numbering_path)
@@ -379,7 +420,9 @@ def _render_final_page_image(
         page_id=page_id, page_number=page_number, page_payload=page_payload
     )
     with Image.open(source_image_path) as image:
-        rendered = _draw_row_start_labels(image, records)
+        rendered = _draw_row_start_labels(
+            image, records, pixels_per_point=image.width / page_width_points
+        )
     return rendered, records
 
 
@@ -480,11 +523,14 @@ def materialize_corrected_final_outputs(
                     f"{corrected_numbering}"
                 )
 
+            with Image.open(source_image) as probe:
+                page_size_points = _physical_page_size(page, probe, warnings)
             rendered, row_records = _render_final_page_image(
                 source_image_path=source_image,
                 numbering_path=corrected_numbering,
                 page_id=page_id,
                 page_number=page_number,
+                page_width_points=page_size_points[0],
             )
             if not row_records:
                 warnings.append(f"{page_id}: no row-start labels were rendered")
@@ -497,7 +543,7 @@ def materialize_corrected_final_outputs(
                     "corrected_numbering_final": str(corrected_numbering),
                     "rendered_row_labels": len(row_records),
                     "row_labels": row_records,
-                    "page_size_points": list(_physical_page_size(page, rendered, warnings)),
+                    "page_size_points": list(page_size_points),
                 }
             )
 

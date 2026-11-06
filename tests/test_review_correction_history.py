@@ -212,6 +212,9 @@ def test_resumed_apply_uses_safe_layer_and_records_sidecar(tmp_path, monkeypatch
     package, pdf = _pdf_package(tmp_path)
     session = create_session(package, _checkpoint(package), pdf)
     handoff = package.root / f"resumed_sessions/{session}/review/manual_correction_input.json"
+    payload = json.loads(handoff.read_text())
+    payload["output_name"] = "Sym4 Vn2"
+    handoff.write_bytes(encoded(payload))
     restored = ReviewPackage(handoff)
 
     def engine(handoff, **kwargs):
@@ -245,6 +248,7 @@ def test_resumed_apply_uses_safe_layer_and_records_sidecar(tmp_path, monkeypatch
     app.thread.join(5)
     snap = restored.state.snapshot()
     assert snap["package"]["current_result"], snap
+    assert app.result().name == "Sym4_Vn2_score_numbered.pdf"
     with fitz.open(app.result()) as doc:
         assert doc[0].get_text().strip() == "12"
         assert len(list(doc[0].annots())) == 1

@@ -158,6 +158,92 @@ class AnnotatedNumberLayerTests(unittest.TestCase):
             all(x["distance_to_staff_start_points"] < 3 for x in report["pages"][0]["labels"])
         )
 
+    def test_label_distance_uses_printed_staff_lines_not_inflated_bbox(self):
+        source = self.root / "source.pdf"
+        image = Image.new("RGB", (800, 1040), "white")
+        for top in (120, 190):
+            for line in range(5):
+                y = (top + line * 5) * 4
+                image.paste((0, 0, 0), (240, y, 720, y + 4))
+        encoded = io.BytesIO()
+        image.save(encoded, "PNG")
+        with fitz.open() as doc:
+            page = doc.new_page(width=200, height=260)
+            page.insert_image(page.rect, stream=encoded.getvalue())
+            page.set_cropbox(fitz.Rect(10, 10, 190, 250))
+            note = page.add_ink_annot([[(150, 240), (170, 245)]])
+            note.update()
+            doc.save(source)
+        data = [
+            {
+                "source_pixels": [200, 260],
+                "rows": [
+                    # The first bbox starts 20 pt above its staff, as with high notes.
+                    {
+                        "row_id": "row_001",
+                        "row_start_measure_number": 1,
+                        "top_staff_bbox": [60, 100, 180, 142],
+                    },
+                    {
+                        "row_id": "row_002",
+                        "row_start_measure_number": 12,
+                        "top_staff_bbox": [60, 188, 180, 212],
+                    },
+                ],
+            }
+        ]
+
+        _, report = write_number_layer(source, source, data, self.root / "out.pdf")
+
+        first, second = report["pages"][0]["labels"]
+        self.assertEqual({first["staff_anchor"], second["staff_anchor"]}, {"staff_lines"})
+        self.assertAlmostEqual(first["staff_start"][1], 110, delta=0.6)
+        self.assertAlmostEqual(second["staff_start"][1], 180, delta=0.6)
+        self.assertAlmostEqual(
+            first["staff_start"][1] - first["rect"][3],
+            second["staff_start"][1] - second["rect"][3],
+            delta=0.5,
+        )
+
+    def test_unwrapped_page_content_gets_one_number_stream_per_label(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+        with fitz.open(source) as doc:
+            page = doc[0]
+            xref = page.get_contents()[0]
+            # Text after the balanced image block leaves the page content not fully wrapped.
+            stream = doc.xref_stream(xref) + b"\nBT /F0 9 Tf 20 20 Td ET\n"
+            doc.update_stream(xref, stream)
+            self.assertFalse(page.is_wrapped)
+            doc.save(self.root / "unwrapped.pdf")
+
+        first = self.root / "first.pdf"
+        sidecar, report = write_number_layer(
+            self.root / "unwrapped.pdf", self.root / "unwrapped.pdf", data, first
+        )
+
+        self.assertEqual(len(report["pages"][0]["number_streams"]), 1)
+        updated = deepcopy(data)
+        updated[0]["rows"][0]["row_start_measure_number"] = 34
+        _, result = write_number_layer(
+            first,
+            self.root / "unwrapped.pdf",
+            updated,
+            self.root / "second.pdf",
+            previous_sidecar=sidecar,
+        )
+        self.assertEqual(result["pages"][0]["labels"][0]["number"], 34)
+
+    def test_staff_without_printed_lines_falls_back_to_detected_bbox(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+
+        _, report = write_number_layer(source, source, data, self.root / "out.pdf")
+
+        label = report["pages"][0]["labels"][0]
+        self.assertEqual(label["staff_anchor"], "staff_bbox")
+        self.assertEqual(label["staff_start"][1], 90)
+
     def test_save_then_validation_failure_never_publishes_result(self):
         source = self.root / "source.pdf"
         data = fixture(source)

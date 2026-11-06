@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -62,6 +64,35 @@ def test_isolated_candidate_and_user_app_assets(candidate):
 def test_candidate_rejects_missing_dependency(candidate, path):
     (candidate / path).unlink()
     assert any(path in error for error in check_tree(candidate))
+
+
+def test_candidate_rejects_launcher_module_absent_from_manifest(candidate):
+    # The launcher starts this module by name inside its container, so no import reveals it.
+    manifest_path = candidate / "docs/MINIMAL_MAINLINE_SURFACE.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["distribution_support_patterns"] = [
+        entry
+        for entry in manifest["distribution_support_patterns"]
+        if entry["pattern"] != "docker/review_relay.py"
+    ]
+    manifest_path.write_text(json.dumps(manifest))
+    (candidate / "docker/review_relay.py").unlink()
+    errors = check_tree(candidate, verify_provenance=False)
+    assert any("docker/distribution.py" in error and "review_relay" in error for error in errors), (
+        errors
+    )
+
+
+def test_candidate_runs_review_relay_entrypoint(candidate):
+    result = subprocess.run(
+        [sys.executable, "-m", "docker.review_relay", "--help"],
+        cwd=candidate,
+        env={**os.environ, "PYTHONPATH": str(candidate)},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--relay-port" in result.stdout
 
 
 def test_candidate_rejects_corrupt_or_extra_content(candidate):

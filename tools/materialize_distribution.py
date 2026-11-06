@@ -86,7 +86,7 @@ def check_tree(
                     modules.update(f"{name}.{a.name}" for a in node.names)
                 elif isinstance(node, ast.Constant) and isinstance(node.value, str):
                     # Production workers launch local modules in subprocesses.
-                    if re.fullmatch(r"src(?:\.[A-Za-z_]\w*)+", node.value):
+                    if re.fullmatch(r"(?:src|tools|docker)(?:\.[A-Za-z_]\w*)+", node.value):
                         modules.add(node.value)
             for module in modules:
                 if module.split(".")[0] not in {"src", "tools", "docker"}:

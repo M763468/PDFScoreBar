@@ -128,7 +128,9 @@ right job without checking its result.
 Choose an output directory outside the distribution checkout or extracted directory,
 such as `/absolute/path/results`. The launcher rejects an output directory inside the
 distribution before creating files or starting Docker, so subsequent review can verify
-the original distribution inventory. Selected-page reviews show the original PDF page
+the original distribution inventory. A development checkout without
+`DISTRIBUTION_PROVENANCE.json` may also use a Git-ignored directory such as `temp/results`.
+Selected-page reviews show the original PDF page
 numbers. A failed PDF input check also saves its job's `result.json` with the error details.
 
 Numbered PDFs retain the source PDF's visible page size, including cropping and
@@ -161,6 +163,12 @@ Replace `JOB_ID` with the printed ID and use the same output root as `run`.
 Open `http://127.0.0.1:8010` in a browser on the same Linux host. Add `--port 8011` when
 that port is occupied, then open `http://127.0.0.1:8011`. The application binds only to localhost and uses Linux Docker host
 networking. It is intended for local use. Select English or Japanese using the language control.
+
+Docker Desktop has no shared host network with WSL or Windows, so the launcher detects it
+and instead publishes the port on host loopback only, through a relay in the container.
+Run from WSL2 and open the same URL in a Windows or WSL browser. The application still binds
+to container loopback and validates Host/Origin. This route has been checked on Windows with
+WSL2 and an NVIDIA GPU only; Docker Engine for Linux remains the primary installation route.
 
 Review page images and numbering. Record barline, measure, or MMR changes using Save;
 confirm any supplied movement-boundary evidence and finalize it before applying.
@@ -258,6 +266,8 @@ versions/export settings and physical printing remain unverified.
 - Docker permission failure: check daemon/socket access and the ownership of output files.
 - Output rejected: choose an absolute output path outside the distribution root.
 - Port occupied: choose an unused `--port` and open that port on localhost.
+- Review URL does not open: on Docker Desktop, check that the port is free on both Windows and
+  WSL. Other Docker setups whose host network is not shared with the browser are unsupported.
 - Missing GPU/provider: verify GPU access in Docker and rerun preflight. Host GPU detection
   alone does not establish container CUDA availability.
 - Missing or corrupt model: use the selected manifest and repeat verified import. A hash

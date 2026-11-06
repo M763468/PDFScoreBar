@@ -332,6 +332,150 @@ def test_release_launcher_uses_pinned_image_and_isolated_paths(tmp_path, monkeyp
     assert distribution.main() == 0
     assert "tools.review_correction.server" in calls[-1]
     assert "--prepare-review" in calls[-2]
+    assert calls[-1][calls[-1].index("--network") + 1] == "host"
+    assert "-p" not in calls[-1]
+    assert calls[-2][calls[-2].index("--network") + 1] == "none"
+
+
+def _review_on_docker_desktop(tmp_path, monkeypatch, port_args):
+    from docker import distribution
+
+    calls = []
+
+    def capture(command):
+        if command[:2] == ["docker", "info"]:
+            return "Docker Desktop"
+        if command[:3] == ["docker", "image", "inspect"]:
+            labels = {
+                "pdfscore.runtime.asset_contract": "v1",
+                "pdfscore.runtime.source_fingerprint": "fixture-source",
+            }
+            return json.dumps([{"Id": "sha256:fixture", "Config": {"Labels": labels}}])
+        return "runtime"
+
+    monkeypatch.setattr(distribution, "capture", capture)
+    monkeypatch.setattr(
+        distribution,
+        "source_identity",
+        lambda: {"source_commit": "fixture", "source_branch": "release"},
+    )
+    monkeypatch.setattr(distribution, "runtime_fingerprint", lambda root: "runtime")
+    monkeypatch.setattr(
+        distribution, "resolve_model_artifact", lambda *a, **k: tmp_path / "weight.pt"
+    )
+    monkeypatch.setattr(
+        distribution.subprocess, "call", lambda command, **kw: calls.append(command) or 0
+    )
+    handoff = tmp_path / "output/job-one/review/manual_correction_input.json"
+    handoff.parent.mkdir(parents=True)
+    handoff.write_text("{}")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "distribution.py",
+            "review",
+            "--output",
+            str(tmp_path / "output"),
+            "--handoff",
+            str(handoff),
+            *port_args,
+        ],
+    )
+    return distribution, calls
+
+
+def test_docker_desktop_review_publishes_only_on_host_loopback(tmp_path, monkeypatch):
+    distribution, calls = _review_on_docker_desktop(tmp_path, monkeypatch, ["--port", "8011"])
+    assert distribution.main() == 0
+    prepare, serve = calls[-2:]
+    assert prepare[prepare.index("--network") + 1] == "none"
+    assert "-p" not in prepare
+    assert serve[serve.index("--network") + 1] == "bridge"
+    # The host keeps the application's port, as its Host/Origin validation requires.
+    assert serve[serve.index("-p") + 1] == "127.0.0.1:8011:8012"
+    assert serve[serve.index("-m") + 1] == "docker.review_relay"
+    assert serve[serve.index("--port") + 1] == "8011"
+    assert serve[serve.index("--relay-port") + 1] == "8012"
+
+
+def test_docker_desktop_review_keeps_relay_port_distinct_at_range_end(tmp_path, monkeypatch):
+    distribution, calls = _review_on_docker_desktop(tmp_path, monkeypatch, ["--port", "65535"])
+    assert distribution.main() == 0
+    assert calls[-1][calls[-1].index("-p") + 1] == "127.0.0.1:65535:65534"
+
+
+def test_docker_desktop_review_rejects_port_it_cannot_publish_before_docker(tmp_path, monkeypatch):
+    distribution, calls = _review_on_docker_desktop(tmp_path, monkeypatch, ["--port", "0"])
+    with pytest.raises(ValueError, match="--port between 1 and 65535"):
+        distribution.main()
+    assert len(calls) == 1  # Only the runtime preflight, no review container.
+
+
+def test_review_relay_forwards_gateway_and_refuses_other_peers(tmp_path):
+    import socket
+    import threading
+
+    from docker.review_relay import default_gateway, serve_relay
+
+    routes = tmp_path / "route"
+    routes.write_text(
+        "Iface Destination Gateway Flags\n"
+        "eth0 000011AC 00000000 0001\n"
+        "eth0 00000000 010011AC 0003\n",
+        encoding="ascii",
+    )
+    assert default_gateway(routes) == "172.17.0.1"
+    routes.write_text("Iface Destination Gateway Flags\n", encoding="ascii")
+    with pytest.raises(ValueError, match="default gateway"):
+        default_gateway(routes)
+
+    def relay_to(allowed_peer):
+        listener = socket.create_server(("127.0.0.1", 0))
+        threading.Thread(
+            target=serve_relay,
+            args=(listener,),
+            kwargs={"target_port": upstream.getsockname()[1], "allowed_peer": allowed_peer},
+            daemon=True,
+        ).start()
+        return socket.create_connection(listener.getsockname(), timeout=5)
+
+    with socket.create_server(("127.0.0.1", 0)) as upstream:
+        upstream.settimeout(5)
+        with relay_to("127.0.0.1") as client:
+            client.sendall(b"request")
+            client.shutdown(socket.SHUT_WR)
+            accepted, _ = upstream.accept()
+            with accepted:
+                assert accepted.recv(16) == b"request"
+                assert accepted.recv(16) == b""
+                accepted.sendall(b"response")
+            assert client.recv(16) == b"response"
+            assert client.recv(16) == b""
+        with relay_to("192.0.2.1") as refused:
+            assert refused.recv(16) == b""
+
+
+def test_launcher_accepts_ignored_output_only_in_development_checkout(tmp_path, monkeypatch):
+    from docker import distribution
+
+    root = tmp_path / "checkout"
+    (root / "temp").mkdir(parents=True)
+    (root / "kept").mkdir()
+    (root / "kept/file.txt").write_text("tracked\n")
+    (root / ".gitignore").write_text("temp/\nkept/\n")
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "-f", "kept/file.txt"], check=True)
+    monkeypatch.setattr(distribution, "ROOT", root)
+
+    assert distribution.is_ignored_development_output(root / "temp/results")
+    assert not distribution.is_ignored_development_output(root)
+    assert not distribution.is_ignored_development_output(root / "results")
+    assert not distribution.is_ignored_development_output(root / ".git/results")
+    # An ignored pattern does not make a directory holding tracked files disposable.
+    assert not distribution.is_ignored_development_output(root / "kept")
+
+    (root / "DISTRIBUTION_PROVENANCE.json").write_text("{}")
+    assert not distribution.is_ignored_development_output(root / "temp/results")
 
 
 @pytest.mark.parametrize("git_checkout", [False, True])

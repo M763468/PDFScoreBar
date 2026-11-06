@@ -68,6 +68,47 @@ def source_identity() -> dict:
     }
 
 
+def is_ignored_development_output(output: Path) -> bool:
+    """Allow Git-ignored output in a development checkout, never in a frozen distribution."""
+    root = ROOT.resolve()
+    if (
+        output == root
+        or (root / "DISTRIBUTION_PROVENANCE.json").exists()
+        or not (root / ".git").exists()
+    ):
+        return False
+    relative = output.relative_to(root)
+    if relative.parts[0] == ".git":
+        return False
+    git = ["git", "-C", str(root)]
+    try:
+        tracked = subprocess.run(
+            [*git, "ls-files", "--", str(relative)], capture_output=True, text=True
+        )
+        ignored = subprocess.run(
+            [*git, "check-ignore", "-q", "--", str(relative)], capture_output=True
+        )
+    except OSError:
+        return False
+    return tracked.returncode == 0 and not tracked.stdout and ignored.returncode == 0
+
+
+def uses_docker_desktop() -> bool:
+    return "Docker Desktop" in capture(["docker", "info", "--format", "{{.OperatingSystem}}"])
+
+
+def published_review_arguments(port: int) -> tuple[list[str], int]:
+    """Return Docker's loopback publish arguments and the container relay port.
+
+    Docker Desktop's host network belongs to its VM rather than to WSL or Windows.
+    The host side keeps the application's port so Host/Origin validation is unchanged.
+    """
+    if not 1 <= port <= 65535:
+        raise ValueError("Docker Desktop review requires --port between 1 and 65535")
+    relay_port = port + 1 if port < 65535 else port - 1
+    return ["-p", f"127.0.0.1:{port}:{relay_port}"], relay_port
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", default="pdfscore_pipeline_gpu")
@@ -88,8 +129,11 @@ def main() -> int:
     output = None
     if args.command in {"run", "review"}:
         output = args.output.resolve()
-        if output.is_relative_to(ROOT.resolve()):
-            raise ValueError("Output directory must be outside the distribution root")
+        if output.is_relative_to(ROOT.resolve()) and not is_ignored_development_output(output):
+            raise ValueError(
+                "Output directory must be outside the distribution root "
+                "(a development checkout may also use a Git-ignored directory)"
+            )
     identity = source_identity()
     commit = identity["source_commit"]
     branch = identity["source_branch"]
@@ -205,6 +249,9 @@ def main() -> int:
             command += ["--pages", *map(str, args.pages)]
     else:
         handoff = args.handoff.resolve(strict=True).relative_to(output)
+        docker_desktop = uses_docker_desktop()
+        if docker_desktop:
+            publish, relay_port = published_review_arguments(args.port)
         status = subprocess.call(
             common
             + [
@@ -219,9 +266,6 @@ def main() -> int:
         )
         if status:
             return status
-        # The existing user server binds container loopback. Linux host networking
-        # preserves its loopback/same-origin contract without widening that bind.
-        common[common.index("none")] = "host"
         command = [
             "/opt/venv_pipeline/bin/python",
             "-m",
@@ -231,6 +275,15 @@ def main() -> int:
             "--port",
             str(args.port),
         ]
+        if docker_desktop:
+            common[common.index("none")] = "bridge"
+            common += publish
+            command[2] = "docker.review_relay"
+            command += ["--relay-port", str(relay_port)]
+        else:
+            # The existing user server binds container loopback. Linux host networking
+            # preserves its loopback/same-origin contract without widening that bind.
+            common[common.index("none")] = "host"
     print(
         json.dumps(
             {"source": identity, "image_id": image_id, "runtime_fingerprint": fingerprint}, indent=2

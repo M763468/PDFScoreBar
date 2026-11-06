@@ -929,6 +929,10 @@
       "role": "Thin command adapter for existing v1 PDF engine"
     },
     {
+      "pattern": "docker/review_relay.py",
+      "role": "Docker Desktop published-port relay to the loopback correction application"
+    },
+    {
       "pattern": "docs/USER_GUIDE.md",
       "role": "Install, model registration, processing, review and troubleshooting"
     },

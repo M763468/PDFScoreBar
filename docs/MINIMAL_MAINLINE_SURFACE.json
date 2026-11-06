@@ -857,6 +857,7 @@
       "tests/test_issue441_annotated_layer.py",
       "tests/test_issue441_mobilesheets_roundtrip.py",
       "tests/test_review_correction_history.py",
+      "tests/test_review_correction_identity_v2.py",
       "tests/test_sr_compiler_cache.py"
     ]
   },

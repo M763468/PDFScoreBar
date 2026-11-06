@@ -1,10 +1,10 @@
 # 補正済み最終出力ヘルパー
 
-<!-- translation: {"original":"corrected_final_output.md","source":{"sha256":"319f574e5799806d2ad81d4378ce9c7bc853aa69f7f11e58e2d29ca769642ef5"},"state":"reviewed"} -->
+<!-- translation: {"original":"corrected_final_output.md","source":{"sha256":"88e95bc9aff17b019248b49ef5ebcb5ad77a0d0331ed37744bdf66e68b68c83a"},"state":"reviewed"} -->
 
 [English / 原文](corrected_final_output.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `319f574e5799806d2ad81d4378ce9c7bc853aa69f7f11e58e2d29ca769642ef5`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `88e95bc9aff17b019248b49ef5ebcb5ad77a0d0331ed37744bdf66e68b68c83a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この内部ヘルパーのリファレンスは開発者・保守担当者向けです。手動補正の `apply_corrections` 再実行経路から、その補正済み実行のクリーンな最終 PDF 成果物への限定的な接続を説明します。サポート対象の利用者向け配布ワークフローは[ユーザーガイド](../USER_GUIDE.ja.md)を参照してください。
 

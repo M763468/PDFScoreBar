@@ -1,10 +1,10 @@
 # 手動補正レビューワークフロー
 
-<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"9804a257b57a64cb43c80cbfaaa16f52cb57bb9d4d4e8a04c971924e435b12cf"},"state":"reviewed"} -->
+<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"42feff3633e0c9392477cd907266dc70bd389f37b861880d790ec295ba903c51"},"state":"reviewed"} -->
 
 [English / 原文](manual_correction_review_package.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `9804a257b57a64cb43c80cbfaaa16f52cb57bb9d4d4e8a04c971924e435b12cf`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `42feff3633e0c9392477cd907266dc70bd389f37b861880d790ec295ba903c51`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この開発者・運用担当者向けリファレンスは、現在の config-first の手動補正ワークフローを説明します。一つのパイプライン実行を既存の手動 GUI に接続し、パッケージ内に補正を保存して、補正を使ってパイプラインを再実行し、補正済みの小節番号付き最終 PDF を生成できます。
 

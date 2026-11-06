@@ -23,7 +23,7 @@ from src.pipeline.review.manual_correction_handoff import (
     load_manual_correction_handoff,
     validate_manual_correction_handoff,
 )
-from tools.review_correction.history import now
+from tools.review_correction.history import identity_matches, now
 
 
 def preview_numbering(handoff_path: str | Path) -> dict:
@@ -162,7 +162,10 @@ class CorrectionApplication:
                 checkpoint = self.package.history.capture()
                 identity = self.package.state.begin_apply()
                 apply_started = True
-                if self.package.history.get(checkpoint)["identity"] != identity:
+                if not identity_matches(
+                    self.package.history.get(checkpoint)["identity"],
+                    self.package.state.capture_identities(),
+                ):
                     raise ValueError("Review changed while preparing application")
                 attempt = self._allocate()
                 event = {
@@ -218,6 +221,13 @@ class CorrectionApplication:
             if not self.package.history.get(checkpoint).get("source_context"):
                 manifest = _resolve_source_manifest_path(payload, self.package.root)
                 payload["source_manifest"] = str(manifest)
+            # An identical checkpoint may be reused after only the name changed, so the
+            # job's current name, not the one retained with that checkpoint, decides here.
+            current_handoff = json.loads(self.handoff.read_text(encoding="utf-8"))
+            if "output_name" in current_handoff:
+                payload["output_name"] = current_handoff["output_name"]
+            else:
+                payload.pop("output_name", None)
             if not (isinstance(payload.get("output_name"), str) and payload["output_name"].strip()):
                 final_dir = self.package.root.parent / "final"
                 if final_dir.is_dir():

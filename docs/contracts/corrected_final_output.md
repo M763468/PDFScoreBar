@@ -90,8 +90,50 @@ never changes the saved attempt, the job handoff, or an existing checkpoint; imp
 again returns its existing checkpoint, even if the job's name has changed since. The checkpoint's
 handoff provides the name when a session resumes, because a session has no `final/` to recover from.
 
-Checkpoint identities still include the whole handoff. Separating `output_name` from them would need
-a new schema and migration, and is not part of this contract.
+## Versioned identity
+
+The review package has two identity rules. `tools/review_correction/state.py` computes both, and a
+stored record is always compared under its own rule:
+
+| | Identity v1 | Identity v2 |
+| --- | --- | --- |
+| Written by | Checkpoint schema 1, older results and pre-checkpoint attempts | Checkpoint schema 2 and new results |
+| Marked by | No `identity_version` | `identity_version: 2` |
+| Handoff input | SHA-256 of the whole file | Digest of the parsed JSON object without top-level `output_name` |
+
+Everything else is the same under both rules: declared source files, the source manifest, the resume
+PDFs, and the corrections. Under v2, handoff content such as page order and the `resume` block still
+changes the identity. JSON formatting and key order do not. A handoff that is not a JSON object is
+hashed by its exact bytes. `corrections_identity` has one value under both rules.
+
+**No migration.** Schema 1 checkpoints, their blobs, and their `cp_...` IDs are never rewritten, and
+they can still be listed, materialized, and resumed. Unknown schema or identity versions, and records
+whose version or digests are inconsistent, are rejected. Code from before this change cannot read
+schema 2 checkpoints.
+
+**Reuse and status:**
+
+- Saving reuses the newest checkpoint whose identity matches under its own rule, so changing only
+  `output_name` does not add a v2 checkpoint or make a v2 result stale.
+- A v1 record stores digests only and cannot be converted. It matches only while the handoff bytes
+  are unchanged, so after a name change the next save writes one v2 checkpoint, and a v1 result shows
+  as stale until the next successful application.
+- `current_identity` in the state response is always v2. A matching v1 result keeps its recorded
+  digests in `current_result`.
+
+**Integrity is separate.** A checkpoint still retains the complete handoff, including `output_name`,
+in a content-addressed blob. The blob hash and the `cp_...` manifest hash cover those bytes, and a
+schema 2 checkpoint without the handoff blob is rejected.
+
+**Name after reuse:**
+
+- Generating a corrected result uses the job's current `output_name`, or the existing naming rules
+  when it has none, even if a checkpoint with another name was reused.
+- Resuming uses the name retained in the selected checkpoint. To resume with a changed name, save a
+  new checkpoint explicitly first, because an explicit save never reuses one.
+
+Identity does not replace the operation checks in the table above. Pre-checkpoint import keeps
+reproducing its recorded v1 identities, and resume keeps its PDF, page, image, and annotation checks.
 
 ## Non-goals
 

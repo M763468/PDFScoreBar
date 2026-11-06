@@ -379,7 +379,8 @@ def _legacy_attempt(app, number=1, manifest=None):
     import shutil
 
     package = app.package
-    identity = package.state.capture_identity()
+    # Pre-checkpoint attempts recorded the byte-based version 1 identity.
+    identity = package.state.capture_identity(version=1)
     attempt = package.root / f"application_runs/attempt_{number:04d}"
     review = attempt / "input_review"
     review.mkdir(parents=True)

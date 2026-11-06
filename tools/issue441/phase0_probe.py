@@ -270,7 +270,9 @@ def audit(source):
             ],
         }
         if snapshot.exists() and provenance:
-            actual = ReviewPackage(snapshot).state.capture_identity()
+            actual = ReviewPackage(snapshot).state.capture_identity(
+                version=provenance.get("identity_version", 1)
+            )
             record["corrections_identity_matches"] = (
                 actual["corrections_identity"] == provenance["corrections_identity"]
             )

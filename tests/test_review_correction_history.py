@@ -15,6 +15,7 @@ from test_review_correction_server import (
     review_server,  # noqa: F401
 )
 
+from src.pipeline.review.final_output import _derive_output_name
 from tools.review_correction import application
 from tools.review_correction.application import CorrectionApplication
 from tools.review_correction.history import digest, encoded
@@ -511,6 +512,19 @@ def test_legacy_import_survives_review_recovering_output_name(tmp_path):
     assert saved["identity"]["corrections_identity"] == identity["corrections_identity"]
     # The tolerance is read-only: the prepared handoff keeps the recovered name.
     assert json.loads(handoff.read_text())["output_name"] == "Festival_Overture"
+    # A resumed session has no final/ directory, so the checkpoint must carry the name.
+    restored = tmp_path / "restored/review"
+    package.history.materialize(checkpoint, restored)
+    assert (
+        _derive_output_name(
+            None, json.loads((restored / "manual_correction_input.json").read_text())
+        )
+        == "Festival_Overture"
+    )
+    # The attempt's own saved input stays unchanged.
+    assert "output_name" not in json.loads(
+        (attempt / "input_review/manual_correction_input.json").read_text()
+    )
 
 
 @pytest.mark.parametrize(

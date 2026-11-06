@@ -146,6 +146,10 @@ def import_attempt(package, name):
         payload = json.loads(snapshot.handoff_path.read_text())
         payload.pop("source_artifact_root", None)
         payload["source_manifest"] = str(manifest)
+        # A resumed session has no final/ to recover from, so keep the prepared name.
+        output_name = json.loads(package.handoff_path.read_text()).get("output_name")
+        if output_name and "output_name" not in payload:
+            payload["output_name"] = output_name
         (review / "manual_correction_input.json").write_bytes(encoded(payload))
         from tools.review_correction.server import ReviewPackage
 

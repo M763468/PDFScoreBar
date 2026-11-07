@@ -1,0 +1,308 @@
+{
+ "schema_version": "issue519.evidence_summary.v1",
+ "detector": {
+  "control": {
+   "gt": 3567,
+   "pred": 3681,
+   "tp": 3560,
+   "fp": 0,
+   "fn": 7,
+   "soft": 121
+  },
+  "no_omr": {
+   "gt": 3567,
+   "pred": 3673,
+   "tp": 3559,
+   "fp": 0,
+   "fn": 8,
+   "soft": 114
+  },
+  "gate_416": "no_omr FAIL (TP>=3560, FN<=7, no new per-page FN)",
+  "new_fn": [
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_005",
+    [
+     2683,
+     1660,
+     2693,
+     1770
+    ]
+   ]
+  ],
+  "unreplaced_removed": [
+   [
+    "Shostakovich-Sym5-Va",
+    "page_016",
+    [
+     2741,
+     3352,
+     2745,
+     3479
+    ]
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     1130,
+     1445,
+     1134,
+     1737
+    ]
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     1261,
+     1445,
+     1265,
+     1737
+    ]
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     2504,
+     1445,
+     2508,
+     1737
+    ]
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     2852,
+     1445,
+     2856,
+     1737
+    ]
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_004",
+    [
+     1209,
+     2922,
+     1213,
+     3058
+    ]
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_005",
+    [
+     2687,
+     1619,
+     2688,
+     1770
+    ]
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_014",
+    [
+     2239,
+     2244,
+     2240,
+     2357
+    ]
+   ]
+  ]
+ },
+ "mmr": {
+  "control": {
+   "expected": 177,
+   "detected": 174,
+   "matched_tp": 171,
+   "missed_fn": 3,
+   "skip_mismatch": 3,
+   "unexpected_fp": 0
+  },
+  "no_omr": {
+   "expected": 177,
+   "detected": 174,
+   "matched_tp": 171,
+   "missed_fn": 3,
+   "skip_mismatch": 3,
+   "unexpected_fp": 0
+  },
+  "override_semantic_diff_pages": []
+ },
+ "final_numbering": {
+  "pages": 68,
+  "systems_control": 637,
+  "systems_no_omr": 637,
+  "systems_paired": 637,
+  "staff_topology_diff_pages": 0,
+  "measures_control": 3287,
+  "measures_no_omr": 3287,
+  "measures_paired": 3287,
+  "measures_unpaired": 0,
+  "number_diffs": 0,
+  "increment_diffs": 0,
+  "page_start_next_diffs": 0,
+  "bbox_changed": 55,
+  "bbox_max_px": 5,
+  "bbox_max_unit": 0.2041,
+  "row_label_text_diffs": 0,
+  "row_label_moved": 0,
+  "row_label_max_move_px": 0,
+  "render_pixel_diff_pages": 0,
+  "accepted_reference_diff_pages": 0,
+  "gt_error_identity_diff_scores": 0
+ },
+ "downstream": {
+  "control": {
+   "physical_measures": 3287,
+   "application_errors": 0,
+   "continuity_errors": 0,
+   "gt_increment_errors": 6,
+   "pdf_pages": 37,
+   "page_render_failures": [
+    [
+     "Shostakovich-Festival_Overture_Va",
+     "page_001",
+     "failed: page_001: no safe 9pt placement for row-start label 53 (row_005) near staff top 3197px"
+    ],
+    [
+     "Shostakovich-Festival_Overture_Va",
+     "page_007",
+     "failed: page_007: no safe 9pt placement for row-start label 285 (row_001) near staff top 434px"
+    ],
+    [
+     "Shostakovich-Sym5-Va",
+     "page_024",
+     "failed: page_024: no safe 9pt placement for row-start label 1047 (row_004) near staff top 1540px"
+    ],
+    [
+     "Shostakovich-Sym5-Va",
+     "page_025",
+     "failed: page_025: no safe 9pt placement for row-start label 1075 (row_001) near staff top 419px"
+    ]
+   ],
+   "gui_path_equal_pages": 68
+  },
+  "no_omr": {
+   "physical_measures": 3287,
+   "application_errors": 0,
+   "continuity_errors": 0,
+   "gt_increment_errors": 6,
+   "pdf_pages": 37,
+   "page_render_failures": [
+    [
+     "Shostakovich-Festival_Overture_Va",
+     "page_001",
+     "failed: page_001: no safe 9pt placement for row-start label 53 (row_005) near staff top 3197px"
+    ],
+    [
+     "Shostakovich-Festival_Overture_Va",
+     "page_007",
+     "failed: page_007: no safe 9pt placement for row-start label 285 (row_001) near staff top 434px"
+    ],
+    [
+     "Shostakovich-Sym5-Va",
+     "page_024",
+     "failed: page_024: no safe 9pt placement for row-start label 1047 (row_004) near staff top 1540px"
+    ],
+    [
+     "Shostakovich-Sym5-Va",
+     "page_025",
+     "failed: page_025: no safe 9pt placement for row-start label 1075 (row_001) near staff top 419px"
+    ]
+   ],
+   "gui_path_equal_pages": 68
+  }
+ },
+ "row_start_samples": {
+  "control": 5,
+  "no_omr": 5
+ },
+ "pdf_renderer_b51c9f6f": {
+  "pages": 68,
+  "page_pixels_equal": 68,
+  "row_labels": 637,
+  "row_label_records_equal": true,
+  "pdf_bytes_equal": [
+   false,
+   false,
+   false,
+   false,
+   false
+  ],
+  "accepted_pixels_equal": [
+   [
+    "Shostakovich-Festival_Overture_Va",
+    true,
+    true
+   ],
+   [
+    "Shostakovich-Sym5-Va",
+    true,
+    true
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    true,
+    true
+   ],
+   [
+    "Va_Prokofiev_Symphony1",
+    true,
+    true
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    true,
+    true
+   ]
+  ]
+ },
+ "correction_roundtrip": {
+  "summary": {
+   "correction": {
+    "correction_type": "mmr_measure_span",
+    "items": [
+     {
+      "op": "set_measure_span",
+      "page": 4,
+      "system": 2,
+      "measure": 2,
+      "measure_span": 3
+     }
+    ]
+   },
+   "package_pages_equal": true,
+   "apply_numbers_equal": true,
+   "apply_geometry_equal": false,
+   "resume_equal_control": true,
+   "resume_equal_no_omr": true,
+   "pdf_count": [
+    1,
+    1
+   ]
+  },
+  "verification": {
+   "corrected_p005_sys2": [
+    236,
+    237,
+    238,
+    241
+   ],
+   "base_p005_sys2": [
+    236,
+    237,
+    238,
+    239
+   ],
+   "corrected_geometry_diffs": 37,
+   "known_prokofiev5_geometry_diffs": 37,
+   "geometry_diffs_outside_known": [],
+   "pdf_pages": 21,
+   "pdf_pixel_equal": 21
+  }
+ }
+}

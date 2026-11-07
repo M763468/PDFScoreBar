@@ -14,9 +14,24 @@ from tqdm import tqdm
 
 from src.pipeline.core import ensure_dir
 from src.pipeline.steps.hybrid_consensus import (
-    apply_hybrid_consensus_filter,
+    apply_x4_staff_piece_consensus_filter,
     load_json_boxes,
+    staff_regions_from_mask,
 )
+
+_BASELINE_STAFF_MASK_NAMES = (
+    "{stem}_proxy_debug_3_staff.png",
+    "{stem}_debug_3_staff.png",
+    "{stem}_staff_mask.png",
+)
+
+
+def _baseline_staff_mask(page_dir: Path, stem: str) -> Path:
+    for name in _BASELINE_STAFF_MASK_NAMES:
+        path = page_dir / name.format(stem=stem)
+        if path.is_file():
+            return path
+    raise FileNotFoundError(f"Missing baseline staff mask for x4 staff-piece support: {page_dir}")
 
 
 class ProfileHybridDetector:
@@ -149,17 +164,14 @@ class ProfileHybridDetector:
             output_root=support_output,
         )
         sr_image = Path(str(payload["sr_image"])).resolve()
-        omr = Path(str(payload["current_omr"])).resolve()
         current_sr_detection = self._current_detection_path(payload)
-        for path in (sr_image, omr):
-            if not path.is_file():
-                raise FileNotFoundError(path)
+        if not sr_image.is_file():
+            raise FileNotFoundError(sr_image)
         commands.append(support_command)
 
         return {
             "sr_image": str(sr_image),
             "current_sr_detection": str(current_sr_detection),
-            "current_omr": str(omr),
             "commands": commands,
             "historical_detector_artifact_runtime_input": False,
             "homr_neural_inference_count": 2,
@@ -246,11 +258,10 @@ class ProfileHybridDetector:
         *,
         baseline_output: Path,
         support_output: Path,
-    ) -> tuple[dict[Path, Path], dict[Path, Path], list[list[str]]]:
+    ) -> tuple[dict[Path, Path], list[list[str]]]:
         """Generate heavy detector sources with one top-level worker per page."""
 
         current_sr_detections: dict[Path, Path] = {}
-        omr_predictions: dict[Path, Path] = {}
         commands: list[list[str]] = []
 
         if self.dry_run:
@@ -263,7 +274,6 @@ class ProfileHybridDetector:
                     / image.stem
                     / f"{image.stem}_detections.json"
                 )
-                omr_predictions[image] = page_root / "omr_sr" / image.stem / "predictions.json"
                 commands.extend(
                     [
                         ["verified-source-page-worker", str(image)],
@@ -271,7 +281,7 @@ class ProfileHybridDetector:
                         ["current-support", str(image)],
                     ]
                 )
-            return current_sr_detections, omr_predictions, commands
+            return current_sr_detections, commands
 
         worker_output = baseline_output.parent / "source_page_workers"
         for image in tqdm(self.images, desc="Two-HOMR source generation", unit="page"):
@@ -281,18 +291,13 @@ class ProfileHybridDetector:
                 baseline_output=baseline_output,
                 support_output=support_output,
             )
-            current_sr_detection = self._current_detection_path(payload)
-            omr = Path(str(payload["current_omr"])).resolve()
-            if not omr.is_file():
-                raise FileNotFoundError(omr)
-            current_sr_detections[image] = current_sr_detection
-            omr_predictions[image] = omr
+            current_sr_detections[image] = self._current_detection_path(payload)
             commands.append(worker_command)
             child_commands = payload.get("commands")
             if isinstance(child_commands, list):
                 commands.extend(child_commands)
 
-        return current_sr_detections, omr_predictions, commands
+        return current_sr_detections, commands
 
     def run(self) -> Dict[str, Any]:
         hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
@@ -316,7 +321,7 @@ class ProfileHybridDetector:
         hybrid_results_dir = hybrid_output_dir / "hybrid_results"
         ensure_dir(hybrid_results_dir)
 
-        current_sr_detections, omr_predictions, commands = self._generate_page_sources(
+        current_sr_detections, commands = self._generate_page_sources(
             baseline_output=baseline_output,
             support_output=support_output,
         )
@@ -326,24 +331,18 @@ class ProfileHybridDetector:
                 stem = image.stem
                 baseline_json = baseline_output / "batch" / stem / f"{stem}_detections.json"
                 sr_json = current_sr_detections[image]
-                omr_json = omr_predictions[image]
                 output_json = hybrid_results_dir / f"{stem}_hybrid.json"
-                missing = [
-                    str(path) for path in (baseline_json, sr_json, omr_json) if not path.is_file()
-                ]
+                missing = [str(path) for path in (baseline_json, sr_json) if not path.is_file()]
                 if missing:
                     raise FileNotFoundError(
                         f"Two-HOMR hybrid components missing for {stem}: {missing}"
                     )
-                hybrid_preds = apply_hybrid_consensus_filter(
-                    baseline_boxes=load_json_boxes(
-                        baseline_json, strict=self.profile_name == "maintained_original"
-                    ),
-                    sr_boxes=load_json_boxes(
-                        sr_json, strict=self.profile_name == "maintained_original"
-                    ),
-                    omr_boxes=load_json_boxes(
-                        omr_json, strict=self.profile_name == "maintained_original"
+                strict = self.profile_name == "maintained_original"
+                hybrid_preds = apply_x4_staff_piece_consensus_filter(
+                    baseline_boxes=load_json_boxes(baseline_json, strict=strict),
+                    sr_boxes=load_json_boxes(sr_json, strict=strict),
+                    staves=staff_regions_from_mask(
+                        _baseline_staff_mask(baseline_json.parent, stem), image
                     ),
                 )
                 output_json.write_text(
@@ -361,6 +360,7 @@ class ProfileHybridDetector:
             "homr_neural_inference_count_per_page": 2,
             "x4_homr_neural_inference_count_per_page": 1,
             "x4_detector_support_owner": "current_x4_support",
+            "hybrid_support": "x4_staff_piece",
             "source_generation_phases": [
                 "verified_source_page_worker_per_page",
                 "verified_baseline_per_page",

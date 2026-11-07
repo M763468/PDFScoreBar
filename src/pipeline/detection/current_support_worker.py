@@ -1,9 +1,10 @@
-"""Generate current x4/HOMR/OMR support for one detector page.
+"""Generate current x4/HOMR support for one detector page.
 
 The current support path preserves connector-semantic HOMR artifacts.  SR may be
 materialized by a dedicated all-pages SR process before this worker starts; the
-current HOMR and OMR-DLN phases remain page-local and process-isolated so no
-Real-ESRGAN model state overlaps their GPU lifetime.
+current HOMR phase remains page-local and process-isolated so no Real-ESRGAN model
+state overlaps its GPU lifetime.  Since #522 no OMR-DLN measure detector runs: hybrid
+support comes from x4 HOMR alone (see ``hybrid_consensus``).
 """
 
 from __future__ import annotations
@@ -17,7 +18,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from src.pipeline.core import run_with_logging
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.perf_trace import set_context, span
 
@@ -192,6 +192,9 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise FileNotFoundError(image)
     set_context(page=image.name)
 
+    if request.get("precomputed_omr") is not None:
+        raise ValueError("OMR-DLN support was removed (#522); precomputed_omr is not accepted")
+
     sr_scale = int(det_cfg.get("sr_scale", 2))
     if sr_scale != 4:
         raise ValueError(f"Verified Stage E current support requires sr_scale=4, got {sr_scale}")
@@ -219,12 +222,12 @@ def run(request_path: Path, result_path: Path) -> Path:
                 env=env,
             )
         sr_execution_scope = "page_subprocess"
-        memory_phase_boundaries = ["sr", "current_homr", "omr_dln"]
+        memory_phase_boundaries = ["sr", "current_homr"]
     else:
         sr_payload = precomputed_sr
         sr_command = ["precomputed-current-x4-sr", str(sr_payload["sr_image"])]
         sr_execution_scope = "dedicated_sr_batch_process"
-        memory_phase_boundaries = ["sr_batch_process_exited", "current_homr", "omr_dln"]
+        memory_phase_boundaries = ["sr_batch_process_exited", "current_homr"]
 
     actual_sr = Path(str(sr_payload["sr_image"])).resolve()
     if precomputed_sr is None and actual_sr != sr_image.resolve():
@@ -251,58 +254,8 @@ def run(request_path: Path, result_path: Path) -> Path:
     )
     homr_paths = _require_current_homr_bundle(homr_payload)
 
-    omr_output = output_root / "omr_sr"
-    precomputed_omr = request.get("precomputed_omr")
-    if precomputed_omr is not None:
-        if precomputed_sr is None:
-            raise ValueError("An OMR job handoff requires precomputed batch SR")
-        from .omr_job import Handoff, consume
-
-        handoff = Handoff.from_request(precomputed_omr)
-        # Validates the complete job manifest before exposing exact prediction bytes.
-        consume(handoff, image, actual_sr, omr_output / stem / "predictions.json")
-        omr_cmd = ["omr-job-handoff", str(handoff.manifest), str(image)]
-        omr_execution_scope = "omr_job_process"
-        memory_phase_boundaries = [
-            "sr_batch_process_exited",
-            "omr_job_process_exited",
-            "current_homr",
-        ]
-    else:
-        # The batch worker writes the same stable per-page SR layout used by the old
-        # page-local SR worker. The production OMR-DLN worker accepts that persisted
-        # path directly; experiment/evaluation code is no longer part of runtime.
-        sr_directory = actual_sr.parent.parent
-        omr_cmd = get_pipeline_python("omr_dln") + [
-            "-m",
-            "src.pipeline.detection.omr_dln_worker",
-            "--images",
-            str(image),
-            "--output-dir",
-            str(omr_output),
-            "--pre-computed-sr",
-            str(sr_directory),
-        ]
-        from .model_selection import model_validation_mode, resolve_omr_model
-
-        mode = model_validation_mode(det_cfg)
-        if mode != "production":
-            model_path = resolve_omr_model(det_cfg, Path(__file__).resolve().parents[3])
-            omr_cmd += [
-                "--model-path",
-                str(model_path),
-                "--device",
-                str(det_cfg.get("omr_dln_device", "cuda")),
-            ]
-        run_with_logging(omr_cmd, env=env, check=True)
-        omr_execution_scope = "page_subprocess"
-
-    omr_predictions = omr_output / stem / "predictions.json"
-    if not omr_predictions.is_file():
-        raise FileNotFoundError(omr_predictions)
-
     payload = {
-        "schema_version": "pipeline.current_x4_support.v3",
+        "schema_version": "pipeline.current_x4_support.v4",
         "status": "completed",
         "image": str(image),
         "sr_scale": 4,
@@ -315,13 +268,11 @@ def run(request_path: Path, result_path: Path) -> Path:
         "connector_symbols": str(homr_paths["connector_symbols"]),
         "connector_brace_dot": str(homr_paths["connector_brace_dot"]),
         "homr_api_compat": homr_payload.get("homr_api_compat"),
-        "current_omr": str(omr_predictions),
-        "omr_execution_scope": omr_execution_scope,
         "support_root": str(output_root),
         "current_homr_executed": True,
         "memory_phase_boundaries": memory_phase_boundaries,
         "historical_detector_artifact_runtime_input": False,
-        "commands": [sr_command, homr_command, omr_cmd],
+        "commands": [sr_command, homr_command],
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(

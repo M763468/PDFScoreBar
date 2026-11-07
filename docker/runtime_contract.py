@@ -35,7 +35,7 @@ SOURCE_CONTRACT_FILES = (
     Path("tools/review_correction/correction_state.js"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml", ".yaml", ".yml", ".json", ".pth"})
-RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
+RUNTIME_MODULES = ("homr", "realesrgan", "basicsr")
 PROVENANCE_NAME = "DISTRIBUTION_PROVENANCE.json"
 MANIFEST_NAME = "docs/MINIMAL_MAINLINE_SURFACE.json"
 MANIFEST_SECTIONS = (
@@ -409,7 +409,6 @@ def run_preflight(
 
     from src.common.model_artifacts import (
         resolve_model_artifact,
-        resolve_omr_dln_model_path,
         resolve_realesrgan_weight,
     )
 
@@ -420,7 +419,6 @@ def run_preflight(
     from src.pipeline.detection.model_selection import (
         model_validation_mode,
         resolve_cnn_candidate,
-        resolve_omr_model,
     )
 
     try:
@@ -444,7 +442,7 @@ def run_preflight(
     import torch
 
     # Probe the native runtime before candidate libraries initialize or alter
-    # CUDA visibility/device-count caches (Ultralytics CPU inference does both).
+    # CUDA visibility/device-count caches.
     cuda_available = torch.cuda.is_available()
     device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
     onnx_providers = ort.get_available_providers()
@@ -458,34 +456,6 @@ def run_preflight(
         path = resolve_realesrgan_weight(model_name, project_root=workspace)
         _require_file(path, role=f"image-owned {model_name} weight", errors=errors)
         sr_weights[model_name] = str(path)
-
-    omr_model = resolve_omr_dln_model_path(repository_root=workspace)
-    if mode != "production":
-        cuda_visibility = os.environ.get("CUDA_VISIBLE_DEVICES")
-        try:
-            omr_model = resolve_omr_model(detection, workspace)
-            import numpy as np
-
-            from src.pipeline.detection.omr_dln_worker import load_candidate
-
-            candidate_device = detection.get("omr_dln_device", "cuda")
-            candidate = load_candidate(omr_model, candidate_device)
-            result = candidate.predict(
-                np.zeros((64, 64, 3), dtype=np.uint8), device=candidate_device, verbose=False
-            )
-            if len(result) != 1 or result[0].boxes is None:
-                raise ValueError("OMR-DLN candidate returned incompatible prediction output")
-            del candidate
-        except Exception as exc:
-            errors.append(f"OMR-DLN candidate is incompatible: {exc}")
-        finally:
-            # Ultralytics CPU prediction changes this process environment. Do not
-            # let one candidate's device selection hide CUDA from the next probe.
-            if cuda_visibility is None:
-                os.environ.pop("CUDA_VISIBLE_DEVICES", None)
-            else:
-                os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visibility
-    _require_file(omr_model, role="OMR-DLN external model", errors=errors)
 
     cnn_model = detection.get("cnn_model_path")
     cnn_model_path = _resolve_input_path(workspace, cnn_model)
@@ -554,7 +524,6 @@ def run_preflight(
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
         "realesrgan_weights": sr_weights,
-        "omr_dln_model": str(omr_model),
         "cnn_model": (
             str(cnn_model_path) if cnn_model_path is not None else resolved_manifest_model
         ),

@@ -167,3 +167,36 @@ def apply_x4_staff_piece_consensus_filter(
         ):
             hybrid.append([int(v) for v in box])
     return hybrid
+
+
+def staff_regions_from_mask(staff_mask: Path, image_path: Path) -> list[Any]:
+    """Staff regions with unit sizes, extracted exactly as staff-stroke normalization does."""
+    import cv2
+
+    from src.common.barline_strokes import StaffRegion
+    from src.measure_numbering.pipeline import StaffExtractor
+
+    image = cv2.imread(str(image_path))
+    if image is None:
+        raise FileNotFoundError(image_path)
+    height, width = image.shape[:2]
+    return [
+        StaffRegion((s.bbox.x1, s.bbox.y1, s.bbox.x2, s.bbox.y2), s.unit_size)
+        for s in StaffExtractor().extract(staff_mask, (width, height))
+        if s.unit_size
+    ]
+
+
+def apply_x4_iou_consensus_filter(
+    *,
+    baseline_boxes: Iterable[Sequence[int]],
+    sr_boxes: Iterable[Sequence[int]],
+    iou_thresh: float = 0.5,
+) -> List[List[int]]:
+    """Keep baseline boxes matched by an x4 HOMR box (staff-stroke seed agreement)."""
+    sr_list = list(sr_boxes)
+    return [
+        [int(v) for v in box]
+        for box in baseline_boxes
+        if _has_match(box, sr_list, iou_thresh=iou_thresh)
+    ]

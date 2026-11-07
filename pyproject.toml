@@ -2,7 +2,6 @@
 name = "pdfscore-pipeline"
 version = "0.1.0"
 description = "PDF Score Barline Pipeline"
-license = "AGPL-3.0-or-later"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

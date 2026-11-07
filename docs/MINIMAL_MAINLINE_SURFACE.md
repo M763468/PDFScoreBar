@@ -2,10 +2,10 @@
 
 [日本語](MINIMAL_MAINLINE_SURFACE.ja.md)
 
-The candidate has **128 tracked files** in
+The candidate has **121 tracked files** in
 [MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 91 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
-application, minimum user documentation, repository license and notice files, and checkout-local ignore rules. The exact distribution is the union of
+application, minimum user documentation, and checkout-local ignore rules. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and
 `distribution_metadata_patterns`. A generated `DISTRIBUTION_PROVENANCE.json` records
 source identity, dirty status, and each shipped file's hash.
@@ -37,7 +37,6 @@ generic one-worker default; selecting two workers remains environment-specific o
 | Eleven `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
 | README + user guide | Install, run, review/correct, troubleshooting and asset ownership |
 | Distribution metadata and ignore rules | Auditable exact release selection; keep generated runtime files out of Git |
-| License and notices (#505) | `LICENSE` (AGPL-3.0-or-later), `NOTICE`, `THIRD_PARTY_NOTICES.md`, `REUSE.toml` and `LICENSES/` travel with every conveyed copy |
 
 Every existing runtime entry was revisited against those responsibilities. GT matching was
 unnecessarily imported from `src/common/barline_evaluation.py` by shared package exports

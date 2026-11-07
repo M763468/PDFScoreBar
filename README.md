@@ -19,19 +19,3 @@ Release candidates and distributions include `DISTRIBUTION_PROVENANCE.json` with
 source commit and hashes for every shipped file. Contributions target `develop`; a
 candidate must pass release acceptance before it is promoted to `main`. Changes merged
 to `develop`, including this guide, do not reach `main` until a separate promotion.
-
-## License
-
-PDFScoreBar's first-party code, scripts, configuration, correction GUI, tests, and
-documentation are licensed under the GNU Affero General Public License v3.0 or later
-(`AGPL-3.0-or-later`); see [LICENSE](LICENSE) and [NOTICE](NOTICE). You may use, modify,
-and run PDFScoreBar, including commercially and as a network service. If you convey it, or
-let users interact with a modified version over a network, the AGPL requires you to offer
-those recipients or users the corresponding source under the same license. It does not
-require publishing changes to GitHub or sending them to this project.
-
-Third-party code, model weights, and data are not relicensed. The built runtime includes
-AGPL-3.0 components (HOMR, Ultralytics, PyMuPDF) and others under their own licenses; see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The MMR model weight, evaluation/GT data,
-and score-derived test fixtures are excluded from the repository license until their rights
-are confirmed; [NOTICE](NOTICE) and `REUSE.toml` list them.

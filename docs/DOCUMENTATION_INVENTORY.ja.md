@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"4cc9f5b05773702b3836eb48379db98ce5fff11cdb9f102a5f75ea9ca50c0bb9"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"639891cd82300b904c46d2425a9d3f7526dcfefc09bdd83d93ff34a144048b70"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `4cc9f5b05773702b3836eb48379db98ce5fff11cdb9f102a5f75ea9ca50c0bb9`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `639891cd82300b904c46d2425a9d3f7526dcfefc09bdd83d93ff34a144048b70`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 
@@ -130,7 +130,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
 | [FUTURE_SERVICE_ARCHITECTURE.md](architecture/FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
 | [licensing/THIRD_PARTY_LICENSE_AUDIT.md](licensing/THIRD_PARTY_LICENSE_AUDIT.md) | Issue-scoped audit snapshot (2026-11-07); reverify before any distribution | JA | EN needed (#504) | P3 |
-| [licensing/REPOSITORY_LICENSE_OPTIONS.md](licensing/REPOSITORY_LICENSE_OPTIONS.md) | decision record: AGPL-3.0-or-later adopted 2026-11-08; scope, exclusions and open owner confirmations | JA | EN needed (#505) | P3 |
+| [licensing/REPOSITORY_LICENSE_OPTIONS.md](licensing/REPOSITORY_LICENSE_OPTIONS.md) | proposal pending owner decision; not a granted license | JA | EN needed (#505) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |

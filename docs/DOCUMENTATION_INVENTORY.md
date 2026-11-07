@@ -132,7 +132,7 @@ when translating. Historical and scoped records follow the exclusions below.
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
 | [FUTURE_SERVICE_ARCHITECTURE.md](architecture/FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
 | [licensing/THIRD_PARTY_LICENSE_AUDIT.md](licensing/THIRD_PARTY_LICENSE_AUDIT.md) | Issue-scoped audit snapshot (2026-11-07); reverify before any distribution | JA | EN needed (#504) | P3 |
-| [licensing/REPOSITORY_LICENSE_OPTIONS.md](licensing/REPOSITORY_LICENSE_OPTIONS.md) | decision record: AGPL-3.0-or-later adopted 2026-11-08; scope, exclusions and open owner confirmations | JA | EN needed (#505) | P3 |
+| [licensing/REPOSITORY_LICENSE_OPTIONS.md](licensing/REPOSITORY_LICENSE_OPTIONS.md) | proposal pending owner decision; not a granted license | JA | EN needed (#505) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |

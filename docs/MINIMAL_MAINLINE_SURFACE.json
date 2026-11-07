@@ -971,40 +971,11 @@
     {
       "pattern": ".gitignore",
       "role": "Keep Python caches and routine local runtime artifacts out of the supported checkout"
-    },
-    {
-      "pattern": "LICENSE",
-      "role": "First-party license text (AGPL-3.0-or-later); required with every conveyed copy"
-    },
-    {
-      "pattern": "NOTICE",
-      "role": "Copyright, license scope and NotLicensed exclusions (weights, data, fixtures)"
-    },
-    {
-      "pattern": "THIRD_PARTY_NOTICES.md",
-      "role": "Third-party components, licenses and HOMR/BasicSR modification notices"
-    },
-    {
-      "pattern": "REUSE.toml",
-      "role": "Path-level SPDX license declarations"
-    },
-    {
-      "pattern": "LICENSES/AGPL-3.0-or-later.txt",
-      "role": "SPDX license text referenced by REUSE.toml"
-    },
-    {
-      "pattern": "LICENSES/AGPL-3.0-only.txt",
-      "role": "SPDX license text for quoted HOMR fragments referenced by REUSE.toml"
-    },
-    {
-      "pattern": "LICENSES/LicenseRef-PDFScoreBar-NotLicensed.txt",
-      "role": "Explains files excluded from the repository license"
     }
   ],
   "documentation_audiences": {
     "user_release": [
       "README.md",
-      "THIRD_PARTY_NOTICES.md",
       "README.ja.md",
       "docs/USER_GUIDE.md",
       "docs/USER_GUIDE.ja.md"

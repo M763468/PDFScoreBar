@@ -103,7 +103,7 @@ def main() -> int:
                 handoff_path,
                 output_root=a.out / variant / attempt,
                 run_id=f"issue519_{variant}_{attempt}",
-                overwrite=False,
+                overwrite=attempt == "resume",  # re-apply after resume replaces canonical files
                 generate_final_pdf=True,
                 output_name=f"{a.score}_{variant}_{attempt}",
             )

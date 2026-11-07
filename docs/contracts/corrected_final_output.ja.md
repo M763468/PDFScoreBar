@@ -1,10 +1,10 @@
 # 補正済み最終出力ヘルパー
 
-<!-- translation: {"original":"corrected_final_output.md","source":{"sha256":"88e95bc9aff17b019248b49ef5ebcb5ad77a0d0331ed37744bdf66e68b68c83a"},"state":"reviewed"} -->
+<!-- translation: {"original":"corrected_final_output.md","source":{"sha256":"00e25c82192f78662ec52841a85ce54c53fd3853857fff071f246da6b381630a"},"state":"reviewed"} -->
 
 [English / 原文](corrected_final_output.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `88e95bc9aff17b019248b49ef5ebcb5ad77a0d0331ed37744bdf66e68b68c83a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `00e25c82192f78662ec52841a85ce54c53fd3853857fff071f246da6b381630a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この内部ヘルパーのリファレンスは開発者・保守担当者向けです。手動補正の `apply_corrections` 再実行経路から、その補正済み実行のクリーンな最終 PDF 成果物への限定的な接続を説明します。サポート対象の利用者向け配布ワークフローは[ユーザーガイド](../USER_GUIDE.ja.md)を参照してください。
 
@@ -102,7 +102,7 @@ dry run ではない補正済み再実行の後で有効にすると、ヘルパ
 - 補正結果の生成では、別の名前のチェックポイントを再利用した場合でも、ジョブの現在の `output_name` を使います。ジョブに名前がなければ既存の名前決定規則に従います。
 - 再開では、選択したチェックポイントに保持された名前を使います。変更後の名前で再開するには、先にチェックポイントを明示的に保存してください。明示的な保存では既存のチェックポイントを再利用しません。
 
-identity は上の表にある操作ごとの検証を置き換えません。チェックポイント導入前の attempt の取り込みでは引き続き記録時の v1 identity を再現し、再開では PDF、ページ、画像、注釈の検証を維持します。
+identity は[出力名と保存済み attempt の互換性](#出力名と保存済み-attempt-の互換性)に示した操作ごとの検証を置き換えません。チェックポイント導入前の attempt の取り込みでは引き続き記録時の v1 identity を再現し、再開では PDF、ページ、画像、注釈の検証を維持します。
 
 ## 非対象
 

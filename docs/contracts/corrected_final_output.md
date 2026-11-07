@@ -132,8 +132,10 @@ schema 2 checkpoint without the handoff blob is rejected.
 - Resuming uses the name retained in the selected checkpoint. To resume with a changed name, save a
   new checkpoint explicitly first, because an explicit save never reuses one.
 
-Identity does not replace the operation checks in the table above. Pre-checkpoint import keeps
-reproducing its recorded v1 identities, and resume keeps its PDF, page, image, and annotation checks.
+Identity does not replace the operation checks listed under
+[Output name and saved-attempt compatibility](#output-name-and-saved-attempt-compatibility).
+Pre-checkpoint import keeps reproducing its recorded v1 identities, and resume keeps its PDF, page,
+image, and annotation checks.
 
 ## Non-goals
 

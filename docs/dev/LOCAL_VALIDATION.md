@@ -116,48 +116,74 @@ docker exec --user "$(id -u):$(id -g)" \
 ### Git-dependent pytest suites
 
 The nested worktree's `.git` pointer is a host path and cannot be followed inside the shared
-container. For tests that invoke Git, map the worktree's administrative directory through the
-manager checkout bind mount and pass it explicitly. Derive its path rather than assuming the
-worktree directory name:
+container. Run suites that invoke Git from a disposable clone that has its own `.git`
+directory, placed under the issue log root so that it is visible through the `/workspace`
+mount:
 
 ```bash
 git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-git_dir="$(git rev-parse --path-format=absolute --git-dir)"
-git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
-container_git_dir="/workspace/.git/$git_dir_relative"
-container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
+manager_root="$(dirname "$git_common_dir")"
+clone="logs/issue${ISSUE_ID}/pytest-clone/$(git rev-parse --short HEAD)"
+git clone -q --no-hardlinks . "$clone"
+container_clone="/workspace/$(realpath --relative-to="$manager_root" "$PWD/$clone")"
 docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_issue" \
-  pdfscore_pipeline_pytest_dev \
-  git --git-dir="$container_git_dir" --work-tree="$container_issue" \
-  rev-parse --absolute-git-dir
-```
-
-If that preflight resolves the container path, pass the same `GIT_DIR` and `GIT_WORK_TREE`
-to pytest so Git subprocesses inherit the mapping. Limit these variables to Git-dependent
-suites; ordinary tests do not need them. If the manager `.git` directory is not visible under
-the inspected `/workspace` mount, use a host runner with the required dependencies or a
-Git-aware checkout instead. Do not report a Git-dependent suite as passed based only on
-`pytest --version` or a test run without Git access.
-
-For example, the Docker runtime contract test that calls `git rev-parse` can run with the
-mapped metadata as follows; substitute the focused test path when needed:
-
-```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-git_dir="$(git rev-parse --path-format=absolute --git-dir)"
-git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
-container_git_dir="/workspace/.git/$git_dir_relative"
-container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_issue" \
-  -e PYTHONPATH="$container_issue" \
-  -e GIT_DIR="$container_git_dir" \
-  -e GIT_WORK_TREE="$container_issue" \
+  -w "$container_clone" -e PYTHONPATH="$container_clone" -e HOME=/tmp \
   pdfscore_pipeline_pytest_dev \
   /opt/venv_pipeline/bin/python -m pytest \
-  tests/test_docker_runtime_contract.py::test_direct_build_creates_artifact_directory_before_tempfile
+  tests/test_docker_runtime_contract.py tests/test_distribution_surface.py \
+  tests/test_release_candidate.py tests/test_doc_translations.py
 ```
+
+`git clone` stops if the path already exists; delete a previous clone only after checking that
+it is the disposable clone. The clone contains only committed `HEAD` content, so commit (or make
+a temporary WIP commit of) the changes under test first and report the tested commit. Remove
+the clone when the run is finished.
+
+Do not pass `GIT_DIR` or `GIT_WORK_TREE` to pytest. These variables override `git -C <dir>`
+and are inherited by every subprocess, so fixtures that run `git init`, `git config`,
+`git add -f -A`, or `git commit` in a temporary directory would write into the mapped worktree:
+its branch receives a commit containing untracked and ignored files, and the shared
+`.git/config` receives `core.worktree` and test `[user]` values (#513). `tests/conftest.py`
+and `tools/release_candidate.py` therefore drop the variables listed by
+`git rev-parse --local-env-vars`; a run that relies on them cannot resolve the issue worktree
+and fails instead. If the manager `.git` directory is not visible under the inspected
+`/workspace` mount, use a host runner with the required dependencies. Do not report a
+Git-dependent suite as passed based only on `pytest --version` or a test run without Git
+access.
+
+#### Detecting and recovering from leaked fixture writes
+
+Runs that followed the earlier `GIT_DIR`/`GIT_WORK_TREE` instructions may have changed the
+checkout. Check the shared configuration and the recent commits of each affected branch:
+
+```bash
+git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
+common_config="$git_common_dir/config"
+git config --file "$common_config" --get-all core.worktree
+git config --file "$common_config" --get-regexp '^user\.'
+git log -5 --format='%h %an <%ae> %s' <branch>
+git -C "$(dirname "$git_common_dir")" rev-parse --show-toplevel
+```
+
+Signs of contamination are a `core.worktree` entry in the shared config (the manager checkout's
+`--show-toplevel` then points at another worktree), `[user]` values such as
+`Distribution test` / `distribution-test@example.invalid` or `Release tests` /
+`release-tests@example.invalid`, and commits such as `fixture candidate` by those identities.
+To recover, after confirming that each value was not set intentionally (the fixture replaces
+an existing repository-level `[user]` value, so restore that value instead of unsetting it if
+the checkout had one):
+
+```bash
+git config --file "$common_config" --unset-all core.worktree
+git config --file "$common_config" --unset user.name
+git config --file "$common_config" --unset user.email
+# On the affected branch, only while the fixture commit is unpublished and is HEAD:
+git reset --mixed HEAD~1
+```
+
+`git reset --mixed` removes the commit and keeps its files in the working tree, so files that
+were untracked or ignored before the run become untracked or ignored again. If the commit has
+already been pushed, revert it instead of rewriting shared history.
 
 Read the maintained `FAST_TESTS` list from the issue worktree's Makefile, then invoke pytest
 directly with the container interpreter:

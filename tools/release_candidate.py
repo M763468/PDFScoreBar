@@ -11,11 +11,33 @@ import re
 import subprocess
 import sys
 import tempfile
+from functools import cache
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import materialize_distribution
 from materialize_distribution import MANIFEST, PROVENANCE, ROOT, check_tree, selected_files
+
+
+@cache
+def repository_env_vars() -> frozenset[str]:
+    """Git's own list of repository-local variables, plus the ones that select a repository."""
+    listed = subprocess.run(
+        ["git", "rev-parse", "--local-env-vars"], capture_output=True, text=True
+    ).stdout.split()
+    return frozenset(("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", *listed))
+
+
+def isolated_environment(base: dict | None = None) -> dict:
+    """Drop inherited repository-selecting variables so ``git -C`` names the only repository.
+
+    GIT_DIR/GIT_WORK_TREE outrank ``-C``; when inherited (a container mapping, a Git hook) they
+    would redirect ``init``/``commit`` meant for the candidate into the caller's checkout.
+    """
+    env = dict(os.environ if base is None else base)
+    for name in repository_env_vars():
+        env.pop(name, None)
+    return env
 
 
 def git(repository: Path, *args: str, data: bytes | None = None, env: dict | None = None) -> bytes:
@@ -24,7 +46,7 @@ def git(repository: Path, *args: str, data: bytes | None = None, env: dict | Non
         input=data,
         capture_output=True,
         check=True,
-        env=env,
+        env=isolated_environment(env),
     ).stdout
 
 
@@ -119,7 +141,7 @@ def write_snapshot(destination: Path, content: dict, provenance: dict) -> None:
 
 
 def commit_environment(provenance: dict) -> dict:
-    env = os.environ.copy()
+    env = isolated_environment()
     for role in ("AUTHOR", "COMMITTER"):
         env[f"GIT_{role}_NAME"] = "PDFScoreBar Release"
         env[f"GIT_{role}_EMAIL"] = "release@pdfscorebar.invalid"

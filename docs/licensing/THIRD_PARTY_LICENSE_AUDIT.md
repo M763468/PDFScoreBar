@@ -116,6 +116,8 @@
 | 学習コード | `yolo/yolo.ipynb`、`measure_detection/compute_barline_bboxs.py` 等 | 上流リポジトリに明示 LICENSE がないため、コードをコピーして本体へ組み込むのではなく、公開された**条件・手法を参考に独自実装**する案を優先 |
 | Ultralytics | 元重みは事前学習済み `yolov8m.pt` を初期化に使用 | [Ultralytics公式](https://www.ultralytics.com/license) は、自社の学習コード／モデルを使ってゼロから作った重みにも AGPL が及ぶとの立場。法的な射程は事案ごとの確認事項 |
 
+**追加の再現性ギャップ:** notebook には小節クラスを `label == 156` で抽出し、`deepscores_train_barlines_new.csv` / `deepscores_test_barlines_new.csv` を読み込む処理がある。しかし公開リポジトリの `yolo/deep_scores.yaml` に記載された `names` は少なくとも確認した版では `0..154` までで、`measure_detection/` にある同名 CSV は `_new` なしのファイルである。学習時に別途生成された YAML/CSV の可能性があり、**公開 notebook をそのまま実行すれば元モデルを再現できるとみなさない**。独立実装では学習用ラベル ID を新たに定義し、元データからの変換・分割・正規化を provenance に残す。
+
 ### 6.2 重みを独立に作る二つの経路
 
 1. **A: Ultralytics を使い元の OMR-DLN 重みを使わず再学習**: 元作者の配布重みへの直接依存は削減できる。ただし、`yolov8m.pt` から初期化すれば事前学習元の条件が残り、`pretrained=False` で開始しても Ultralytics 実装・ライセンスの検討は残る。コードと重みを全て permissive にできる案とはみなさない。

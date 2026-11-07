@@ -6,7 +6,7 @@ import json
 import logging
 import math
 from pathlib import Path
-from typing import Iterable, List, Sequence
+from typing import Any, Iterable, List, Sequence
 
 from src.common import Box, barline_iou
 
@@ -103,6 +103,67 @@ def apply_hybrid_consensus_filter(
     for box in baseline_boxes:
         if _has_match(box, sr_list, iou_thresh=iou_thresh) or _has_match(
             box, omr_list, iou_thresh=iou_thresh
+        ):
+            hybrid.append([int(v) for v in box])
+    return hybrid
+
+
+# x4 staff-piece support (Issue #522) ------------------------------------------------
+#
+# Replaces OMR-DLN measure-box support for long original-HOMR barlines that span two
+# or more staves.  Such a box rarely reaches IoU>0.5 with the per-staff x4 HOMR
+# strokes, although x4 HOMR independently detects each staff piece.  The box is
+# supported only when *every* staff piece has its own x4 stroke, so a stroke seen on
+# a single staff is never propagated to other staves.  Thresholds are expressed in
+# the staff's ``unit_size``; detector and CNN thresholds are unchanged.
+
+X4_PIECE_CENTER_UNITS = 0.5
+X4_PIECE_MIN_HEIGHT_UNITS = 2.0
+X4_PIECE_MIN_CONTAINED = 0.8
+
+
+def _x4_supports_piece(
+    piece: Sequence[int], sr_boxes: Sequence[Sequence[int]], unit: float
+) -> bool:
+    center = (piece[0] + piece[2]) / 2
+    for stroke in sr_boxes:
+        height = stroke[3] - stroke[1]
+        if height < X4_PIECE_MIN_HEIGHT_UNITS * unit:
+            continue
+        if abs((stroke[0] + stroke[2]) / 2 - center) > X4_PIECE_CENTER_UNITS * unit:
+            continue
+        overlap = min(piece[3], stroke[3]) - max(piece[1], stroke[1])
+        if overlap >= X4_PIECE_MIN_CONTAINED * height:
+            return True
+    return False
+
+
+def x4_staff_piece_support(
+    box: Sequence[int], sr_boxes: Sequence[Sequence[int]], staves: Sequence[Any]
+) -> bool:
+    """True when a multi-staff box has an x4 stroke inside every staff piece."""
+    from src.common.barline_strokes import normalize_staff_stroke
+
+    box = tuple(int(v) for v in box)
+    pieces = normalize_staff_stroke(box, staves)
+    if pieces == [(-1, box)]:
+        return False
+    return all(_x4_supports_piece(piece, sr_boxes, staves[i].unit_size) for i, piece in pieces)
+
+
+def apply_x4_staff_piece_consensus_filter(
+    *,
+    baseline_boxes: Iterable[Sequence[int]],
+    sr_boxes: Iterable[Sequence[int]],
+    staves: Sequence[Any],
+    iou_thresh: float = 0.5,
+) -> List[List[int]]:
+    """Keep baseline boxes supported by x4 HOMR IoU or by x4 staff-piece support."""
+    sr_list = list(sr_boxes)
+    hybrid: List[List[int]] = []
+    for box in baseline_boxes:
+        if _has_match(box, sr_list, iou_thresh=iou_thresh) or x4_staff_piece_support(
+            box, sr_list, staves
         ):
             hybrid.append([int(v) for v in box])
     return hybrid

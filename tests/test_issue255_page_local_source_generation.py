@@ -84,19 +84,15 @@ def test_one_page_source_worker_runs_two_homr_sources_in_order(tmp_path: Path, m
         detection = (
             artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
         )
-        omr = artifacts / "omr_sr" / image.stem / "predictions.json"
         sr.parent.mkdir(parents=True)
         detection.parent.mkdir(parents=True)
-        omr.parent.mkdir(parents=True)
         sr.write_bytes(b"sr")
         detection.write_text("[]\n", encoding="utf-8")
-        omr.write_text("[]\n", encoding="utf-8")
         return (
             {
                 "status": "completed",
                 "sr_image": str(sr),
                 "current_sr_detection": str(detection),
-                "current_omr": str(omr),
                 "historical_detector_artifact_runtime_input": False,
             },
             ["support", image.stem],
@@ -117,7 +113,7 @@ def test_one_page_source_worker_runs_two_homr_sources_in_order(tmp_path: Path, m
     ]
     assert Path(payload["sr_image"]) == expected_sr()
     assert Path(payload["current_sr_detection"]) == expected_detection()
-    assert Path(payload["current_omr"]).is_file()
+    assert "current_omr" not in payload  # #522
     assert payload["commands"] == [
         ["baseline", "page_001"],
         ["support", "page_001"],
@@ -153,16 +149,12 @@ def test_verified_sources_launch_one_top_level_worker_per_page(tmp_path: Path, m
         detection = (
             artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
         )
-        omr = artifacts / "omr_sr" / image.stem / "predictions.json"
         detection.parent.mkdir(parents=True)
-        omr.parent.mkdir(parents=True)
         detection.write_text("[]\n", encoding="utf-8")
-        omr.write_text("[]\n", encoding="utf-8")
         return (
             {
                 "status": "completed",
                 "current_sr_detection": str(detection),
-                "current_omr": str(omr),
                 "commands": [["child", image.stem]],
                 "memory_boundary": "top_level_python_per_page",
                 "historical_detector_artifact_runtime_input": False,
@@ -175,14 +167,13 @@ def test_verified_sources_launch_one_top_level_worker_per_page(tmp_path: Path, m
 
     monkeypatch.setattr(detector, "_source_page_worker", fake_source_worker)
 
-    current_sr_detections, omr_predictions, commands = detector._generate_page_sources(
+    current_sr_detections, commands = detector._generate_page_sources(
         baseline_output=baseline_output,
         support_output=support_output,
     )
 
     assert calls == images
     assert list(current_sr_detections) == images
-    assert list(omr_predictions) == images
     assert commands == [
         ["worker", "page_001"],
         ["child", "page_001"],

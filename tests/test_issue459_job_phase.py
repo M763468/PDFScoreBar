@@ -10,6 +10,11 @@ import pytest
 
 from tools.issue459.job_phase import build, consume, digest, execute_worker
 
+pytestmark = pytest.mark.skipif(
+    not (Path(__file__).resolve().parents[1] / "models/omr_dln/manifest.json").exists(),
+    reason="historical #459 OMR job PoC; the OMR-DLN model manifest was removed by #522",
+)
+
 
 def inputs(tmp_path):
     tmp_path.mkdir(parents=True, exist_ok=True)

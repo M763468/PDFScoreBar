@@ -119,7 +119,7 @@ def test_verified_dry_run_declares_one_all_pages_sr_phase(tmp_path: Path) -> Non
         "dedicated_sr_batch_then_top_level_python_per_page"
     )
     assert result["sr_model_lifetime"] == "one_per_detection_call"
-    assert result["sr_memory_boundary"] == "batch_process_exits_before_homr_omr"
+    assert result["sr_memory_boundary"] == "batch_process_exits_before_homr"
     assert result["homr_neural_inference_count_per_page"] == 2
     assert result["x4_homr_neural_inference_count_per_page"] == 1
     assert result["source_generation_phases"][0] == "current_x4_sr_batch_all_pages"

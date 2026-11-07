@@ -90,14 +90,13 @@ def main() -> int:
             or review / "manual_correction_input.json"
         )
         handoff = read(handoff_path)
-        staged = review / "custom" / "correction.json"
+        # Save exactly where the GUI saves staged corrections for this package.
+        from src.pipeline.review.manual_correction_handoff import GUI_OUTPUT_KEYS
+
+        kind = read(a.correction)["correction_type"]
+        staged = review / "corrections" / GUI_OUTPUT_KEYS[kind]
         staged.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(a.correction, staged)
-        kind = read(a.correction)["correction_type"]
-        for page in handoff["pages"]:
-            if page["page_id"] == a.page_id:
-                page.setdefault("correction_outputs", {})[kind] = "custom/correction.json"
-        handoff_path.write_text(json.dumps(handoff, indent=2) + "\n")
         runs = {}
         for attempt in ("apply", "resume"):
             corrected = apply_corrections_and_rerun(

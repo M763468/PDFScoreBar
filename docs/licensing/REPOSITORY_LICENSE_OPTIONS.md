@@ -34,7 +34,9 @@
 | テスト fixture（合成） | `tests/fixtures/system_grouping/issue218_3div*` / `issue218_4div*`（PNG と JSON、#218） | first-party。同ディレクトリの `README.md` が合成と記載し、`generate_issue218.py` で 8 ファイルすべてを byte 一致で再生成できた（2026-11-08 確認）。#504 監査の「出典記録なし」はこの確認で訂正する | **AGPL-3.0-or-later** |
 | テスト fixture（楽譜由来） | `tests/fixtures/expected_overrides_page_*.json`、`tests/fixtures/movement_boundaries/**`、`tests/fixtures/system_grouping/issue218_{la_mer,measure_gt,real_detection,real_score}.json` | 第三者の楽譜（IMSLP 等）から作った座標・期待値 | **除外**（`LicenseRef-PDFScoreBar-NotLicensed`） |
 | 実験の評価データ | `experiments/issue333/corpus.json`、`phase25_ground_truth.json`、`results/**`、`configs/cnn_barline_runs/issue44_baseline_v1/fixtures/**` | 第三者の楽譜に対するコーパス・GT・評価出力 | **除外** |
-| agent skill の参照資料 | `.agents/skills/graphify/references/**`、`.graphify_version` | 上流 Graphify 由来と見られるが、出典とライセンスを確認していない | **除外**（出典確認後に判断） |
+| Graphify 参照資料（第三者） | `.agents/skills/graphify/references/**`（8 ファイル） | 第三者。導入済み `graphifyy 0.9.41`（[Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)）の `graphify/skills/*/references/` と byte 一致（2026-11-08 確認）。パッケージメタデータは `License-Expression: Apache-2.0`。NOTICE は MIT 時代の寄与部分が MIT でも利用可能と記載 | 再許諾しない。`Apache-2.0`（`LICENSES/Apache-2.0.txt`）、Graphify の NOTICE をルート `NOTICE` に転記 |
+| Graphify 生成物 | `graphify-out/**`、`.agents/skills/graphify/.graphify_version` | first-party 由来の生成物。Graphify 0.9.41 の code-only モード（semantic / LLM 経路なし）で first-party の source（`3ff2800b`）から生成。node の参照元は first-party のコードと model manifest のみで、除外データや Graphify 参照資料を含まない。`.graphify_version` は installer の版 stamp | **AGPL-3.0-or-later**（`REUSE.toml` で来歴を明記） |
+| Graphify skill 本体 | `.agents/skills/graphify/SKILL.md`、`.agents/workflows/graphify.md` | first-party。パッケージ同梱のファイルと一致せず、本リポジトリ固有の運用を記述 | **AGPL-3.0-or-later** |
 | 利用者が提供する PDF と出力 | git 管理外 | 利用者 | リポジトリのライセンスは及ばない。利用者の権利のまま |
 
 ## 3. 寄与者の確認
@@ -117,7 +119,9 @@ GPL-3.0 はネットワーク提供時の source 提供を求めないため、�
 2. **第三者のコード・重み・データは再許諾しない。** `NOTICE` と `THIRD_PARTY_NOTICES.md` で、runtime が AGPL-3.0 部品を含むことと、
    HOMR / BasicSR の改変を明記する。
 3. **権利が未確定のものは AGPL の対象外**とし、`LicenseRef-PDFScoreBar-NotLicensed`（`LICENSES/` に説明文）で区別する:
-   first-party の MMR 重み、`data/evaluation2/**`、楽譜由来の fixture と実験データ、出典未確認の Graphify 参照資料（§2）。
+   first-party の MMR 重み、`data/evaluation2/**`、楽譜由来の fixture と実験データ（§2）。
+   Graphify の参照資料は第三者の Apache-2.0 として区別し、Graphify 生成物は first-party として扱う。Graphify 関連はいずれも
+   開発用で、実行用配布物には含めない（本 PR で Graphify のファイルと配布 manifest の Graphify 分類は変更していない）。
    barline CNN 重みは git 管理外の release asset で、同じく別途定める。
 4. 楽譜画像・PDF、利用者の入力 PDF と出力はリポジトリに含まれず、ライセンスは及ばない。
 
@@ -130,7 +134,7 @@ GPL-3.0 はネットワーク提供時の source 提供を求めないため、�
 | `THIRD_PARTY_NOTICES.md` | #504 §2・§3 の台帳から作成。部品、版、ライセンス、取得元、HOMR / BasicSR の改変内容と日付、第三者重みの状態 |
 | `pyproject.toml` | `license = "AGPL-3.0-or-later"`（PEP 639）。`LICENSE` / `NOTICE` は setuptools の既定 glob で wheel に入る。`license-files` は指定しない（Docker builder は `pyproject.toml` だけを copy して `uv pip install -e .` するため） |
 | README（英・日） | ライセンス節: first-party の条件、AGPL の義務の範囲、第三者部品、除外範囲 |
-| SPDX / REUSE | `REUSE.toml` で path 単位に宣言（全体は `AGPL-3.0-or-later`、HOMR 断片を含む patch script、除外対象を override）。`LICENSES/` に `AGPL-3.0-or-later.txt`、`AGPL-3.0-only.txt`、`LicenseRef-PDFScoreBar-NotLicensed.txt`。各ファイルへの header 追加はしない（`docker/patch_homr_onnx_provider.py` は runtime fingerprint の対象でもある） |
+| SPDX / REUSE | `REUSE.toml` で path 単位に宣言（全体は `AGPL-3.0-or-later`、HOMR 断片を含む patch script、Graphify の参照資料と生成物、除外対象を override）。`LICENSES/` に `AGPL-3.0-or-later.txt`、`AGPL-3.0-only.txt`、`Apache-2.0.txt`（Graphify 参照資料用。開発用のため配布 manifest には入れない）、`LicenseRef-PDFScoreBar-NotLicensed.txt`。各ファイルへの header 追加はしない（`docker/patch_homr_onnx_provider.py` は runtime fingerprint の対象でもある） |
 | 配布 manifest | `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`、`REUSE.toml`、`LICENSES/*.txt` の 7 ファイルを `distribution_metadata_patterns` に追加（121 → 128 ファイル） |
 | 版管理 | `LICENSE` を含む版から適用する。それ以前の commit への遡及は明示しない（§7） |
 
@@ -156,7 +160,6 @@ PR 上で確認を求める事項（本 PR では推測で確定せず、上記�
 - [ ] 過去 commit への遡及の有無（暫定: 明示しない。`LICENSE` を含む版から適用）
 - [ ] first-party 重み（MMR、barline CNN）の扱い
 - [ ] GT ラベル、楽譜由来 fixture、実験データの扱い
-- [ ] Graphify 参照資料の出典確認
 - [ ] 外部寄与を受ける場合の DCO / CLA（デュアルライセンスを維持するなら CLA 等で別条件の許諾を得る必要がある）
 - [ ] (c) で提供するときの「Source」リンク（#449 / #508 で実装）
 

@@ -16,6 +16,9 @@ dependencies = [
     "coloredlogs==15.0.1",
     "rapidocr-onnxruntime==1.4.4",
     "psutil==7.2.2",
+    # Ultralytics used to be the only declared torch consumer; keep the accepted runtime.
+    "torch==2.14.0",
+    "torchvision==0.29.0",
 ]
 
 [tool.ruff]

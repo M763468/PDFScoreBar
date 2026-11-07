@@ -1,0 +1,192 @@
+{
+ "schema_version": "issue522.evidence_summary.v1",
+ "contract": "#416: TP>=3560, FP=0, FN<=7, no new per-page hard FN/FP, 3287 physical measures, topology/membership/numbers, MMR 171/3/3/0",
+ "full68_detector": {
+  "x4_staff_piece": {
+   "gt": 3567,
+   "pred": 3677,
+   "tp": 3560,
+   "fp": 0,
+   "fn": 7,
+   "soft": 117
+  },
+  "physical_measures": 3287,
+  "vs_control": {
+   "fn_new": [],
+   "fn_recovered": [],
+   "pages_measure_count_changed": 0,
+   "pages_topology_changed": 0,
+   "pages_numbers_changed": 0,
+   "pages_geometry_only_changed": 18
+  },
+  "harness_vs_production_helpers_identical_pages": 68
+ },
+ "mmr": {
+  "expected": 177,
+  "detected": 174,
+  "matched_tp": 171,
+  "missed_fn": 3,
+  "skip_mismatch": 3,
+  "unexpected_fp": 0
+ },
+ "final_numbering": {
+  "pages": 68,
+  "systems_control": 637,
+  "systems_no_omr": 637,
+  "systems_paired": 637,
+  "staff_topology_diff_pages": 0,
+  "measures_control": 3287,
+  "measures_no_omr": 3287,
+  "measures_paired": 3287,
+  "measures_unpaired": 0,
+  "number_diffs": 0,
+  "increment_diffs": 0,
+  "page_start_next_diffs": 0,
+  "bbox_changed": 55,
+  "bbox_max_px": 5,
+  "bbox_max_unit": 0.2041,
+  "row_label_text_diffs": 0,
+  "row_label_moved": 0,
+  "row_label_max_move_px": 0,
+  "render_pixel_diff_pages": 0,
+  "accepted_reference_diff_pages": 0,
+  "gt_error_identity_diff_scores": 0
+ },
+ "downstream": {
+  "physical_measures": 3287,
+  "application_errors": 0,
+  "continuity_errors": 0,
+  "gt_increment_errors": 6,
+  "pdf_pages": 37,
+  "page_render_failures": [
+   [
+    "Shostakovich-Festival_Overture_Va",
+    "page_001",
+    "failed: page_001: no safe 9pt placement for row-start label 53 (row_005) near staff top 3197px"
+   ],
+   [
+    "Shostakovich-Festival_Overture_Va",
+    "page_007",
+    "failed: page_007: no safe 9pt placement for row-start label 285 (row_001) near staff top 434px"
+   ],
+   [
+    "Shostakovich-Sym5-Va",
+    "page_024",
+    "failed: page_024: no safe 9pt placement for row-start label 1047 (row_004) near staff top 1540px"
+   ],
+   [
+    "Shostakovich-Sym5-Va",
+    "page_025",
+    "failed: page_025: no safe 9pt placement for row-start label 1075 (row_001) near staff top 419px"
+   ]
+  ],
+  "gui_path_equal_pages": 68
+ },
+ "pdf_renderer_b51c9f6f": {
+  "pages": 68,
+  "pixel_equal": 68,
+  "row_labels_equal": true
+ },
+ "correction_roundtrip": {
+  "package_pages_equal": true,
+  "correction_changed_pages_control": [
+   "page_005",
+   "page_007",
+   "page_008",
+   "page_009",
+   "page_010",
+   "page_011",
+   "page_013",
+   "page_014",
+   "page_015",
+   "page_016",
+   "page_017",
+   "page_018",
+   "page_019",
+   "page_020",
+   "page_021",
+   "page_022",
+   "page_023"
+  ],
+  "apply_numbers_equal": true,
+  "apply_geometry_equal": false,
+  "resume_equal_control": true,
+  "resume_equal_no_omr": true,
+  "pdf_count": [
+   1,
+   1
+  ]
+ },
+ "fresh_e2e_smoke": {
+  "image": "sha256:71cbccf6d7f7bba3b96989f8043e1b6b991a3d90122bfe6afda0aae82d99610a",
+  "gt": 85,
+  "tp": 85,
+  "hard_fp": 0,
+  "fn": 0,
+  "soft": 0,
+  "omr_dln_weight_mounted": false,
+  "ultralytics_installed": false
+ },
+ "perf_n1": {
+  "develop_smoke1": {
+   "returncode": 0,
+   "wall_sec": 276.8,
+   "samples": 102,
+   "peak_device_gpu_mib": 3221,
+   "peak_container_mem_mib": 5080.1
+  },
+  "candidate_smoke1": {
+   "returncode": 0,
+   "wall_sec": 252.1,
+   "samples": 105,
+   "peak_device_gpu_mib": 3221,
+   "peak_container_mem_mib": 4101.1
+  },
+  "develop_perf3": {
+   "returncode": 0,
+   "wall_sec": 431.2,
+   "samples": 175,
+   "peak_device_gpu_mib": 3227,
+   "peak_container_mem_mib": 4823.0
+  },
+  "candidate_perf3": {
+   "returncode": 0,
+   "wall_sec": 425.1,
+   "samples": 175,
+   "peak_device_gpu_mib": 3225,
+   "peak_container_mem_mib": 5257.2
+  }
+ },
+ "generalization_gt_v2": {
+  "develop": {
+   "status": "passed",
+   "totals": {
+    "gt_intervals": 80,
+    "pred_intervals": 80,
+    "matched_intervals": 80,
+    "correct_numbers": 80,
+    "correct_page_local_numbers": 80,
+    "count_correct_systems": 19,
+    "total_systems": 19,
+    "mmr_gt": 3,
+    "mmr_pred": 3,
+    "mmr_exact": 3
+   }
+  },
+  "candidate": {
+   "status": "passed",
+   "totals": {
+    "gt_intervals": 80,
+    "pred_intervals": 80,
+    "matched_intervals": 80,
+    "correct_numbers": 80,
+    "correct_page_local_numbers": 80,
+    "count_correct_systems": 19,
+    "total_systems": 19,
+    "mmr_gt": 3,
+    "mmr_pred": 3,
+    "mmr_exact": 3
+   }
+  }
+ }
+}

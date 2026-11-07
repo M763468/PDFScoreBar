@@ -63,7 +63,8 @@
 | OMR-DLN worker | 本体とは別プロセスで、JSON / ファイルの受け渡し。ただし worker 自体は PDFScoreBar のコードで Ultralytics を import する | worker と Ultralytics は一体。本体と worker の関係は、引数・データの受け渡し方やモジュール共有から判断が分かれる |
 | 補正 GUI サーバ（`tools/review_correction/server.py` 等） | `resume.py` と `src.pipeline.review.*` 経由で PyMuPDF を同一プロセスで import | engine と同じく結合著作物とみなされる可能性が高い |
 | 補正 GUI ブラウザ資産 | AGPL 部品を含まない | ブラウザへ送られる JS/HTML は first-party のみ |
-| ローカルランチャー（`docker/distribution.py`、`docker/review_relay.py`） | AGPL 部品を import しない。`docker` CLI でコンテナを操作 | first-party の `docker/runtime_contract.py`、`src/common/model_artifacts.py` のみ import |
+| ローカルランチャー（`docker/distribution.py`） | ランチャー自身は AGPL 部品を import せず、`docker` CLI で起動する | first-party の `docker/runtime_contract.py`、`src/common/model_artifacts.py` を import。起動先は別途分類する |
+| Docker Desktop レビューデータ転送（`docker/review_relay.py`） | `main()` が `tools.review_correction.server.create_server` を import し、同一プロセス内で補正 GUI サーバを実行。`resume.py` 経由で PyMuPDF (`fitz`) に到達 | **補正 GUI サーバ側の AGPL 結合境界に含む**（PR #518 Codex review 指摘を反映） |
 | 将来の Web 入口（#449、別リポジトリ想定） | 現存しない | ジョブ投入のみの独立サービスにできる設計余地はあるが、別プロセス・別リポジトリという形式だけで独立と断定しない |
 
 結論: engine、OMR-DLN worker、補正 GUI サーバは、プロセス分割の有無にかかわらず AGPL 部品と一体の作品として扱うのが安全側の前提である。
@@ -87,7 +88,7 @@
 | GPL / LGPL のシステムパッケージ | Ubuntu base image と apt パッケージ | 対象外 | **必須**: ビルド済みイメージを渡す場合（対応ソースの入手方法の提示等）。受領者が自分でビルドする現行手順では当方の conveying なし | 対象外（イメージを渡さない） |
 | NVIDIA CUDA のライセンス条件 | base image、`nvidia-*` wheel | 対象外 | **条件付き**: イメージを渡す場合、NVIDIA の再配布条件に従う。受領者自身のビルドなら受領者が NVIDIA と直接合意 | 対象外（自前クラウドでの利用条件は別途確認） |
 | HOMR 重みの提供 | イメージ同梱の ONNX 重み | 対象外 | **未確定**（イメージ同梱で再配布する場合。上流 release の明示条件なし） | **未確定**（ただし AGPL 準拠で上流 release を案内すれば実務上の不足は小さい） |
-| OMR-DLN 重み | `YOLOv8m_Measures.pt` | **未確定**（公開されているが利用許諾の明示なし） | **提供不可**（同梱・再配布しない）。受領者自身による取得と利用の可否も**未確定** | **未確定・実質ブロッカー**: 当方が運用するクラウドに配置し他者のために推論するには明示許諾が必要と扱う |
+| OMR-DLN 重み | `YOLOv8m_Measures.pt` | **研究利用は黙示許諾の余地**（README にダウンロード・実験方法あり）。許諾範囲の法的確定はしていない | **同梱・再配布は回避**: その権限を明確に確認できない。利用者自身の取得は当方の再配布とは別に評価する | **未確定・提供ゲート**: 当方クラウドへ配置した第三者向け実行は README の実験案内だけでは許諾範囲を確認できないため保留 |
 | Ultralytics が学習済みモデルにも AGPL が及ぶと主張する点 | OMR-DLN 重み | 未確定 | 未確定 | 未確定 |
 
 補足:
@@ -98,28 +99,35 @@
 - (c) で §13 を満たすには、ネットワーク越しの利用者に、実行中の版の Corresponding Source を無償で入手できる機会を目立つ形で提示する
   （例: GUI と Web 入口に「Source」リンクを置き、実行中 commit と一致させる）。
 
-## 6. OMR-DLN
+## 6. OMR-DLN: 研究利用、提供権限、自前再学習の区別
 
-- 上流リポジトリに LICENSE ファイルはなく、README は Google Drive のモデルフォルダへの案内のみ。著作権法上、明示許諾のない公開物は利用・再配布の許諾を意味しない。
-- 重みは Ultralytics の事前学習 YOLOv8m から学習されたと README にある。Ultralytics は学習済みモデルにも AGPL-3.0 が及ぶと主張しており、
-  仮に上流作者が許諾しても AGPL 条件が付く可能性がある（**未確定**）。学習データ DeepScoresV2 は CC BY 4.0 で、帰属表示が必要になる。
-- 現行の「同梱せず、利用者が取得してハッシュ検証つき import」という扱いは、当方の再配布を避けるが、利用者の利用許諾問題は解決しない。
-- 推論を ONNX Runtime 等へ移植しても重みの権利問題は消えない。
+- 上流 [dmgonzalez8/OMR](https://github.com/dmgonzalez8/OMR) は 2024 年公開の研究・実験プロジェクト。README にモデルの Google Drive 取得先、学習手順・設定、評価結果を掲載する一方、リポジトリと重みに一般的な利用・改変・再配布権限を示す LICENSE は確認できない。
+- **README に従った取得・研究実験を「違法」と断定しない。** 作者が実験利用を想定している根拠があり、状況により黙示的許諾の余地がある。ただし、権利範囲は法域・具体的な利用に依存する。**研究実験の想定 ≠ 重みの再配布や第三者向けクラウド提供の明示許諾**。現行の operator-supplied + SHA-256 import は当方の重み再配布を避けるもので、全ての利用形態の許諾を確定させるものではない。
+- コードの権利、**上流の配布重み**、**Ultralytics の学習コード／初期重み**、**DeepScoresV2 等のデータ**を分離して評価する。推論だけを ONNX Runtime に変更しても、既存重みの権利関係は変わらない。
+- **上流への問い合わせは行わない方針。** 公開情報で判断できない配布／クラウド利用は保留し、[#519](https://github.com/M763468/PDFScoreBar/issues/519) で既存補助検出経路の寄与と独立再学習を検討する。
 
-上流への問い合わせ案（GitHub issue または README 記載の連絡先。英語）:
+### 6.1 公開済みの学習情報と再現性の不足
 
-> We use the `YOLOv8m_Measures.pt` measure-detection weights linked from your README in PDFScoreBar
-> (https://github.com/M763468/PDFScoreBar), a tool that numbers measures in score PDFs. The repository does not
-> state a license for the code or the weights. Could you tell us under which license (for example MIT, Apache-2.0,
-> CC BY 4.0 or AGPL-3.0) we may (1) run the weights locally, (2) run them on a cloud GPU on behalf of a few invited
-> users, and (3) redistribute the unmodified weights inside a Docker image with attribution? Adding a LICENSE file
-> to the repository would also resolve this for other users. Thank you for publishing the work.
+| 項目 | 確認した公開情報 | 再現時の注意 |
+| --- | --- | --- |
+| 対象 | YOLOv8m による小節領域の検出（`YOLOv8m_Measures.pt`） | PDFScoreBar は box 左右端を barline 支持情報に変換 |
+| 学習設定 | [README](https://github.com/dmgonzalez8/OMR#yolo-training) / [`yolo/yolo.ipynb`](https://github.com/dmgonzalez8/OMR/blob/main/yolo/yolo.ipynb): 事前学習あり、500 epochs、batch=5、`imgsz=[704,992]`、patience=0、device 指定、deterministic/AMP | notebook ログに「`imgsz=992` へ更新」の警告あり。入力解像度が指定値どおりだったと仮定しない |
+| データ | [DeepScoresV2](https://digitalcollection.zhaw.ch/items/1376f518-211d-49c8-a658-dbc7f085d2b1)（CC BY 4.0）、上流の処理済み `ds2_dense` / 小節box生成処理 | 小節用 GT の生成、データ分割、変換後の画像・box をそのまま再現可能か未確認。CC BY の帰属表示を行う |
+| 学習コード | `yolo/yolo.ipynb`、`measure_detection/compute_barline_bboxs.py` 等 | 上流リポジトリに明示 LICENSE がないため、コードをコピーして本体へ組み込むのではなく、公開された**条件・手法を参考に独自実装**する案を優先 |
+| Ultralytics | 元重みは事前学習済み `yolov8m.pt` を初期化に使用 | [Ultralytics公式](https://www.ultralytics.com/license) は、自社の学習コード／モデルを使ってゼロから作った重みにも AGPL が及ぶとの立場。法的な射程は事案ごとの確認事項 |
 
-許諾が得られない場合の方針:
+### 6.2 重みを独立に作る二つの経路
 
-1. (b)(c) の提供では OMR-DLN の重みを同梱・配置しない。(c) は OMR-DLN を当方クラウドで実行しない。
-2. OMR-DLN を外した経路は現行 production 契約外であり、精度 gate の再評価なしに既定にしない（§7 の比較計画で扱う）。
-3. 長期策は、許諾が明確なデータと緩いライセンスの学習コードで小節検出器を自前学習すること（§7）。
+1. **A: Ultralytics を使い元の OMR-DLN 重みを使わず再学習**: 元作者の配布重みへの直接依存は削減できる。ただし、`yolov8m.pt` から初期化すれば事前学習元の条件が残り、`pretrained=False` で開始しても Ultralytics 実装・ライセンスの検討は残る。コードと重みを全て permissive にできる案とはみなさない。
+2. **B: 独立した permissive 実装で再学習**: `torchvision` の検出器（BSD-3-Clause）、`YOLOX`（Apache-2.0）等を使用し、OMR-DLN の配布重み・無許諾の上流コード・Ultralytics 初期重みを使わずに小節検出器を学習する。必要なら scratch 初期化を優先し、追加で事前学習重みを使う場合はそれ自体の条件を確かめる。**元重みと上流コードの直接依存を回避する経路として本命候補**。ただし新規重みの配布条件は、学習データ・初期化元・実装条件を調べてから確定する。
+
+上流の学習方法を参考にすることと、上流のコード・重みを複製することは異なる。どちらの経路も学習済みモデルの同等性は未検証で、精度を保証するものではない。
+
+### 6.3 提供前の扱い
+
+- **内部研究**: 現状の実験資産と provenance は維持。既存の実験利用を遡って違法と扱う根拠はないが、あらゆる利用が無条件に許諾されると断言もしない。
+- **重みの再配布／自前クラウドから第三者提供**: 明示的な権限が確認できるまで OMR-DLN の重みを同梱・配置しない。完全な production 経路は OMR-DLN 支持を必須とするため、単純除去を production 化しない。
+- **後続**: #519 で retained outputs による OMR-DLN ablation と、権利・精度が検証できる再学習・代替器の二本立てを進める。代替器は x4 画像入力、source 座標への戻し、`predictions.json` の既存出力契約を守る。学習・本番変更は別の検証ゲートで扱う。
 
 ## 7. 緩いライセンスの代替候補と比較計画
 
@@ -131,8 +139,11 @@
 | PyMuPDF（PDF 出力・番号レイヤ・再開） | `pikepdf`（MPL-2.0、qpdf は Apache-2.0）または `pypdf`（BSD-3-Clause） | 緩い / 弱いコピーレフト | 使用 API は `open`、`set_cropbox`、`get_contents` / `wrap_contents`、xref の get/set、`insert_text`、`insert_image`、`annots`、`get_fonts`、`save` 等。低水準の PDF オブジェクト操作が中心で、移植は中規模。`insert_text` のフォント埋め込みは代替実装が必要 | 番号レイヤの所有権・除去・往復（#441、MobileSheets roundtrip）、補正後最終出力、再開、[数値の幾何契約](../contracts/NUMBERING_GEOMETRY_CONTRACT.md)、ページサイズ・回転・cropbox、既存注釈の保持 | **有利**。補正 GUI サーバと出力経路から AGPL を外せる。最初の後続候補 |
 | PyMuPDF（ページ描画・入力検査） | `pypdfium2`（PDFium。既にイメージに間接導入済み） | Apache-2.0 / BSD-3-Clause 系 | 描画結果のピクセルが変わり得るため、検出器入力が変わる。入力検査（画像・フォント・リンク列挙）も PDFium API で再実装 | 描画画像の差分評価に加え、`data/evaluation2` 全 68 ページの小節線 GT 指標、既存の GPU smoke gate、番号付け、性能 | **条件付きで有利**。精度 gate 通過が前提。出力経路の置換と分けて評価する |
 | Ultralytics（OMR-DLN 推論） | ONNX へ export し ONNX Runtime（MIT）で推論 | MIT | 前処理・NMS・後処理の再実装が必要。費用は小〜中 | OMR-DLN 検出の一致（同一入力での box 差分）、下流の barline decision と番号付けの regression gate | **単独では限定的**。実行コードから AGPL を外せるが、重み（§6）と Ultralytics の学習済みモデルに関する主張は残る |
-| OMR-DLN 重みと Ultralytics | 緩いライセンスの検出フレームワーク（例: torchvision の検出モデル BSD-3-Clause、YOLOX Apache-2.0）で、許諾が明確なデータ（例: DeepScoresV2 CC BY 4.0、自前 GT）から小節検出器を再学習 | 緩い | 再学習・評価が必要で費用大 | 置換前後で同一入力の OMR-DLN 支持の役割（barline decision）に対する regression gate、精度・性能 | **長期的に有利**。OMR-DLN の許諾回答を待ってから着手判断 |
+| OMR-DLN の寄与 | 保存済み baseline HOMR / current x4 HOMR / OMR-DLN / probe / CNN の retained artifact を用い、OMR 支持の削除による差分を再採点 | 新規依存なし | 変更なしで下流影響を調査可能かを先に確認。実行時の worker 削除とは別物 | focused/risk → full68、GT barline、番号付け、semantic topology、PDF 幾何、性能（事前固定） | **最優先**。検証結果は [#519](https://github.com/M763468/PDFScoreBar/issues/519) |
+| OMR-DLN 重みだけ | YOLOv8m を自前再学習し、元の配布重みを使わない | Ultralytics の AGPL 義務が残る | 公開レシピを参照可能だが label 生成・split・実効 `imgsz` を調査 | 同一入力の box/support と下流の regression gate | **限定的**。元重みの依存解消だが、permissive 全面化ではない |
+| OMR-DLN 重み + Ultralytics | permissive 検出器（torchvision BSD-3-Clause / YOLOX Apache-2.0）で DeepScoresV2 CC BY 4.0 等の由来明確なデータから自前再学習。元重み・元コード・Ultralytics 初期重みは使用しない | 緩い条件を目指す（最終的な重みの権利は要精査） | 再学習コストはあるが source-coordinate `predictions.json` の worker contract を維持して移行可能 | box/support、downstream numbering、full68、PDF contract、性能、重み/コード/データの権利台帳 | **重点候補**。問い合わせを条件とせず [#519](https://github.com/M763468/PDFScoreBar/issues/519) で検証 |
 | HOMR | 同等機能の緩いライセンス実装は見つかっていない。自前 segmentation の学習は費用大 | — | engine の基盤検出器で、置換は検出意味論全体を変える | 全面的な精度 gate | **現時点では置換不利**。AGPL を遵守して提供する（source 公開）方針が現実的。上流の状況が変われば再評価 |
+| 追加の外部小節検出器 | [OMR-Research/MeasureDetector](https://github.com/OMR-Research/MeasureDetector) 等の学習済みモデルを調査。oemer は初期開発で不適合となり HOMR に変更した履歴がある | MeasureDetector の追加コードは MIT、同梱 TF 基盤は Apache-2.0。**モデル重み・学習元は別途確認** | 旧 TensorFlow 実装の移植費用あり。既存の不適合候補を根拠なしに優先しない | 条件が明確な重みに限定して同一入力比較 | **二次候補**。単にライブラリが permissive でも重みの権利問題は解消しない |
 | Real-ESRGAN / BasicSR / RapidOCR / ONNX Runtime | 置換不要 | BSD / Apache / MIT | — | — | 通知の同梱のみ |
 
 注意: 推論エンジンだけを替えても、モデル重み・学習成果物・追加 patch の権利は残る。置換候補が認識・番号付けの意味を変える場合は、
@@ -147,7 +158,7 @@
 3. HOMR と BasicSR の改変について、改変日と内容を通知に明記する。
 4. 提供時の source 提供方法を決める: 実行中の commit に固定した公開 GitHub の tag / commit へのリンクを、
    (b) では同梱文書に、(c) では GUI・Web 入口の「Source」リンクに置く。
-5. OMR-DLN は再配布・当方クラウド配置をしない。上流への問い合わせを送る（§6）。回答なしの間は (c) で OMR-DLN を使わない。
+5. OMR-DLN は、現在の上流公開表示だけでは第三者向けの重み再配布・当方クラウドでの提供権限を確定できないため、同梱・クラウド配置を保留する。上流への問い合わせは行わない。研究実験と公開提供を混同せず、#519 で代替を検証する（§6）。
 
 **P1: イメージを配布する場合**
 
@@ -157,7 +168,7 @@
 **P2: 長期のライセンス負担軽減（後続 Issue）**
 
 8. PyMuPDF の出力経路を `pikepdf` / `pypdf` に置換する評価、続いて描画経路の `pypdfium2` 置換の評価。
-9. OMR-DLN の許諾結果を受けて、ONNX 推論化または緩い条件での小節検出器再学習を評価。
+9. #519 で OMR-DLN 支持を外した場合の retained-artifact ablation を最優先し、差分が無視できなければ、元重みと上流コードから独立した permissive 実装による再学習を評価する。元重みの ONNX 化だけでは権利問題は解決しない。
 
 **専門家確認が望ましい事項**
 

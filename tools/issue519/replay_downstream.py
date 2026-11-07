@@ -32,8 +32,12 @@ from src.pipeline.orchestrator import PipelineOrchestrator  # noqa: E402
 from src.pipeline.review.apply_corrections import (  # noqa: E402
     _final_numbering_from_retained_geometry,
 )
-from src.pipeline.review.final_output import materialize_corrected_final_outputs  # noqa: E402
-from tools.issue413.replay_phase_c import verify_pdf_images  # noqa: E402
+from src.pipeline.review.final_output import (  # noqa: E402
+    CorrectedFinalOutputError,
+    _physical_page_size,
+    _render_final_page_image,
+    materialize_corrected_final_outputs,
+)
 from tools.issue415.audit_numbering import audit_pages  # noqa: E402
 
 SOURCE = ROOT / "logs/issue409/full68-numbering-20261009/candidate"
@@ -57,6 +61,42 @@ def sha(p):
 def local(raw) -> Path:
     p = Path(raw)
     return p if p.is_relative_to("/workspace") else ROOT / p
+
+
+def verify_pdf_images(summary: dict) -> list[dict]:
+    """#413 pixel check adapted to the current renderer signature (page_width_points)."""
+    import io
+
+    import fitz
+    from PIL import Image
+
+    results = []
+    with fitz.open(summary["final_pdf"]) as pdf:
+        assert len(pdf) == len(summary["pages"])
+        for index, page in enumerate(summary["pages"]):
+            expected, _ = _render_final_page_image(
+                source_image_path=Path(page["source_image"]),
+                numbering_path=Path(page["corrected_numbering_final"]),
+                page_id=page["page_id"],
+                page_number=page["page_number"],
+                page_width_points=page["page_size_points"][0],
+            )
+            buffer = io.BytesIO()
+            expected.save(buffer, format="JPEG")
+            expected.close()
+            images = pdf[index].get_images()
+            assert len(images) == 1, (page["page_id"], "PDF image count")
+            embedded = pdf.extract_image(images[0][0])
+            with (
+                Image.open(io.BytesIO(buffer.getvalue())) as reference,
+                Image.open(io.BytesIO(embedded["image"])) as actual,
+            ):
+                assert actual.size == reference.size
+                a = hashlib.sha256(actual.convert("RGB").tobytes()).hexdigest()
+                b = hashlib.sha256(reference.convert("RGB").tobytes()).hexdigest()
+                assert a == b, (page["page_id"], "PDF pixel mismatch")
+            results.append({"page_id": page["page_id"], "decoded_rgb_sha256": a})
+    return results
 
 
 def main() -> int:
@@ -180,12 +220,43 @@ def main() -> int:
                 [m["bbox"] for m in x["measures"]] for x in e["base"]["pages"][0]["systems"]
             ], (name, e["page"], "final geometry differs from Phase-A base")
         write(run / "handoff.json", {"pages": handoff})
-        pdf = materialize_corrected_final_outputs(
-            handoff_path=run / "handoff.json", corrected_run_dir=run, output_name=name
-        )
-        pixels = verify_pdf_images(pdf)
-        write(run / "review/pdf-pixel-verification.json", pixels)
-        write(run / "review/final-summary.json", pdf)
+        pdf_status, pdf, pixels = "completed", None, []
+        try:
+            pdf = materialize_corrected_final_outputs(
+                handoff_path=run / "handoff.json", corrected_run_dir=run, output_name=name
+            )
+            pixels = verify_pdf_images(pdf)
+            write(run / "review/pdf-pixel-verification.json", pixels)
+            write(run / "review/final-summary.json", pdf)
+        except CorrectedFinalOutputError as error:
+            pdf_status = f"failed: {error}"
+        # Per-page render with the same production renderer, so a score-level PDF
+        # failure still yields comparable page images, row labels and failure sets.
+        page_render = []
+        for h in handoff:
+            final_path = run / "outputs" / h["page_id"] / "numbering_final.json"
+            try:
+                from PIL import Image
+
+                with Image.open(run / h["source_image"]) as probe:
+                    size = _physical_page_size(h, probe, [])
+                image, rows = _render_final_page_image(
+                    source_image_path=run / h["source_image"],
+                    numbering_path=final_path,
+                    page_id=h["page_id"],
+                    page_number=h["page_number"],
+                    page_width_points=size[0],
+                )
+                target = run / "review/page_render" / f"{h['page_id']}.png"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                image.save(target)
+                image.close()
+                page_render.append(
+                    dict(page=h["page_id"], status="rendered", rows=rows, png_sha256=sha(target))
+                )
+            except CorrectedFinalOutputError as error:
+                page_render.append(dict(page=h["page_id"], status=f"failed: {error}"))
+        write(run / "review/page-render.json", page_render)
         audit = audit_pages(entries)
         reports.append(
             dict(
@@ -193,10 +264,11 @@ def main() -> int:
                 pages=len(pages),
                 audit=audit,
                 gui_path_equal_pages=sum(gui_equal),
-                pdf=pdf["final_pdf"],
-                pdf_sha256=sha(pdf["final_pdf"]),
+                pdf_status=pdf_status,
+                pdf=pdf["final_pdf"] if pdf else None,
+                pdf_sha256=sha(pdf["final_pdf"]) if pdf else None,
                 pdf_pages=len(pixels),
-                row_labels=[[r for r in p["row_labels"]] for p in pdf["pages"]],
+                page_render=page_render,
                 next_number=prev,
             )
         )
@@ -228,7 +300,12 @@ def main() -> int:
         continuity_errors=sum(len(r["audit"]["continuity_errors"]) for r in reports),
         gt_increment_errors=sum(len(r["audit"]["gt_increment_errors"]) for r in reports),
         pdf_pages=sum(r["pdf_pages"] for r in reports),
-        pdf_rows=sum(len(x) for r in reports for x in r["row_labels"]),
+        page_render_failures=[
+            (r["score"], x["page"], x["status"])
+            for r in reports
+            for x in r["page_render"]
+            if x["status"] != "rendered"
+        ],
         gui_path_equal_pages=sum(r["gui_path_equal_pages"] for r in reports),
     )
     write(out / "report.json", dict(variant=a.variant, totals=totals, reports=reports))

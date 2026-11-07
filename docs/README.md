@@ -30,6 +30,7 @@ runtime file list. Most `docs/**` and all `tests/**` remain develop-only; the ma
 | [`dev/`](dev/) | branch, environment, validation, configuration, Makefile, script and model-publication procedures |
 | [`history/`](history/), [`refactors/`](refactors/), [`releases/`](releases/), [`performance/`](performance/) | frozen Issue records, milestone ledgers, refactor/release evidence and performance results |
 | [`ai-workflow/`](ai-workflow/), [`agent-skills/`](agent-skills/), [`archive/`](archive/) | optional agent workflow guidance, skill evaluation and archived pointers |
+| [`licensing/`](licensing/) | third-party license audit (#504) and repository license options pending owner decision (#505); Japanese originals |
 
 Language counterparts sit beside their original. #492 moved these files out of the root; its
 [old-to-new path table](DOCUMENTATION_INVENTORY.md#directory-layout-and-492-reorganization)

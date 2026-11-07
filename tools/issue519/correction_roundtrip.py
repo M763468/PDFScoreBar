@@ -56,6 +56,32 @@ def main() -> int:
     for variant in ("control", "no_omr"):
         run = a.out / variant / "source_run"
         shutil.copytree(a.downstream / variant / a.score, run, symlinks=True)
+        # The materializer requires per-page artifacts inside the run; stage copies of
+        # externally referenced files into the copied run and rewrite only the copy.
+        manifest = read(run / "manifest.json")
+        relocated = []
+        for page in manifest["pages"]:
+            for field in ("barlines_json",):
+                raw = page.get(field)
+                if not raw:
+                    continue
+                path = Path(raw)
+                try:
+                    path.resolve().relative_to(run.resolve())
+                    continue
+                except ValueError:
+                    pass
+                target = run / "staged_inputs" / page["page_id"] / f"{field}{path.suffix}"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(path, target)
+                page[field] = str(target)
+                relocated.append(
+                    dict(page=page["page_id"], field=field, source=str(path), sha256=sha(path))
+                )
+        (run / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        (run / "staged_inputs" / "relocation.json").write_text(
+            json.dumps(relocated, indent=1) + "\n"
+        )
         review = run / "review_package"
         package = materialize_manual_correction_review_package(run_root=run, review_root=review)
         handoff_path = Path(

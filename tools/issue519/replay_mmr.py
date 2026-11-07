@@ -68,9 +68,12 @@ def main() -> int:
     assert providers and all("CUDAExecutionProvider" in v for v in providers.values()), providers
     device = torch.device("cuda")
     classifier = MMRClassifier(model, device)
-    processor = MMRProcessor(Path("unused"), device, classifier=classifier,
-                             ocr_engine=MMROCREngine(ocr_engine=engine))
-    gt = {(p["score"], p["page"]): p for p in read(CODE / "tools/issue415/reviewed_gt.json")["pages"]}
+    processor = MMRProcessor(
+        Path("unused"), device, classifier=classifier, ocr_engine=MMROCREngine(ocr_engine=engine)
+    )
+    gt = {
+        (p["score"], p["page"]): p for p in read(CODE / "tools/issue415/reviewed_gt.json")["pages"]
+    }
     summary = read(SOURCE_RUN / "variant_summary.json")
     totals: dict[str, int] = {}
     pages = []
@@ -86,22 +89,43 @@ def main() -> int:
             image = cv2.imread(str(image_path))
             h, w = image.shape[:2]
             result = processor._process_page_with_support(
-                page_data=base, support=support, image=image, page_num=pi + 1,
-                image_width=w, image_height=h, debug_img=None)
-            expected = [dict(page=pi, system=e["system"], measure=e["measure"], skip=e["skip"])
-                        for e in gt[(s["score"], page)]["events"]]
+                page_data=base,
+                support=support,
+                image=image,
+                page_num=pi + 1,
+                image_width=w,
+                image_height=h,
+                debug_img=None,
+            )
+            expected = [
+                dict(page=pi, system=e["system"], measure=e["measure"], skip=e["skip"])
+                for e in gt[(s["score"], page)]["events"]
+            ]
             scoring = score_overrides(expected, dict(measure_overrides=result))
             for k, v in scoring["counts"].items():
                 totals[k] = totals.get(k, 0) + v
-            rec = dict(score=s["score"], page=page, scoring=scoring, overrides=result,
-                       mask_sha256=sha(mask))
+            rec = dict(
+                score=s["score"],
+                page=page,
+                scoring=scoring,
+                overrides=result,
+                mask_sha256=sha(mask),
+            )
             pages.append(rec)
             write(a.out / s["score"] / f"{page}.json", rec)
             print(s["score"], page, scoring["counts"], flush=True)
-    report = dict(variant_root=str(a.variant_root), counts=totals, providers=providers,
-                  model_sha256=sha(model), mmr_source_sha256=sha(CODE / "src/measure_numbering/mmr.py"),
-                  runner_sha256=sha(__file__), elapsed=time.monotonic() - started,
-                  support_stats=processor.support_stats, pages=pages, accepted=ACCEPTED)
+    report = dict(
+        variant_root=str(a.variant_root),
+        counts=totals,
+        providers=providers,
+        model_sha256=sha(model),
+        mmr_source_sha256=sha(CODE / "src/measure_numbering/mmr.py"),
+        runner_sha256=sha(__file__),
+        elapsed=time.monotonic() - started,
+        support_stats=processor.support_stats,
+        pages=pages,
+        accepted=ACCEPTED,
+    )
     write(a.out / "report.json", report)
     print("COMPLETE", totals, flush=True)
     return 0

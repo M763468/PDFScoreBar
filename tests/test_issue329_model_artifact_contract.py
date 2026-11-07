@@ -9,7 +9,6 @@ import pytest
 from src.common.model_artifacts import (
     ModelArtifactIntegrityError,
     import_model_artifact,
-    load_model_artifact_manifest,
     resolve_model_artifact,
 )
 
@@ -81,27 +80,17 @@ def test_silent_byte_replacement_under_same_version_fails_integrity(tmp_path: Pa
         resolve_model_artifact(manifest, project_root=tmp_path)
 
 
-def test_omr_manifest_records_selected_version_identity_and_external_ownership() -> None:
-    manifest = load_model_artifact_manifest(OMR_MANIFEST)
-
-    assert manifest.model_id == "omr-dln-measures"
-    assert manifest.version == "phase1-validated-v1"
-    assert manifest.sha256 == ("00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212")
-    assert manifest.ownership == "external/operator-supplied"
-    assert manifest.is_downloadable is False
-    assert manifest.cache_path == Path("omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt")
-    assert manifest.runtime_path == (
-        "/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
-    )
+def test_omr_dln_weight_is_no_longer_a_selected_artifact() -> None:
+    # #522: hybrid support uses x4 HOMR; the unlicensed OMR-DLN weight is not selected.
+    assert not OMR_MANIFEST.exists()
 
 
 def test_canonical_docker_validation_uses_manifest_resolver_and_read_only_mount() -> None:
     script = (PROJECT_ROOT / "scripts" / "docker_runtime_validation.sh").read_text(encoding="utf-8")
 
-    assert "models/omr_dln/manifest.json" in script
+    assert "models/omr_dln/manifest.json" not in script
+    assert "OMR_DLN_MODEL_PATH" not in script
     assert "src.pipeline.detection.model_selection" in script
-    # Production SHA checks now share the resolver exercised by selection tests.
-    assert '"$omr_host:$omr_container:ro"' in script
     assert "PDFSCOREBAR_MODEL_CACHE" in script
 
 
@@ -122,7 +111,6 @@ def test_inventory_documents_all_canonical_model_families() -> None:
 
     for identity in (
         "barline-cnn",
-        "omr-dln-measures",
         "realesrgan-x4plus",
         "realesrgan-x2plus",
         "Maintained HOMR runtime assets",

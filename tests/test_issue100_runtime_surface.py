@@ -35,12 +35,13 @@ def test_experiments_do_not_change_runtime_source_fingerprint(tmp_path: Path) ->
     assert runtime_contract.source_fingerprint(tmp_path) == initial
 
 
-def test_production_omr_worker_is_under_src() -> None:
+def test_production_support_does_not_run_omr_dln() -> None:
     support = (PROJECT_ROOT / "src/pipeline/detection/current_support_worker.py").read_text(
         encoding="utf-8"
     )
-    assert "src.pipeline.detection.omr_dln_worker" in support
+    assert "omr_dln_worker" not in support
     assert "experiments/models/eval_omr_dln.py" not in support
+    assert not (PROJECT_ROOT / "src/pipeline/detection/omr_dln_worker.py").exists()
 
 
 @pytest.mark.parametrize(

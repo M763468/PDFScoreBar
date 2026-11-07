@@ -211,34 +211,21 @@ def test_current_support_runs_sr_homr_omr_as_separate_phases(tmp_path: Path, mon
             )
         raise AssertionError(name)
 
-    def fake_pipeline_python(name):
-        assert name == "omr_dln"
-        return ["python"]
-
-    def fake_run(command, **_kwargs):
-        calls.append("omr")
-        assert "--pre-computed-sr" in command
-        omr = output_root / "omr_sr/page_001/predictions.json"
-        omr.parent.mkdir(parents=True)
-        omr.write_text("[]\n", encoding="utf-8")
-
     monkeypatch.setattr(support_worker, "_run_child_worker", fake_child_worker)
-    monkeypatch.setattr(support_worker, "get_pipeline_python", fake_pipeline_python)
-    monkeypatch.setattr(support_worker, "run_with_logging", fake_run)
 
     support_worker.run(request, result)
     payload = json.loads(result.read_text(encoding="utf-8"))
 
-    assert calls == ["sr", "homr", "omr"]
-    assert payload["schema_version"] == "pipeline.current_x4_support.v3"
+    assert calls == ["sr", "homr"]
+    assert payload["schema_version"] == "pipeline.current_x4_support.v4"
     assert payload["current_homr_executed"] is True
-    assert payload["memory_phase_boundaries"] == ["sr", "current_homr", "omr_dln"]
+    assert payload["memory_phase_boundaries"] == ["sr", "current_homr"]
     assert payload["sr_sha256"] == "abc"
     assert Path(payload["sr_image"]).is_file()
     assert Path(payload["current_sr_detection"]).is_file()
     assert Path(payload["connector_symbols"]).is_file()
     assert Path(payload["connector_brace_dot"]).is_file()
-    assert Path(payload["current_omr"]).is_file()
+    assert "current_omr" not in payload  # #522: no OMR-DLN support
     assert payload["historical_detector_artifact_runtime_input"] is False
 
 

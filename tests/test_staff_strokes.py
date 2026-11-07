@@ -66,12 +66,10 @@ def fixture_inputs(tmp_path, monkeypatch, regions=STAVES):
     baseline = tmp_path / "baseline"
     baseline.mkdir()
     # A composite HOMR seed was lost by whole-box consensus. Its lower piece
-    # must re-enter only when the unchanged SR-or-OMR consensus supports it.
+    # must re-enter only when x4 HOMR (SR) consensus supports it (#522: no OMR-DLN).
     (baseline / "page_001_detections.json").write_text(json.dumps([[20, 10, 24, 120]]))
     sr = tmp_path / "sr.json"
-    omr = tmp_path / "omr.json"
-    for path in (sr, omr):
-        path.write_text(json.dumps([[20, 80, 24, 120]]))
+    sr.write_text(json.dumps([[20, 80, 24, 120]]))
     support = tmp_path / "hybrid/current_support/score/page_001/result.json"
     support.parent.mkdir(parents=True)
     support.write_text(
@@ -81,7 +79,6 @@ def fixture_inputs(tmp_path, monkeypatch, regions=STAVES):
                 current_homr_executed=True,
                 image=str(image),
                 current_sr_detection=str(sr),
-                current_omr=str(omr),
             )
         )
     )
@@ -109,7 +106,7 @@ def fixture_inputs(tmp_path, monkeypatch, regions=STAVES):
     )
     target.parent.mkdir(parents=True)
     target.write_text(json.dumps([[60, 10, 64, 120]]))
-    return inventory, support, target, image, omr
+    return inventory, support, target, image, sr
 
 
 def test_adapter_restores_only_consensus_supported_staff_piece(tmp_path, monkeypatch):
@@ -126,13 +123,12 @@ def test_adapter_restores_only_consensus_supported_staff_piece(tmp_path, monkeyp
     audit = json.loads(target.with_name("pipeline2_no_peak_staff_strokes.json").read_text())
     assert audit["coordinate_space"] == "source_page"
     assert audit["source_count"] == 1
-    assert len(audit["input_sha256"]) == 6
+    assert len(audit["input_sha256"]) == 5
 
 
-def test_seed_without_either_consensus_source_is_not_restored(tmp_path, monkeypatch):
-    inv, _, target, _, omr = fixture_inputs(tmp_path, monkeypatch)
-    omr.write_text("[]")
-    (tmp_path / "sr.json").write_text("[]")
+def test_seed_without_x4_consensus_is_not_restored(tmp_path, monkeypatch):
+    inv, _, target, _, sr = fixture_inputs(tmp_path, monkeypatch)
+    sr.write_text("[]")
     prepare_staff_stroke_candidates(
         inventory=inv, hybrid_root=tmp_path / "hybrid", probe_root=tmp_path / "probe"
     )

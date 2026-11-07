@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.common.model_artifacts import resolve_omr_dln_model_path, resolve_realesrgan_weight
+from src.common.model_artifacts import resolve_realesrgan_weight
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -47,15 +47,11 @@ def test_realesrgan_weight_override_is_independent_of_workspace(tmp_path: Path) 
     assert resolved == expected
 
 
-def test_omr_dln_model_accepts_explicit_external_asset(tmp_path: Path) -> None:
-    expected = tmp_path / "YOLOv8m_Measures.pt"
-
-    resolved = resolve_omr_dln_model_path(
-        repository_root=tmp_path / "workspace",
-        environment={"OMR_DLN_MODEL_PATH": str(expected)},
-    )
-
-    assert resolved == expected
+def test_runtime_contract_no_longer_requires_ultralytics_or_omr_dln() -> None:
+    contract = _load_runtime_contract_module()
+    assert "ultralytics" not in contract.RUNTIME_MODULES
+    text = (PROJECT_ROOT / "docker" / "runtime_contract.py").read_text(encoding="utf-8")
+    assert "OMR_DLN" not in text and "omr_dln" not in text
 
 
 def test_source_fingerprint_detects_source_config_and_checkpoint_drift(tmp_path: Path) -> None:

@@ -41,10 +41,6 @@
       "role": "production MMR classifier checkpoint"
     },
     {
-      "pattern": "models/omr_dln/manifest.json",
-      "role": "production OMR-DLN artifact manifest"
-    },
-    {
       "pattern": "pyproject.toml",
       "role": "runtime dependency metadata"
     },
@@ -227,18 +223,6 @@
     {
       "pattern": "src/pipeline/detection/maintained_source_page_worker.py",
       "role": "Production maintained source page worker implementation used by maintained dense processing"
-    },
-    {
-      "pattern": "src/pipeline/detection/omr_dln_worker.py",
-      "role": "formal production OMR-DLN worker"
-    },
-    {
-      "pattern": "src/pipeline/detection/omr_job.py",
-      "role": "Per-job OMR-DLN route selection, attested handoff publication and consumption"
-    },
-    {
-      "pattern": "src/pipeline/detection/omr_job_worker.py",
-      "role": "Per-job OMR-DLN worker: one verified model lifetime for ordered pages"
     },
     {
       "pattern": "src/pipeline/detection/profile_contract.py",
@@ -606,8 +590,8 @@
   "reference_checks": [
     {
       "path": "src/pipeline/detection/current_support_worker.py",
-      "contains": "src.pipeline.detection.omr_dln_worker",
-      "not_contains": "experiments/models/eval_omr_dln.py"
+      "contains": "src.pipeline.detection.current_homr_worker",
+      "not_contains": "omr_dln_worker"
     },
     {
       "path": "src/pipeline/detection/__init__.py",
@@ -834,9 +818,6 @@
       "tests/test_mmr_rapidocr_provider.py",
       "tests/test_numbering_geometry_scale.py",
       "tests/test_numbering_overrides.py",
-      "tests/test_omr_dln_worker.py",
-      "tests/test_omr_job.py",
-      "tests/test_omr_job_route.py",
       "tests/test_pdf_to_images_progress.py",
       "tests/test_pipeline_detection.py",
       "tests/test_pipeline_integration.py",

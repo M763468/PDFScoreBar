@@ -1,10 +1,10 @@
 # worktree へのローカルデータのリンク
 
-<!-- translation: {"original":"local_worktree_data.md","source":{"sha256":"eaeb4b2f6671371dccb3b0c6746089f740d7d58ac4579440c597da2a5252e1ce"},"state":"reviewed"} -->
+<!-- translation: {"original":"local_worktree_data.md","source":{"sha256":"3ccd1a837defe7c89a7c0772b6c17404e327e762be714274d275b6b07eb5747a"},"state":"reviewed"} -->
 
 [English / 原文](local_worktree_data.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `eaeb4b2f6671371dccb3b0c6746089f740d7d58ac4579440c597da2a5252e1ce`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `3ccd1a837defe7c89a7c0772b6c17404e327e762be714274d275b6b07eb5747a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 worktree では、意図的に git で追跡していないローカル専用のデータ（データセット、生成されたログ、モデル成果物、キャッシュ）が必要になることがよくあります。worktree を動かすためだけに、それらの資産をコピーしたりコミットしたりしないでください。
 
@@ -52,7 +52,7 @@ make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/pdfscore-local-assets
 一覧は環境変数で上書きできます。
 
 ```bash
-PDFSCORE_LINK_ITEMS="datasets logs/models external/homr external/omr_dln cache" \
+PDFSCORE_LINK_ITEMS="datasets logs/models external/homr cache" \
   scripts/setup_local_worktree_links.sh --source /path/to/pdfscore-local-assets
 ```
 

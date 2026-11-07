@@ -21,7 +21,7 @@
 | first-party 文書 | `docs/`、`README*`、`AGENTS.md`、`.github/` テンプレート | 同上 | コードと同じライセンス（文書だけ CC BY 4.0 にする選択肢もある） |
 | GUI 資産 | `tools/review_correction/*.html` / `*.js` 等 | first-party。外部ライブラリ・CDN を含まない | コードと同じ |
 | 第三者コード片 | `docker/patch_homr_onnx_provider.py` 内の、置換対象として引用した HOMR のソース断片（数行） | HOMR 作者（AGPL-3.0） | 再許諾しない。断片は AGPL-3.0 の下にあると注記する |
-| 第三者コード（未同梱） | HOMR、Ultralytics、PyMuPDF、Real-ESRGAN 等は build 時に取得。`external/` は #382 で廃止済み | 各上流 | 対象外。`THIRD_PARTY_NOTICES` で案内 |
+| 第三者コード（未同梱） | HOMR、PyMuPDF、Real-ESRGAN 等は build 時に取得（Ultralytics は #522 で除去）。`external/` は #382 で廃止済み | 各上流 | 対象外。`THIRD_PARTY_NOTICES` で案内 |
 | first-party 重み | `models/mmr/mmr_classifier_best.pth`（git 管理）、barline CNN（本リポジトリの GitHub release、manifest のみ git 管理） | オーナーが学習。MMR は torchvision の ImageNet 事前学習重みから初期化。学習データは楽譜由来 | **コードと分けて決める**。§4 参照 |
 | 第三者重み | HOMR、OMR-DLN、Real-ESRGAN、RapidOCR | 各上流（#504 §3） | 対象外。git には manifest と SHA-256 のみ |
 | 評価・学習データ | `data/evaluation2/annotations/**`（座標 JSON、git 管理）。楽譜画像・PDF は git 管理外 | ラベルは first-party。元の楽譜は第三者著作物（保護期間内の作品を含む） | ラベルは許諾対象にできるが、楽譜画像・PDF は含めない |
@@ -71,7 +71,7 @@ control-plane が engine の AGPL 部品と結合しない（ジョブ投入と�
 2. **将来、AGPL 依存を減らした部分を緩い条件で再利用できるようにしたいか。**
    Apache-2.0 / MIT ならそのまま再利用できる。AGPL-3.0-or-later では first-party 部分にも AGPL の条件が残る。
 
-どれを選んでも、**HOMR・PyMuPDF・Ultralytics と結合した runtime を渡す・提供するときの AGPL 遵守義務は消えない**（#504 §5）。
+どれを選んでも、**HOMR・PyMuPDF と結合した runtime を渡す・提供するときの AGPL 遵守義務は消えない**（#504 §5。Ultralytics は #522 で runtime から除去）。
 #504 の方針では HOMR / PyMuPDF は遵守を前提に原則維持するため、runtime 全体はしばらく AGPL の条件で提供することになる。
 また、一度 Apache-2.0 / MIT で公開した版の許諾は取り消せない。後の版から別ライセンスに変えることはできる。
 

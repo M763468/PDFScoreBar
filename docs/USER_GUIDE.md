@@ -80,32 +80,18 @@ is the built runtime template, not the temporary container created for a command
 default image tag is `pdfscore_pipeline_gpu`; when choosing another tag, pass the same
 `--image YOUR_TAG` before each `build`, `preflight`, `run` and `review` subcommand.
 
-[OMR-DLN](https://github.com/dmgonzalez8/OMR) is an operator-supplied model, not
-included or automatically downloaded. Open
-the [official model folder](https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing)
-listed in `models/omr_dln/manifest.json` and manually download `YOLOv8m_Measures.pt`.
-The selected version is `phase1-validated-v1`; its manifest SHA-256 is
-`00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`.
-The upstream repository does not publish an explicit license for automated redistribution.
-If the folder is inaccessible, check its access with the upstream provider; do not substitute
-unverified weights. Replace the example path below with the downloaded file's absolute path
-and import once:
+No operator-supplied model is required. Since #522 the detector no longer uses the external
+OMR-DLN measure detector (`YOLOv8m_Measures.pt`); do not download or mount it. Run preflight:
 
 ```bash
-python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /absolute/path/YOLOv8m_Measures.pt
 python3 docker/distribution.py preflight
 ```
 
-Import checks the manifest SHA-256 before publishing to the host model cache. Preflight
+Preflight
 checks CUDA, the ONNX CUDA provider, required models, and pinned HOMR runtime provenance.
-The external weight is mounted read-only into the runtime. To share a cache, set
-`PDFSCOREBAR_MODEL_CACHE` on the host. The default cache root is
-`~/.cache/pdfscorebar/models`; when `XDG_CACHE_HOME` is set, it is
-`$XDG_CACHE_HOME/pdfscorebar/models` unless `PDFSCOREBAR_MODEL_CACHE` overrides it.
-A file with the same name but different bytes fails the hash check; obtain the selected
-bytes from upstream and retry, rather than bypassing verification. Changing model bytes
-requires a new manifest/version. Build success alone does not check the external model or
-GPU; preflight checks them but does not certify score accuracy.
+All required models are image-owned or tracked manifests verified by SHA-256; changing model
+bytes requires a new manifest/version. Build success alone does not check the GPU;
+preflight checks it but does not certify score accuracy.
 
 ## Process a PDF
 
@@ -270,7 +256,7 @@ versions/export settings and physical printing remain unverified.
   WSL. Other Docker setups whose host network is not shared with the browser are unsupported.
 - Missing GPU/provider: verify GPU access in Docker and rerun preflight. Host GPU detection
   alone does not establish container CUDA availability.
-- Missing or corrupt model: use the selected manifest and repeat verified import. A hash
+- Missing or corrupt model: rebuild the image or restore the tracked manifest artifact. A hash
   mismatch fails rather than selecting another model.
 - Runtime mismatch: build this distribution with a separate image tag, then use that tag.
 - Review/apply failure: preserve the entire job directory and read the reported application

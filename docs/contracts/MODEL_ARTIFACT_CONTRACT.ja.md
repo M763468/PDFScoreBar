@@ -1,6 +1,6 @@
 # 正規モデル資産の契約
 
-<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"57303c81ebb441017d6cf83a75296e3d2e5b3613a807885941d7012d1bbb79ee"},"state":"reviewed"} -->
+<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"e221051caa19d6605675abc2035872fd5b887f900f790df4eb95c667c5a8c552"},"state":"reviewed"} -->
 
 [English / 原文](MODEL_ARTIFACT_CONTRACT.md)
 
@@ -36,20 +36,10 @@
 - 明示的上書き: `PDFSCOREBAR_MODEL_CACHE` はキャッシュルートを変更する。production CNNのモデル選択はこのDocker契約ではなく #315／設定が管理する
 - 更新手順: 意図して選んだ置換バイト列を公開し、新しいモデルバージョンとrelease来歴を割り当て、manifestにダイジェストを記録してから配置・検証する。`issue296-d27-v1` のバイト列を差し替えない。
 
-### OMR-DLN小節検出器
+### OMR-DLN小節検出器（#522で廃止）
 
-- 論理モデルID: `omr-dln-measures`
-- 選択バージョン: `phase1-validated-v1`
-- 来歴: `models/omr_dln/manifest.json`。公式 `dmgonzalez8/OMR` モデル配布物と、PR #330のPhase 1最終検証で使用した正確なバイト列
-- 期待SHA-256: `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`
-- 所有: 外部・運用者提供
-- ホスト上の配置: `$XDG_CACHE_HOME/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt`（または `~/.cache/pdfscorebar/models` へのフォールバック／`PDFSCOREBAR_MODEL_CACHE` による上書き）
-- コンテナruntime: `/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt`
-- 解決・配置: `src.common.model_artifacts verify/import`。正規Docker検証は選択済みキャッシュ資産を解決して読み取り専用でマウントする
-- 明示的上書き: 互換性のため `OMR_DLN_MODEL_PATH` を維持する。参照先は使用前に選択manifestのダイジェストと照合する
-- 更新手順: 意図して選んだ公式の置換モデルを入手し、manifestに新しいバージョン・来歴・ダイジェスト・キャッシュパスを登録し、`python3 -m src.common.model_artifacts import ...` でimportして検証する。Phase 1のダイジェストは過去の来歴であり、系列に永続するハッシュではない。
-
-上流はモデルをソースリポジトリと別に配布する。Issue #329 Phase 2では上流リポジトリに明示的なモデル再配布ライセンスが見つからなかったため、PDFScoreBarはモデルを暗黙に再配布したり自動的に代替したりしない。運用者によるimportでは、選択済みの既知のバイト列を検証してから共通キャッシュに公開する。
+- 論理モデルID: `omr-dln-measures` — **選択対象から外した**。バージョン `phase1-validated-v1`（SHA-256 `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`）は、#416／#519 までの受入結果の来歴としてのみ残す。
+- `models/omr_dln/manifest.json`、OMR-DLN worker と job 経路、`OMR_DLN_MODEL_PATH`、Docker のマウントを削除した。hybrid の支持には x4 HOMR の五線片支持（`src/pipeline/steps/hybrid_consensus.py`）を使う。OMR-DLN を指定したままの設定は明示的にエラーになり、旧重みへの fallback はない。
 
 ### Real-ESRGAN x4
 
@@ -115,17 +105,6 @@
 - 解決・配置: `docker/Dockerfile.stage-e` の固定ソースcommitにおける `download_weights()` の後、明示的にSHA-256を検証
 - 明示的上書き: 正規Stage-E profileにはなし
 - 更新手順: このprofileは過去の来歴である。置換は独自のソース・evaluator来歴とダイジェストを持つ新しいprofile／モデルバージョンとし、記録済みStage-Eの識別情報をその場で変更しない。
-
-## OMR-DLN登録手順
-
-公式 `YOLOv8m_Measures.pt` を上流の配布経路から入手し、選択されたmanifestバージョンに対して一度実行する。
-
-```bash
-python3 -m src.common.model_artifacts import \
-  models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
-```
-
-importは選択バージョンのダイジェストに一致しないバイト列を拒否し、検証済みバイト列をアトミックに公開する。その後 `make verify-gpu-smoke` はキャッシュ項目を自ら解決する。通常のホスト既定値はXDG／ユーザーキャッシュを通じてworktree間で共有される。別のキャッシュルートを明示的に指定する必要がある場合だけ `PDFSCOREBAR_MODEL_CACHE` を使う。
 
 ## モデルの更新
 

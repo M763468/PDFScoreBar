@@ -59,7 +59,6 @@ The ownership rules are:
 | verified historical Stage-E HOMR stack | reproduction image only | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
 | Real-ESRGAN x2/x4 weights | Docker image | `/opt/pdfscore-assets/realesrgan` |
 | canonical smoke CNN bytes | Docker image, derived from the tracked #315 manifest | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
-| OMR-DLN `YOLOv8m_Measures.pt` | operator/external asset | selected manifest version in the common host model cache, mounted read-only below `/opt/pdfscore-external/omr-dln-measures/<version>/` |
 | repository source/config/input data | active checkout | bind-mounted at `/workspace` |
 | generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
 
@@ -83,21 +82,9 @@ and x4 support contract as `configs/dense_full_pipeline.yaml`. Docker still mate
 tracked manifest through `src.common.model_artifacts`, including its SHA-256 check, and exposes
 the verified bytes at the stable smoke-only compatibility path above.
 
-The OMR-DLN weight is different: it is externally distributed and is not silently downloaded,
-redistributed, or substituted by the Docker build. Register the selected official
-`YOLOv8m_Measures.pt` once in the common cache with:
-
-```bash
-python3 -m src.common.model_artifacts import \
-  models/omr_dln/manifest.json /path/to/official/YOLOv8m_Measures.pt
-```
-
-The import verifies the selected version digest before atomically publishing the file to the
-cache. Canonical `make verify-gpu-smoke` resolves that selected cache entry itself and mounts
-it read-only at the manifest-declared container path. `OMR_DLN_MODEL_PATH` remains an explicit
-compatibility override and is verified against the same selected-version digest before use.
-The legacy repository-local OMR-DLN path also remains accepted for compatibility, but it is
-not the canonical staging workflow.
+No operator/external detector weight is required. Since #522 the detector no longer uses the
+OMR-DLN measure detector (`YOLOv8m_Measures.pt`) or its Ultralytics runtime; hybrid support
+comes from x4 HOMR. Settings or handoffs that still name OMR-DLN fail explicitly.
 
 ### Source/image compatibility
 
@@ -314,9 +301,7 @@ The accepted two-HOMR milestone is **not fresh-clone reproducible** through the 
 compatibility extension: its exact evaluation images remain external, and the extension does
 not reconstruct the complete historical main dependency stack. The milestone doc separates
 those requirements from the retained Stage-E component pins. The Docker smoke removes the
-former ignored/local-only CNN dependency. OMR-DLN remains an explicit external asset, but once its
-selected version is registered in the common model cache, canonical smoke no longer depends
-on an ad-hoc checkout-local model path.
+former ignored/local-only CNN dependency, and since #522 no external OMR-DLN weight is needed.
 
 ## Persistent pytest-capable pipeline container
 
@@ -331,22 +316,16 @@ The commands below run against the manager checkout itself. A dedicated containe
 directly from an isolated candidate is an explicit exception. Browser checks use the separate
 runner described in [Local validation](LOCAL_VALIDATION.md#browser-validation).
 
-Create the container when absent. Resolve the production tag to a verified immutable image,
-and mount the registered external OMR-DLN weight so this container can run pipeline checks:
+Create the container when absent. Resolve the production tag to a verified immutable image:
 
 ```bash
 image_id=$(python3 scripts/docker_image_resolver.py resolve \
   --repo-root . --image-ref pdfscore_pipeline_gpu --explicit)
-omr_host=$(python3 -m src.common.model_artifacts verify models/omr_dln/manifest.json)
-omr_runtime=$(python3 -c \
-  'import json; print(json.load(open("models/omr_dln/manifest.json"))["runtime_path"])')
 docker run -dit --gpus all \
   --name pdfscore_pipeline_pytest_dev \
   -v "$PWD":/workspace \
-  -v "$omr_host:$omr_runtime:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  -e OMR_DLN_MODEL_PATH="$omr_runtime" \
   "$image_id" bash
 ```
 

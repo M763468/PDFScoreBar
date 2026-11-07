@@ -59,7 +59,7 @@ detection:
 `src/pipeline/detection/__init__.py` dispatches that route to
 `src/pipeline/detection/dense_orchestrator_batch_sr.py`. This is the accepted dense
 orchestrator with one Issue #284 specialization: Real-ESRGAN x4 generation is lifted into a
-dedicated all-pages phase before page-local HOMR/OMR source generation. The generic
+dedicated all-pages phase before page-local HOMR source generation. The generic
 `src/pipeline/detection/orchestrator.py` / `HybridDetector` path is a separate standard
 route and must not be used to infer the dense production architecture.
 
@@ -82,11 +82,10 @@ PDF or persisted page images
             -> maintained HOMR pinned at immutable commit on original image
             -> current-x4 support worker (consumes the precomputed x4 image)
                  -> current-runtime HOMR on precomputed persisted x4 image
-                 -> OMR-DLN on the same persisted x4 image
-            -> hybrid consensus
+            -> hybrid consensus (x4 HOMR IoU or x4 staff-piece support; #522)
        -> dense candidate/probe reconstruction
        -> staff-local CNN candidate normalization (maintained_original only)
-            -> split multi-staff boxes; supplement original HOMR pieces with SR-or-OMR consensus
+            -> split multi-staff boxes; supplement original HOMR pieces with x4 HOMR (SR) consensus
             -> preserve original probe row seeds and connector-mask evidence
        -> CNN scoring + strict staff-stroke duplicate suppression
   -> page filtering / movement-boundary validation
@@ -104,7 +103,7 @@ PDF or persisted page images
 
 The staff-stroke adapter runs after dense generation, filtering and rescue. It splits
 only boxes intersecting at least two extracted staves by at least two staff units each;
-single-staff connector tails remain unchanged. Added original-HOMR pieces pass the existing SR-or-OMR
+single-staff connector tails remain unchanged. Added original-HOMR pieces pass the x4 HOMR (SR)
 IoU > 0.5 consensus before actual CNN inference. Post-CNN duplicate suppression uses
 X-center distance <= 0.1 median extracted staff unit and vertical overlap >= 0.8,
 retaining the numbering-compatible canonical geometry and its own CNN score. This is
@@ -166,7 +165,7 @@ when the explicit develop compatibility mode `sr_mode=page_local` is selected, r
 than as recovery from a failed batch. Legacy non-batch profiles write that mode explicitly. Page-local
 SR calls the generic helper with `strict=True` and checks exact x4 shape; generic development
 callers retain `strict=False` compatibility. Batch SR propagates runtime errors and shape failures.
-Canonical HOMR/OMR consensus uses strict detection JSON parsing, including finite numeric
+Canonical HOMR consensus uses strict detection JSON parsing, including finite numeric
 coordinates and valid bounds; valid empty predictions remain normal. Canonical dense rescue
 requires seed files, while generic no-seed probe operation remains optional. Errors propagate
 through workers to a FAILED engine job before final/review publication.
@@ -234,7 +233,8 @@ not rerun on x4 in the current production path.
 - **Input:** the precomputed persisted Real-ESRGAN x4 image from the dedicated SR process.
 - **Producer runtime:** current pipeline HOMR runtime, not the historical `stage_e_verified` runtime.
 - **Published bundle:** source-coordinate `current_sr_detection`, current-HOMR staff mask,
-  the complete connector semantic pair, x4 image/provenance, and OMR-DLN predictions.
+  the complete connector semantic pair and x4 image/provenance (schema
+  `pipeline.current_x4_support.v4`; no OMR-DLN predictions since #522).
 - **Coordinate contract:** detection and semantic support exposed to downstream consumers
   are restored to source-page coordinates where required; the persisted x4 image remains
   the physical x4 source artifact.
@@ -250,8 +250,8 @@ two-HOMR environment or guarantee its full-68 metrics.
 
 The production path does not initialize Real-ESRGAN inside each page-local support worker.
 The dedicated SR process finishes all pages first and exits. Only then do disposable
-page-local workers run maintained baseline HOMR plus current-x4 HOMR and OMR-DLN. This prevents
-Real-ESRGAN model/activation state from overlapping the later HOMR/OMR GPU phases while
+page-local workers run maintained baseline HOMR plus current-x4 HOMR. This prevents
+Real-ESRGAN model/activation state from overlapping the later HOMR GPU phases while
 still reusing the SR model across pages.
 
 ## Current-x4 SR runtime contract
@@ -265,7 +265,7 @@ Issue #284 makes the Real-ESRGAN phase an explicit reusable runtime boundary.
   the persisted x4 page image.
 - Model lifetime: one SR process/model is reused across the selected page batch.
 - Compile mode: `torch.compile(..., mode="reduce-overhead")` in the production config.
-- Memory boundary: the SR process exits before any page-local HOMR or OMR-DLN inference.
+- Memory boundary: the SR process exits before any page-local HOMR inference.
 
 The compiled and eager SR paths intentionally need not be byte-identical. Acceptance is at
 the detector/topology/numbering/MMR semantic contracts. The final Issue #284 full-68 gate
@@ -275,7 +275,7 @@ wall time.
 ## Detector input provenance and scoring defaults
 
 Detector input provenance is a machine-readable contract, not something inferred from a
-run-directory name or from the fact that HOMR/SR/OMR executed. `src/pipeline/detection/input_contract.py`
+run-directory name or from the fact that HOMR/SR executed. `src/pipeline/detection/input_contract.py`
 classifies each detector configuration as one of:
 
 ```text
@@ -326,9 +326,12 @@ accuracy/downstream evidence rather than a silent scoring-policy change.
 
 - maintained original-image baseline detections;
 - `current_x4_support.current_sr_detection`;
-- OMR-DLN predictions produced from the persisted x4 support image.
+- staff regions from the baseline staff mask (for staff-piece support).
 
-The hybrid step filters baseline HOMR boxes by x4 HOMR or OMR-DLN support; it does not merge
+The hybrid step filters baseline HOMR boxes by x4 HOMR support: IoU>0.5 with an x4 box, or, for a
+box spanning two or more staves, an x4 stroke inside every staff piece (centre within 0.5 staff
+unit, at least 2 units tall, at least 80% of it inside the piece). OMR-DLN support was removed in
+#522. It does not merge
 x4 coordinates into the returned baseline boxes. The old pinned HOMR-on-x4 inference is not
 part of this consensus. The current x4 HOMR output is the single x4 HOMR owner and is reused.
 
@@ -412,10 +415,10 @@ and could diverge from Phase A. Current MMR support instead reuses the Phase-A t
 | --- | --- | --- |
 | `src/pipeline/main.py` / `PipelineOrchestrator` | main pipeline process | owns orchestration, numbering, persistent MMR classifier/OCR |
 | `current_sr_batch_worker` | one disposable process for all selected pages | owns Real-ESRGAN model/import/CUDA lifetime and persisted x4 generation |
-| SR batch process exit | hard phase boundary | releases Real-ESRGAN/compile/CUDA state before HOMR/OMR |
+| SR batch process exit | hard phase boundary | releases Real-ESRGAN/compile/CUDA state before HOMR |
 | `maintained_source_page_worker` | disposable top-level Python worker per page, started after SR batch | bounds lifetime of page-local verified source generation |
 | maintained original HOMR | inside page worker | immutable maintained baseline only |
-| `current_support_worker` | child worker using precomputed x4 | current x4 HOMR + OMR-DLN support contract; does not own production SR model lifetime |
+| `current_support_worker` | child worker using precomputed x4 | current x4 HOMR support contract; does not own production SR model lifetime |
 | dense route + CNN | imported/run after source workers exit | avoids retaining heavy source-generation state |
 | MMR batch | main pipeline process | reuses persistent classifier/OCR; no HOMR execution |
 
@@ -454,7 +457,7 @@ ignored `logs/` paths unless a narrow retention policy explicitly says otherwise
 Do not introduce any of the following as a hidden downstream operation:
 
 - a page-local Real-ESRGAN model initialization on every dense production page;
-- overlap between the production Real-ESRGAN lifetime and later HOMR/OMR heavy phases;
+- overlap between the production Real-ESRGAN lifetime and later HOMR heavy phases;
 - pinned Stage-E HOMR on x4 solely for detector consensus;
 - current-runtime HOMR on the original page solely for MMR staff geometry;
 - an MMR-specific second numbering rebuild whose topology can diverge from Phase A.

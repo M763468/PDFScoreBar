@@ -2,7 +2,7 @@
 
 [English](EXPERIMENT_MODEL_SELECTION.en.md)
 
-CNNとOMR-DLN候補は、既存configの明示パスで試せる。
+CNN候補は、既存configの明示パスで試せる（OMR-DLNは#522で削除したため候補対象外）。
 探索のたびにversion/SHA/provenanceを登録したり、production manifestを編集したりする必要はない。
 
 現行productionの正規契約は [モデル契約](../contracts/MODEL_ARTIFACT_CONTRACT.md)、
@@ -17,8 +17,8 @@ route省略（standard）・標準route・未知routeとの組合せは、prefli
 | 設定 | モデル選択・検証 | 固定/記録 |
 | --- | --- | --- |
 | `exploration` | 明示パスの現在のcheckpointを実際にload。対応architecture、tensor shape、I/O、要求deviceを確認。採用済みbytesとの一致は要求しない | 実行時に現在のhashを自動記録。事前登録不要。同じパスの重みを更新して再実行できる |
-| `comparison` | 探索と同じ選択・load経路に加え、`model_sha256.cnn` / `model_sha256.omr_dln`との一致を必須とする | 探索結果からhashをコピーして固定。評価の入力・config・runtime・metric・seed・toleranceも実験前に固定する |
-| `production` | 従来のCNN manifest/architecture/threshold契約、OMR-DLN selected manifest SHA、maintained runtime、配布inventoryを検証 | 採用済みversion/provenance/integrity契約を維持する |
+| `comparison` | 探索と同じ選択・load経路に加え、`model_sha256.cnn`との一致を必須とする | 探索結果からhashをコピーして固定。評価の入力・config・runtime・metric・seed・toleranceも実験前に固定する |
+| `production` | 従来のCNN manifest/architecture/threshold契約、maintained runtime、配布inventoryを検証 | 採用済みversion/provenance/integrity契約を維持する |
 
 Preflight成功、pipeline実行成功、精度比較合格、production採用は別の判定。
 候補モードのDocker実行はproduction専用のaccuracy smokeを自動流用しない。
@@ -32,15 +32,13 @@ Preflight成功、pipeline実行成功、精度比較合格、production採用�
 | CNN architecture | 既存loaderが対応するResNet18 / EfficientNet-B0。binary headとstate_dictのshapeを検証 | EfficientNet-B0を維持 | `steps/cnn_scoring.py`。探索用のEfficientNet-B0固定チェックを除外し、実loadを共用 |
 | CNN threshold | configで明示、有限の0〜1。manifestの`production_contract`との一致は不要 | manifest thresholdとの一致を維持 | `dense_orchestrator.py`。threshold探索は比較条件として明示 |
 | CNN NMS/crop/geometry | dense経路のNMS=falseなど既存I/O/scoring条件は維持 | 従来どおり | model identityとは別の下流semantic契約 |
-| OMR-DLNパス | `omr_dln_model_path`を優先、次に環境変数。明示したmissing/corrupt候補から別モデルへfallbackしない | 同じoverrideでもproduction manifest SHA照合が必須 | `model_selection.py`。Docker launcherに重複していた解決/照合を共通化 |
-| OMR-DLN互換性 | native `.pt`、detection taskとbox I/O、明示device、予測I/Oを検証。モデルの意味が「小節」であることは候補作成者が保証する | 従来のselectedモデル | `omr_dln_worker.py`。exported ONNX/TensorRT候補は未対応 |
 | weight hash/version | 探索は実hashを自動記録、比較だけ指定hashと照合 | manifest選定versionのSHAを検証 | 全候補への事前SHA/version/provenance登録義務は設けない |
 | 古い検出出力の再利用 | モデル差替時に古い結果を使わないよう検出のskip-existingを無効化 | 従来どおり | `dense_orchestrator.py`。同じパスで再学習した重みの再実行に対応 |
 | HOMR source pin/marker | 現行maintained runtimeをそのまま利用。候補HOMR差替は未対応 | 必須 | `profile_contract.py` / `maintained_homr_worker.py`。対応しないruntimeまでチェックを削って実行可能とは扱わない |
 | SR / MMR / OCR | 候補交換の検証は対象外 | 既存設定・assetを維持 | SRはimage-owned。MMR raw pathの存在検査は全weight SHA検証ではない |
 | image/runtime互換性 | image存在、immutable ID、runtime fingerprint照合を維持 | 必須 | `scripts/docker_image_resolver.py` / `docker/runtime_contract.py` |
 | source provenance | source fingerprintと実行sourceを記録。image build時とのsource一致自体は拒否条件ではない | frozen配布ではinventory/hash/dirty検証を追加 | runtime互換性とsource identityは別概念 |
-| provider/device | CNN/OMR候補は`cpu`または`cuda`を明示。既定は`cuda`。CUDA要求からCPUへfallbackしない | 現行CUDA/ONNX/maintained契約を維持 | GPU一覧だけで実load成功とは扱わない。MMR OCRのwarning後fallbackまで候補の保証範囲に含めない |
+| provider/device | CNN候補は`cpu`または`cuda`を明示。既定は`cuda`。CUDA要求からCPUへfallbackしない | 現行CUDA/ONNX/maintained契約を維持 | GPU一覧だけで実load成功とは扱わない。MMR OCRのwarning後fallbackまで候補の保証範囲に含めない |
 | input/weight存在・mount | containerから見えることを検査し候補をRO mount | 従来どおり | hostの絶対symlink先がcontainerに見えるとは限らない |
 | 配布identity | frozen配布から候補モードを使うことを拒否。開発checkoutを使用する | schema/inventory/path/hash/release provenanceを厳格検証 | `distribution.py:source_identity` / `runtime_contract.py:validate_distribution_provenance` |
 
@@ -63,12 +61,9 @@ detection:
   cnn_model_path: /absolute/path/to/candidate.pth
   cnn_threshold: 0.5
   cnn_device: cuda
-  omr_dln_model_path: /absolute/path/to/measure_candidate.pt
-  omr_dln_device: cuda
 ```
 
 CNNの元manifestは残っていてもよい。`cnn_model_path`を削除するとmanifest選択へ戻る。
-片方のモデルだけを試す場合、もう片方は既存manifest/cacheまたは採用済みパスを利用できる。
 新しいweightを同じパスへ保存した後、configやpreflight本体を編集せず再実行できる。
 探索時も実行中のcheckpoint書換えは避ける。実行の前後で変更を検出した場合は結果を無効として停止する。
 
@@ -77,7 +72,7 @@ bash scripts/docker_runtime_validation.sh --config experiments/my_candidate.yaml
 bash scripts/docker_runtime_validation.sh --config experiments/my_candidate.yaml
 ```
 
-既存launcherが候補パスを解決し、CNN/OMRをRO mountして同じconfigでpreflightとpipelineを実行する。
+既存launcherが候補パスを解決し、CNNをRO mountして同じconfigでpreflightとpipelineを実行する。
 外部PDF等のmountは従来どおり `DOCKER_EXTRA_ARGS` で追加する。
 HOMR/SRのruntime互換性が変わらなければ、checkpoint更新のためのimage再buildは不要。
 候補用の新しいselection manifestや専用runnerはない。
@@ -86,7 +81,7 @@ HOMR/SRのruntime互換性が変わらなければ、checkpoint更新のため�
 
 ## 正式比較・再現
 
-候補実行の `<run-dir>/model_selection.json` には、選択したCNN/OMRのパスと実SHA、
+候補実行の `<run-dir>/model_selection.json` には、選択したCNNのパスと実SHA、
 config、入力画像SHA、source/runtime fingerprint、launcherから渡されたsource commit/image IDを記録する。
 `status: selected` は観測記録であり、pipelineや精度評価の成功宣言ではない。
 検出sourceのmanifest/result、pipeline log、評価resultも同じIssue rootに保持する。

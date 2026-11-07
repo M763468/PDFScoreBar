@@ -27,7 +27,7 @@ The contract separates three layers:
 3. **developer profiling/traces** — detailed Issue-specific traces, CUDA profiling, subprocess logs,
    and internal paths. These remain diagnostic and are not public progress fields.
 
-Telemetry must not change detector, HOMR, OMR-DLN, grouping, numbering, MMR, correction, or artifact
+Telemetry must not change detector, HOMR, grouping, numbering, MMR, correction, or artifact
 publication semantics.
 
 ### 1.1 Acceptance versus engine start

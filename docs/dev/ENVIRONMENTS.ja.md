@@ -1,6 +1,6 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"190fe7024de2037474d129d7b60afc5acbddd437793626dbbacf4fa8fe5eacca"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"95f00766567c070eec5cdb2a099771d5814b4ee3c7e6ef2c4151039f47c7bd3d"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
@@ -43,7 +43,6 @@
 | 検証済みの過去 Stage-E HOMR スタック | 再現用イメージのみ | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
 | Real-ESRGAN x2/x4 重み | Docker イメージ | `/opt/pdfscore-assets/realesrgan` |
 | 標準スモーク CNN バイトデータ | Docker イメージ（追跡対象の #315 マニフェストから派生） | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
-| OMR-DLN `YOLOv8m_Measures.pt` | オペレータ／外部アセット | ホスト共通モデルキャッシュ内の選択されたマニフェストバージョン（`/opt/pdfscore-external/omr-dln-measures/<version>/` 配下に読み取り専用でマウント） |
 | リポジトリのソース／設定／入力データ | アクティブなチェックアウト | `/workspace` にバインドマウント |
 | 生成された実行アーティファクト | アクティブなチェックアウト／オペレータ | Git 管理外の `logs/`、`artifacts/`、および設定された出力パス |
 
@@ -53,14 +52,7 @@ Real-ESRGAN リゾルバはイメージ内の `PDFSCORE_REALESRGAN_WEIGHTS_DIR` 
 
 イメージが所有するスモーク CNN パスはレガシー／ワークフロー専用のフィクスチャ向けに引き続き利用可能ですが、標準の精度スモークテストではなく、本番精度のエビデンスとして使用してはなりません。標準のスモークテストでは、`configs/dense_full_pipeline.yaml` と同じ `models/barline_cnn/manifest.json`、しきい値、dense 検出器ルート、および x4 サポートコントラクトを使用します。Docker は引き続き `src.common.model_artifacts` を通じて追跡対象マニフェストを実体化（SHA-256 チェックを含む）し、検証済みのバイトデータを上記の安定したスモーク専用互換パスで公開します。
 
-OMR-DLN の重みは扱いが異なります。これは外部で配布されているものであり、Docker ビルドによって暗黙的にダウンロード、再配布、または代替されることはありません。選択された公式の `YOLOv8m_Measures.pt` を、以下のコマンドで一度だけ共通キャッシュに登録してください。
-
-```bash
-python3 -m src.common.model_artifacts import \
-  models/omr_dln/manifest.json /path/to/official/YOLOv8m_Measures.pt
-```
-
-インポート処理では、選択されたバージョンのダイジェストを検証した上で、ファイルをアトミックにキャッシュへ公開します。標準の `make verify-gpu-smoke` は、その選択されたキャッシュエントリを自身で解決し、マニフェストで宣言されたコンテナパスに読み取り専用でマウントします。`OMR_DLN_MODEL_PATH` は引き続き明示的な互換性オーバーライドとして機能し、使用前に同じ選択バージョンのダイジェストに対して検証されます。従来のリポジトリローカルな OMR-DLN パスも互換性のために引き続き受け入れられますが、標準のステージングワークフローではありません。
+オペレータ／外部の検出器の重みは不要です。#522 以降、検出処理は OMR-DLN 小節検出器（`YOLOv8m_Measures.pt`）とその Ultralytics ランタイムを使用しません。hybrid の支持は x4 HOMR から得ます。OMR-DLN を指定したままの設定やハンドオフは、明示的にエラーになります。
 
 ### ソースとイメージの互換性
 
@@ -192,7 +184,7 @@ configs/detector_profiles/stage_e_verified_homr.json
 - ローカルのスクラッチ／ワークベンチ用データは Git 管理外の `tmp/` 配下に配置してください。追跡対象の `data/workbench/` ツリーを再作成してはなりません。
 - CNN データセットの作業では、一括処理を行う前にアクティブなデータセットをリポジトリの `datasets/` 配下にステージングしてください。`/mnt/*` はメタデータ処理の重いスクラッチ領域としてではなく、ソース／アーカイブとして使用してください。
 
-承認済みの 2 系統 HOMR（two-HOMR）マイルストーンは、現在の互換性拡張だけでは**新規クローンからそのまま再現することはできません**。正確な評価画像は引き続き外部にあり、またこの拡張は過去の完全なメイン依存関係スタックを再構築しないためです。マイルストーンのドキュメントでは、それらの要件を、保持されている Stage-E コンポーネントのピン留めから分離して記載しています。Docker スモークテストでは、以前の Git 管理外／ローカル専用の CNN 依存関係が解消されています。OMR-DLN は引き続き明示的な外部アセットですが、選択されたバージョンを共通モデルキャッシュに一度登録すれば、標準スモークテストが場当たり的なチェックアウトローカルのモデルパスに依存することはなくなります。
+承認済みの 2 系統 HOMR（two-HOMR）マイルストーンは、現在の互換性拡張だけでは**新規クローンからそのまま再現することはできません**。正確な評価画像は引き続き外部にあり、またこの拡張は過去の完全なメイン依存関係スタックを再構築しないためです。マイルストーンのドキュメントでは、それらの要件を、保持されている Stage-E コンポーネントのピン留めから分離して記載しています。Docker スモークテストでは、以前の Git 管理外／ローカル専用の CNN 依存関係が解消されています。また #522 以降、外部の OMR-DLN 重みも不要です。
 
 ## pytest 実行可能な永続パイプラインコンテナ
 
@@ -200,21 +192,16 @@ configs/detector_profiles/stage_e_verified_homr.json
 
 この共有コンテナの作成や検査は、マネージャーチェックアウトから行ってください。このコンテナの `/workspace` マウントは `.worktrees/` 配下に Issue 用 worktree を公開するため、[Local validation](LOCAL_VALIDATION.md#python-and-pytest) に従って、ネストされた worktree パスとそれに対応する `PYTHONPATH` を指定して pytest を実行してください。以下のコマンドはマネージャーチェックアウト自体に対して実行するものです。分離された候補環境から直接マウントされた専用コンテナは明示的な例外です。ブラウザチェックには、[Local validation](LOCAL_VALIDATION.md#browser-validation) に記載されている別のランナーを使用します。
 
-コンテナが存在しない場合は作成します。このコンテナでパイプラインチェックを実行できるよう、本番タグを検証済みの不変イメージに解決し、登録済みの外部 OMR-DLN 重みをマウントします。
+コンテナが存在しない場合は作成します。本番タグを検証済みの不変イメージに解決します。
 
 ```bash
 image_id=$(python3 scripts/docker_image_resolver.py resolve \
   --repo-root . --image-ref pdfscore_pipeline_gpu --explicit)
-omr_host=$(python3 -m src.common.model_artifacts verify models/omr_dln/manifest.json)
-omr_runtime=$(python3 -c \
-  'import json; print(json.load(open("models/omr_dln/manifest.json"))["runtime_path"])')
 docker run -dit --gpus all \
   --name pdfscore_pipeline_pytest_dev \
   -v "$PWD":/workspace \
-  -v "$omr_host:$omr_runtime:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  -e OMR_DLN_MODEL_PATH="$omr_runtime" \
   "$image_id" bash
 ```
 

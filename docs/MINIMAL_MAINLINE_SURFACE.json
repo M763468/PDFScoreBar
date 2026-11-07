@@ -591,7 +591,7 @@
     {
       "path": "src/pipeline/detection/current_support_worker.py",
       "contains": "src.pipeline.detection.current_homr_worker",
-      "not_contains": "omr_dln_worker"
+      "not_contains": "omr_dln"
     },
     {
       "path": "src/pipeline/detection/__init__.py",
@@ -762,23 +762,23 @@
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
-      "tests/test_issue458_source_concurrency.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",
       "tests/test_apply_corrections_final_output.py",
       "tests/test_apply_corrections_mmr_suppressions.py",
       "tests/test_barline_units.py",
+      "tests/test_clipped_system_end.py",
       "tests/test_corrected_final_output.py",
       "tests/test_current_homr_worker.py",
       "tests/test_detection_config.py",
       "tests/test_detector_input_contract.py",
       "tests/test_detector_orchestrator_input_contract.py",
+      "tests/test_distribution_surface.py",
       "tests/test_engine_contract.py",
       "tests/test_engine_input_safety.py",
       "tests/test_engine_telemetry.py",
       "tests/test_final_pdf_page_size.py",
       "tests/test_homr_barline_candidates.py",
-      "tests/test_clipped_system_end.py",
       "tests/test_homr_profile.py",
       "tests/test_issue100_runtime_surface.py",
       "tests/test_issue115_runtime_boundaries.py",
@@ -808,6 +808,11 @@
       "tests/test_issue283_thin_barline_vectorization.py",
       "tests/test_issue284_sr_batch_contract.py",
       "tests/test_issue333_movement_boundary_fixture.py",
+      "tests/test_issue409_failure_contracts.py",
+      "tests/test_issue413_system_identity.py",
+      "tests/test_issue441_annotated_layer.py",
+      "tests/test_issue441_mobilesheets_roundtrip.py",
+      "tests/test_issue458_source_concurrency.py",
       "tests/test_job_lifecycle.py",
       "tests/test_manual_correction_handoff.py",
       "tests/test_manual_correction_materializer.py",
@@ -828,19 +833,15 @@
       "tests/test_probe_x_domain.py",
       "tests/test_probe_x_domain_route.py",
       "tests/test_python_env.py",
-      "tests/test_source_page_provenance.py",
-      "tests/test_subprocess_utils.py",
-      "tests/test_thin_barline_finder.py",
-      "tests/test_reviewed_movement_apply.py",
-      "tests/test_distribution_surface.py",
-      "tests/test_issue409_failure_contracts.py",
-      "tests/test_issue413_system_identity.py",
-      "tests/test_staff_strokes.py",
-      "tests/test_issue441_annotated_layer.py",
-      "tests/test_issue441_mobilesheets_roundtrip.py",
       "tests/test_review_correction_history.py",
       "tests/test_review_correction_identity_v2.py",
-      "tests/test_sr_compiler_cache.py"
+      "tests/test_reviewed_movement_apply.py",
+      "tests/test_source_page_provenance.py",
+      "tests/test_sr_compiler_cache.py",
+      "tests/test_staff_strokes.py",
+      "tests/test_subprocess_utils.py",
+      "tests/test_thin_barline_finder.py",
+      "tests/test_x4_staff_piece_support.py"
     ]
   },
   "test_support_patterns": [
@@ -979,7 +980,7 @@
   "distribution_policy": {
     "default": "Every tracked file outside the exact selected lists stays develop-only. Audience patterns are advisory; only exact distribution lists authorize shipping.",
     "tests": "All regression suites and fixtures stay develop-only; operational preflight is shipped instead.",
-    "models": "MMR checkpoint tracked; CNN downloaded and hash-verified during Docker build; OMR-DLN operator-supplied under manifest, never silently redistributed.",
+    "models": "MMR checkpoint tracked; CNN downloaded and hash-verified during Docker build; no operator-supplied OMR-DLN weight since #522.",
     "supported_platform": "Linux Docker with NVIDIA GPU; Docker primary installation route.",
     "exceptions": {
       "src/pipeline/probe_detector/debug.py": "Normal candidate scan still writes diagnostic artifacts through this production renderer; no evaluation or GT imports. Debug outputs are part of retained pipeline provenance.",

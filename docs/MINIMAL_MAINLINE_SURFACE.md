@@ -32,7 +32,7 @@ generic one-worker default; selecting two workers remains environment-specific o
 | `src/measure_numbering` | Grouping, MMR/OCR, numbering and overlay rendering |
 | Dense production `src/pipeline` | PDF jobs, detector/SR workers, candidate processing, corrections, final output and provenance |
 | Two canonical configs | Dense algorithm base and pinned maintained HOMR profile |
-| Three model files | CNN/download contract, verified external OMR-DLN contract, tracked production MMR checkpoint |
+| Two model files | CNN/download contract, tracked production MMR checkpoint (the external OMR-DLN contract was removed in #522) |
 | Production Docker helpers and metadata | Clean build, compatibility/preflight, normal PDF and correction operation |
 | Eleven `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
 | README + user guide | Install, run, review/correct, troubleshooting and asset ownership |

@@ -1,6 +1,6 @@
 # 現行パイプライン — 実装・技術契約リファレンス
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"d78e01ef1ec6f28374ae9b23cb05f39d5bf04bd50867d2521972055e98f63c1e"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"f86147808f93e16e98f1823893ff3ad7f7ded4f1c7c6ecdfc075e1a58cf1803b"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE_REFERENCE.md) · [アーキテクチャ概要に戻る](PIPELINE_ARCHITECTURE.ja.md)
 
@@ -64,7 +64,7 @@ detection:
 `src/pipeline/detection/__init__.py`は、このルートを
 `src/pipeline/detection/dense_orchestrator_batch_sr.py`にディスパッチする。
 これは採択済みのdense orchestratorに、Issue #284の専用処理を1つ加えたものである。
-Real-ESRGAN x4生成を、ページごとのHOMR/OMRソース生成より前の、全ページ専用フェーズへ移している。
+Real-ESRGAN x4生成を、ページごとのHOMRソース生成より前の、全ページ専用フェーズへ移している。
 汎用の`src/pipeline/detection/orchestrator.py` / `HybridDetector`経路は別の標準ルートであり、
 これを根拠にdense productionのアーキテクチャを推測してはならない。
 
@@ -87,11 +87,10 @@ PDFまたは永続化済みページ画像
             -> 不変commitに固定した保守対象HOMRを元画像に適用
             -> current-x4サポートworker（事前計算済みx4画像を入力として利用）
                  -> 事前計算して永続化したx4画像でcurrent-runtime HOMRを実行
-                 -> 同じ永続化済みx4画像でOMR-DLNを実行
-            -> hybrid合意判定
+            -> hybrid合意判定（x4 HOMRのIoUまたは五線片支持。#522）
        -> dense候補/probeの再構築
        -> 譜表単位のCNN候補正規化（maintained_originalのみ）
-            -> 複数譜表にまたがるboxを分割し、元画像HOMRの断片をSRまたはOMRの合意判定で補充
+            -> 複数譜表にまたがるboxを分割し、元画像HOMRの断片をx4 HOMR（SR）の合意判定で補充
             -> 元のprobe行のseedとコネクターマスクの根拠を保持
        -> CNNスコアリング + 厳密な譜表ストローク重複抑制
   -> ページフィルタリング / 楽章境界の検証
@@ -110,7 +109,7 @@ PDFまたは永続化済みページ画像
 譜表ストロークアダプターはdense生成、フィルタリング、rescueの後に動く。
 抽出済みの少なくとも2つの譜表それぞれと2譜表単位以上交差するboxだけを分割し、
 単一譜表のコネクターの尾部は変更しない。追加する元画像HOMRの断片は、実際のCNN推論の前に、
-既存のSRまたはOMRとのIoU > 0.5の合意判定を通過する必要がある。
+x4 HOMR（SR）とのIoU > 0.5の合意判定を通過する必要がある。
 CNN後の重複抑制は、X中心間距離 <= 抽出譜表単位の中央値の0.1倍、垂直方向の重なり >= 0.8を使い、
 番号付けと互換性のある正規のジオメトリと、そのジオメトリ自体のCNNスコアを保持する。
 これは論理的な時間境界の統合とは別である。ページごとの正規化・抑制sidecarは、
@@ -168,7 +167,7 @@ probeの診断レンダリングと任意の幅広候補分割は、要求され
 旧形式の非バッチプロファイルは、このモードを明示的に記録する。
 ページ単位のSRは`strict=True`で汎用ヘルパーを呼び、正確なx4形状を確認する。
 汎用の開発用呼び出し元は`strict=False`の互換性を維持する。バッチSRは実行時エラーと形状チェックの失敗を伝播する。
-正規のHOMR/OMR合意判定は、有限の数値座標と有効な境界を含む厳密な検出JSON解析を行う。
+正規のHOMR合意判定は、有限の数値座標と有効な境界を含む厳密な検出JSON解析を行う。
 有効な空予測は引き続き正常として扱う。正規のdense rescueはseedファイルを要求する一方、
 汎用probeは引き続きseedなしでも動作できる。エラーはworkerを通じて伝播し、
 final/reviewを公開する前にengine jobをFAILEDにする。
@@ -235,7 +234,7 @@ dense productionルートの各ページには、HOMRニューラル推論の用
 - **入力:** 専用SRプロセスが事前計算して永続化したReal-ESRGAN x4画像。
 - **Producerの実行環境:** 過去の`stage_e_verified`実行環境ではなく、現行パイプラインのHOMR実行環境。
 - **公開するbundle:** ソース座標の`current_sr_detection`、current-HOMR譜表マスク、
-  完全なコネクター意味情報のペア、x4画像/provenance、OMR-DLN予測。
+  完全なコネクター意味情報のペア、x4画像/provenance（スキーマ`pipeline.current_x4_support.v4`。#522以降OMR-DLN予測は含まない）。
 - **座標契約:** downstream consumerへ渡す検出と意味情報のサポートは、必要に応じて
   ソースページ座標へ戻す。永続化済みx4画像は物理的なx4ソース成果物のまま保持する。
 - **Consumer:** detectorのhybrid合意判定、コネクターを考慮したグルーピングのサポート、
@@ -249,9 +248,9 @@ dense productionルートの各ページには、HOMRニューラル推論の用
 
 production経路は、各ページのsupport worker内でReal-ESRGANを初期化しない。
 専用SRプロセスが先に全ページを処理して終了する。その後で初めて、使い捨てのページ単位workerが
-保守対象baseline HOMR、current-x4 HOMR、OMR-DLNを実行する。
+保守対象baseline HOMRとcurrent-x4 HOMRを実行する。
 これにより、ページ間でSRモデルを再利用しながら、Real-ESRGANのモデル/活性化状態と
-後続HOMR/OMRのGPUフェーズが重ならないようにする。
+後続HOMRのGPUフェーズが重ならないようにする。
 
 ## Current-x4 SRの実行時契約
 
@@ -263,7 +262,7 @@ Issue #284で、Real-ESRGANフェーズを明示的な再利用可能な実行�
 - 出力経路: 各タイルをCUDA `uint8`へ変換し、CPUへコピーして結合し、永続化するx4ページ画像として書き出す。
 - モデル寿命: 選択ページのバッチ全体で1つのSRプロセス/モデルを再利用する。
 - コンパイルモード: production設定では`torch.compile(..., mode="reduce-overhead")`。
-- メモリ境界: ページ単位のHOMRまたはOMR-DLN推論を始める前にSRプロセスが終了する。
+- メモリ境界: ページ単位のHOMR推論を始める前にSRプロセスが終了する。
 
 コンパイル版とeager版のSR経路は、意図的にバイト単位の一致を必須としていない。
 受入判定はdetector/トポロジー/番号付け/MMRの意味的契約に対して行う。
@@ -324,9 +323,9 @@ PR #154を記録している。将来デフォルトを変更する場合は、�
 
 - 保守対象の元画像baselineの検出結果。
 - `current_x4_support.current_sr_detection`。
-- 永続化済みx4サポート画像から生成したOMR-DLN予測。
+- 五線片支持に使う、baseline譜表マスクから得た譜表領域。
 
-hybridステップは、x4 HOMRまたはOMR-DLNの裏付けを使ってbaseline HOMRのboxをフィルタリングする。
+hybridステップは、x4 HOMRの裏付けを使ってbaseline HOMRのboxをフィルタリングする。裏付けは、x4 boxとのIoU>0.5、または2つ以上の譜表にまたがるboxでは各譜表区間それぞれにx4の縦線があること（中心差0.5譜表単位以内、高さ2単位以上、その80%以上が区間内）である。OMR-DLNの裏付けは#522で削除した。
 返すbaseline boxへx4座標を混ぜ込むことはない。以前の固定HOMRをx4上で実行する推論は、
 この合意判定には含まない。current x4 HOMRの出力が唯一のx4 HOMRの所有元であり、再利用する。
 
@@ -402,10 +401,10 @@ page indexは統合時にはバッチ全体を基準とし、ページごとの�
 | --- | --- | --- |
 | `src/pipeline/main.py` / `PipelineOrchestrator` | メインパイプラインプロセス | オーケストレーション、番号付け、永続的なMMR classifier/OCRを所有 |
 | `current_sr_batch_worker` | 選択した全ページに対する1つの使い捨てプロセス | Real-ESRGANのモデル/import/CUDA寿命と永続化するx4生成を所有 |
-| SRバッチプロセスの終了 | 厳密なフェーズ境界 | HOMR/OMRより前にReal-ESRGAN/コンパイル/CUDA状態を解放 |
+| SRバッチプロセスの終了 | 厳密なフェーズ境界 | HOMRより前にReal-ESRGAN/コンパイル/CUDA状態を解放 |
 | `maintained_source_page_worker` | SRバッチ後に起動するページごとの使い捨てトップレベルPython worker | ページ単位の検証済みソース生成の寿命を限定 |
 | 保守対象の元画像HOMR | ページworker内 | 不変の保守対象baselineのみ |
-| `current_support_worker` | 事前計算済みx4を使う子worker | current x4 HOMR + OMR-DLNサポート契約。productionのSRモデル寿命は所有しない |
+| `current_support_worker` | 事前計算済みx4を使う子worker | current x4 HOMRサポート契約。productionのSRモデル寿命は所有しない |
 | denseルート + CNN | source worker終了後にimport/実行 | 重いソース生成状態を保持し続けることを回避 |
 | MMRバッチ | メインパイプラインプロセス | 永続的なclassifier/OCRを再利用。HOMRを実行しない |
 
@@ -443,7 +442,7 @@ current-supportのページサブツリーには、全ページSRフェーズに
 以下を暗黙のdownstream操作として導入してはならない。
 
 - dense productionの各ページで、ページ単位のReal-ESRGANモデル初期化を行うこと。
-- productionのReal-ESRGANの寿命と後続の重いHOMR/OMRフェーズを重ねること。
+- productionのReal-ESRGANの寿命と後続の重いHOMRフェーズを重ねること。
 - detectorの合意判定だけを目的として、固定したStage-E HOMRをx4で実行すること。
 - MMRの譜表ジオメトリだけを目的として、current-runtime HOMRを元ページで実行すること。
 - トポロジーがPhase Aから乖離し得る、MMR専用の2回目の番号付け再構築を行うこと。

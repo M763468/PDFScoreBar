@@ -51,7 +51,7 @@ By default the helper tries:
 Override the list with an environment variable:
 
 ```bash
-PDFSCORE_LINK_ITEMS="datasets logs/models external/homr external/omr_dln cache" \
+PDFSCORE_LINK_ITEMS="datasets logs/models external/homr cache" \
   scripts/setup_local_worktree_links.sh --source /path/to/pdfscore-local-assets
 ```
 

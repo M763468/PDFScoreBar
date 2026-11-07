@@ -312,19 +312,13 @@ workspace assumption as the GUI command: `<review_root>` is inside the repositor
 and pass its container-visible handoff path; retained source-artifact paths in the handoff must also
 be reachable inside the container.
 
-When OMR-DLN is registered in the shared host cache, mount the selected verified artifact at its
-manifest-declared runtime path:
+No external detector weight is mounted (OMR-DLN was removed in #522):
 
 ```bash
-OMR_HOST="$HOME/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
-OMR_RUNTIME="/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
-
 docker run --rm --gpus all \
   -v "$PWD":/workspace \
-  -v "$OMR_HOST:$OMR_RUNTIME:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  -e OMR_DLN_MODEL_PATH="$OMR_RUNTIME" \
   pdfscore_pipeline_gpu \
   /opt/venv_pipeline/bin/python -m src.pipeline.review.apply_corrections \
   <review_root>/manual_correction_input.json \
@@ -341,7 +335,7 @@ The helper:
 3. carries forward existing correction inputs when applicable;
 4. fixes the rerun to the retained artifacts from the reviewed source run;
 5. applies new barline corrections to the reviewed barline artifact without rerunning PDF rendering,
-   HOMR, Real-ESRGAN, OMR-DLN, probe generation, or CNN scoring;
+   HOMR, Real-ESRGAN, probe generation, or CNN scoring;
 6. reuses the previous automatic MMR result everywhere except measures directly touched by a changed
    barline;
 7. selectively reruns MMR only for those touched measures, excluding any measure that already has an

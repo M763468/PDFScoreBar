@@ -20,14 +20,14 @@ Here a **staff** is a set of horizontal music lines, a **system** is the group o
 
 ## 2. Component and data flow
 
-HOMR and OMR-DLN are music-recognition systems used here to detect score features.
+HOMR is the music-recognition system used here to detect score features.
 A convolutional neural network (CNN) scores barline candidates; a separate CNN and
 RapidOCR recognize multi-measure rests and their counts.
 
 The diagram shows data dependencies in the selected production route with solid arrows.
 Dotted arrows show execution order, not data flow: the all-page SR process finishes
 before page-local recognition; within each page the original-image HOMR runs before
-x4 HOMR, followed by OMR-DLN. Their recognition results meet in the barline decision;
+x4 HOMR. Their recognition results meet in the barline decision;
 Phases A–C use that decision to build the layout and finalize numbering.
 
 Page-source jobs can run concurrently after SR exits, with explicit resource
@@ -41,17 +41,13 @@ flowchart TD
   P --> H1["HOMR on original image: baseline barlines and staves"]
   SR -. "batch completes before page work" .-> H1
   SR --> H2["HOMR on x4 image: supporting detections and connector evidence"]
-  SR --> OMR["OMR-DLN on x4 image: supporting barline detections"]
   H1 -. "then on the same page" .-> H2
-  H2 -. "then on the same page" .-> OMR
   H1 --> HC["Compare detections; keep supported baseline barlines"]
   H2 --> HC
-  OMR --> HC
   HC --> PR["Search page image for further candidates; adjust multi-staff strokes"]
   P --> PR
   H1 --> PR
   H2 --> PR
-  OMR --> PR
   PR --> CNN["CNN: score barline candidates and remove close duplicates"]
   CNN --> F["Filter / exclude pages"]
   F --> A["Phase A: apply optional barline edits; build layout and base numbering"]
@@ -67,13 +63,13 @@ flowchart TD
   C --> O["Final numbering and configured review / export outputs"]
 ```
 
-**Why two HOMR calls?** Both calls use the maintained production HOMR runtime, but process different images for different purposes. HOMR on the **original page** supplies the baseline barline coordinates and the staff positions used to build measures. HOMR on the **four-times-enlarged image** provides independent supporting detections and information about how staves are visually connected. OMR-DLN supplies another check using the same enlarged image. The comparison keeps supported baseline coordinates, rather than replacing them with enlarged-image coordinates. Detections and semantic support from the enlarged image are mapped to original-page coordinates where needed for comparison and downstream use.
+**Why two HOMR calls?** Both calls use the maintained production HOMR runtime, but process different images for different purposes. HOMR on the **original page** supplies the baseline barline coordinates and the staff positions used to build measures. HOMR on the **four-times-enlarged image** provides independent supporting detections and information about how staves are visually connected. The comparison keeps supported baseline coordinates, rather than replacing them with enlarged-image coordinates. Detections and semantic support from the enlarged image are mapped to original-page coordinates where needed for comparison and downstream use.
 
 ## 3. Execution order and decisions
 
 ### 3.1 Prepare images
 
-The pipeline renders the PDF into page-image files if needed. Real-ESRGAN then produces enlarged images for all selected pages in **one batch process**, reusing its model. The process ends before the page-by-page HOMR and OMR-DLN work begins. This ordering both reuses the expensive enlargement model and releases its GPU memory before subsequent recognition.
+The pipeline renders the PDF into page-image files if needed. Real-ESRGAN then produces enlarged images for all selected pages in **one batch process**, reusing its model. The process ends before the page-by-page HOMR work begins. This ordering both reuses the expensive enlargement model and releases its GPU memory before subsequent recognition.
 
 The maintained Docker launcher supports an explicit private SR compiler cache through
 `PDFSCORE_SR_COMPILER_CACHE`. It retains compiled artifacts across disposable jobs without
@@ -84,9 +80,9 @@ variable is unset, the existing SR execution path is unchanged. See [the cache c
 
 ### 3.2 Locate and score barline candidates
 
-Recognition starts from three sources: original-image HOMR, enlarged-image HOMR and enlarged-image OMR-DLN. The **combined decision** checks the original-image candidates against either supporting detector. It retains the original-image candidate's position when that support is present.
+Recognition starts from two sources: original-image HOMR and enlarged-image HOMR. The **combined decision** keeps an original-image candidate when an x4 HOMR detection overlaps it, or, for a barline spanning two or more staves, when x4 HOMR independently detects a stroke inside every staff piece (`unit_size`-normalized; a stroke on only one staff is never propagated). It retains the original-image candidate's position. The external OMR-DLN measure detector formerly used as a second supporting detector was removed in #522.
 
-The detector then looks for more plausible vertical lines in the page image. This search is called **probe**; its **rescue** rules recover candidates that the first scan could miss, including candidates near the right edge or between detected bands. Using the original-image staff mask, a **staff-stroke adjustment** splits a vertical candidate that spans several staves into staff-local pieces when appropriate. It also adds pieces split from original-image HOMR baseline boxes when they have x4 HOMR or OMR-DLN support. The CNN scores the resulting candidates, after which nearly identical detections of the same staff-local stroke are suppressed.
+The detector then looks for more plausible vertical lines in the page image. This search is called **probe**; its **rescue** rules recover candidates that the first scan could miss, including candidates near the right edge or between detected bands. Using the original-image staff mask, a **staff-stroke adjustment** splits a vertical candidate that spans several staves into staff-local pieces when appropriate. It also adds pieces split from original-image HOMR baseline boxes when they have x4 HOMR support. The CNN scores the resulting candidates, after which nearly identical detections of the same staff-local stroke are suppressed.
 
 At this point the output is a set of accepted barline positions, still **not** a complete model of which staves and measures belong together.
 
@@ -120,7 +116,6 @@ These are the modules worth knowing first. This is a responsibility map, not an 
 | Choose and run the production detector | `src/pipeline/detection/__init__.py` and `src/pipeline/detection/dense_orchestrator_batch_sr.py` | Select the configured detection route; schedule image enlargement, sources, candidate construction and CNN |
 | Produce the per-page recognition sources | `src/pipeline/detection/maintained_source_page_worker.py` and `src/pipeline/detection/current_support_worker.py` | Obtain original-image baseline results and enlarged-image support results |
 | Prepare the x4 page batch | `src/pipeline/detection/current_sr_batch_worker.py` | Reuse the enlargement model and finish SR before page recognition |
-| Run OMR-DLN once per multi-page root job | `src/pipeline/detection/omr_job.py` and `src/pipeline/detection/omr_job_worker.py` | After SR, one OMR process serves all ordered pages and publishes a hash-bound handoff; single-page and non-root jobs keep the per-page OMR route ([OMR job reuse](../performance/issue459-omr-job-reuse.md)) |
 | Recognize multi-measure rests | `src/pipeline/mmr_geometry_handoff.py` and `src/measure_numbering/mmr.py` | Reuse Phase-A layout, map vertical staff support and recognize rests |
 | Adjust barline candidates for CNN | `src/pipeline/steps/staff_strokes.py` | Reconcile multi-staff vertical candidates before scoring |
 | Construct systems and measures | `src/measure_numbering/pipeline.py` | Turn positions and connector evidence into the page's measure structure |

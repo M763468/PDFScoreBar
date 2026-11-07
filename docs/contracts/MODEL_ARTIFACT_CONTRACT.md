@@ -52,32 +52,15 @@ version in cache.
   version/release provenance, record its digest in the manifest, then materialize and validate
   it. Do not replace bytes under `issue296-d27-v1`.
 
-### OMR-DLN measure detector
+### OMR-DLN measure detector (removed in #522)
 
-- logical model ID: `omr-dln-measures`
-- selected version: `phase1-validated-v1`
-- provenance: `models/omr_dln/manifest.json`; official `dmgonzalez8/OMR` model distribution
-  and the exact bytes used by the final Phase 1 validation in PR #330
-- expected SHA-256: `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`
-- ownership: external/operator-supplied
-- host materialization:
-  `$XDG_CACHE_HOME/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt`
-  (or the `~/.cache/pdfscorebar/models` fallback / `PDFSCOREBAR_MODEL_CACHE` override)
-- container runtime: `/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt`
-- resolver/materializer: `src.common.model_artifacts verify/import`; canonical Docker validation
-  resolves the selected cached artifact and mounts it read-only
-- explicit override: `OMR_DLN_MODEL_PATH`, retained for compatibility; the pointed file is
-  verified against the selected manifest digest before use
-- update procedure: obtain the intentionally selected official replacement, register a new
-  version/provenance/digest/cache path in the manifest, import it with
-  `python3 -m src.common.model_artifacts import ...`, and validate. The Phase 1 digest is
-  historical provenance, not a permanent family hash.
-
-Upstream distributes the model separately from the source repository. No explicit model
-redistribution license was found in the upstream repository during Issue #329 Phase 2, so
-PDFScoreBar does not silently redistribute or automatically substitute the model. The
-operator import workflow verifies known selected bytes before publishing them into the common
-cache.
+- logical model ID: `omr-dln-measures` — **no longer selected**. Version `phase1-validated-v1`
+  (SHA-256 `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`) remains as
+  historical provenance of accepted results up to #416/#519 only.
+- `models/omr_dln/manifest.json`, the OMR-DLN worker/job route, `OMR_DLN_MODEL_PATH` and the
+  Docker mount were removed. Hybrid support uses x4 HOMR staff-piece support
+  (`src/pipeline/steps/hybrid_consensus.py`). Settings that still name OMR-DLN fail explicitly;
+  there is no fallback to the old weight.
 
 ### Real-ESRGAN x4
 
@@ -166,21 +149,6 @@ for the selected pinned HOMR runtime; the Docker image remains the runtime owner
 - update procedure: this profile is historical provenance. A replacement is a new profile/model
   version with its own source/evaluator provenance and digests; do not mutate the recorded
   Stage-E identity in place.
-
-## OMR-DLN registration workflow
-
-Obtain the official `YOLOv8m_Measures.pt` through the upstream distribution channel, then run
-once for the selected manifest version:
-
-```bash
-python3 -m src.common.model_artifacts import \
-  models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
-```
-
-The import rejects bytes that do not match the selected version digest and publishes verified
-bytes atomically. Afterwards `make verify-gpu-smoke` resolves the cache entry itself. The
-normal host default is already shared across worktrees through the XDG/user cache; use
-`PDFSCOREBAR_MODEL_CACHE` only when an explicit alternate cache root is required.
 
 ## Updating a model
 

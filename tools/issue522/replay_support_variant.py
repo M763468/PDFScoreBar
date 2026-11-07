@@ -88,19 +88,14 @@ def link(path: Path, target: Path) -> None:
 
 
 def staff_regions(score: str, page: str, retained: Path):
-    """Staff regions as the dense route derives them from the baseline staff mask."""
-    from src.common.barline_strokes import StaffRegion
-    from src.measure_numbering.pipeline import StaffExtractor
+    """Staff regions through the production helpers used by ``ProfileHybridDetector.run``."""
+    from src.pipeline.detection.profile_sources import _baseline_staff_mask
+    from src.pipeline.steps.hybrid_consensus import staff_regions_from_mask
 
-    image = cv2.imread(str(ROOT / "data/evaluation2/images" / score / f"{page}.png"))
-    height, width = image.shape[:2]
-    mask = retained / "baseline/batch" / page / f"{page}_staff_mask.png"
-    staves = StaffExtractor().extract(mask, (width, height))
-    return [
-        StaffRegion((s.bbox.x1, s.bbox.y1, s.bbox.x2, s.bbox.y2), s.unit_size)
-        for s in staves
-        if s.unit_size
-    ]
+    image = ROOT / "data/evaluation2/images" / score / f"{page}.png"
+    return staff_regions_from_mask(
+        _baseline_staff_mask(retained / "baseline/batch" / page, page), image
+    )
 
 
 def build_variant_hybrid(variant: str, score: str, retained: Path, out: Path, pages) -> dict:

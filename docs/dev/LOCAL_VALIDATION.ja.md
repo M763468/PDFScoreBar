@@ -1,6 +1,6 @@
 # ローカル検証環境
 
-<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"ec8d7387b0dd01e18a7d5ffa16d7b3fc8f9981716814d95a1abb42f573f04371"},"state":"reviewed"} -->
+<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"0aae4fc6bad97c007f9360c9ec5ce833652b209c9769fe2957fa622ec7282c30"},"state":"reviewed"} -->
 
 [English / 原文](LOCAL_VALIDATION.md)（英語正本）
 
@@ -90,40 +90,31 @@ docker exec --user "$(id -u):$(id -g)" \
 
 ### Git に依存する pytest スイート
 
-ネストされたワークツリーの `.git` ポインタはホスト上のパスであるため、共有コンテナ内からは辿ることができません。Git を呼び出すテストでは、マネージャーチェックアウトのバインドマウントを介してワークツリーの管理ディレクトリをマッピングし、明示的に渡してください。ワークツリーのディレクトリ名を決め打ちせず、パスを動的に導出してください。
+`GIT_DIR` や `GIT_WORK_TREE` を pytest に渡さないでください。これらはすべてのサブプロセスで `git -C` より優先されるため、一時リポジトリを作る fixture が worktree のブランチへコミットし、共有 `.git/config` に `core.worktree`/`[user]` を書き込みます（#513）。`tests/conftest.py` はこれらの変数を除去します。
+
+共有コンテナはチェックアウトを `/workspace` にマウントするため、worktree の `.git` ポインタ（ホストパス）はそこでは解決できません。Git に依存するスイートは、[pytest 検証イメージ](ENVIRONMENTS.md#disposable-pytest-validation-image) から起動した使い捨てコンテナで、マネージャーチェックアウトをホストと同じ絶対パスにマウントして実行してください。Git が worktree をそのまま解決し、未コミットの変更も検証対象になります。
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-git_dir="$(git rev-parse --path-format=absolute --git-dir)"
-git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
-container_git_dir="/workspace/.git/$git_dir_relative"
-container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_issue" \
-  pdfscore_pipeline_pytest_dev \
-  git --git-dir="$container_git_dir" --work-tree="$container_issue" \
-  rev-parse --absolute-git-dir
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$manager_root:$manager_root" -w "$PWD" -e PYTHONPATH="$PWD" \
+  --entrypoint /opt/venv_pipeline/bin/python "pdfscore_pytest_validation:<base-id>" \
+  -m pytest tests/test_release_candidate.py
 ```
 
-この事前確認でコンテナ内のパスが解決された場合は、同じ `GIT_DIR` と `GIT_WORK_TREE` を pytest に渡し、Git のサブプロセスがそのマッピングを継承するようにします。これらの変数は Git に依存するスイートに限定してください（通常のテストでは不要です）。検査した `/workspace` マウント配下にマネージャーの `.git` ディレクトリが見えない場合は、必要な依存関係を備えたホストランナー、または Git を認識できるチェックアウトを代わりに使用してください。`pytest --version` のみ、あるいは Git アクセスなしでのテスト実行のみに基づいて、Git に依存するスイートを合格（Passed）として報告しないでください。
+ホストのインタープリタは、選択したスイートの依存関係をすべて備えている場合に限り同等とみなせます。Git にアクセスできない実行に基づいて、Git に依存するスイートを合格（Passed）として報告しないでください。
 
-たとえば、`git rev-parse` を呼び出す Docker ランタイム契約テストは、マッピングされたメタデータを使用して次のように実行できます（必要に応じて対象のテストパスに置き換えてください）。
+#### fixture の書き込み混入からの復旧
+
+以前の手順はこれらの変数を pytest に渡していました。共有 config と、影響を受けたブランチの最近のコミットを確認してください。
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-git_dir="$(git rev-parse --path-format=absolute --git-dir)"
-git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
-container_git_dir="/workspace/.git/$git_dir_relative"
-container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_issue" \
-  -e PYTHONPATH="$container_issue" \
-  -e GIT_DIR="$container_git_dir" \
-  -e GIT_WORK_TREE="$container_issue" \
-  pdfscore_pipeline_pytest_dev \
-  /opt/venv_pipeline/bin/python -m pytest \
-  tests/test_docker_runtime_contract.py::test_direct_build_creates_artifact_directory_before_tempfile
+common_config="$manager_root/.git/config"
+git config --file "$common_config" --get-all core.worktree
+git config --file "$common_config" --get-regexp '^user\.'
+git log -5 --format='%h %an <%ae> %s' <branch>
 ```
+
+混入は `core.worktree`（このときマネージャーチェックアウトは別のワークツリーに解決されます）、`Distribution test` や `Release tests` の `[user]`、`fixture candidate` などのコミットとして現れます。意図的に設定した値でないことを確認してから、`git config --file "$common_config" --unset-all <key>` で削除してください。リポジトリ単位の `[user]` が上書きされていた場合は元の値に戻してください。未 push の fixture コミットが `HEAD` にある場合は `git reset --mixed HEAD~1` で取り除きます（ファイルは再び未追跡または ignored になります）。push 済みの場合は revert してください。
 
 Issue ワークツリーの Makefile から保守対象の `FAST_TESTS` リストを読み取り、コンテナのインタープリタで直接 pytest を呼び出します。
 

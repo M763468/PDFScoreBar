@@ -115,49 +115,45 @@ docker exec --user "$(id -u):$(id -g)" \
 
 ### Git-dependent pytest suites
 
-The nested worktree's `.git` pointer is a host path and cannot be followed inside the shared
-container. For tests that invoke Git, map the worktree's administrative directory through the
-manager checkout bind mount and pass it explicitly. Derive its path rather than assuming the
-worktree directory name:
+Never pass `GIT_DIR` or `GIT_WORK_TREE` to pytest. They override `git -C` in every subprocess,
+so fixtures that create temporary repositories would commit to the worktree branch and write
+`core.worktree`/`[user]` into the shared `.git/config` (#513); `tests/conftest.py` drops them.
+
+The shared container mounts the checkout at `/workspace`, so the worktree's host-path `.git`
+pointer does not resolve there. Run Git-dependent suites in a disposable container from the
+[pytest validation image](ENVIRONMENTS.md#disposable-pytest-validation-image) instead, with the
+manager checkout mounted at its host absolute path. Git then resolves the worktree directly and
+uncommitted changes are tested:
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-git_dir="$(git rev-parse --path-format=absolute --git-dir)"
-git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
-container_git_dir="/workspace/.git/$git_dir_relative"
-container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_issue" \
-  pdfscore_pipeline_pytest_dev \
-  git --git-dir="$container_git_dir" --work-tree="$container_issue" \
-  rev-parse --absolute-git-dir
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$manager_root:$manager_root" -w "$PWD" -e PYTHONPATH="$PWD" \
+  --entrypoint /opt/venv_pipeline/bin/python "pdfscore_pytest_validation:<base-id>" \
+  -m pytest tests/test_release_candidate.py
 ```
 
-If that preflight resolves the container path, pass the same `GIT_DIR` and `GIT_WORK_TREE`
-to pytest so Git subprocesses inherit the mapping. Limit these variables to Git-dependent
-suites; ordinary tests do not need them. If the manager `.git` directory is not visible under
-the inspected `/workspace` mount, use a host runner with the required dependencies or a
-Git-aware checkout instead. Do not report a Git-dependent suite as passed based only on
-`pytest --version` or a test run without Git access.
+A host interpreter is equivalent only when it already has every dependency of the selected
+suites. Do not report a Git-dependent suite as passed from a run without Git access.
 
-For example, the Docker runtime contract test that calls `git rev-parse` can run with the
-mapped metadata as follows; substitute the focused test path when needed:
+#### Recovering from leaked fixture writes
+
+Earlier instructions passed those variables to pytest. Check the shared config and recent
+commits of affected branches:
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-git_dir="$(git rev-parse --path-format=absolute --git-dir)"
-git_dir_relative="$(realpath --relative-to="$git_common_dir" "$git_dir")"
-container_git_dir="/workspace/.git/$git_dir_relative"
-container_issue="/workspace/$(realpath --relative-to="$(dirname "$git_common_dir")" "$PWD")"
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_issue" \
-  -e PYTHONPATH="$container_issue" \
-  -e GIT_DIR="$container_git_dir" \
-  -e GIT_WORK_TREE="$container_issue" \
-  pdfscore_pipeline_pytest_dev \
-  /opt/venv_pipeline/bin/python -m pytest \
-  tests/test_docker_runtime_contract.py::test_direct_build_creates_artifact_directory_before_tempfile
+common_config="$manager_root/.git/config"
+git config --file "$common_config" --get-all core.worktree
+git config --file "$common_config" --get-regexp '^user\.'
+git log -5 --format='%h %an <%ae> %s' <branch>
 ```
+
+Leaks show up as `core.worktree` (the manager checkout then resolves to another worktree),
+`[user]` values `Distribution test` or `Release tests`, and commits such as
+`fixture candidate`. After confirming that a value was not set intentionally, remove it with
+`git config --file "$common_config" --unset-all <key>`. Restore a previous repository-level
+`[user]` value if one was overwritten. Drop an unpublished fixture commit at `HEAD` with
+`git reset --mixed HEAD~1`, which keeps its files untracked or ignored again; revert a
+pushed one instead.
 
 Read the maintained `FAST_TESTS` list from the issue worktree's Makefile, then invoke pytest
 directly with the container interpreter:

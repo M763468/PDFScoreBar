@@ -418,6 +418,28 @@ This is an adoption snapshot; tags can change later. Use `docker image inspect` 
 `docker inspect` to establish current identities. Inspect snapshots, migration commands,
 preflight and test evidence are retained locally under `logs/issue398/environment-update/`.
 
+## Disposable pytest validation image
+
+For pytest that needs Git (or must see an issue worktree's uncommitted changes), build a
+validation-only image from the same base as the persistent container. It adds Git and pytest;
+the production image stays unchanged:
+
+```bash
+base=$(docker inspect pdfscore_pipeline_pytest_dev --format '{{.Image}}')
+docker tag "$base" "pdfscore_pytest_validation_base:${base:7:12}"
+docker build -t "pdfscore_pytest_validation:${base:7:12}" - <<DOCKERFILE
+FROM pdfscore_pytest_validation_base:${base:7:12}
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/* \
+    && /opt/venv_pipeline/bin/python -m pip install --no-cache-dir pytest==8.4.2
+DOCKERFILE
+```
+
+Rebuild it when the persistent container moves to another image, and record the image IDs of the
+base and the validation image with results. Run it as a disposable container (`docker run --rm`)
+with the manager checkout mounted at its host absolute path; see
+[Local validation](LOCAL_VALIDATION.md#git-dependent-pytest-suites).
+
 ## Review helpers
 
 The browser-based GT editor remains the preferred manual GT review helper:

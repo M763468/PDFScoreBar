@@ -293,3 +293,26 @@ def test_cli_report_cannot_contaminate_candidate(source, tmp_path):
     assert result.returncode == 1
     assert "outside the exact candidate" in result.stderr
     assert not (tmp_path / "candidate").exists()
+
+
+def test_release_candidate_ignores_inherited_repository_env(
+    source,
+    mapped_worktree,
+    tmp_path,
+    monkeypatch,
+):
+    env, state = mapped_worktree
+    before = state()
+    root, head, parent = source
+    destination = tmp_path / "candidate"
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+
+    report = create_candidate(root, destination, head, parent, "release/env-rc1")
+    assert check_candidate(root, destination, head, parent) == report
+
+    monkeypatch.delenv("GIT_DIR")
+    monkeypatch.delenv("GIT_WORK_TREE")
+    assert state() == before
+    assert (destination / ".git").is_dir()
+    assert git(destination, "rev-parse", "HEAD") == report["candidate_commit"]

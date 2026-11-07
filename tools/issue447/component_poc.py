@@ -311,7 +311,6 @@ def model_wall(output: Path, kind: str) -> dict:
         from src.pipeline.detection.current_homr_worker import run
     else:
         import ultralytics
-
         from src.pipeline.detection.omr_dln_worker import run
     events.append(
         {

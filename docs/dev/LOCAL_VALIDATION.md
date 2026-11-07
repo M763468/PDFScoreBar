@@ -115,75 +115,51 @@ docker exec --user "$(id -u):$(id -g)" \
 
 ### Git-dependent pytest suites
 
-The nested worktree's `.git` pointer is a host path and cannot be followed inside the shared
-container. Run suites that invoke Git from a disposable clone that has its own `.git`
-directory, placed under the issue log root so that it is visible through the `/workspace`
-mount:
+Never pass `GIT_DIR` or `GIT_WORK_TREE` to pytest. They override `git -C` in every subprocess,
+so fixtures that create temporary repositories would commit to the worktree branch and write
+`core.worktree`/`[user]` into the shared `.git/config` (#513); `tests/conftest.py` drops them.
+
+Prefer a host interpreter that has the suite's dependencies. On the host, the issue worktree's
+`.git` pointer resolves directly, and uncommitted changes are tested:
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-manager_root="$(dirname "$git_common_dir")"
+"$manager_root/.venv_pdf/bin/python" -m pytest tests/test_release_candidate.py
+```
+
+The shared container cannot follow that host-path pointer, and its image does not ship Git.
+When the container is required, run its Git-enabled persistent instance from a disposable clone
+under the issue log root. The clone contains only committed `HEAD`; remove it afterwards:
+
+```bash
 clone="logs/issue${ISSUE_ID}/pytest-clone/$(git rev-parse --short HEAD)"
 git clone -q --no-hardlinks . "$clone"
 container_clone="/workspace/$(realpath --relative-to="$manager_root" "$PWD/$clone")"
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_clone" -e PYTHONPATH="$container_clone" -e HOME=/tmp \
-  pdfscore_pipeline_pytest_dev \
-  /opt/venv_pipeline/bin/python -m pytest \
-  tests/test_docker_runtime_contract.py tests/test_distribution_surface.py \
-  tests/test_release_candidate.py tests/test_doc_translations.py
+docker exec --user "$(id -u):$(id -g)" -w "$container_clone" \
+  -e PYTHONPATH="$container_clone" -e HOME=/tmp pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python -m pytest tests/test_release_candidate.py
 ```
 
-`git clone` stops if the path already exists; delete a previous clone only after checking that
-it is the disposable clone. The clone contains only committed `HEAD` content, so commit (or make
-a temporary WIP commit of) the changes under test first and report the tested commit. Remove
-the clone when the run is finished.
+Do not report a Git-dependent suite as passed from a run without Git access.
 
-Do not pass `GIT_DIR` or `GIT_WORK_TREE` to pytest. These variables override `git -C <dir>`
-and are inherited by every subprocess, so fixtures that run `git init`, `git config`,
-`git add -f -A`, or `git commit` in a temporary directory would write into the mapped worktree:
-its branch receives a commit containing untracked and ignored files, and the shared
-`.git/config` receives `core.worktree` and test `[user]` values (#513). `tests/conftest.py`
-and `tools/release_candidate.py` therefore drop the variables listed by
-`git rev-parse --local-env-vars`; a run that relies on them cannot resolve the issue worktree
-and fails instead. If the manager `.git` directory is not visible under the inspected
-`/workspace` mount, use a host runner with the required dependencies. Do not report a
-Git-dependent suite as passed based only on `pytest --version` or a test run without Git
-access.
+#### Recovering from leaked fixture writes
 
-#### Detecting and recovering from leaked fixture writes
-
-Runs that followed the earlier `GIT_DIR`/`GIT_WORK_TREE` instructions may have changed the
-checkout. Check the shared configuration and the recent commits of each affected branch:
+Earlier instructions passed those variables to pytest. Check the shared config and recent
+commits of affected branches:
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-common_config="$git_common_dir/config"
+common_config="$manager_root/.git/config"
 git config --file "$common_config" --get-all core.worktree
 git config --file "$common_config" --get-regexp '^user\.'
 git log -5 --format='%h %an <%ae> %s' <branch>
-git -C "$(dirname "$git_common_dir")" rev-parse --show-toplevel
 ```
 
-Signs of contamination are a `core.worktree` entry in the shared config (the manager checkout's
-`--show-toplevel` then points at another worktree), `[user]` values such as
-`Distribution test` / `distribution-test@example.invalid` or `Release tests` /
-`release-tests@example.invalid`, and commits such as `fixture candidate` by those identities.
-To recover, after confirming that each value was not set intentionally (the fixture replaces
-an existing repository-level `[user]` value, so restore that value instead of unsetting it if
-the checkout had one):
-
-```bash
-git config --file "$common_config" --unset-all core.worktree
-git config --file "$common_config" --unset user.name
-git config --file "$common_config" --unset user.email
-# On the affected branch, only while the fixture commit is unpublished and is HEAD:
-git reset --mixed HEAD~1
-```
-
-`git reset --mixed` removes the commit and keeps its files in the working tree, so files that
-were untracked or ignored before the run become untracked or ignored again. If the commit has
-already been pushed, revert it instead of rewriting shared history.
+Leaks show up as `core.worktree` (the manager checkout then resolves to another worktree),
+`[user]` values `Distribution test` or `Release tests`, and commits such as
+`fixture candidate`. After confirming that a value was not set intentionally, remove it with
+`git config --file "$common_config" --unset-all <key>`. Restore a previous repository-level
+`[user]` value if one was overwritten. Drop an unpublished fixture commit at `HEAD` with
+`git reset --mixed HEAD~1`, which keeps its files untracked or ignored again; revert a
+pushed one instead.
 
 Read the maintained `FAST_TESTS` list from the issue worktree's Makefile, then invoke pytest
 directly with the container interpreter:

@@ -1,6 +1,6 @@
 # ローカル検証環境
 
-<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"7299a9e13ca93ec681f565dd22193b52dd779258ff740b20d162ffe74ee97ae0"},"state":"reviewed"} -->
+<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"c520a6bff00d10b7ca0abbc5d0f5c578a784950317b9d2db985f0287eb9f12db"},"state":"reviewed"} -->
 
 [English / 原文](LOCAL_VALIDATION.md)（英語正本）
 
@@ -90,50 +90,39 @@ docker exec --user "$(id -u):$(id -g)" \
 
 ### Git に依存する pytest スイート
 
-ネストされたワークツリーの `.git` ポインタはホスト上のパスであるため、共有コンテナ内からは辿ることができません。Git を呼び出すスイートは、独自の `.git` ディレクトリを持つ使い捨て clone から実行してください。clone は `/workspace` マウント経由で見えるよう、Issue のログルート配下に置きます。
+`GIT_DIR` や `GIT_WORK_TREE` を pytest に渡さないでください。これらはすべてのサブプロセスで `git -C` より優先されるため、一時リポジトリを作る fixture が worktree のブランチへコミットし、共有 `.git/config` に `core.worktree`/`[user]` を書き込みます（#513）。`tests/conftest.py` はこれらの変数を除去します。
+
+スイートの依存関係を備えたホストのインタープリタを優先してください。ホストでは Issue ワークツリーの `.git` ポインタがそのまま解決され、未コミットの変更も検証対象になります。
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-manager_root="$(dirname "$git_common_dir")"
+"$manager_root/.venv_pdf/bin/python" -m pytest tests/test_release_candidate.py
+```
+
+共有コンテナはホストパスのポインタを辿れず、そのイメージには Git が含まれていません。コンテナが必要な場合は、Git を追加済みの常駐コンテナで、Issue のログルート配下に作った使い捨て clone から実行します。clone にはコミット済みの `HEAD` しか含まれません。実行後は削除してください。
+
+```bash
 clone="logs/issue${ISSUE_ID}/pytest-clone/$(git rev-parse --short HEAD)"
 git clone -q --no-hardlinks . "$clone"
 container_clone="/workspace/$(realpath --relative-to="$manager_root" "$PWD/$clone")"
-docker exec --user "$(id -u):$(id -g)" \
-  -w "$container_clone" -e PYTHONPATH="$container_clone" -e HOME=/tmp \
-  pdfscore_pipeline_pytest_dev \
-  /opt/venv_pipeline/bin/python -m pytest \
-  tests/test_docker_runtime_contract.py tests/test_distribution_surface.py \
-  tests/test_release_candidate.py tests/test_doc_translations.py
+docker exec --user "$(id -u):$(id -g)" -w "$container_clone" \
+  -e PYTHONPATH="$container_clone" -e HOME=/tmp pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python -m pytest tests/test_release_candidate.py
 ```
 
-パスが既に存在する場合 `git clone` は停止します。以前の clone を削除するのは、それが使い捨ての clone であることを確認してからにしてください。clone にはコミット済みの `HEAD` の内容しか含まれないため、検証対象の変更を先にコミット（または一時的な WIP コミット）し、検証したコミットを報告してください。実行後は clone を削除してください。
+Git にアクセスできない実行に基づいて、Git に依存するスイートを合格（Passed）として報告しないでください。
 
-`GIT_DIR` や `GIT_WORK_TREE` を pytest に渡さないでください。これらの変数は `git -C <dir>` より優先され、すべてのサブプロセスに継承されます。そのため、一時ディレクトリで `git init`、`git config`、`git add -f -A`、`git commit` を実行する fixture が、マッピング先のワークツリーへ書き込みます。そのブランチには未追跡ファイルや ignored ファイルを含むコミットが追加され、共有 `.git/config` には `core.worktree` とテスト用の `[user]` が書き込まれます（#513）。このため `tests/conftest.py` と `tools/release_candidate.py` は `git rev-parse --local-env-vars` が返す変数を除去します。これらの変数に依存する実行は Issue ワークツリーを解決できず、失敗します。検査した `/workspace` マウント配下にマネージャーの `.git` ディレクトリが見えない場合は、必要な依存関係を備えたホストランナーを使用してください。`pytest --version` のみ、あるいは Git アクセスなしでのテスト実行のみに基づいて、Git に依存するスイートを合格（Passed）として報告しないでください。
+#### fixture の書き込み混入からの復旧
 
-#### fixture の書き込み混入の検出と復旧
-
-以前の `GIT_DIR`/`GIT_WORK_TREE` 手順に従った実行は、チェックアウトを変更している可能性があります。共有設定と、影響を受けた各ブランチの最近のコミットを確認してください。
+以前の手順はこれらの変数を pytest に渡していました。共有 config と、影響を受けたブランチの最近のコミットを確認してください。
 
 ```bash
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"
-common_config="$git_common_dir/config"
+common_config="$manager_root/.git/config"
 git config --file "$common_config" --get-all core.worktree
 git config --file "$common_config" --get-regexp '^user\.'
 git log -5 --format='%h %an <%ae> %s' <branch>
-git -C "$(dirname "$git_common_dir")" rev-parse --show-toplevel
 ```
 
-混入の兆候は、共有設定の `core.worktree`（このときマネージャーチェックアウトの `--show-toplevel` は別のワークツリーを指します）、`Distribution test` / `distribution-test@example.invalid` や `Release tests` / `release-tests@example.invalid` などの `[user]`、およびそれらの identity による `fixture candidate` などのコミットです。各値が意図的に設定されたものでないことを確認してから復旧してください（fixture は既存のリポジトリ単位の `[user]` を上書きするため、元の値があった場合は削除せずその値に戻してください）。
-
-```bash
-git config --file "$common_config" --unset-all core.worktree
-git config --file "$common_config" --unset user.name
-git config --file "$common_config" --unset user.email
-# 影響を受けたブランチで、fixture のコミットが未 push かつ HEAD の場合のみ:
-git reset --mixed HEAD~1
-```
-
-`git reset --mixed` はコミットを取り除き、そのファイルを作業ツリーに残します。そのため、実行前に未追跡または ignored だったファイルは、再び未追跡または ignored に戻ります。コミットが既に push されている場合は、共有履歴を書き換えずに revert してください。
+混入は `core.worktree`（このときマネージャーチェックアウトは別のワークツリーに解決されます）、`Distribution test` や `Release tests` の `[user]`、`fixture candidate` などのコミットとして現れます。意図的に設定した値でないことを確認してから、`git config --file "$common_config" --unset-all <key>` で削除してください。リポジトリ単位の `[user]` が上書きされていた場合は元の値に戻してください。未 push の fixture コミットが `HEAD` にある場合は `git reset --mixed HEAD~1` で取り除きます（ファイルは再び未追跡または ignored になります）。push 済みの場合は revert してください。
 
 Issue ワークツリーの Makefile から保守対象の `FAST_TESTS` リストを読み取り、コンテナのインタープリタで直接 pytest を呼び出します。
 

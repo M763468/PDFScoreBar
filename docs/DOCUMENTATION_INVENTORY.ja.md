@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"933770ce73ac72195de838a4da4a67011db261f45c2f47659b5cca51fb707c9a"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"639891cd82300b904c46d2425a9d3f7526dcfefc09bdd83d93ff34a144048b70"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `933770ce73ac72195de838a4da4a67011db261f45c2f47659b5cca51fb707c9a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `639891cd82300b904c46d2425a9d3f7526dcfefc09bdd83d93ff34a144048b70`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 
@@ -129,6 +129,8 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [ai-workflow/LABELS.md](ai-workflow/LABELS.md) | current/reference | EN | [JA reviewed](ai-workflow/LABELS.ja.md); #482 | P2 |
 | [ai-workflow/PROMPTS.md](ai-workflow/PROMPTS.md) | optional/reference | JA | EN needed | P3 |
 | [FUTURE_SERVICE_ARCHITECTURE.md](architecture/FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
+| [licensing/THIRD_PARTY_LICENSE_AUDIT.md](licensing/THIRD_PARTY_LICENSE_AUDIT.md) | Issue-scoped audit snapshot (2026-11-07); reverify before any distribution | JA | EN needed (#504) | P3 |
+| [licensing/REPOSITORY_LICENSE_OPTIONS.md](licensing/REPOSITORY_LICENSE_OPTIONS.md) | proposal pending owner decision; not a granted license | JA | EN needed (#505) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |
@@ -164,6 +166,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | `dev/`（既存） | 開発者・運用者向けの手順と方針 | 追加: `BRANCH_POLICY`、`ENVIRONMENTS`、`MAKEFILE_SURFACE`、`REGRESSION_TEST_WORKFLOW`、`SCRIPT_MANAGEMENT`（`.md` / `.en.md`）、`GT_PREPARATION_POLICY`、`MODEL_ARTIFACTS`、`manual_correction_review_package` |
 | `history/` | 凍結された Issue 限定の記録と過去の台帳 | `ISSUE44_ITER7_FINAL_REPORT.md`、`ISSUE120_EVALUATION_CONTRACT.md`、`ISSUE120_ARTIFACT_RETENTION.md`、`ISSUE158_DENSE_ROUTE_NAMING.md`、`ISSUE162_PIPELINE_LOGGING_TAXONOMY.md`、`ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`、`ISSUE363_RUNTIME_DEPENDENCY_REVIEW.md`、`DEVELOPMENT_LOG.md`、`DEVLOG_MEASURE_NUMBERING.md`、`TWO_HOMR_MILESTONE.md` |
 | `ai-workflow/`、`agent-skills/`、`performance/`、`refactors/`、`releases/`、`archive/` | 既存の領域 | 変更なし |
+| `licensing/` | #492 以後に追加したライセンス監査とライセンス決定の記録（#504 / #505） | 新設。移動したファイルはなし |
 
 単一のファイル名を示した場合を除き、各名前は `.md` / `.ja.md` の組を表します。移動した各ファイルの旧パスは `docs/<name>`、新パスは `docs/<location>/<name>` です。
 

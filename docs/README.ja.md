@@ -1,10 +1,10 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"255e88fb09d30037bf04130a9d3e8d21f1c4e6f47a140b29135590c02afbd099"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"f85f1c31bc3224ee427d78f2f48c100842267dbdf69d297389215db96f7fc1c4"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `255e88fb09d30037bf04130a9d3e8d21f1c4e6f47a140b29135590c02afbd099`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `f85f1c31bc3224ee427d78f2f48c100842267dbdf69d297389215db96f7fc1c4`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 
@@ -31,6 +31,7 @@
 | [`dev/`](dev/) | ブランチ、環境、検証、設定、Makefile、スクリプト、モデル公開の手順 |
 | [`history/`](history/)、[`refactors/`](refactors/)、[`releases/`](releases/)、[`performance/`](performance/) | 凍結された Issue の記録、マイルストーンの台帳、リファクタリング・リリースの証拠、性能の結果 |
 | [`ai-workflow/`](ai-workflow/)、[`agent-skills/`](agent-skills/)、[`archive/`](archive/) | 任意のエージェント作業ガイド、Skill の評価、アーカイブした案内 |
+| [`licensing/`](licensing/) | 第三者ライセンス監査（#504）と、オーナー決定待ちのリポジトリライセンス選択肢（#505）。日本語が原文 |
 
 言語の対応訳は原文の隣にあります。#492 ではこれらのファイルを直下から移動しました。古い Issue や PR のリンクを解決するには、その[旧パスと新パスの対応表](DOCUMENTATION_INVENTORY.ja.md#directory-layout-and-492-reorganization)を使ってください。
 

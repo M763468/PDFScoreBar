@@ -249,7 +249,9 @@ boundary; they do not have a separate record action. The finalized movement-boun
 part of the correction identity.
 
 Recording and generating a corrected result are separate. The app compares content identities for
-the handoff, declared source artifacts, source manifest when available, and correction files. A
+the handoff, declared source artifacts, source manifest when available, and correction files. New
+identities exclude `output_name` from the handoff; see the
+[versioned identity contract](../contracts/corrected_final_output.md#versioned-identity). A
 corrected result is current only while the source and complete recorded correction set match the
 identities consumed by that run. Editing or removing a recorded correction makes the previous result
 stale, even when an older corrected PDF still exists.

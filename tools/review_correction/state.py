@@ -10,10 +10,19 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from tools.review_correction.history import now, package_path
+from tools.review_correction.history import (
+    IDENTITY_VERSION,
+    identity_matches,
+    identity_record_version,
+    now,
+    package_path,
+    semantic_identity_digest,
+)
 
 SCHEMA_VERSION = 1
 STATE_FILENAME = ".correction_state.json"
+# Handoff fields that name outputs without affecting what is computed from the review.
+HANDOFF_OUTPUT_METADATA = frozenset({"output_name"})
 CORRECTION_TYPES = (
     "mmr_measure_span",
     "measure_construction",
@@ -50,6 +59,22 @@ def _file_identity(path: Path) -> str | None:
     if not path.is_file():
         return None
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _semantic_handoff_identity(data: bytes | None) -> str | None:
+    """Digest parsed handoff content without output metadata (identity v2).
+
+    Content that is not a JSON object stays distinct through its exact bytes.
+    """
+    if data is None:
+        return None
+    try:
+        payload = json.loads(data)
+    except ValueError:
+        payload = None
+    if not isinstance(payload, dict):
+        return _digest({"unparsed_handoff_sha256": hashlib.sha256(data).hexdigest()})
+    return _digest({k: v for k, v in payload.items() if k not in HANDOFF_OUTPUT_METADATA})
 
 
 class CorrectionState:
@@ -100,6 +125,8 @@ class CorrectionState:
             raise ValueError("Unsupported correction state metadata")
         if not isinstance(data.get("last_successful_result"), (dict, type(None))):
             raise ValueError("Invalid last successful result metadata")
+        if data.get("last_successful_result") is not None:
+            identity_record_version(data["last_successful_result"])
         if not isinstance(data.get("last_application"), (dict, type(None))):
             raise ValueError("Invalid application state metadata")
         return data
@@ -206,7 +233,16 @@ class CorrectionState:
             raise ValueError("Declared source artifact changed its package path")
         return _file_identity(path)
 
-    def capture_identity(self) -> dict:
+    def capture_identity(self, version: int = IDENTITY_VERSION) -> dict:
+        return self.capture_identities()[version]
+
+    def capture_identities(self) -> dict[int, dict]:
+        """Current identity under each rule stored records may use.
+
+        Version 1 hashes the whole handoff file and must stay byte-for-byte reproducible for
+        existing records. Version 2 excludes output metadata from the handoff. The source and
+        correction inputs are otherwise the same under both versions.
+        """
         source_files: dict[str, str | None] = {}
         for page in self.pages:
             for field in (
@@ -222,10 +258,12 @@ class CorrectionState:
                     source_files[rel] = self._source_identity(rel)
         if self.handoff_path.is_symlink():
             raise ValueError("Review handoff must not be a symlink")
-        source_files[self.handoff_path.name] = _file_identity(self.handoff_path)
+        handoff_bytes = self.handoff_path.read_bytes() if self.handoff_path.is_file() else None
         try:
-            handoff_data = json.loads(self.handoff_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+            handoff_data = json.loads(handoff_bytes)
+        except (TypeError, ValueError):
+            handoff_data = {}
+        if not isinstance(handoff_data, dict):
             handoff_data = {}
         from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
 
@@ -258,12 +296,34 @@ class CorrectionState:
                         for path in paths
                     ],
                 }
-        source = _digest(source_files)
         corrections = _digest(correction_files)
+        source_v1 = _digest(
+            {
+                **source_files,
+                self.handoff_path.name: None
+                if handoff_bytes is None
+                else hashlib.sha256(handoff_bytes).hexdigest(),
+            }
+        )
+        source_v2 = _digest(
+            {
+                **source_files,
+                "identity_version": IDENTITY_VERSION,
+                "semantic_handoff": _semantic_handoff_identity(handoff_bytes),
+            }
+        )
         return {
-            "source_identity": source,
-            "corrections_identity": corrections,
-            "identity": _digest({"source": source, "corrections": corrections}),
+            1: {
+                "source_identity": source_v1,
+                "corrections_identity": corrections,
+                "identity": _digest({"source": source_v1, "corrections": corrections}),
+            },
+            IDENTITY_VERSION: {
+                "identity_version": IDENTITY_VERSION,
+                "source_identity": source_v2,
+                "corrections_identity": corrections,
+                "identity": semantic_identity_digest(source_v2, corrections),
+            },
         }
 
     def set_pending(self, page: object, kind: object, items: list) -> None:
@@ -388,9 +448,10 @@ class CorrectionState:
 
     def snapshot(self) -> dict:
         self._sync_application()
-        current = self.capture_identity()
+        identities = self.capture_identities()
+        current = identities[IDENTITY_VERSION]
         last = self._metadata.get("last_successful_result")
-        matched = bool(last and last.get("identity") == current["identity"])
+        matched = bool(last and identity_matches(last, identities))
         states = []
         counts = {
             "pending": 0,

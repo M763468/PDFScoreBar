@@ -17,6 +17,8 @@ from pathlib import Path
 from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
 
 CHECKPOINT_ID = re.compile(r"cp_[0-9a-f]{64}\Z")
+CHECKPOINT_SCHEMA_VERSION = 2
+IDENTITY_VERSION = 2
 
 
 def digest(data):
@@ -87,6 +89,47 @@ def relocate_manifest(data, manifest_path):
         return value
 
     return convert(data)
+
+
+def semantic_identity_digest(source, corrections):
+    """Combined identity v2. The version is hashed so it can never equal a v1 digest."""
+    return digest(
+        encoded(
+            {"identity_version": IDENTITY_VERSION, "source": source, "corrections": corrections}
+        )
+    )
+
+
+def identity_record_version(recorded):
+    """Return the identity version of a stored record, rejecting unknown formats.
+
+    Records written before versioning have no `identity_version` and are version 1.
+    """
+    if not isinstance(recorded, dict):
+        raise ValueError("Invalid recorded identity")
+    if "identity_version" not in recorded:
+        return 1
+    version = recorded["identity_version"]
+    if type(version) is not int or version != IDENTITY_VERSION:
+        raise ValueError("Unsupported identity version")
+    source, corrections = recorded.get("source_identity"), recorded.get("corrections_identity")
+    if (
+        not isinstance(source, str)
+        or not isinstance(corrections, str)
+        or recorded.get("identity") != semantic_identity_digest(source, corrections)
+    ):
+        raise ValueError("Recorded identity is inconsistent")
+    return version
+
+
+def identity_matches(recorded, identities):
+    """Compare a stored record with the current package under the record's own version.
+
+    `identities` maps each supported version to the current identity, because a version 1
+    record stores only digests and cannot be converted to a later rule.
+    """
+    version = identity_record_version(recorded)
+    return recorded.get("identity") == identities[version]["identity"]
 
 
 class ReviewBusyError(ValueError):
@@ -240,10 +283,11 @@ class CheckpointStore:
         if not isinstance(label, str) or len(label) > 100:
             raise ValueError("Checkpoint label must be at most 100 characters")
         package = snapshot or self.package
-        identity = package.state.capture_identity()
+        identities = package.state.capture_identities()
+        identity = identities[IDENTITY_VERSION]
         if not force:
             for item in reversed(self.list()):
-                if item["identity"] == identity:
+                if identity_matches(item["identity"], identities):
                     self.validate_dependencies(item["id"])
                     return item["id"]
         refs = {}
@@ -252,7 +296,7 @@ class CheckpointStore:
             refs[rel] = self.put(path.read_bytes()) if path.is_file() else None
         refs["manual_correction_input.json"] = self.put(package.handoff_path.read_bytes())
         value = {
-            "schema_version": 1,
+            "schema_version": CHECKPOINT_SCHEMA_VERSION,
             "created_at": now(),
             "label": label,
             "identity": identity,
@@ -289,8 +333,18 @@ class CheckpointStore:
         if directory.is_symlink() or path.is_symlink():
             raise ValueError("Checkpoint must not use symlinks")
         value = json.loads(path.read_text())
-        if value.get("schema_version") != 1 or "cp_" + digest(encoded(value)) != checkpoint:
+        schema = value.get("schema_version")
+        if type(schema) is not int or schema not in (1, CHECKPOINT_SCHEMA_VERSION):
+            raise ValueError("Unsupported checkpoint schema")
+        if "cp_" + digest(encoded(value)) != checkpoint:
             raise ValueError("Checkpoint metadata changed")
+        # Each schema is bound to the identity rule it was written with.
+        if identity_record_version(value.get("identity")) != schema:
+            raise ValueError("Checkpoint identity does not match its schema")
+        if schema == CHECKPOINT_SCHEMA_VERSION and not value["files"].get(
+            "manual_correction_input.json"
+        ):
+            raise ValueError("Checkpoint does not retain its complete handoff")
         for rel, ref in value["files"].items():
             package_path(self.package.root, rel)
             if ref is not None:

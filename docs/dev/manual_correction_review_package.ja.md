@@ -1,10 +1,10 @@
 # 手動補正レビューワークフロー
 
-<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"9804a257b57a64cb43c80cbfaaa16f52cb57bb9d4d4e8a04c971924e435b12cf"},"state":"reviewed"} -->
+<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"42feff3633e0c9392477cd907266dc70bd389f37b861880d790ec295ba903c51"},"state":"reviewed"} -->
 
 [English / 原文](manual_correction_review_package.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `9804a257b57a64cb43c80cbfaaa16f52cb57bb9d4d4e8a04c971924e435b12cf`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `42feff3633e0c9392477cd907266dc70bd389f37b861880d790ec295ba903c51`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この開発者・運用担当者向けリファレンスは、現在の config-first の手動補正ワークフローを説明します。一つのパイプライン実行を既存の手動 GUI に接続し、パッケージ内に補正を保存して、補正を使ってパイプラインを再実行し、補正済みの小節番号付き最終 PDF を生成できます。
 
@@ -163,7 +163,7 @@ MMR／小節線／小節補正の典型的な流れ:
 
 MMR 小節範囲、小節構築、小節線の編集はレビュアーが記録するまで未記録です。楽章判断は境界あり／なしを確定すると記録済みになり、別の記録操作はありません。最終確定した楽章境界入力も補正の識別情報の一部です。
 
-記録と補正済み結果の生成は別です。アプリは handoff、宣言された元成果物、利用可能なら元 manifest、補正ファイルの内容識別子を比較します。補正済み結果が最新とみなされるのは、元データと記録済み補正の全体がその実行で消費した識別子と一致している間だけです。記録済み補正の編集や削除により、古い補正済み PDF が存在していても以前の結果は stale になります。
+記録と補正済み結果の生成は別です。アプリは handoff、宣言された元成果物、利用可能なら元 manifest、補正ファイルの内容識別子を比較します。新しい識別子では handoff から `output_name` を除きます。[バージョン付き identity の契約](../contracts/corrected_final_output.ja.md#バージョン付き-identity)を参照してください。補正済み結果が最新とみなされるのは、元データと記録済み補正の全体がその実行で消費した識別子と一致している間だけです。記録済み補正の編集や削除により、古い補正済み PDF が存在していても以前の結果は stale になります。
 
 記録または適用の失敗はエラーとして報告され、以前の記録済み補正ファイルと最後に成功した補正結果の識別子は保持されます。状態メタデータは補正ペイロードとは別に `corrections/.correction_state.json` に保存され、エンジンのペイロードスキーマを変更しません。サーバーは `GET /api/state` でこの契約を公開します。利用者アプリは `POST /api/state/pending` で未記録の下書きをサーバーに報告し、`POST /api/state/pending/clear` で消去します。
 

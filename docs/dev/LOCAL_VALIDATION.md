@@ -119,27 +119,21 @@ Never pass `GIT_DIR` or `GIT_WORK_TREE` to pytest. They override `git -C` in eve
 so fixtures that create temporary repositories would commit to the worktree branch and write
 `core.worktree`/`[user]` into the shared `.git/config` (#513); `tests/conftest.py` drops them.
 
-Prefer a host interpreter that has the suite's dependencies. On the host, the issue worktree's
-`.git` pointer resolves directly, and uncommitted changes are tested:
+The shared container mounts the checkout at `/workspace`, so the worktree's host-path `.git`
+pointer does not resolve there. Run Git-dependent suites in a disposable container from the
+[pytest validation image](ENVIRONMENTS.md#disposable-pytest-validation-image) instead, with the
+manager checkout mounted at its host absolute path. Git then resolves the worktree directly and
+uncommitted changes are tested:
 
 ```bash
-"$manager_root/.venv_pdf/bin/python" -m pytest tests/test_release_candidate.py
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$manager_root:$manager_root" -w "$PWD" -e PYTHONPATH="$PWD" \
+  --entrypoint /opt/venv_pipeline/bin/python "pdfscore_pytest_validation:<base-id>" \
+  -m pytest tests/test_release_candidate.py
 ```
 
-The shared container cannot follow that host-path pointer, and its image does not ship Git.
-When the container is required, run its Git-enabled persistent instance from a disposable clone
-under the issue log root. The clone contains only committed `HEAD`; remove it afterwards:
-
-```bash
-clone="logs/issue${ISSUE_ID}/pytest-clone/$(git rev-parse --short HEAD)"
-git clone -q --no-hardlinks . "$clone"
-container_clone="/workspace/$(realpath --relative-to="$manager_root" "$PWD/$clone")"
-docker exec --user "$(id -u):$(id -g)" -w "$container_clone" \
-  -e PYTHONPATH="$container_clone" -e HOME=/tmp pdfscore_pipeline_pytest_dev \
-  /opt/venv_pipeline/bin/python -m pytest tests/test_release_candidate.py
-```
-
-Do not report a Git-dependent suite as passed from a run without Git access.
+A host interpreter is equivalent only when it already has every dependency of the selected
+suites. Do not report a Git-dependent suite as passed from a run without Git access.
 
 #### Recovering from leaked fixture writes
 

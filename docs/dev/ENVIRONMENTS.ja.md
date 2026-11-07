@@ -1,6 +1,6 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"709c465dfcd1a66f450a29faee8d0595e7fb1142e23721d84766b149d101321a"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"190fe7024de2037474d129d7b60afc5acbddd437793626dbbacf4fa8fe5eacca"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
@@ -274,6 +274,23 @@ docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev 
 | `pdfscore_pipeline_pytest_dev_before_issue398` | 旧開発用コンテナの停止済みアーカイブ（書き込み可能レイヤーを保持） |
 
 その他の Issue スコープのコンテナや過去のコンテナは、保守対象環境へ昇格されませんでした。これは採用時点のスナップショットであり、タグは今後変更される可能性があります。現在のアイデンティティを確認するには、`docker image inspect` および `docker inspect` を使用してください。inspect スナップショット、移行コマンド、プリフライト、およびテストのエビデンスは、ローカルの `logs/issue398/environment-update/` 配下に保持されています。
+
+## 使い捨て pytest 検証イメージ
+
+Git を必要とする pytest（または Issue worktree の未コミット変更を検証する pytest）には、永続コンテナと同じベースから検証専用イメージをビルドします。Git と pytest を追加するだけで、本番イメージは変更しません。
+
+```bash
+base=$(docker inspect pdfscore_pipeline_pytest_dev --format '{{.Image}}')
+docker tag "$base" "pdfscore_pytest_validation_base:${base:7:12}"
+docker build -t "pdfscore_pytest_validation:${base:7:12}" - <<DOCKERFILE
+FROM pdfscore_pytest_validation_base:${base:7:12}
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/* \
+    && /opt/venv_pipeline/bin/python -m pip install --no-cache-dir pytest==8.4.2
+DOCKERFILE
+```
+
+永続コンテナが別のイメージに移行したときは再ビルドし、結果にはベースと検証イメージのイメージ ID を記録してください。マネージャーチェックアウトをホストと同じ絶対パスにマウントした使い捨てコンテナ（`docker run --rm`）として実行します。[Local validation](LOCAL_VALIDATION.md#git-dependent-pytest-suites) を参照してください。
 
 ## レビューヘルパー
 

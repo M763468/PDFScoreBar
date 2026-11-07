@@ -1,6 +1,6 @@
 # ローカル検証環境
 
-<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"c520a6bff00d10b7ca0abbc5d0f5c578a784950317b9d2db985f0287eb9f12db"},"state":"reviewed"} -->
+<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"0aae4fc6bad97c007f9360c9ec5ce833652b209c9769fe2957fa622ec7282c30"},"state":"reviewed"} -->
 
 [English / 原文](LOCAL_VALIDATION.md)（英語正本）
 
@@ -92,24 +92,16 @@ docker exec --user "$(id -u):$(id -g)" \
 
 `GIT_DIR` や `GIT_WORK_TREE` を pytest に渡さないでください。これらはすべてのサブプロセスで `git -C` より優先されるため、一時リポジトリを作る fixture が worktree のブランチへコミットし、共有 `.git/config` に `core.worktree`/`[user]` を書き込みます（#513）。`tests/conftest.py` はこれらの変数を除去します。
 
-スイートの依存関係を備えたホストのインタープリタを優先してください。ホストでは Issue ワークツリーの `.git` ポインタがそのまま解決され、未コミットの変更も検証対象になります。
+共有コンテナはチェックアウトを `/workspace` にマウントするため、worktree の `.git` ポインタ（ホストパス）はそこでは解決できません。Git に依存するスイートは、[pytest 検証イメージ](ENVIRONMENTS.md#disposable-pytest-validation-image) から起動した使い捨てコンテナで、マネージャーチェックアウトをホストと同じ絶対パスにマウントして実行してください。Git が worktree をそのまま解決し、未コミットの変更も検証対象になります。
 
 ```bash
-"$manager_root/.venv_pdf/bin/python" -m pytest tests/test_release_candidate.py
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$manager_root:$manager_root" -w "$PWD" -e PYTHONPATH="$PWD" \
+  --entrypoint /opt/venv_pipeline/bin/python "pdfscore_pytest_validation:<base-id>" \
+  -m pytest tests/test_release_candidate.py
 ```
 
-共有コンテナはホストパスのポインタを辿れず、そのイメージには Git が含まれていません。コンテナが必要な場合は、Git を追加済みの常駐コンテナで、Issue のログルート配下に作った使い捨て clone から実行します。clone にはコミット済みの `HEAD` しか含まれません。実行後は削除してください。
-
-```bash
-clone="logs/issue${ISSUE_ID}/pytest-clone/$(git rev-parse --short HEAD)"
-git clone -q --no-hardlinks . "$clone"
-container_clone="/workspace/$(realpath --relative-to="$manager_root" "$PWD/$clone")"
-docker exec --user "$(id -u):$(id -g)" -w "$container_clone" \
-  -e PYTHONPATH="$container_clone" -e HOME=/tmp pdfscore_pipeline_pytest_dev \
-  /opt/venv_pipeline/bin/python -m pytest tests/test_release_candidate.py
-```
-
-Git にアクセスできない実行に基づいて、Git に依存するスイートを合格（Passed）として報告しないでください。
+ホストのインタープリタは、選択したスイートの依存関係をすべて備えている場合に限り同等とみなせます。Git にアクセスできない実行に基づいて、Git に依存するスイートを合格（Passed）として報告しないでください。
 
 #### fixture の書き込み混入からの復旧
 

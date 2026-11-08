@@ -1,6 +1,6 @@
 # OMR job reuse (Issue #459)
 
-> **Superseded (#522):** the OMR-DLN detector and this job route were removed from production; this page is retained as the #459 record only.
+> **Superseded (#522):** the OMR-DLN detector and this job route were removed from production; this page is retained as the #459 record only. The `tools/issue459/` tooling was also removed; reproduce from commit `4f1594bc`.
 
 Status: maintained production route for root multi-page jobs. Research evidence and the
 failed/passed gate history live in PR #478 (`docs/performance/issue459/` on

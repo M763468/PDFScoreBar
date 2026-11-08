@@ -631,8 +631,6 @@
     "src/homr_eval_scripts/segnet_cache.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detection/homr_profile.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detection/homr_profile_compat.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/hybrid.py": "older hybrid orchestration path; canonical dense dispatcher uses dense_orchestrator_batch_sr",
-    "src/pipeline/detection/orchestrator.py": "standard detector route; outside the selected dense engine path",
     "src/pipeline/detection/profile_hybrid.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detection/profile_hybrid_batch_sr.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detection/verified_source_page_worker.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
@@ -681,15 +679,8 @@
       "configs/cnn_barline_runs/**",
       "configs/detector_profiles/stage_e_verified_homr.json",
       "configs/detector_routes/issue120_dense_probe_candidate_route.yaml",
-      "configs/evaluation2_bypass_sr.yaml",
-      "configs/evaluation2_bypass_sr_batch.yaml",
       "configs/evaluation2_e2e_subset.yaml",
-      "configs/evaluation2_sr_x2.yaml",
-      "configs/evaluation2_sr_x4.yaml",
-      "configs/issue120_stage_e_full_pipeline.yaml",
-      "configs/issue333_provenance_smoke.yaml",
-      "configs/issue43_ab_*.yaml",
-      "configs/toy_symphony.yaml"
+      "configs/issue43_ab_*.yaml"
     ]
   },
   "test_module_groups": {
@@ -844,12 +835,6 @@
     "tests/fixtures/**"
   ],
   "runtime_optional_source_imports": {
-    "src/pipeline/detection/__init__.py": {
-      "src/pipeline/detection/orchestrator.py": "Lazy standard-route compatibility only; the selected engine uses dense_full_pipeline."
-    },
-    "src/pipeline/detection/connector_artifacts.py": {
-      "src/pipeline/detection/hybrid.py": "Lazy default skip-existing hook for the unselected standard route; maintained workers supply their predictor class explicitly."
-    },
     "src/pipeline/detection/dense_orchestrator.py": {
       "src/pipeline/detection/profile_hybrid.py": "Explicit non-maintained profile selection loads the historical backend lazily; maintained_original never imports it."
     },

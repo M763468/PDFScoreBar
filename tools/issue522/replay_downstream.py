@@ -155,7 +155,6 @@ def main() -> int:
             apply_measure_overrides=True,
             overlay=False,
         )
-        config["detection"]["detector_route"] = "standard"  # bypass fresh MMR support prep
         first = pages[0]
         barline_pattern = str(variant_root / "candidate" / name / "{page_id}" / "predictions.json")
         config["inputs"].update(

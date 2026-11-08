@@ -1,13 +1,16 @@
+# evaluation2_e2e_subset: evaluation run on the single verified detector route (#522).
+# detection/filters/mmr/numbering are copied from configs/dense_full_pipeline.yaml;
+# only run/inputs/steps are evaluation-specific. The former standard-route variant is
+# reproducible from commit 4f1594bc.
 run:
   run_id: eval2_prokofiev1_subset
   output_root: logs/full_pipeline_runs/eval2_subset_test
-
 inputs:
   pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
   pdf_to_images:
     output_dir: logs/preprocess/evaluation2/Va_Prokofiev_Symphony1
     dpi: 300
-    pages: "1,2,3"
+    pages: 1,2,3
     target_width: null
     target_height: null
     interpolation: area
@@ -16,14 +19,12 @@ inputs:
     overwrite: true
     alpha: false
     image_glob: page_*.png
-  # These are resolved automatically by detection step if enabled
   barlines_root: null
   barlines_pattern: null
   staff_mask_pattern: null
   page_runs: null
   barline_overrides: null
   measure_overrides: null
-
 steps:
   pdf_to_images: true
   detection: true
@@ -33,30 +34,59 @@ steps:
   mmr_overrides: true
   apply_measure_overrides: true
   overlay: true
-
 detection:
-  container_name: sr_eval_gpu_exp
+  source_concurrency:
+    workers: 1
+    timeout_sec: 900
+    on_unavailable: error
+  enable_sr: true
+  sr_scale: 4
+  sr_compile_mode: reduce-overhead
+  homr_profile: maintained_original
+  detector_route: dense_full_pipeline
+  probe_use_original_images: true
+  crop_recenter_on_bbox_ink: true
   hybrid_output_root: logs/hybrid_generalization/eval2_subset_test
-  enable_sr: false
-  ink_threshold: 230
-  min_ratio: 0.70
-  min_height_ratio: 0.012
-  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
-  cnn_threshold: 0.1
-  # Probe Rescue flags are enabled by default in probe_scan.py but can be overridden here
+  band_source: row_stats
+  band_cluster_max_dist: 25.0
+  ink_threshold: 240
+  min_ratio: 0.6
+  min_height_ratio: 0.006
+  min_width_ratio: 0.0
+  probe_width: 4
+  max_per_band: 80
+  enable_heuristic_filters: true
+  candidate_filter_kwargs:
+    left_margin_ratio: 0.12
+    clef_left_ratio: 0.25
+    min_height_median_ratio: 0.6
+    ink_threshold: 180
+    min_ink_ratio: 0.18
+    paper_threshold: 200
+    min_paper_overlap_ratio: 0.6
+    min_staff_overlap_ratio: 0.02
+  cnn_model_manifest: models/barline_cnn/manifest.json
+  cnn_threshold: 0.4965248107910156
+  cnn_apply_nms: false
   divisi_rescue: true
   scan_gap_rescue: true
+  scan_gap_threshold_ratio: 1.5
+  scan_gap_rescue_min_ratio: 0.3
   scan_x_peak_rescue: true
-
+  scan_rightmost_rescue: true
+  scan_center_on_peak: true
 filters:
   blank_page: auto
+  blank_page_config:
+    pixel_threshold: 245
+    max_ink_ratio: 0.003
+    max_stddev: 12.0
   staff_detect: auto
+  staff_detect_config:
+    min_nonzero_ratio: 0.001
   user_exclude: []
-
 mmr:
   model_path: models/mmr/mmr_classifier_best.pth
-  ocr_lang: eng
   enable_rotation_tta: false
-
 numbering:
   force_single_system: false

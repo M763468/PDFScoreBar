@@ -240,8 +240,10 @@ Build the reproduction extension explicitly from a production image:
 ```bash
 make docker-build
 make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
-make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
 ```
+
+The former `run-issue120-stage-e-full` target executed the standard detector route that was
+removed in #522; reproduce that run from commit `4f1594bc`.
 
 The extension is `docker/Dockerfile.stage-e`; its default output is
 `pdfscore_stage_e_reproduction`. For an isolated build, set

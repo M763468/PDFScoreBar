@@ -1,10 +1,10 @@
 # 保守対象のMakefile入口
 
-<!-- translation: {"original":"MAKEFILE_SURFACE.md","source":{"sha256":"2b6cb7906b879c61d739e5569f821da7f706a70294e702b8d3cdab1ea17a4a25"},"state":"reviewed"} -->
+<!-- translation: {"original":"MAKEFILE_SURFACE.md","source":{"sha256":"d5c7f8e51229714031ab08f0072cd3f5a1ae182962c66b1c9c6cf2e44bb6fa4a"},"state":"reviewed"} -->
 
 [English / 原文](MAKEFILE_SURFACE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `2b6cb7906b879c61d739e5569f821da7f706a70294e702b8d3cdab1ea17a4a25`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `d5c7f8e51229714031ab08f0072cd3f5a1ae182962c66b1c9c6cf2e44bb6fa4a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 ルートの `Makefile` は、日常の開発、検証、正規のランタイム操作、および少数の保持された過去の再現手順について、サポートされるリポジトリの入口である。`make help` は各項目に役割を表示する。この一覧はルートの全ターゲットを分類する。Issue固有のターゲットは来歴のために保持されており、一般的なワークフローとして推奨するものではない。
 
@@ -43,7 +43,7 @@
 | --- | --- | --- |
 | `eval-issue120-full` | Issue #120の再現 | `tools/issue120/eval_full68_from_intermediates.py` と来歴ツール |
 | `verify-issue120-stage-b`, `verify-issue120-stage-b-native` | Issue #120の再現 | Stage-Bスコアラー・評価器。DockerまたはホストPython経由 |
-| `regen-issue120-stage-d-upstream`, `verify-issue120-stage-d` | Issue #120の再現 | Stage-D生成とStage-C検証器 |
+| `verify-issue120-stage-d` | Issue #120の再現 | 保持済みのStage-D成果物に対するStage-C検証器（Stage-D生成のtargetは#522で削除したstandard検出経路を実行していたため、commit `4f1594bc` から再現する） |
 | `summarize-issue120-stage-d`, `compare-issue120-stage-d-boxes` | Issue #120の再現 | ドリフトとボックス統計の分析ツール |
 
 Stage-Eターゲットも利用できるが、その契約はIssue #120に限定されるため、ルートのhelp表示からは削除された。次のように明示的に呼び出す。

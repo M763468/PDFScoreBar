@@ -43,7 +43,7 @@ historical contract. Their defaults may require operator-held data, models, Dock
 | --- | --- | --- |
 | `eval-issue120-full` | Issue #120 reproduction | `tools/issue120/eval_full68_from_intermediates.py` and provenance tool |
 | `verify-issue120-stage-b`, `verify-issue120-stage-b-native` | Issue #120 reproduction | Stage-B scorer/evaluator; Docker or host Python route |
-| `regen-issue120-stage-d-upstream`, `verify-issue120-stage-d` | Issue #120 reproduction | Stage-D generation and Stage-C verifier |
+| `verify-issue120-stage-d` | Issue #120 reproduction | Stage-C verifier on retained Stage-D artifacts (the Stage-D generation target ran the standard detector route removed in #522; reproduce it from commit `4f1594bc`) |
 | `summarize-issue120-stage-d`, `compare-issue120-stage-d-boxes` | Issue #120 reproduction | Drift and box-statistics analysis tools |
 
 Stage-E targets remain available, but were removed from the root help surface because their

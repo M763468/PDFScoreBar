@@ -1,6 +1,6 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"95f00766567c070eec5cdb2a099771d5814b4ee3c7e6ef2c4151039f47c7bd3d"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"12b2934021ae3ac084312b0d2eb608999dd3268a73f8f631f56eb90e1d9a63c6"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
@@ -154,8 +154,9 @@ configs/detector_profiles/maintained_original_homr.json
 ```bash
 make docker-build
 make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
-make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
 ```
+
+以前の `run-issue120-stage-e-full` は、#522 で削除した standard 検出経路を実行するものでした。その実行は commit `4f1594bc` から再現してください。
 
 この拡張は `docker/Dockerfile.stage-e` であり、デフォルトの出力イメージ名は `pdfscore_stage_e_reproduction` です。分離されたビルドを行う場合は、これらの Make コマンドで `ISSUE120_PRODUCTION_IMAGE=<production-image>` および `ISSUE120_STAGE_E_IMAGE=<reproduction-image>` を設定してください。再現プロビナンスを保持する場合は、ベースイメージを不変のイメージ ID にピン留めしてください。このイメージには個別のアセットコントラクトラベルが付与されるため、本番プリフライトへの明示的なオーバーライドを含め、標準のイメージ解決からは除外されます。この拡張は過去のソースコミット、モデルの SHA-256 チェック、および分離された依存関係バージョンを保持しますが、本番環境向けに過去のプロファイルを選択するものではありません。
 

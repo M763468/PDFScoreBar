@@ -147,3 +147,26 @@ def test_correction_reapplies_mmr_in_the_source_run_mode(tmp_path):
     support.parent.mkdir(parents=True)
     support.write_text("{}")
     assert _source_used_mmr_support({}, source_root=tmp_path, page_id="p")
+
+
+def test_correction_of_a_standard_route_review_package_is_not_rejected(tmp_path):
+    # Correction never reruns detection: the recorded route of a historical source run
+    # is provenance, so packages produced by the removed standard route stay correctable.
+    from src.pipeline.review.apply_corrections import _run_retained_artifact_correction
+
+    canonical = {
+        "measure_overrides": tmp_path / "measure_overrides.json",
+        "barline_overrides": tmp_path / "barline_overrides.json",
+    }
+    summary = _run_retained_artifact_correction(
+        normalized_handoff={"pages": []},
+        package_root=tmp_path,
+        source_manifest={"pages": []},
+        source_root=tmp_path,
+        source_config={"detection": {"detector_route": "standard"}},
+        canonical_paths=canonical,
+        staging_paths={},
+        new_run_dir=tmp_path / "corrected",
+        movement_boundary_input=({}, None, None),
+    )
+    assert isinstance(summary, dict)

@@ -690,9 +690,10 @@ def _source_used_mmr_support(
     manifest_page: Dict[str, Any], *, source_root: Path, page_id: str
 ) -> bool:
     """Re-apply MMR the same way the reviewed source run did (with or without x4 support)."""
-    return isinstance(manifest_page.get("mmr_support"), dict) or (
-        source_root / "intermediate" / page_id / "mmr_support.json"
-    ).is_file()
+    return (
+        isinstance(manifest_page.get("mmr_support"), dict)
+        or (source_root / "intermediate" / page_id / "mmr_support.json").is_file()
+    )
 
 
 def _current_homr_staff_mask(
@@ -809,10 +810,10 @@ def _run_retained_artifact_correction(
         get_nested(source_config, "numbering", "force_single_system", default=False)
     )
     mmr_enabled = bool(get_nested(source_config, "steps", "mmr_overrides", default=False))
-    # #522: one detector route; a review package from a removed route fails explicitly.
-    from src.pipeline.detection.config import resolve_detector_route
-
-    resolve_detector_route(get_nested(source_config, "detection", default={}) or {})
+    # #522: correction never reruns detection, so the source run's recorded
+    # detector_route is history, not a setting to apply. Review packages produced by
+    # the removed standard route stay correctable; MMR is re-applied in the source
+    # run's mode (see _source_used_mmr_support).
 
     states: List[Dict[str, Any]] = []
     execution_user_overrides: List[Dict[str, Any]] = []

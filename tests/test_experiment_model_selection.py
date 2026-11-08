@@ -253,8 +253,8 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
 
 
 @pytest.mark.parametrize("mode", ["exploration", "comparison"])
-@pytest.mark.parametrize("route", [None, "standard", "unsupported_route"])
-def test_candidate_routes_are_rejected_before_standard_dispatch(tmp_path, monkeypatch, mode, route):
+@pytest.mark.parametrize("route", ["standard", "unsupported_route"])
+def test_candidate_modes_reject_removed_or_unknown_routes(tmp_path, monkeypatch, mode, route):
     import yaml
 
     from src.pipeline import detection
@@ -262,15 +262,9 @@ def test_candidate_routes_are_rejected_before_standard_dispatch(tmp_path, monkey
 
     cfg = _candidate_config(tmp_path)
     cfg["model_validation"] = mode
-    if route is None:
-        cfg.pop("detector_route")
-    else:
-        cfg["detector_route"] = route
+    cfg["detector_route"] = route
     config = {"detection": cfg}
-    monkeypatch.setattr(
-        detection, "_install_standard_detector_hooks", lambda: pytest.fail("standard route entered")
-    )
-    message = "requires detector_route='dense_full_pipeline'"
+    message = "only detector route is 'dense_full_pipeline'"
     with pytest.raises(ValueError, match=message):
         detection.DetectorOrchestrator(config, [], "test", tmp_path / "run", dry_run=False)
     with pytest.raises(ValueError, match=message):
@@ -282,7 +276,7 @@ def test_candidate_routes_are_rejected_before_standard_dispatch(tmp_path, monkey
 
 
 @pytest.mark.parametrize("mode", ["exploration", "comparison"])
-@pytest.mark.parametrize("route", [None, "standard", "unsupported_route"])
+@pytest.mark.parametrize("route", ["standard", "unsupported_route"])
 def test_preflight_rejects_candidate_routes_before_gpu_or_model_work(
     tmp_path, monkeypatch, capsys, mode, route
 ):
@@ -291,9 +285,7 @@ def test_preflight_rejects_candidate_routes_before_gpu_or_model_work(
 
     from docker import runtime_contract
 
-    cfg = {"model_validation": mode}
-    if route is not None:
-        cfg["detector_route"] = route
+    cfg = {"model_validation": mode, "detector_route": route}
     config = tmp_path / "candidate.yaml"
     config.write_text(yaml.safe_dump({"detection": cfg}))
     monkeypatch.setattr(runtime_contract, "runtime_fingerprint", lambda root: "matching")
@@ -311,7 +303,24 @@ def test_preflight_rejects_candidate_routes_before_gpu_or_model_work(
     )
     result = json.loads(capsys.readouterr().err)
     assert result["status"] == "fail"
-    assert "requires detector_route='dense_full_pipeline'" in result["errors"][0]
+    assert "only detector route is 'dense_full_pipeline'" in result["errors"][0]
+
+
+@pytest.mark.parametrize("mode", ["exploration", "comparison"])
+def test_candidate_mode_with_omitted_route_uses_the_dense_route(tmp_path, mode):
+    from src.pipeline import detection
+    from src.pipeline.detection import dense_orchestrator_batch_sr
+
+    cfg = _candidate_config(tmp_path)
+    observed = model_observation(cfg, tmp_path)
+    cfg["model_validation"] = mode
+    cfg.pop("detector_route")
+    if mode == "comparison":
+        cfg["model_sha256"] = {role: model["sha256"] for role, model in observed.items()}
+    built = detection.DetectorOrchestrator(
+        {"detection": cfg}, [], "t", tmp_path / "r", dry_run=False
+    )
+    assert isinstance(built, dense_orchestrator_batch_sr.DetectorOrchestrator)
 
 
 @pytest.mark.parametrize("mode", ["exploration", "comparison"])

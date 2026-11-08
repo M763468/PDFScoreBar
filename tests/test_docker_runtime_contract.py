@@ -834,8 +834,9 @@ def test_historical_reproduction_uses_separate_image() -> None:
             "-f",
             "tools/issue120/Makefile.stage_e.mk",
             "-n",
-            "run-issue120-stage-e-full",
+            "docker-build-stage-e",
             "ISSUE120_STAGE_E_IMAGE=repro:test",
+            "ISSUE120_PRODUCTION_IMAGE=prod:test",
         ],
         cwd=root,
         capture_output=True,
@@ -843,4 +844,5 @@ def test_historical_reproduction_uses_separate_image() -> None:
         check=True,
     )
     assert "repro:test" in result.stdout
+    assert "PRODUCTION_IMAGE=prod:test" in result.stdout
     assert "pdfscore_pipeline_gpu" not in result.stdout

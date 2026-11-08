@@ -1,6 +1,6 @@
 # 現行パイプライン — 実装・技術契約リファレンス
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"f86147808f93e16e98f1823893ff3ad7f7ded4f1c7c6ecdfc075e1a58cf1803b"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"b6c4b41883723d1decc93640d8c40e7f0a48c0618404d9c4a44b8a52fef66996"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE_REFERENCE.md) · [アーキテクチャ概要に戻る](PIPELINE_ARCHITECTURE.ja.md)
 
@@ -65,8 +65,10 @@ detection:
 `src/pipeline/detection/dense_orchestrator_batch_sr.py`にディスパッチする。
 これは採択済みのdense orchestratorに、Issue #284の専用処理を1つ加えたものである。
 Real-ESRGAN x4生成を、ページごとのHOMRソース生成より前の、全ページ専用フェーズへ移している。
-汎用の`src/pipeline/detection/orchestrator.py` / `HybridDetector`経路は別の標準ルートであり、
-これを根拠にdense productionのアーキテクチャを推測してはならない。
+これが唯一のdetectorルートである。`detection.detector_route`を省略するとこのルートを選び、
+削除済みの`standard`ルート（#522で削除した旧`src/pipeline/detection/orchestrator.py` / `HybridDetector`経路）は、
+読み替えずに`resolve_detector_route`が移行エラーとして拒否する。
+過去のstandardルートの実行はcommit `4f1594bc`から再現できる。
 
 ## 入力から出力までの処理順序
 
@@ -133,8 +135,9 @@ source-page worker内で解決したidentityを使える。アダプターは、
 固定入力での検証は`tools/issue416/IMPLEMENTATION.md`を参照。
 
 `pdf_to_images`は、有効な場合、現在は`PipelineOrchestrator`内でインプロセス実行される。
-検証済みdenseルート自体は永続化済みのページ画像ファイルを要求し、
-detector境界でメモリ内にしかない画像を拒否する。
+検証済みdenseルートは永続化済みのページ画像ファイルを要求するため、検出が有効な場合、
+`PipelineOrchestrator`は構築時にメモリ内だけのレンダリング（`output_dir`なしの`pdf_to_images`）を拒否する。
+検出が無効な場合は、メモリ内レンダリングを引き続き使える。
 
 ## オーケストレーションとprobeのモジュール境界
 
@@ -305,6 +308,9 @@ fresh_upstream_authoritative = true
 override_keys = []
 ```
 
+productionのdetectorルートは`fresh_upstream`を要求し、どちらかの上書きがあれば記録して無視するのではなく
+構築時に拒否する（`require_fresh_detector_input_contract`）。
+事前計算候補の評価は、別の評価ツール`src/pipeline/detector_routes/dense_probe_candidate_route.py`だけで行う。
 チェックポイント/事前計算ルートは、過去結果に対する回帰確認、CNN比較、downstreamの切り分けに
 引き続き有用だが、その指標には入力モードを明記し続ける必要がある。
 この区別を確立した原因調査はIssue #245とPR #251に保持されている。

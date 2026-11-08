@@ -1,6 +1,6 @@
 # Development model exploration, fixed comparison, and production selection
 
-<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"a397e8584724e880665dafe728a063b7d5700e41259f7f022f145b8eade0dce1"},"state":"reviewed"} -->
+<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"c749cbf7e096fccef5b43873f66e3f8d54442c6b14ef783ff12dc864b51b48a7"},"state":"reviewed"} -->
 
 [日本語 / Original](EXPERIMENT_MODEL_SELECTION.md) (Japanese original)
 
@@ -15,8 +15,8 @@ the [model registration procedure](MODEL_ARTIFACTS.md), and the [validation poli
 ## Validation modes
 
 Set `detection.model_validation`. It defaults to `production`; unknown values are errors.
-`exploration` / `comparison` are supported only with `detection.detector_route: dense_full_pipeline`.
-Combinations with an omitted route (standard), the standard route, or an unknown route are rejected at both the preflight and direct pipeline entry points.
+The only detector route is `dense_full_pipeline`, which is also selected when the route is omitted (#522).
+The removed `standard` route and unknown routes are rejected in every mode at both the preflight and direct pipeline entry points.
 
 | Setting | Model selection and validation | Pinning / recording |
 | --- | --- | --- |

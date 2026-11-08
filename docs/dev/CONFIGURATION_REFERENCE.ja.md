@@ -1,6 +1,6 @@
 # パイプラインの設定と実行入口のリファレンス
 
-<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"c55b2c357606fef11b63413268199a5a51e202fc725cb8afbefbc0858758f029"},"state":"reviewed"} -->
+<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"9970bf32c914cc282b13bd905aff35392f5d2181280669d1f50531ab7e490ec8"},"state":"reviewed"} -->
 
 [English / 原文](CONFIGURATION_REFERENCE.md)（英語正本）
 
@@ -82,7 +82,7 @@
 | `detection.sr_scale` | `4` | 超解像の倍率。 |
 | `detection.sr_compile_mode` | `reduce-overhead` | バッチ SR worker のモデルのコンパイルモード。 |
 | `detection.homr_profile` | `maintained_original` | 保守対象の HOMR ランタイムのプロファイル。 |
-| `detection.detector_route` | `dense_full_pipeline` | 検出器の経路。探索・比較のモデルモードはこの経路を必要とします。 |
+| `detection.detector_route` | `dense_full_pipeline` | 検出器の経路。`dense_full_pipeline`が唯一の経路で、省略時もこの経路になります。削除済みの`standard`と未知の値はエラーになります（#522）。 |
 | `detection.probe_use_original_images` | `true` | 探査検出は、SR の出力ではなく元のページ画像を読みます。 |
 | `detection.crop_recenter_on_bbox_ink` | `true` | CNN の切り出しをボックス内のインクに合わせて中心を調整します。 |
 | `detection.hybrid_output_root` | `logs/full_pipeline_runs/dense_full_pipeline/hybrid_output` | 検出器の中間成果物の出力ルート。 |

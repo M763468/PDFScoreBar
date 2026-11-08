@@ -92,7 +92,7 @@ it does not inherit earlier acceptance results.
 | `detection.sr_scale` | `4` | Super-resolution scale. |
 | `detection.sr_compile_mode` | `reduce-overhead` | Model compile mode for the batch SR worker. |
 | `detection.homr_profile` | `maintained_original` | Maintained HOMR runtime profile. |
-| `detection.detector_route` | `dense_full_pipeline` | Detector route. Exploration/comparison model modes require this route. |
+| `detection.detector_route` | `dense_full_pipeline` | Detector route. `dense_full_pipeline` is the only route and the default when omitted; the removed `standard` route and unknown values raise an error (#522). |
 | `detection.probe_use_original_images` | `true` | Probe detection reads the original page images instead of SR output. |
 | `detection.crop_recenter_on_bbox_ink` | `true` | Recenter CNN crops on box ink. |
 | `detection.hybrid_output_root` | `logs/full_pipeline_runs/dense_full_pipeline/hybrid_output` | Output root for intermediate detector artifacts. |

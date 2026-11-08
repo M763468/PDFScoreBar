@@ -59,9 +59,11 @@ detection:
 `src/pipeline/detection/__init__.py` dispatches that route to
 `src/pipeline/detection/dense_orchestrator_batch_sr.py`. This is the accepted dense
 orchestrator with one Issue #284 specialization: Real-ESRGAN x4 generation is lifted into a
-dedicated all-pages phase before page-local HOMR source generation. The generic
-`src/pipeline/detection/orchestrator.py` / `HybridDetector` path is a separate standard
-route and must not be used to infer the dense production architecture.
+dedicated all-pages phase before page-local HOMR source generation. This is the only
+detector route: an omitted `detection.detector_route` selects it, and the removed `standard`
+route (the former `src/pipeline/detection/orchestrator.py` / `HybridDetector` path, deleted in
+#522) is rejected by `resolve_detector_route` with a migration error instead of being
+reinterpreted. Historical standard-route runs are reproducible from commit `4f1594bc`.
 
 ## End-to-end order
 
@@ -130,8 +132,9 @@ geometric threshold. This also preserves unknown voices on mixed pages.
 See `tools/issue416/IMPLEMENTATION.md` for the fixed-input validation.
 
 `pdf_to_images` is currently in-process inside `PipelineOrchestrator` when enabled. The
-verified dense route itself requires persisted page image files; it rejects in-memory-only
-images at the detector boundary.
+verified dense route itself requires persisted page image files, so `PipelineOrchestrator`
+rejects in-memory-only rendering (`pdf_to_images` without `output_dir`) at construction when
+detection is enabled; in-memory rendering remains available when detection is disabled.
 
 ## Orchestration and probe module boundaries
 
@@ -308,6 +311,10 @@ fresh_upstream_authoritative = true
 override_keys = []
 ```
 
+The production detector route requires `fresh_upstream`: it rejects either override at
+construction (`require_fresh_detector_input_contract`) rather than recording and ignoring it.
+Precomputed candidate evaluation runs only through the separate evaluation tool
+`src/pipeline/detector_routes/dense_probe_candidate_route.py`.
 Checkpoint/precomputed routes remain useful for historical regression, CNN comparison, and
 downstream isolation, but their metrics must remain labelled with that input mode. The
 forensic investigation that established this distinction is retained in Issue #245 and PR

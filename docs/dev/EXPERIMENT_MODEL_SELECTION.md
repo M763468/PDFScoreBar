@@ -11,8 +11,8 @@ CNN候補は、既存configの明示パスで試せる（OMR-DLNは#522で削除
 ## 検証の段階
 
 `detection.model_validation` を指定する。省略時は `production`。未知の値はエラー。
-`exploration` / `comparison` は `detection.detector_route: dense_full_pipeline` のみ対応する。
-route省略（standard）・標準route・未知routeとの組合せは、preflightと直接pipeline実行の入口で拒否する。
+検出routeは `dense_full_pipeline` だけで、route省略時もこのrouteになる（#522）。
+削除済みの `standard` や未知routeは、どのモードでもpreflightと直接pipeline実行の入口で拒否する。
 
 | 設定 | モデル選択・検証 | 固定/記録 |
 | --- | --- | --- |

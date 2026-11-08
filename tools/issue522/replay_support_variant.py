@@ -1,28 +1,16 @@
 #!/usr/bin/env python3
-"""Issue #522 (from #519): Full68 hybrid-support variants replayed from retained producer outputs.
+"""Issue #522: Full68 x4 staff-piece support replayed from retained producer outputs.
 
-``x4_staff_piece`` uses the candidate production consensus
-(``apply_x4_staff_piece_consensus_filter``) with staff regions from the baseline staff
-mask, and gives staff-stroke seeding x4-only support (no OMR-DLN input).
+``x4_staff_piece`` uses the production consensus (``apply_x4_staff_piece_consensus_filter``
+with staff regions from the baseline staff mask) and x4-only staff-stroke seeding.
+Production code, config, thresholds and models are used unchanged.  The retained
+producer outputs come from the #409 fresh Full68 run (same images and runtime image as
+#416); dense route, staff-stroke normalization and CUDA CNN scoring are regenerated.
+Outputs are compared with the accepted #416 bytes (the OMR-DLN control/no_omr replays
+that reproduce those bytes live in the evaluation-only #519 tools, PR #520).
 
-Evaluation-only harness.  Production code, config, thresholds and models are used
-unchanged; only the OMR-DLN *input bytes* handed to the two production consumers are
-varied:
-
-* ``control``  - retained OMR-DLN predictions (must reproduce the accepted #416 Full68
-  predictions/numbering bytes exactly; otherwise the harness is invalid);
-* ``no_omr``   - OMR-DLN predictions replaced by an empty box list, i.e. both
-  ``apply_hybrid_consensus_filter`` call sites (hybrid consensus and staff-stroke
-  agreed seeds) receive no OMR support.  Everything else (baseline HOMR, x4 HOMR,
-  masks, images, SR, CNN checkpoint/threshold) is byte-identical.
-
-The retained producer outputs come from the #409 fresh Full68 run (same images and
-runtime image as #416).  The dense route (probe generation -> filter -> rescue),
-staff-stroke normalization and CUDA CNN scoring are regenerated for both variants with
-the current checkout so both variants share one code identity.
-
-The script must run inside the #409/#416 runtime image with the manager checkout mounted
-at /workspace and this worktree at /workspace/.worktrees/issue519.
+Run inside the #409/#416 runtime image with the manager checkout at /workspace and this
+worktree at /workspace/.worktrees/issue522.
 """
 
 from __future__ import annotations
@@ -55,7 +43,6 @@ from src.pipeline.detector_routes.dense_full_pipeline import (  # noqa: E402
     reconstruct_dense_full_pipeline_route,
 )
 from src.pipeline.steps.hybrid_consensus import (  # noqa: E402
-    apply_hybrid_consensus_filter,
     apply_x4_staff_piece_consensus_filter,
     load_json_boxes,
 )
@@ -99,54 +86,27 @@ def staff_regions(score: str, page: str, retained: Path):
 
 
 def build_variant_hybrid(variant: str, score: str, retained: Path, out: Path, pages) -> dict:
-    """Materialize the hybrid_output tree a variant consumes; return per-page audit."""
+    """Materialize the hybrid_output tree the x4_staff_piece variant consumes."""
     link(out / "baseline", retained / "baseline")
     audit = {}
-    empty = out / "omr_ablation_empty_predictions.json"
-    if variant in ("no_omr", "x4_staff_piece"):
-        write(empty, [])
     for page in pages:
-        support_src = retained / "current_support" / score / page / "result.json"
-        support = read(support_src)
+        support = read(retained / "current_support" / score / page / "result.json")
         base = load_json_boxes(retained / "baseline/batch" / page / f"{page}_detections.json")
         sr = load_json_boxes(Path(support["current_sr_detection"]))
-        omr_path = Path(support["current_omr"])
-        omr = load_json_boxes(omr_path)
-        retained_hybrid = read(retained / "hybrid_results" / f"{page}_hybrid.json")
-        assert (
-            apply_hybrid_consensus_filter(baseline_boxes=base, sr_boxes=sr, omr_boxes=omr)
-            == retained_hybrid
-        ), f"consensus harness mismatch {score}/{page}"
-        if variant == "control":
-            hybrid = retained_hybrid
-        else:
-            if variant == "no_omr":
-                hybrid = apply_hybrid_consensus_filter(
-                    baseline_boxes=base, sr_boxes=sr, omr_boxes=[]
-                )
-            else:
-                hybrid = apply_x4_staff_piece_consensus_filter(
-                    baseline_boxes=base, sr_boxes=sr, staves=staff_regions(score, page, retained)
-                )
-            support = dict(
-                support,
-                current_omr=str(empty),
-                issue522_variant=f"{variant}: OMR-DLN predictions not used",
-            )
+        hybrid = apply_x4_staff_piece_consensus_filter(
+            baseline_boxes=base, sr_boxes=sr, staves=staff_regions(score, page, retained)
+        )
+        # The production staff-stroke step reads only x4 support fields.
+        support = {k: v for k, v in support.items() if "omr" not in k.lower() or "homr" in k}
         write(out / "hybrid_results" / f"{page}_hybrid.json", hybrid)
         write(out / "current_support" / score / page / "result.json", support)
-        audit[page] = {
-            "hybrid": len(hybrid),
-            "retained_hybrid": len(retained_hybrid),
-            "omr_input": str(support["current_omr"]),
-            "omr_input_sha256": sha(support["current_omr"]),
-        }
+        audit[page] = {"hybrid": len(hybrid)}
     return audit
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--variant", choices=("control", "no_omr", "x4_staff_piece"), required=True)
+    parser.add_argument("--variant", choices=("x4_staff_piece",), required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     out = args.out.resolve()
@@ -317,16 +277,6 @@ def main() -> int:
     )
     write(out / "report.json", dict(summary=summary, pages=rows))
     print(json.dumps(summary, indent=1), flush=True)
-    if args.variant == "control":
-        ok = (
-            len(rows) == 68
-            and dict(totals) == ACCEPTED_TOTALS
-            and measures == ACCEPTED_MEASURES
-            and summary["pages_predictions_equal_accepted"] == 68
-            and summary["pages_numbering_base_equal_accepted"] == 68
-        )
-        print("CONTROL HARNESS GATE:", "PASS" if ok else "FAIL", flush=True)
-        return 0 if ok else 2
     return 0
 
 

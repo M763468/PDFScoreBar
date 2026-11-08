@@ -1,6 +1,6 @@
 """Classify whether detector candidates come from fresh upstream or overrides.
 
-A run may execute HOMR/SR/OMR while still replacing the authoritative probe or
+A run may execute HOMR/SR while still replacing the authoritative probe or
 CNN inputs with precomputed artifacts. Metrics from that route are useful as a
 checkpoint, but they are not evidence that fresh upstream regeneration works.
 This module keeps that distinction machine-readable and records the selected
@@ -65,6 +65,6 @@ def require_fresh_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[st
         raise ValueError(
             "Fresh detector validation rejects candidate-source overrides: "
             f"{keys}. A run that uses these keys is a checkpoint/precomputed route, "
-            "even if HOMR/SR/OMR also execute."
+            "even if HOMR/SR also execute."
         )
     return contract

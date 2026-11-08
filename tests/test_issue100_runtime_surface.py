@@ -44,6 +44,35 @@ def test_production_support_does_not_run_omr_dln() -> None:
     assert not (PROJECT_ROOT / "src/pipeline/detection/omr_dln_worker.py").exists()
 
 
+def test_omr_dln_cannot_return_as_a_production_or_standard_route_dependency() -> None:
+    """#522: no OMR-DLN code path, setting, model manifest or Ultralytics dependency."""
+    import yaml
+
+    for config in ("configs/dense_full_pipeline.yaml", "configs/smoke_test.yaml"):
+        detection = yaml.safe_load((PROJECT_ROOT / config).read_text())["detection"]
+        assert not any(key.startswith("omr") for key in detection), config
+    assert "ultralytics" not in (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    for removed in (
+        "src/pipeline/detection/omr_dln_worker.py",
+        "src/pipeline/detection/omr_job.py",
+        "src/pipeline/detection/omr_job_worker.py",
+        "models/omr_dln/manifest.json",
+        "experiments/models/eval_omr_dln.py",
+    ):
+        assert not (PROJECT_ROOT / removed).exists(), removed
+    for module in (
+        "src/pipeline/detection/hybrid.py",
+        "src/pipeline/detection/current_support_worker.py",
+        "src/pipeline/detection/profile_sources.py",
+        "src/pipeline/detection/profile_sources_batch_sr.py",
+        "src/pipeline/steps/staff_strokes.py",
+        "src/pipeline/steps/probe_scan.py",
+    ):
+        text = (PROJECT_ROOT / module).read_text(encoding="utf-8")
+        for token in ("omr_dln", "omr_sr", "current_omr", "omr_boxes", "ultralytics"):
+            assert token not in text, (module, token)
+
+
 @pytest.mark.parametrize(
     "missing_path",
     [

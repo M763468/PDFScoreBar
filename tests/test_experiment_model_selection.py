@@ -62,24 +62,6 @@ def test_comparison_freezes_observed_bytes_only_when_requested(tmp_path):
         model_observation(cfg, tmp_path)
 
 
-def test_removed_omr_dln_settings_fail_explicitly(tmp_path):
-    for key, value in (
-        ("omr_dln_model_path", "model.pt"),
-        ("omr_job_reuse", {"mode": "auto"}),
-        ("omr_dln_device", "cuda"),
-    ):
-        cfg = _candidate_config(tmp_path)
-        cfg[key] = value
-        with pytest.raises(ValueError, match="OMR-DLN support was removed"):
-            dense.DetectorOrchestrator(
-                config={"detection": cfg},
-                images=[],
-                run_id="t",
-                run_dir=tmp_path / "run",
-                dry_run=False,
-            )
-
-
 def test_unknown_mode_is_rejected():
     assert model_validation_mode({}) == "production"
     with pytest.raises(ValueError, match="Unknown"):

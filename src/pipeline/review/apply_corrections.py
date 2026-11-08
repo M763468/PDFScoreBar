@@ -1319,7 +1319,7 @@ def apply_corrections_and_rerun(
         return new_run_dir
 
     # 6. Execute only the downstream correction boundary against retained
-    # reviewed artifacts. Do not regenerate PDF images, detector/HOMR/SR/OMR-DLN,
+    # reviewed artifacts. Do not regenerate PDF images, detector/HOMR/SR,
     # probe candidates, or CNN scores.
     if source_manifest is None:
         raise FileNotFoundError(

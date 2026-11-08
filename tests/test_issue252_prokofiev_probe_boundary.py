@@ -18,7 +18,6 @@ def _source_trace(*, baseline: bool = True, hybrid: bool = False):
         "missing": {
             "fresh_baseline": {"accepted": baseline},
             "current_sr": {"accepted": False},
-            "current_omr": {"accepted": False},
             "hybrid": {"accepted": hybrid},
         }
     }

@@ -39,8 +39,7 @@ def test_in_process_source_generation_reuses_current_x4_detection(
 
     sr_image = tmp_path / "support" / "page_x4.png"
     current_detection = tmp_path / "support" / "page_detections.json"
-    omr = tmp_path / "support" / "predictions.json"
-    for path in (sr_image, current_detection, omr):
+    for path in (sr_image, current_detection):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("[]\n", encoding="utf-8")
 
@@ -70,7 +69,6 @@ def test_in_process_source_generation_reuses_current_x4_detection(
             {
                 "sr_image": str(sr_image),
                 "current_sr_detection": str(current_detection),
-                "current_omr": str(omr),
             },
             ["current-support", str(image)],
         )

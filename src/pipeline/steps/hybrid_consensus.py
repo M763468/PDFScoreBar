@@ -40,7 +40,7 @@ def load_json_boxes(path: Path, *, strict: bool = True) -> List[Box]:
                 for v in box
             ):
                 raise ValueError(f"box {index} has non-finite or non-numeric coordinates")
-            # Existing HOMR/OMR clipping can produce zero-width/height boxes at
+            # Existing HOMR clipping can produce zero-width/height boxes at
             # image edges. Preserve their historical conversion and consensus behavior.
             if box[2] < box[0] or box[3] < box[1]:
                 raise ValueError(f"box {index} has reversed bounds")
@@ -89,29 +89,10 @@ def _has_match(
     return any(barline_iou(query_box, ref) > iou_thresh for ref in references)
 
 
-def apply_hybrid_consensus_filter(
-    *,
-    baseline_boxes: Iterable[Sequence[int]],
-    sr_boxes: Iterable[Sequence[int]],
-    omr_boxes: Iterable[Sequence[int]],
-    iou_thresh: float = 0.5,
-) -> List[List[int]]:
-    """Keep baseline boxes that are supported by SR or OMR predictions."""
-    sr_list = list(sr_boxes)
-    omr_list = list(omr_boxes)
-    hybrid: List[List[int]] = []
-    for box in baseline_boxes:
-        if _has_match(box, sr_list, iou_thresh=iou_thresh) or _has_match(
-            box, omr_list, iou_thresh=iou_thresh
-        ):
-            hybrid.append([int(v) for v in box])
-    return hybrid
-
-
 # x4 staff-piece support (Issue #522) ------------------------------------------------
 #
-# Replaces OMR-DLN measure-box support for long original-HOMR barlines that span two
-# or more staves.  Such a box rarely reaches IoU>0.5 with the per-staff x4 HOMR
+# Supports long original-HOMR barlines that span two or more staves (formerly
+# supported by the removed OMR-DLN measure detector).  Such a box rarely reaches IoU>0.5 with the per-staff x4 HOMR
 # strokes, although x4 HOMR independently detects each staff piece.  The box is
 # supported only when *every* staff piece has its own x4 stroke, so a stroke seen on
 # a single staff is never propagated to other staves.  Thresholds are expressed in

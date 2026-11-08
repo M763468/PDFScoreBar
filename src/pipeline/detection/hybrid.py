@@ -1,4 +1,4 @@
-"""Hybrid detection engine using Homr and OMR-DLN."""
+"""Hybrid detection engine using original-image and SR HOMR (standard route)."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from tqdm import tqdm
 from src.homr_runtime.api_compat import build_processing_config_compat
 from src.pipeline.core import ensure_dir, run_with_logging
 from src.pipeline.core.python_env import get_pipeline_python
-from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.steps.hybrid_consensus import apply_x4_iou_consensus_filter, load_json_boxes
 
 from .utils import log_vram_usage
 
@@ -130,7 +130,7 @@ def _suppress_homr_low_value_internal_logs():
 
 
 class HybridDetector:
-    """Encapsulates hybrid detection logic (Baseline, SR, OMR-DLN)."""
+    """Encapsulates hybrid detection logic (Baseline and SR HOMR)."""
 
     def __init__(
         self,
@@ -239,28 +239,7 @@ class HybridDetector:
             if not self.dry_run:
                 run_with_logging(cmd, env=env, check=True)
 
-        # 3. OMR-DLN SR
-        logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
-        sr_root = hybrid_output_dir / "sr" / "batch"
-        omr_output = hybrid_output_dir / "omr_sr"
-
-        if not enable_sr:
-            logger.info("Skipping OMR-DLN: SR is disabled.")
-        elif self.skip_existing and self._omr_all_stems_exist(omr_output, stems):
-            logger.info("Skipping OMR-DLN: outputs already exist.")
-        else:
-            python_cmd_omr = self._get_python_cmd("omr_dln")
-            omr_cmd = (
-                python_cmd_omr
-                + ["experiments/models/eval_omr_dln.py", "--images"]
-                + image_paths
-                + ["--output-dir", self._rel(omr_output), "--pre-computed-sr", self._rel(sr_root)]
-            )
-            commands.append(omr_cmd)
-            if not self.dry_run:
-                run_with_logging(omr_cmd, env=env, check=True)
-
-        # 4. Consensus
+        # 3. Consensus (x4 HOMR support; OMR-DLN was removed in #522)
         logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
         hybrid_results_dir = hybrid_output_dir / "hybrid_results"
         ensure_dir(hybrid_results_dir)
@@ -270,7 +249,6 @@ class HybridDetector:
                 hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
             )
             sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
-            omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
             output_json = hybrid_results_dir / f"{stem}_hybrid.json"
 
             if not enable_sr:
@@ -279,18 +257,16 @@ class HybridDetector:
                         shutil.copy(baseline_json, output_json)
                 continue
 
-            if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
+            if not baseline_json.exists() or not sr_json.exists():
                 logger.warning(f"Missing components for {stem}. Skipping consensus.")
                 continue
 
             if not self.dry_run:
                 baseline_boxes = load_json_boxes(baseline_json, strict=False)
                 sr_boxes = load_json_boxes(sr_json, strict=False)
-                omr_boxes = load_json_boxes(omr_json, strict=False)
-                hybrid_preds = apply_hybrid_consensus_filter(
+                hybrid_preds = apply_x4_iou_consensus_filter(
                     baseline_boxes=baseline_boxes,
                     sr_boxes=sr_boxes,
-                    omr_boxes=omr_boxes,
                 )
                 output_json.write_text(json.dumps(hybrid_preds, indent=2))
 
@@ -309,12 +285,6 @@ class HybridDetector:
             return False
         found_stems = {p.parent.name for p in base_dir.glob(glob_pattern)}
         return all(s in found_stems for s in stems_to_check)
-
-    def _omr_all_stems_exist(self, omr_output: Path, stems: List[str]) -> bool:
-        if not omr_output.exists():
-            return False
-        found = {p.parent.name for p in omr_output.glob("*/predictions.json")}
-        return all(s in found for s in stems)
 
     def _run_homr_in_process(
         self,

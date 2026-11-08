@@ -17,7 +17,7 @@ from src.pipeline.detection.config import get_probe_kwargs
 from src.pipeline.probe_detector import detect_probe_scan
 from src.pipeline.probe_detector.bands import build_row_stats
 from src.pipeline.steps.candidate_filters import filter_probe_candidates, trim_box_to_ink
-from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.steps.hybrid_consensus import load_json_boxes
 from src.pipeline.steps.probe_scan import (
     _extract_candidate_postprocess_cfg,
     _resolve_scale_aware_probe_kwargs,
@@ -341,24 +341,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     paths = {
         "fresh_baseline": args.fresh_baseline,
         "current_sr": args.current_sr,
-        "current_omr": args.current_omr,
         "hybrid": args.hybrid,
     }
     boxes = {
         name: [normalize_box(box) for box in load_json_boxes(path, strict=False)]
         for name, path in paths.items()
     }
-    regenerated = [
-        normalize_box(box)
-        for box in apply_hybrid_consensus_filter(
-            baseline_boxes=boxes["fresh_baseline"],
-            sr_boxes=boxes["current_sr"],
-            omr_boxes=boxes["current_omr"],
-            iou_thresh=args.consensus_iou,
-        )
-    ]
-    if sorted(regenerated) != sorted(boxes["hybrid"]):
-        raise ValueError("Saved hybrid is not reproduced from the supplied source artifacts")
 
     staff_mask, staff_mask_source = _load_mask(
         args.staff_mask,
@@ -474,11 +462,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "clef_mask": clef_mask_source,
         },
         "resolved_detection_config": resolved,
-        "consensus_reproduction": {
-            "saved_count": len(boxes["hybrid"]),
-            "regenerated_count": len(regenerated),
-            "semantic_equal": True,
-        },
+        # #522: the OMR-DLN consensus that produced the saved hybrid was removed;
+        # the saved hybrid is traced as recorded rather than regenerated.
+        "saved_hybrid_count": len(boxes["hybrid"]),
         "source_trace": source_trace,
         "existing_boxes_after_seed_split": len(existing),
         "variants": variants,
@@ -503,7 +489,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--expected-image-sha256", required=True)
     parser.add_argument("--fresh-baseline", type=Path, required=True)
     parser.add_argument("--current-sr", type=Path, required=True)
-    parser.add_argument("--current-omr", type=Path, required=True)
     parser.add_argument("--hybrid", type=Path, required=True)
     parser.add_argument("--staff-mask", type=Path)
     parser.add_argument("--clef-mask", type=Path)
@@ -515,7 +500,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--nearby-reference", nargs=4, type=int, required=True)
     parser.add_argument("--accepted-iou", type=float, default=0.5)
     parser.add_argument("--experimental-paper-side-context-width-ratio", type=float, default=0.0)
-    parser.add_argument("--consensus-iou", type=float, default=0.5)
     parser.add_argument("--vertical-iou-sweep", nargs="+", type=float, default=DEFAULT_SWEEP)
     parser.add_argument("--output-root", type=Path, default=Path("logs/issue252_probe_boundary"))
     return parser

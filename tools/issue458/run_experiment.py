@@ -93,8 +93,6 @@ def main() -> int:
         config["detection"]["sr_compile_mode"] = None
     config_path = dest / "config.yaml"
     config_path.write_text(yaml.safe_dump(config, sort_keys=False))
-    omr_manifest = json.loads((root / "models/omr_dln/manifest.json").read_text())
-    omr = omr_manifest["runtime_path"]
     name = "pdfscore-issue458-" + args.label
     command = [
         "docker",
@@ -118,8 +116,6 @@ def main() -> int:
         f"{cache}:/model-cache:ro",
         "-v",
         f"{compile_cache}:/compile-cache",
-        "-v",
-        f"{cache / omr_manifest['cache_path']}:{omr}:ro",
         "-e",
         "PDFSCOREBAR_MODEL_CACHE=/model-cache",
         "-e",
@@ -130,8 +126,6 @@ def main() -> int:
         "TRITON_CACHE_DIR=/compile-cache/triton",
         "-e",
         "PYTHONPATH=/workspace",
-        "-e",
-        f"OMR_DLN_MODEL_PATH={omr}",
     ]
     if args.readonly_source:
         command += ["-v", f"{root}/logs/issue458:/workspace/logs/issue458"]

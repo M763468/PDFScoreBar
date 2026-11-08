@@ -3,8 +3,8 @@
 The current support path preserves connector-semantic HOMR artifacts.  SR may be
 materialized by a dedicated all-pages SR process before this worker starts; the
 current HOMR phase remains page-local and process-isolated so no Real-ESRGAN model
-state overlaps its GPU lifetime.  Since #522 no OMR-DLN measure detector runs: hybrid
-support comes from x4 HOMR alone (see ``hybrid_consensus``).
+state overlaps its GPU lifetime.  Hybrid support comes from x4 HOMR alone (see
+``hybrid_consensus``).
 """
 
 from __future__ import annotations
@@ -191,9 +191,6 @@ def run(request_path: Path, result_path: Path) -> Path:
     if not image.is_file():
         raise FileNotFoundError(image)
     set_context(page=image.name)
-
-    if request.get("precomputed_omr") is not None:
-        raise ValueError("OMR-DLN support was removed (#522); precomputed_omr is not accepted")
 
     sr_scale = int(det_cfg.get("sr_scale", 2))
     if sr_scale != 4:

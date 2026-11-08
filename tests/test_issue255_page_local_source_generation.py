@@ -208,17 +208,14 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
 
     sr = tmp_path / "generated/page_001.png"
     detection = tmp_path / "generated/page_001_detections.json"
-    omr = tmp_path / "generated/predictions.json"
     sr.parent.mkdir(parents=True)
     sr.write_bytes(b"sr")
     detection.write_text("[]\n", encoding="utf-8")
-    omr.write_text("[]\n", encoding="utf-8")
 
     def fake_generate(self, **_kwargs):
         return {
             "sr_image": str(sr),
             "current_sr_detection": str(detection),
-            "current_omr": str(omr),
             "commands": [["phase"]],
             "historical_detector_artifact_runtime_input": False,
             "homr_neural_inference_count": 2,
@@ -240,7 +237,7 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
     assert payload["memory_boundary"] == "top_level_python_per_page"
     assert payload["sr_image"] == str(sr)
     assert payload["current_sr_detection"] == str(detection)
-    assert payload["current_omr"] == str(omr)
+    assert "current_omr" not in payload
     assert payload["historical_detector_artifact_runtime_input"] is False
     assert payload["homr_neural_inference_count"] == 2
     assert payload["x4_homr_neural_inference_count"] == 1

@@ -619,7 +619,7 @@ def build_route_provenance(
                 "canonical detector evaluation",
             ],
             "excludes": [
-                "slow HOMR/SR/OMR upstream generation",
+                "slow HOMR/SR upstream generation",
                 "full end-to-end PDF pipeline execution",
                 "downstream measure numbering and measure-count evaluation",
             ],

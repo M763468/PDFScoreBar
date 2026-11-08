@@ -1,9 +1,9 @@
 """Verified hybrid detector with all-pages current-x4 SR phase batching.
 
-The accepted two-HOMR route stays page-local for verified baseline HOMR,
-current-x4 HOMR, and OMR-DLN.  Only Real-ESRGAN is lifted into a dedicated
-all-pages phase so its model/import/CUDA lifetime is reused and then released
-before any page's HOMR/OMR work begins.
+The accepted two-HOMR route stays page-local for verified baseline HOMR and
+current-x4 HOMR.  Only Real-ESRGAN is lifted into a dedicated all-pages phase so
+its model/import/CUDA lifetime is reused and then released before any page's
+HOMR work begins.
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ This is a detector-level partial pipeline route:
     dense candidate/bands generation -> clef-mask-aware filtering
       -> probe-rescue candidate generation -> CNN scoring -> detector eval
 
-It does not run slow HOMR/SR/OMR upstream generation and it does not run
+It does not run slow HOMR/SR upstream generation and it does not run
 downstream measure numbering.
 """
 

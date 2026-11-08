@@ -112,7 +112,7 @@ def run_detection_step(
     if _detector_route(config) == DENSE_ROUTE_NAME:
         _validate_verified_image_stems(images)
         # Issue #284 keeps Real-ESRGAN in one dedicated all-pages process which
-        # exits before the verified page-local HOMR/OMR workers begin.
+        # exits before the verified page-local HOMR workers begin.
         from .dense_orchestrator_batch_sr import run_detection_step as run_verified
 
         return run_verified(

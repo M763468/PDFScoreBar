@@ -55,8 +55,6 @@ def run(request_path: Path, result_path: Path) -> Path:
         profile_name=profile_name,
     )
     sr_arguments = {} if mode == "page_local" else {"precomputed_sr": precomputed_sr}
-    if request.get("precomputed_omr") is not None:
-        raise ValueError("OMR-DLN support was removed (#522); precomputed_omr is not accepted")
     payload = detector._generate_one_page_sources_in_process(
         image=image,
         baseline_output=baseline_output,

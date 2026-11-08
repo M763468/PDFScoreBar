@@ -149,9 +149,6 @@ def parallel_semantics(root: Path, issue: Path) -> dict:
             "current_sr_detection",
             ("staff_mask", "connector_symbols", "connector_brace_dot"),
         )
-        checks["omr_ordered_predictions"] = load(
-            a_path / "omr_sr" / page / "predictions.json"
-        ) == load(b_path / "omr_sr" / page / "predictions.json")
         result[page] = checks
     return result
 
@@ -298,15 +295,6 @@ def main() -> None:
                 load(result_path),
                 "current_sr_detection",
                 ("staff_mask", "connector_symbols", "connector_brace_dot"),
-            )
-    reference_omr = load(
-        next((issue / "runs/single-off-warm/pipeline").rglob("omr_sr/page_013/predictions.json"))
-    )
-    for label in ("omr-dln-cpu-profile", "omr-dln-wall", "omr-dln-wall-device"):
-        predictions = issue / "runs" / label / "component/omr/page_013/predictions.json"
-        if predictions.is_file():
-            summary.setdefault("retained_input_omr_semantics", {})[label] = reference_omr == load(
-                predictions
             )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(summary, indent=2) + "\n")

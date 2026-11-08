@@ -150,16 +150,6 @@ class DetectorOrchestrator:
         self._dense_route: Any | None = None
         self._staff_stroke_units: dict[str, float] | None = None
 
-        removed = sorted(
-            key
-            for key in ("omr_job_reuse", "omr_dln_model_path", "omr_dln_device")
-            if key in self.det_cfg
-        )
-        if removed:
-            raise ValueError(
-                "OMR-DLN support was removed (#522); delete detection settings: "
-                + ", ".join(removed)
-            )
         if self.detector_route != DENSE_ROUTE_NAME:
             raise ValueError(
                 f"Verified Stage E orchestrator requires detector_route={DENSE_ROUTE_NAME}"

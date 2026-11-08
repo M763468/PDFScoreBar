@@ -20,10 +20,8 @@ def imports(output: Path) -> dict:
 import json,os,sys,time
 from pathlib import Path
 started=time.perf_counter()
-import ultralytics
-klass=ultralytics.YOLO
 import torch
-print(json.dumps({'import_seconds':time.perf_counter()-started,'class':klass.__module__+'.'+klass.__qualname__,
+print(json.dumps({'import_seconds':time.perf_counter()-started,
 'torch':torch.__version__,'pycache_prefix':sys.pycache_prefix,'cuda_initialized':torch.cuda.is_initialized(),
 'site_cache_writable':os.access(Path(torch.__file__).parent/'__pycache__',os.W_OK)}))
 """
@@ -64,58 +62,6 @@ print(json.dumps({'import_seconds':time.perf_counter()-started,'class':klass.__m
         "class_identity_equal": len(identities) == 1,
         "cuda_never_initialized": not any(r["cuda_initialized"] for r in rows),
         "limits": "CPU-only import/process microbenchmark; prefix first-call cost separate; not E2E/model correctness acceptance",
-    }
-
-
-def omr(output: Path, batch: bool) -> dict:
-    reference = Path("logs/issue447/runs/multi-off-warm/pipeline")
-    sr = json.loads(next(reference.rglob("_sr_batch/result.json")).read_text())["outputs"]
-    staged = output / "sr-inputs"
-    staged.mkdir()
-    images = []
-    for item in sr:
-        image = Path(item["image"])
-        (staged / image.name).symlink_to(item["sr_image"])
-        images.append(image)
-    groups = [images] if batch else [[p] for p in images]
-    commands = []
-    started = time.perf_counter()
-    for index, group in enumerate(groups):
-        command = [
-            sys.executable,
-            "-m",
-            "src.pipeline.detection.omr_dln_worker",
-            "--images",
-            *[str(p) for p in group],
-            "--output-dir",
-            str(output / "predictions"),
-            "--pre-computed-sr",
-            str(staged),
-        ]
-        commands.append(command)
-        with (output / f"worker-{index}.log").open("w") as stream:
-            subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT, check=True)
-    elapsed = time.perf_counter() - started
-    checks = {}
-    for image in images:
-        old = (
-            reference
-            / "hybrid_output/pipeline/current_support/Shostakovich-Sym5-Va"
-            / image.stem
-            / "artifacts/omr_sr"
-            / image.stem
-            / "predictions.json"
-        )
-        new = output / "predictions" / image.stem / "predictions.json"
-        checks[image.stem] = json.loads(old.read_text()) == json.loads(new.read_text())
-    return {
-        "status": "completed",
-        "kind": "omr-reuse",
-        "batch": batch,
-        "component_wall_seconds": elapsed,
-        "commands": commands,
-        "ordered_source_predictions_equal": checks,
-        "limits": "one worker reusing model/predictor vs fresh worker per page, retained SR; source-only and not integrated E2E",
     }
 
 
@@ -235,7 +181,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--kind",
-        choices=("python-imports", "omr-serial", "omr-batch", "compiled-tiles1", "compiled-tiles2"),
+        choices=("python-imports", "compiled-tiles1", "compiled-tiles2"),
         required=True,
     )
     parser.add_argument("--output", type=Path, required=True)
@@ -243,8 +189,6 @@ def main():
     args.output.mkdir(parents=True, exist_ok=False)
     if args.kind == "python-imports":
         result = imports(args.output)
-    elif args.kind.startswith("omr-"):
-        result = omr(args.output, args.kind == "omr-batch")
     else:
         result = compiled_tiles(args.output, int(args.kind[-1]))
     (args.output / "result.json").write_text(json.dumps(result, indent=2) + "\n")

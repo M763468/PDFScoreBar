@@ -44,8 +44,6 @@ def source_checks(
                 "current_sr_detection",
                 ("staff_mask", "connector_symbols", "connector_brace_dot"),
             ),
-            "omr": load(current_a / "omr_sr" / page / "predictions.json")
-            == load(current_b / "omr_sr" / page / "predictions.json"),
         }
     return checks
 
@@ -126,9 +124,7 @@ def is_source_worker(command: str) -> bool:
         module = args[index + 1]
     except (ValueError, IndexError):
         return False
-    if module == "src.pipeline.detection.maintained_source_page_worker":
-        return True
-    return module == "tools.issue447.omr_reuse_poc" and "--support" not in args[index + 2 :]
+    return module == "src.pipeline.detection.maintained_source_page_worker"
 
 
 def timeline(run: Path) -> dict:

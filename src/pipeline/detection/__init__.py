@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from src.pipeline.core import get_nested
 
+from .config import DENSE_ROUTE_NAME, resolve_detector_route
 from .model_selection import model_validation_mode
 from .utils import resolve_barlines_and_masks_config, resolve_paths_from_detection
 
@@ -15,25 +16,15 @@ __all__ = [
     "run_detection_step",
     "resolve_barlines_and_masks_config",
     "resolve_paths_from_detection",
+    "DENSE_ROUTE_NAME",
 ]
-
-DENSE_ROUTE_NAME = "dense_full_pipeline"
-
-
-def _install_standard_detector_hooks() -> None:
-    from .connector_artifacts import (
-        install_homr_connector_artifact_capture,
-        install_homr_skip_existing_guard,
-    )
-
-    install_homr_connector_artifact_capture()
-    install_homr_skip_existing_guard()
 
 
 def _detector_route(config: Dict[str, Any]) -> str:
     det_cfg = get_nested(config, "detection", default={}) or {}
+    route = resolve_detector_route(det_cfg)
     model_validation_mode(det_cfg)
-    return str(det_cfg.get("detector_route", "standard"))
+    return route
 
 
 def _validate_verified_image_stems(images: List[Path]) -> None:
@@ -58,7 +49,7 @@ def _validate_verified_image_stems(images: List[Path]) -> None:
 
 
 class DetectorOrchestrator:
-    """Route the public orchestrator constructor by the configured detector route."""
+    """Construct the single verified dense detector orchestrator (#522)."""
 
     def __new__(
         cls,
@@ -70,29 +61,17 @@ class DetectorOrchestrator:
         dry_run: bool,
         in_memory_images: Dict[str, Any] | None = None,
     ):
-        if _detector_route(config) == DENSE_ROUTE_NAME:
-            _validate_verified_image_stems(images)
-            from .dense_orchestrator_batch_sr import (
-                DetectorOrchestrator as VerifiedDetectorOrchestrator,
-            )
+        _detector_route(config)
+        _validate_verified_image_stems(images)
+        from .dense_orchestrator_batch_sr import (
+            DetectorOrchestrator as VerifiedDetectorOrchestrator,
+        )
 
-            return VerifiedDetectorOrchestrator(
-                config=config,
-                images=images,
-                run_id=run_id,
-                run_dir=run_dir,
-                dry_run=dry_run,
-                in_memory_images=in_memory_images,
-            )
-
-        _install_standard_detector_hooks()
-        from .orchestrator import DetectorOrchestrator as StandardDetectorOrchestrator
-
-        return StandardDetectorOrchestrator(
-            config,
-            images,
-            run_id,
-            run_dir,
+        return VerifiedDetectorOrchestrator(
+            config=config,
+            images=images,
+            run_id=run_id,
+            run_dir=run_dir,
             dry_run=dry_run,
             in_memory_images=in_memory_images,
         )
@@ -108,27 +87,14 @@ def run_detection_step(
     dry_run: bool,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    """Dispatch standard or verified dense production detection."""
-    if _detector_route(config) == DENSE_ROUTE_NAME:
-        _validate_verified_image_stems(images)
-        # Issue #284 keeps Real-ESRGAN in one dedicated all-pages process which
-        # exits before the verified page-local HOMR workers begin.
-        from .dense_orchestrator_batch_sr import run_detection_step as run_verified
+    """Run the single verified dense detector route (#522)."""
+    _detector_route(config)
+    _validate_verified_image_stems(images)
+    # Issue #284 keeps Real-ESRGAN in one dedicated all-pages process which
+    # exits before the verified page-local HOMR workers begin.
+    from .dense_orchestrator_batch_sr import run_detection_step as run_verified
 
-        return run_verified(
-            config,
-            images,
-            page_ids,
-            run_id,
-            run_dir,
-            dry_run=dry_run,
-            in_memory_images=in_memory_images,
-        )
-
-    _install_standard_detector_hooks()
-    from .orchestrator import run_detection_step as run_standard
-
-    return run_standard(
+    return run_verified(
         config,
         images,
         page_ids,

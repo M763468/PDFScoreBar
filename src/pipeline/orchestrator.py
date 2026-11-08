@@ -19,6 +19,7 @@ from src.pipeline.detection import (
     resolve_paths_from_detection,
     run_detection_step,
 )
+from src.pipeline.detection.config import resolve_detector_route
 from src.pipeline.detection.model_selection import model_validation_mode
 from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.review.manual_correction_materializer import (
@@ -209,6 +210,15 @@ class PipelineOrchestrator:
                 index: [doc[index].rect.width, doc[index].rect.height] for index in pages
             }
 
+        if not self._should_persist_pdf_images(pdf_opts) and get_nested(
+            self.config, "steps", "detection", default=False
+        ):
+            # #522: the single verified detector route requires persisted page images.
+            raise ValueError(
+                "In-memory PDF rendering (inputs.pdf_to_images.output_dir: null) is not "
+                "supported when steps.detection is enabled; the dense_full_pipeline detector "
+                "requires persisted page images. Remove output_dir: null."
+            )
         logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
         from src.pdf_to_images import render_pdf_to_memory
         from src.pipeline.utils.images import get_image_cache
@@ -489,14 +499,12 @@ class PipelineOrchestrator:
 
         # Phase B: MMR Batch Detection
         mmr_page_ctx = page_ctx
-        detector_route = str(
-            get_nested(self.config, "detection", "detector_route", default="standard")
-        )
+        # #522: one detector route; MMR always uses the current-x4 support sidecar.
+        resolve_detector_route(get_nested(self.config, "detection", default={}) or {})
         if (
             get_nested(self.config, "steps", "mmr_overrides", default=False)
             and not self.dry_run
             and not self.validate_only
-            and detector_route == "dense_full_pipeline"
         ):
             from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 

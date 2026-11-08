@@ -23,12 +23,9 @@ def model_validation_mode(detection: Mapping[str, Any]) -> str:
     if mode not in ("production", "exploration", "comparison"):
         raise ValueError(f"Unknown detection.model_validation: {mode!r}")
     if mode != "production":
-        route = detection.get("detector_route", "standard")
-        if route != "dense_full_pipeline":
-            raise ValueError(
-                f"detection.model_validation={mode!r} requires "
-                f"detector_route='dense_full_pipeline'; got {route!r}"
-            )
+        from .config import resolve_detector_route
+
+        resolve_detector_route(detection)
         for key in ("cnn_device",):
             if detection.get(key, "cuda") not in ("cpu", "cuda"):
                 raise ValueError(f"Unsupported detection.{key}; use cpu or cuda")

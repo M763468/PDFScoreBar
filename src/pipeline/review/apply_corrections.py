@@ -800,10 +800,10 @@ def _run_retained_artifact_correction(
         get_nested(source_config, "numbering", "force_single_system", default=False)
     )
     mmr_enabled = bool(get_nested(source_config, "steps", "mmr_overrides", default=False))
-    dense_mmr = (
-        str(get_nested(source_config, "detection", "detector_route", default="standard"))
-        == "dense_full_pipeline"
-    )
+    # #522: one detector route; a review package from a removed route fails explicitly.
+    from src.pipeline.detection.config import resolve_detector_route
+
+    resolve_detector_route(get_nested(source_config, "detection", default={}) or {})
 
     states: List[Dict[str, Any]] = []
     execution_user_overrides: List[Dict[str, Any]] = []
@@ -993,17 +993,15 @@ def _run_retained_artifact_correction(
         support_data: List[Dict[str, Any] | None] = []
         output_paths: List[Path] = []
         for state in mmr_states:
-            support = None
-            if dense_mmr:
-                from src.pipeline.mmr_support_reuse import build_mmr_support_data
+            from src.pipeline.mmr_support_reuse import build_mmr_support_data
 
-                current_mask = _current_homr_staff_mask(
-                    state["manifest_page"],
-                    source_root=source_root,
-                    page_id=state["page_id"],
-                )
-                support = build_mmr_support_data(state["corrected_base"], current_mask)
-                write_json(state["page_intermediate"] / "mmr_support.json", support)
+            current_mask = _current_homr_staff_mask(
+                state["manifest_page"],
+                source_root=source_root,
+                page_id=state["page_id"],
+            )
+            support = build_mmr_support_data(state["corrected_base"], current_mask)
+            write_json(state["page_intermediate"] / "mmr_support.json", support)
             support_data.append(support)
             output_paths.append(state["page_intermediate"] / "overrides_mmr_selective.json")
 

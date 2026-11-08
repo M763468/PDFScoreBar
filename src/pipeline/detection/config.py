@@ -101,3 +101,28 @@ def get_probe_x_domain_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
 def get_cnn_apply_nms(det_cfg: Dict[str, Any]) -> bool:
     """Return explicit CNN NMS setting, defaulting to False (opt-in)."""
     return bool(det_cfg.get("cnn_apply_nms", DEFAULT_CNN_APPLY_NMS))
+
+
+DENSE_ROUTE_NAME = "dense_full_pipeline"
+REMOVED_DETECTOR_ROUTES = ("standard",)
+
+
+def resolve_detector_route(det_cfg: Dict[str, Any] | None) -> str:
+    """Return the single supported detector route (#522).
+
+    ``dense_full_pipeline`` is the only route; an omitted key selects it. The former
+    ``standard`` route (and any other value) is rejected instead of being reinterpreted.
+    """
+    route = (det_cfg or {}).get("detector_route", DENSE_ROUTE_NAME)
+    if route == DENSE_ROUTE_NAME:
+        return DENSE_ROUTE_NAME
+    if route in REMOVED_DETECTOR_ROUTES:
+        raise ValueError(
+            f"detection.detector_route={route!r} was removed in #522; the only detector "
+            f"route is {DENSE_ROUTE_NAME!r}. Delete the key or set it to {DENSE_ROUTE_NAME!r}; "
+            "reproduce historical standard-route runs from commit 4f1594bc."
+        )
+    raise ValueError(
+        f"Unknown detection.detector_route={route!r}; the only detector route is "
+        f"{DENSE_ROUTE_NAME!r}"
+    )

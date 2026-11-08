@@ -12,6 +12,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from .config import resolve_detector_route
+
 FRESH_UPSTREAM_MODE = "fresh_upstream"
 PRECOMPUTED_CANDIDATE_MODE = "precomputed_candidate_route"
 PRECOMPUTED_PROBE_KEY = "precomputed_probe_candidates_root"
@@ -38,7 +40,7 @@ def build_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[str, Any]:
         "hybrid_detection_may_execute": True,
         "hybrid_output_authoritative_for_probe": not uses_precomputed_probe,
         "hybrid_output_authoritative_for_cnn_bands": not uses_cnn_bands_override,
-        "detector_route": str(det_cfg.get("detector_route", "standard")),
+        "detector_route": resolve_detector_route(dict(det_cfg)),
         "homr_profile": det_cfg.get("homr_profile"),
         "sr_scale": int(det_cfg.get("sr_scale", 2)),
         "probe_use_original_images": bool(det_cfg.get("probe_use_original_images", False)),

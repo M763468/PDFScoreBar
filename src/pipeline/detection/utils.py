@@ -1,7 +1,6 @@
 """Utility functions for path resolution and system monitoring in detection."""
 
 import logging
-import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -172,23 +171,3 @@ def resolve_barlines_and_masks_config(
             }
         )
     return resolved
-
-
-def log_vram_usage(message: str = ""):
-    """Logs current GPU memory usage if available."""
-    try:
-        res = subprocess.run(
-            [
-                "nvidia-smi",
-                "--query-gpu=memory.used,memory.total",
-                "--format=csv,noheader,nounits",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if res.returncode == 0:
-            used, total = res.stdout.strip().split(",")
-            logger.info(f"VRAM Usage ({message}): {used.strip()} / {total.strip()} MiB")
-    except Exception as e:
-        logger.debug(f"Could not get VRAM usage: {e}")

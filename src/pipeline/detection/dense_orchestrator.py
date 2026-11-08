@@ -16,13 +16,17 @@ from src.common.model_artifacts import (
 )
 from src.pipeline.core import ensure_dir, split_score_page_from_composite_stem
 
-from .config import get_cnn_apply_nms, get_probe_x_domain_kwargs
-from .input_contract import build_detector_input_contract
+from .config import (
+    DENSE_ROUTE_NAME,
+    get_cnn_apply_nms,
+    get_probe_x_domain_kwargs,
+    resolve_detector_route,
+)
+from .input_contract import require_fresh_detector_input_contract
 from .maintained_profile_hybrid import VerifiedProfileHybridDetector
 from .model_selection import model_observation, model_validation_mode, resolve_cnn_candidate
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DENSE_ROUTE_NAME = "dense_full_pipeline"
 
 
 def _first_existing(directory: Path, names: tuple[str, ...], *, description: str) -> Path:
@@ -133,7 +137,7 @@ class DetectorOrchestrator:
         self.dry_run = dry_run
         self.in_memory_images = in_memory_images
         self.det_cfg = dict(config.get("detection") or {})
-        self.detector_route = str(self.det_cfg.get("detector_route", "standard"))
+        self.detector_route = resolve_detector_route(self.det_cfg)
         self.homr_profile = self.det_cfg.get("homr_profile")
         self.model_validation = model_validation_mode(self.det_cfg)
         self.skip_existing = (
@@ -143,17 +147,15 @@ class DetectorOrchestrator:
         )
         if self.model_validation != "production" and self.homr_profile != "maintained_original":
             raise ValueError("Candidate selection currently supports maintained_original HOMR only")
-        self.input_contract = build_detector_input_contract(self.det_cfg)
+        # Candidate-source overrides belong to the separate dense_probe_candidate_route
+        # evaluation tool; the production route never silently ignores them.
+        self.input_contract = require_fresh_detector_input_contract(self.det_cfg)
         self.input_contract_path = self.run_dir / "intermediate" / "detector_input_contract.json"
         self.hybrid_output_dir: Path | None = None
         self.probe_output_dir: Path | None = None
         self._dense_route: Any | None = None
         self._staff_stroke_units: dict[str, float] | None = None
 
-        if self.detector_route != DENSE_ROUTE_NAME:
-            raise ValueError(
-                f"Verified Stage E orchestrator requires detector_route={DENSE_ROUTE_NAME}"
-            )
         if not self.homr_profile:
             raise ValueError("Verified Stage E production route requires detection.homr_profile")
         if in_memory_images:

@@ -686,6 +686,15 @@ def _reuse_auto_mmr_overrides(
     return list(reused.values())
 
 
+def _source_used_mmr_support(
+    manifest_page: Dict[str, Any], *, source_root: Path, page_id: str
+) -> bool:
+    """Re-apply MMR the same way the reviewed source run did (with or without x4 support)."""
+    return isinstance(manifest_page.get("mmr_support"), dict) or (
+        source_root / "intermediate" / page_id / "mmr_support.json"
+    ).is_file()
+
+
 def _current_homr_staff_mask(
     manifest_page: Dict[str, Any],
     *,
@@ -993,15 +1002,19 @@ def _run_retained_artifact_correction(
         support_data: List[Dict[str, Any] | None] = []
         output_paths: List[Path] = []
         for state in mmr_states:
-            from src.pipeline.mmr_support_reuse import build_mmr_support_data
+            support = None
+            if _source_used_mmr_support(
+                state["manifest_page"], source_root=source_root, page_id=state["page_id"]
+            ):
+                from src.pipeline.mmr_support_reuse import build_mmr_support_data
 
-            current_mask = _current_homr_staff_mask(
-                state["manifest_page"],
-                source_root=source_root,
-                page_id=state["page_id"],
-            )
-            support = build_mmr_support_data(state["corrected_base"], current_mask)
-            write_json(state["page_intermediate"] / "mmr_support.json", support)
+                current_mask = _current_homr_staff_mask(
+                    state["manifest_page"],
+                    source_root=source_root,
+                    page_id=state["page_id"],
+                )
+                support = build_mmr_support_data(state["corrected_base"], current_mask)
+                write_json(state["page_intermediate"] / "mmr_support.json", support)
             support_data.append(support)
             output_paths.append(state["page_intermediate"] / "overrides_mmr_selective.json")
 

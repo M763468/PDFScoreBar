@@ -67,6 +67,27 @@
 | 評価GT / fixture / 利用者PDF | 権利・取得元が異なる | 元の楽譜著作物、座標ラベル、合成fixture、ユーザーPDFを一括で再許諾しない。#505の権利分類を参照 |
 | **OMR-DLN重み** | 現行の取得・配置・推論なし | 旧 §3/§6 は歴史的研究の証拠。production の重み・クラウド許諾ブロッカーから除外 |
 
+**固定HOMRソースから特定できるGPU初期化資産（2026-11-11上流確認）:**
+`Dockerfile` は `homr.main --init --gpu force` を実行する。
+HOMR固定commitの
+[segmentation/config.py](https://github.com/liebharc/homr/blob/457e7c6518a10ba755db2e60883419e56c4d7369/homr/segmentation/config.py)、
+[transformer/configs.py](https://github.com/liebharc/homr/blob/457e7c6518a10ba755db2e60883419e56c4d7369/homr/transformer/configs.py)、
+[main.py](https://github.com/liebharc/homr/blob/457e7c6518a10ba755db2e60883419e56c4d7369/homr/main.py)
+から、GPU経路で選ぶ `onnx_checkpoints` release のZIP名を次のとおり特定できる。
+
+| 用途 | 上流release ZIP（GPU FP16） | 上流GitHub Releaseが表示するZIPのSHA-256 |
+| --- | --- | --- |
+| SegNet | `segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16.zip` | `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82` |
+| Transformer encoder | `encoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16.zip` | `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c` |
+| Transformer decoder | `decoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16.zip` | `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8` |
+
+典拠: [HOMR `onnx_checkpoints` release](https://github.com/liebharc/homr/releases/tag/onnx_checkpoints)
+の資産メタデータ（2026-11-11確認）。**これはGitHubが表示する配布ZIPのdigestであって、
+当方がダウンロードして検算した値でも、解凍後のONNX単体のhashでもない。**
+実際のイメージ内のmodel bytes・hash・source fingerprintが一致するかは**未実施**。
+また、上流FAQの歴史的なcheckpoint 396の例を現行の **426** と混同せず、
+426の正確な学習元は上流FAQ/Training資料との個別照合を残す。
+
 上流FAQの「重みはAGPL」という記述は、**学習データを含むあらゆる権利の保証ではない**。
 とくに商用化時は実際のcheckpoint/学習データと利用形態を特定したうえで、必要なら法律専門家に確認する。
 作者への新規問い合わせは本Issueの現行方針では行わない。

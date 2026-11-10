@@ -100,6 +100,17 @@ PyMuPDF が入る。`docker/review_relay.py` は `tools.review_correction.server
 ブラウザ側HTML/JSとランチャー、将来の独立Web入口は結合/著作物の境界を個別に検討する。
 **単に別リポジトリ・別プロセスとすることだけで独立とは結論しない。**
 
+**PyMuPDFの直接importを現行sourceで確認した境界:**
+- 入力検査・描画: `src/pdf_to_images.py` と `src/pipeline/engine_input_safety.py` が `fitz.open`、`Matrix`、`get_pixmap` を使用。
+- 新規の通常PDF出力: `src/pipeline/review/final_output.py` が `fitz.open`、`new_page`、`insert_image` を使用。
+- 既存PDFへの番号レイヤ・戻し: `src/pipeline/review/number_layer.py` が
+  `wrap_contents`、`insert_text`、xref stream/key操作、注釈・ページ回転・cropbox検証を使用。
+- 補正の再開・PDF同一性: `tools/review_correction/resume.py` が `fitz.open`、`annots`、`set_cropbox`、`get_pixmap` を使用。
+
+したがって `pikepdf`/`pypdf` で番号レイヤの低水準操作を置換する課題と、
+`pypdfium2` で描画・入力検査を置換する課題は、回帰契約も作業費も異なる。
+
+
 以下は公開条文に基づく**遵守計画上の分類**であり、個別の結合著作物の法的判断を確定しない。
 典拠: [AGPLv3 §1/§4–6/§13](https://www.gnu.org/licenses/agpl-3.0.html)、
 [GNU FAQ](https://www.gnu.org/licenses/gpl-faq.html)、

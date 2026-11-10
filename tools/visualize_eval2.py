@@ -7,7 +7,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
 # Drawing util
-from tools.run_gt_rebuild_hybrid_eval import load_preds
+from tools.probe_evaluation_helpers import load_preds
 
 
 def draw_boxes(img, boxes, color, thickness=2):

@@ -5,7 +5,7 @@ import pytest
 from src.pipeline.detection.current_sr_batch_worker import _items
 from src.pipeline.detection.current_sr_runtime import normalize_compile_mode
 from src.pipeline.detection.current_support_worker import _require_precomputed_sr
-from src.pipeline.detection.profile_hybrid_batch_sr import BatchSRVerifiedProfileHybridDetector
+from src.pipeline.detection.maintained_profile_hybrid import BatchSRVerifiedProfileHybridDetector
 
 
 def _detector(tmp_path: Path, images: list[Path]) -> BatchSRVerifiedProfileHybridDetector:
@@ -20,7 +20,7 @@ def _detector(tmp_path: Path, images: list[Path]) -> BatchSRVerifiedProfileHybri
         project_root=tmp_path,
         dry_run=True,
         skip_existing=False,
-        profile_name="stage_e_verified_homr",
+        profile_name="maintained_original",
     )
 
 

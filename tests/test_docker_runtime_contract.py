@@ -819,30 +819,7 @@ def test_production_preflight_checks_maintained_provenance_without_historical_as
     assert "runtime is incomplete" in errors[-1]
 
 
-def test_historical_reproduction_uses_separate_image() -> None:
+def test_historical_execution_build_is_retired() -> None:
     root = Path(__file__).resolve().parents[1]
-    production = (root / "Dockerfile").read_text()
-    assert "stage_e" not in production.lower()
-    assert "musicxml==1.4" not in production
-    reproduction = (root / "docker/Dockerfile.stage-e").read_text()
-    assert 'pdfscore.runtime.asset_contract="historical-stage-e-v1"' in reproduction
-    assert "FROM ${PRODUCTION_IMAGE}" in reproduction
-    assert "/opt/venv_stage_e_homr" in reproduction
-    result = subprocess.run(
-        [
-            "make",
-            "-f",
-            "tools/issue120/Makefile.stage_e.mk",
-            "-n",
-            "docker-build-stage-e",
-            "ISSUE120_STAGE_E_IMAGE=repro:test",
-            "ISSUE120_PRODUCTION_IMAGE=prod:test",
-        ],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    assert "repro:test" in result.stdout
-    assert "PRODUCTION_IMAGE=prod:test" in result.stdout
-    assert "pdfscore_pipeline_gpu" not in result.stdout
+    assert not (root / "docker/Dockerfile.stage-e").exists()
+    assert "docker-build-stage-e:" not in (root / "tools/issue120/Makefile.stage_e.mk").read_text()

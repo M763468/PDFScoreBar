@@ -45,7 +45,7 @@ class ProfileHybridDetector:
     top-level Python worker before moving on.
     """
 
-    source_worker_module = "src.pipeline.detection.verified_source_page_worker"
+    source_worker_module = "src.pipeline.detection.maintained_source_page_worker"
 
     def _run_homr_profile(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         raise NotImplementedError("A profile execution backend is required")

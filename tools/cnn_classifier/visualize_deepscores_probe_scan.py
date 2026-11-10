@@ -16,7 +16,7 @@ from tools.cnn_classifier.build_cnn_dataset import (
     find_components,
     load_palette_index,
 )
-from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan
+from tools.probe_evaluation_helpers import detect_probe_scan
 
 
 def collect_tp_boxes(seg_np: np.ndarray, palette_index: int, min_area: int, min_height: int):

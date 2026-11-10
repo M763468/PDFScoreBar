@@ -3,9 +3,9 @@ from typing import Any
 
 import pytest
 
-import src.pipeline.detection.profile_hybrid as profile_hybrid
+import src.pipeline.detection.maintained_profile_hybrid as profile_hybrid
 from src.pipeline.detection.current_support_worker import _require_current_homr_bundle
-from src.pipeline.detection.profile_hybrid import VerifiedProfileHybridDetector
+from src.pipeline.detection.maintained_profile_hybrid import VerifiedProfileHybridDetector
 
 
 def _detector(
@@ -25,7 +25,7 @@ def _detector(
         project_root=tmp_path,
         dry_run=dry_run,
         skip_existing=False,
-        profile_name="stage_e_verified_homr",
+        profile_name="maintained_original",
     )
 
 
@@ -51,7 +51,7 @@ def test_in_process_source_generation_reuses_current_x4_detection(
         images: list[Path],
         output_root: Path,
     ) -> dict[str, Any]:
-        assert profile_name == "stage_e_verified_homr"
+        assert profile_name == "maintained_original"
         assert output_root == tmp_path / "baseline"
         homr_calls.extend(images)
         return {"commands": [["profile:homr", profile_name, "baseline", str(images[0])]]}
@@ -88,7 +88,7 @@ def test_in_process_source_generation_reuses_current_x4_detection(
     assert result["x4_homr_neural_inference_count"] == 1
     assert result["x4_detector_support_owner"] == "current_x4_support"
     assert result["commands"] == [
-        ["profile:homr", "stage_e_verified_homr", "baseline", str(image)],
+        ["profile:homr", "maintained_original", "baseline", str(image)],
         ["current-support", str(image)],
     ]
 

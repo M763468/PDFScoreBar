@@ -173,10 +173,6 @@ class DetectorOrchestrator:
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
         detector_cls = VerifiedProfileHybridDetector
-        if self.homr_profile != "maintained_original":
-            from .profile_hybrid import VerifiedProfileHybridDetector as HistoricalProfileDetector
-
-            detector_cls = HistoricalProfileDetector
         detector = detector_cls(
             det_cfg=self.det_cfg,
             images=self.images,

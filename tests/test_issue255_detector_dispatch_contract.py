@@ -6,7 +6,7 @@ import src.pipeline.detection as detection
 import src.pipeline.detection.dense_orchestrator_batch_sr as dense_batch
 
 
-def _dense_config(*, profile: str | None = "stage_e_verified") -> dict:
+def _dense_config(*, profile: str | None = "maintained_original") -> dict:
     det = {"detector_route": "dense_full_pipeline"}
     if profile is not None:
         det["homr_profile"] = profile

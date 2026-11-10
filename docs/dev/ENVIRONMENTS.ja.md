@@ -1,6 +1,6 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"12b2934021ae3ac084312b0d2eb608999dd3268a73f8f631f56eb90e1d9a63c6"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"888c2c510aced17388e79740dc9c29fac3911578fd5795869227a6809929dba3"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
@@ -12,7 +12,7 @@
 
 ### `pdfscore_pipeline_gpu`
 
-これは、保守対象となっている本番専用のフルパイプライン Docker イメージです。このイメージの `/opt` ペイロードには過去の Stage-E ランタイムは含まれていません。保持されている互換性ツールでは、別イメージである `pdfscore_stage_e_reproduction` を使用します。
+これは、保守対象となっている本番専用のフルパイプライン Docker イメージです。このイメージの `/opt` ペイロードには過去の Stage-E ランタイムは含まれていません。歴史的再現にはcommit `f6bbd1c0`を使用します。
 
 - Dockerfile: `Dockerfile`
 - ビルドターゲット: `make docker-build`
@@ -147,28 +147,12 @@ dense 本番ルートでは、不変の保守対象オリジナル画像 HOMR �
 configs/detector_profiles/maintained_original_homr.json
 ```
 
-過去の Stage-E プロファイルは、保持されている過去のツール向けの分離された互換性コンポーネントとして引き続き利用可能です。これは本番環境の依存関係ではありません。ルートの `Dockerfile` には、過去の venv、クローンされたソース、モデルのダウンロード、またはマーカーは一切含まれていません。標準のプリフライトは、保守対象プロファイルのパスと、そのマニフェストに記載された正確な HOMR／評価器マーカー値を検証します。
-
-本番イメージから再現用拡張イメージを明示的にビルドするには、以下を実行します。
-
-```bash
-make docker-build
-make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
-```
-
-以前の `run-issue120-stage-e-full` は、#522 で削除した standard 検出経路を実行するものでした。その実行は commit `4f1594bc` から再現してください。
-
-この拡張は `docker/Dockerfile.stage-e` であり、デフォルトの出力イメージ名は `pdfscore_stage_e_reproduction` です。分離されたビルドを行う場合は、これらの Make コマンドで `ISSUE120_PRODUCTION_IMAGE=<production-image>` および `ISSUE120_STAGE_E_IMAGE=<reproduction-image>` を設定してください。再現プロビナンスを保持する場合は、ベースイメージを不変のイメージ ID にピン留めしてください。このイメージには個別のアセットコントラクトラベルが付与されるため、本番プリフライトへの明示的なオーバーライドを含め、標準のイメージ解決からは除外されます。この拡張は過去のソースコミット、モデルの SHA-256 チェック、および分離された依存関係バージョンを保持しますが、本番環境向けに過去のプロファイルを選択するものではありません。
-
-旧来の Stage-E という名称は、#120 のツール、マニフェスト、および承認済みの過去の結果に対する互換性識別子として保持されています。残されている目的は、保持されているツールやコンポーネント比較実験に対して、ピン留めされたコンポーネントを公開することです。この拡張は現在の本番メイン venv を継承するため、過去の完全な 2 系統 HOMR（two-HOMR）環境を再構築するものではなく、その full68 メトリクスを保証するものでもありません。過去の環境の完全な再現は #398 の受け入れ基準の対象外です。標準の `maintained_original` ルートはこれを必要としません。この互換性コントラクトの削除やインターフェースの名称変更は別途の廃止決定事項となり、ここで過去のデータ、ソースのピン留め、またはプロファイルが削除されることはありません。後述のマイルストーンに記録されているとおり、正確な入力画像は引き続き外部の前提条件となります。
-
-コンポーネントプロファイルの正確なプロビナンス、パッケージバージョン、モデルハッシュ、および `/opt/` のランタイムパスは以下に保存されています。
-
-```text
-configs/detector_profiles/stage_e_verified_homr.json
-```
-
-保守対象のオリジナルプロファイルと `current_x4_support` で使用される現行ランタイムの HOMR は、メインのイメージおよびランタイムを共有しますが、個別の入力コントラクトおよび座標コントラクトを保持しています。標準の dense ルートでは過去のプロファイルは選択されません。再現要件については `TWO_HOMR_MILESTONE.md` を参照してください。
+#522で歴史的Stage-Eの実行経路を廃止しました。現行の検出入口で選択できるのは
+`maintained_original`のみです。歴史的Stage-Eの環境、Docker拡張、実行は別worktreeの
+commit `f6bbd1c0`から再現してください。
+`configs/detector_profiles/stage_e_verified_homr.json`は来歴（source pin、モデルhash、
+受入指標）として保持し、実行可能なprofile selectorとしては使用しません。
+共通のモデル契約、コネクタ処理、HOMR API互換ヘルパーは保持します。
 
 ## 過去の評価環境
 

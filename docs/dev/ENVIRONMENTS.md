@@ -11,8 +11,7 @@ unless an active Issue explicitly revives them.
 ### `pdfscore_pipeline_gpu`
 
 This is the maintained production-only full-pipeline Docker image. Its `/opt` payload
-contains no historical Stage-E runtime; retained compatibility tooling uses the separate
-`pdfscore_stage_e_reproduction` image.
+contains no historical Stage-E runtime. Historical reproduction uses commit `f6bbd1c0`.
 
 - Dockerfile: `Dockerfile`
 - Build target: `make docker-build`
@@ -230,49 +229,12 @@ commit and runtime paths are stored in:
 configs/detector_profiles/maintained_original_homr.json
 ```
 
-The historical Stage-E profile remains available as an isolated compatibility component
-for retained historical tooling. It is not a production dependency: the root `Dockerfile` contains no historical venv, cloned source,
-model downloads, or markers. Canonical preflight validates the maintained profile paths
-and the exact HOMR/evaluator marker values from its manifest.
-
-Build the reproduction extension explicitly from a production image:
-
-```bash
-make docker-build
-make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
-```
-
-The former `run-issue120-stage-e-full` target executed the standard detector route that was
-removed in #522; reproduce that run from commit `4f1594bc`.
-
-The extension is `docker/Dockerfile.stage-e`; its default output is
-`pdfscore_stage_e_reproduction`. For an isolated build, set
-`ISSUE120_PRODUCTION_IMAGE=<production-image>` and `ISSUE120_STAGE_E_IMAGE=<reproduction-image>`
-on those Make commands. Pin the base to an immutable image ID when retaining reproduction
-provenance. Its separate asset-contract label excludes it from canonical image resolution,
-including explicit overrides to production preflight. This extension retains the historical
-source commits, model SHA-256 checks, and isolated dependency versions; it does not select the historical profile for production.
-
-The old Stage-E name is retained as a compatibility identifier for #120 tools, manifests,
-and accepted historical results. Its remaining purpose is exposing the pinned component to
-retained tooling and component comparison experiments. This extension inherits the current production main
-venv; it does not reconstruct the complete historical two-HOMR environment or guarantee
-its full68 metrics. Full historical environment reproduction is outside #398 acceptance.
-The canonical `maintained_original` route does not need it. Removing that compatibility contract or renaming its interfaces would be a separate retirement decision;
-no historical data, source pins, or profile is deleted here. The exact input images are still
-an external prerequisite, as recorded in the milestone below.
-
-The component profile's exact provenance, package versions, model hashes, and `/opt/` runtime
-paths are stored in:
-
-```text
-configs/detector_profiles/stage_e_verified_homr.json
-```
-
-The maintained original profile and current-runtime HOMR used by `current_x4_support` share
-the main image/runtime but retain separate input and coordinate contracts. The historical
-profile is not selected by the canonical dense route. See `TWO_HOMR_MILESTONE.md` for
-reproduction requirements.
+Historical Stage-E execution was retired in #522. The current detection entrance
+accepts only `maintained_original`. Reproduce historical Stage-E environments,
+Docker extension builds and runs from commit `f6bbd1c0` in a separate checkout.
+`configs/detector_profiles/stage_e_verified_homr.json` remains historical provenance
+(source pins, model hashes and accepted metrics), not an executable profile selector.
+Shared HOMR model contracts, connector processing and API compatibility helpers remain.
 
 ## Historical evaluation environments
 

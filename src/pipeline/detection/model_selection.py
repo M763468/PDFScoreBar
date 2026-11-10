@@ -19,6 +19,9 @@ from src.common.model_artifacts import (
 
 
 def model_validation_mode(detection: Mapping[str, Any]) -> str:
+    from .config import validate_detection_config
+
+    validate_detection_config(dict(detection))
     mode = detection.get("model_validation", "production")
     if mode not in ("production", "exploration", "comparison"):
         raise ValueError(f"Unknown detection.model_validation: {mode!r}")

@@ -569,7 +569,7 @@ def extract_deepscores_probe_fp(
     if str(tools_dir) not in sys.path:
         sys.path.append(str(tools_dir))
 
-    from run_gt_rebuild_hybrid_eval import detect_probe_scan
+    from probe_evaluation_helpers import detect_probe_scan
 
     scale = crop_scale
     aspect_ratio = crop_w / crop_h

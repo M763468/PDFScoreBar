@@ -352,7 +352,7 @@ def test_composite_image_probe_adapter_cnn_connection(
     assert target.with_name("pipeline2_no_peak_stroke_dedup.json").is_file()
 
 
-@pytest.mark.parametrize("profile, expected_calls", [("maintained_original", 1), ("stage_e", 0)])
+@pytest.mark.parametrize("profile, expected_calls", [("maintained_original", 1)])
 def test_adapter_wiring_is_limited_to_maintained_dense_route(
     tmp_path, monkeypatch, profile, expected_calls
 ):

@@ -1,9 +1,8 @@
 import json
 from pathlib import Path
 
-import src.pipeline.detection.profile_hybrid as profile_hybrid
-import src.pipeline.detection.profile_hybrid_batch_sr as profile_hybrid_batch_sr
-import src.pipeline.detection.verified_source_page_worker as source_worker
+import src.pipeline.detection.maintained_profile_hybrid as profile_hybrid
+import src.pipeline.detection.maintained_source_page_worker as source_worker
 
 
 def _detector(tmp_path: Path, images: list[Path]) -> profile_hybrid.VerifiedProfileHybridDetector:
@@ -198,7 +197,8 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
                 "image": str(image),
                 "run_id": "test",
                 "project_root": str(tmp_path),
-                "profile_name": "stage_e_verified",
+                "profile_name": "maintained_original",
+                "sr_mode": "page_local",
                 "baseline_output": str(tmp_path / "baseline"),
                 "support_output": str(tmp_path / "support"),
             }
@@ -224,7 +224,7 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
         }
 
     monkeypatch.setattr(
-        profile_hybrid_batch_sr.BatchSRVerifiedProfileHybridDetector,
+        profile_hybrid.VerifiedProfileHybridDetector,
         "_generate_one_page_sources_in_process",
         fake_generate,
     )

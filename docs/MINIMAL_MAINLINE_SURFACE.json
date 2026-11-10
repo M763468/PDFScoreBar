@@ -629,11 +629,7 @@
     "src/homr_eval_scripts/core/utils.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/homr_eval_scripts/homr_evaluator.py": "historical/evaluation CLI; maintained workers use production-owned src/homr_runtime directly",
     "src/homr_eval_scripts/segnet_cache.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/homr_profile.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detection/homr_profile_compat.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/profile_hybrid.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/profile_hybrid_batch_sr.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/verified_source_page_worker.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detector_routes/dense_probe_candidate.py": "Issue #120 candidate route; not called by canonical dense route",
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
@@ -835,12 +831,6 @@
     "tests/fixtures/**"
   ],
   "runtime_optional_source_imports": {
-    "src/pipeline/detection/dense_orchestrator.py": {
-      "src/pipeline/detection/profile_hybrid.py": "Explicit non-maintained profile selection loads the historical backend lazily; maintained_original never imports it."
-    },
-    "src/pipeline/detection/dense_orchestrator_batch_sr.py": {
-      "src/pipeline/detection/profile_hybrid_batch_sr.py": "Explicit non-maintained profile selection loads historical batch-SR execution lazily; excluded from the maintained bundle."
-    },
     "src/common/__init__.py": {
       "src/common/barline_evaluation.py": "Lazy compatibility exports for development evaluation callers only; production callers use barline_geometry."
     },

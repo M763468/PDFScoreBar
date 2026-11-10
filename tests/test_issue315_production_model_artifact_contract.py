@@ -173,7 +173,7 @@ def test_verified_stage_e_fails_loud_when_cached_artifact_is_missing(
 def test_verified_stage_e_rejects_legacy_path_and_manifest_ambiguity(tmp_path: Path) -> None:
     config = {
         "detection": {
-            "homr_profile": "stage_e_verified",
+            "homr_profile": "maintained_original",
             "detector_route": "dense_full_pipeline",
             "cnn_model_manifest": PRODUCTION_MANIFEST_CONFIG_PATH,
             "cnn_model_path": "logs/legacy/model.pth",

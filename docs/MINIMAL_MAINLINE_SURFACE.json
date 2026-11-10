@@ -488,11 +488,6 @@
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "docker/Dockerfile.stage-e",
-      "role": "historical Stage-E reproduction image extension",
-      "include_in_runtime_bundle": false
-    },
-    {
       "pattern": "Dockerfile.homr",
       "role": "isolated/historical HOMR environment",
       "include_in_runtime_bundle": false
@@ -822,7 +817,8 @@
       "tests/test_staff_strokes.py",
       "tests/test_subprocess_utils.py",
       "tests/test_thin_barline_finder.py",
-      "tests/test_x4_staff_piece_support.py"
+      "tests/test_x4_staff_piece_support.py",
+      "tests/test_detection_config_keys.py"
     ]
   },
   "test_support_patterns": [

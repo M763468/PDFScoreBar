@@ -1,0 +1,257 @@
+{
+ "schema_version": "issue522.review_audit.v1",
+ "staff_piece_audit": {
+  "multi_staff_boxes_without_iou_support": 104,
+  "admitted": 80,
+  "admitted_by_staff_count": {
+   "2": 80
+  },
+  "admitted_cross_system": [],
+  "admitted_pieces_without_gt": [],
+  "admitted_min_support_height_units": 3.74,
+  "admitted_min_piece_coverage": 0.54,
+  "rejected_partial_support": 1
+ },
+ "soft_diff": {
+  "totals": {
+   "control": 121,
+   "x4": 117
+  },
+  "only_control": [
+   [
+    "Shostakovich-Sym5-Va",
+    "page_013",
+    [
+     891,
+     2956,
+     896,
+     3093
+    ],
+    0.0
+   ],
+   [
+    "Shostakovich-Sym5-Va",
+    "page_013",
+    [
+     923,
+     762,
+     928,
+     900
+    ],
+    0.0
+   ],
+   [
+    "Shostakovich-Sym5-Va",
+    "page_013",
+    [
+     2755,
+     3681,
+     2756,
+     3829
+    ],
+    0.0
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     1130,
+     1445,
+     1134,
+     1737
+    ],
+    0.02
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     1261,
+     1445,
+     1265,
+     1737
+    ],
+    0.02
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     2504,
+     1445,
+     2508,
+     1737
+    ],
+    0.06
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_001",
+    [
+     2852,
+     1445,
+     2856,
+     1737
+    ],
+    0.02
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_004",
+    [
+     3183,
+     3086,
+     3187,
+     3270
+    ],
+    0.06
+   ],
+   [
+    "Va_Prokofiev_Symphony1",
+    "page_004",
+    [
+     1143,
+     3274,
+     1147,
+     3376
+    ],
+    0.0
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_003",
+    [
+     3378,
+     1344,
+     3382,
+     1504
+    ],
+    0.02
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_014",
+    [
+     2239,
+     2244,
+     2240,
+     2357
+    ],
+    0.11
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_018",
+    [
+     1941,
+     4450,
+     1942,
+     4564
+    ],
+    0.06
+   ]
+  ],
+  "only_x4": [
+   [
+    "Shostakovich-Sym5-Va",
+    "page_013",
+    [
+     891,
+     2956,
+     896,
+     3092
+    ],
+    0.0
+   ],
+   [
+    "Shostakovich-Sym5-Va",
+    "page_013",
+    [
+     923,
+     762,
+     928,
+     899
+    ],
+    0.0
+   ],
+   [
+    "Shostakovich-Sym5-Va",
+    "page_013",
+    [
+     2755,
+     3681,
+     2756,
+     3828
+    ],
+    0.0
+   ],
+   [
+    "Sibelius-Violin_Concerto-Viola",
+    "page_004",
+    [
+     3186,
+     3093,
+     3187,
+     3273
+    ],
+    0.06
+   ],
+   [
+    "Va_Prokofiev_Symphony1",
+    "page_004",
+    [
+     1143,
+     3274,
+     1147,
+     3375
+    ],
+    0.0
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_003",
+    [
+     3379,
+     1344,
+     3380,
+     1504
+    ],
+    0.02
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_005",
+    [
+     1154,
+     1378,
+     1155,
+     1477
+    ],
+    0.0
+   ],
+   [
+    "Va__Prokofiev_Symphony5",
+    "page_007",
+    [
+     1833,
+     1849,
+     1837,
+     1934
+    ],
+    0.02
+   ]
+  ],
+  "interpretation": {
+   "coordinate_replacements": "6 pairs (12 rows): same line represented by a box 1-4 px different (Sym5 p013 x3, Sibelius p004, Prokofiev1 p004, Prokofiev5 p003)",
+   "net_minus_4": "Sibelius p001 four malformed boxes [x,1445,x,1737] spanning the inter-staff gap into the lower staff; real staff pieces remain TP in both",
+   "other_duplicates": "Prokofiev5 p014/p018 (control only) and p005/p007 (x4 only): duplicate sub-pieces on the same boundary; representative choice differs",
+   "numbering_impact": "none: final boundaries, system membership and numbers identical (Phase-C diff 0)"
+  },
+  "counts": {
+   "only_control": 12,
+   "only_x4": 8,
+   "breakdown_control": "6 replacements + 4 Sibelius gap boxes + 2 duplicates",
+   "breakdown_x4": "6 replacements + 2 duplicates"
+  }
+ }
+}

@@ -270,9 +270,9 @@ def test_explicit_develop_modes_preserve_optional_compatibility(tmp_path):
     assert load_json_boxes(path, strict=False) == []
 
 
-@pytest.mark.parametrize("role", ["baseline", "current", "omr"])
+@pytest.mark.parametrize("role", ["baseline", "current"])
 @pytest.mark.parametrize("payload", ["{broken", '{"unexpected":[]}'])
-def test_canonical_consensus_rejects_corrupt_homr_or_omr(tmp_path, monkeypatch, role, payload):
+def test_canonical_consensus_rejects_corrupt_homr(tmp_path, monkeypatch, role, payload):
     from src.pipeline.detection.profile_sources import ProfileHybridDetector
 
     image = _image(tmp_path)
@@ -290,14 +290,15 @@ def test_canonical_consensus_rejects_corrupt_homr_or_omr(tmp_path, monkeypatch, 
         paths = {
             "baseline": baseline_output / "batch" / image.stem / (image.stem + "_detections.json"),
             "current": support_output / "current.json",
-            "omr": support_output / "omr.json",
         }
         for key, path in paths.items():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(payload if key == role else "[]")
-        return {image: paths["current"]}, {image: paths["omr"]}, []
+        return {image: paths["current"]}, []
 
     monkeypatch.setattr(detector, "_generate_page_sources", sources)
+    with pytest.raises(ValueError, match="Invalid detection JSON"):
+        detector.run()
     _engine(tmp_path, detector.run)
     assert not (tmp_path / "hybrid/test/hybrid_results" / f"{image.stem}_hybrid.json").exists()
 

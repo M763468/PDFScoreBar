@@ -1,5 +1,9 @@
 # Issue 120 Stage D Upstream Regeneration
 
+> **Retired (#522):** `tools/issue120/run_stage_d_upstream_regen.py` and `make regen-issue120-stage-d-upstream`
+> ran the standard detector route, which was removed. This record is retained; reproduce the
+> regeneration from commit `4f1594bc`.
+
 ## Purpose
 
 Stage D verifies whether the slow upstream artifacts used by the Issue #120 detector reconstruction can be regenerated from the current repository and local `evaluation2` inputs.

@@ -19,6 +19,7 @@ from src.pipeline.detection import (
     resolve_paths_from_detection,
     run_detection_step,
 )
+from src.pipeline.detection.config import resolve_detector_route
 from src.pipeline.detection.model_selection import model_validation_mode
 from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.review.manual_correction_materializer import (
@@ -98,6 +99,53 @@ class PipelineOrchestrator:
         # Persistence: Link to module-level cache
         self._persistence = _PIPELINE_PERSISTENCE
         self._mmr_persistence = _MMR_PERSISTENCE
+        self._validate_detector_configuration()
+
+    @staticmethod
+    def _mmr_uses_current_x4_support(
+        detected_this_run: bool,
+        page_ids: List[str],
+        excluded_page_ids: Set[str],
+        page_ctx: Dict[str, Dict[str, Any]],
+    ) -> bool:
+        """Decide MMR support from the inputs, not from a detector-route name (#522).
+
+        Detection in this run always produces current-x4 support, which is then
+        required. Precomputed inputs use support when every page resolves a retained
+        current-HOMR staff mask, and run without support when none does; a partial
+        set is ambiguous and rejected.
+        """
+        if detected_this_run:
+            return True
+        masks = [
+            Path(str((page_ctx[page_id].get("resolved") or {}).get("current_homr_staff_mask", "")))
+            for page_id in page_ids
+            if page_id not in excluded_page_ids and page_id in page_ctx
+        ]
+        present = [path.is_file() for path in masks]
+        if present and all(present):
+            return True
+        if any(present):
+            raise ValueError(
+                "Precomputed inputs resolve current-HOMR staff masks for only some pages; "
+                "MMR support would be mixed. Provide the retained mask for every page."
+            )
+        return False
+
+    def _validate_detector_configuration(self) -> None:
+        """Reject removed detector routes and unsupported image modes before any work (#522)."""
+        resolve_detector_route(get_nested(self.config, "detection", default={}) or {})
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        if (
+            get_nested(self.config, "steps", "detection", default=False)
+            and get_nested(self.config, "steps", "pdf_to_images", default=False)
+            and not self._should_persist_pdf_images(pdf_opts)
+        ):
+            raise ValueError(
+                "In-memory PDF rendering (inputs.pdf_to_images.output_dir: null) is not "
+                "supported when steps.detection is enabled; the dense_full_pipeline detector "
+                "requires persisted page images. Remove output_dir: null."
+            )
 
     def _telemetry_stage(self, stage_id: str, *, detail_code: str | None = None):
         if self.telemetry is None:
@@ -489,14 +537,13 @@ class PipelineOrchestrator:
 
         # Phase B: MMR Batch Detection
         mmr_page_ctx = page_ctx
-        detector_route = str(
-            get_nested(self.config, "detection", "detector_route", default="standard")
-        )
         if (
             get_nested(self.config, "steps", "mmr_overrides", default=False)
             and not self.dry_run
             and not self.validate_only
-            and detector_route == "dense_full_pipeline"
+            and self._mmr_uses_current_x4_support(
+                bool(run_detection), page_ids, excluded_page_ids, page_ctx
+            )
         ):
             from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 

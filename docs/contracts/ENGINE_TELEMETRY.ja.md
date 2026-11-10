@@ -1,10 +1,10 @@
 # エンジンの構造化テレメトリ契約
 
-<!-- translation: {"original":"ENGINE_TELEMETRY.md","source":{"sha256":"ad0929b6982b88c89414f9055e701cc86157a7e417fd39ba393ed04b6464ae14"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENGINE_TELEMETRY.md","source":{"sha256":"b8ee604256ec8226828fa2aa46761e49fc25a7d3e7e5100185b8df24737ddd57"},"state":"reviewed"} -->
 
 [English / 原文](ENGINE_TELEMETRY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `ad0929b6982b88c89414f9055e701cc86157a7e417fd39ba393ed04b6464ae14`。状態: `reviewed`。全文の意味・制約・例外を原文と照合し、日本語の可読性も確認済み。
+翻訳元: same PR / SHA-256 `b8ee604256ec8226828fa2aa46761e49fc25a7d3e7e5100185b8df24737ddd57`。状態: `reviewed`。全文の意味・制約・例外を原文と照合し、日本語の可読性も確認済み。
 
 > **状態: エンジンジョブ契約 v1を基盤とするIssue #339の構造化テレメトリ契約。**
 >
@@ -22,7 +22,7 @@
 2. **コンパクトなジョブテレメトリサマリー**: `JobResult.resources` への射影やデバッグ成果物に適した、ステージの実時間と任意のリソースピーク。
 3. **開発者用プロファイリング・トレース**: Issue固有の詳細トレース、CUDA プロファイリング、サブプロセスログ、内部パス。これらは診断用のままであり、公開の進捗フィールドではない。
 
-テレメトリは、detector、HOMR、OMR-DLN、グルーピング、番号付け、MMR、補正、成果物公開の意味を変更してはならない。
+テレメトリは、detector、HOMR、グルーピング、番号付け、MMR、補正、成果物公開の意味を変更してはならない。
 
 ### 1.1 受理とエンジン開始
 

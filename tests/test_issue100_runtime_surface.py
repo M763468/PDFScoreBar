@@ -35,12 +35,48 @@ def test_experiments_do_not_change_runtime_source_fingerprint(tmp_path: Path) ->
     assert runtime_contract.source_fingerprint(tmp_path) == initial
 
 
-def test_production_omr_worker_is_under_src() -> None:
+def test_production_support_does_not_run_omr_dln() -> None:
     support = (PROJECT_ROOT / "src/pipeline/detection/current_support_worker.py").read_text(
         encoding="utf-8"
     )
-    assert "src.pipeline.detection.omr_dln_worker" in support
+    assert "omr_dln_worker" not in support
     assert "experiments/models/eval_omr_dln.py" not in support
+    assert not (PROJECT_ROOT / "src/pipeline/detection/omr_dln_worker.py").exists()
+
+
+def test_omr_dln_and_the_standard_route_cannot_return() -> None:
+    """#522: no OMR-DLN code path, setting, model manifest or Ultralytics dependency."""
+    import yaml
+
+    for config in ("configs/dense_full_pipeline.yaml", "configs/smoke_test.yaml"):
+        detection = yaml.safe_load((PROJECT_ROOT / config).read_text())["detection"]
+        assert not any(key.startswith("omr") for key in detection), config
+    assert "ultralytics" not in (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    from src.pipeline.detection.config import DENSE_ROUTE_NAME, resolve_detector_route
+
+    for config in sorted((PROJECT_ROOT / "configs").glob("*.yaml")):
+        payload = yaml.safe_load(config.read_text(encoding="utf-8")) or {}
+        assert resolve_detector_route(payload.get("detection")) == DENSE_ROUTE_NAME, config
+    for removed in (
+        "src/pipeline/detection/omr_dln_worker.py",
+        "src/pipeline/detection/omr_job.py",
+        "src/pipeline/detection/omr_job_worker.py",
+        "models/omr_dln/manifest.json",
+        "experiments/models/eval_omr_dln.py",
+        "src/pipeline/detection/hybrid.py",
+        "src/pipeline/detection/orchestrator.py",
+    ):
+        assert not (PROJECT_ROOT / removed).exists(), removed
+    for module in (
+        "src/pipeline/detection/current_support_worker.py",
+        "src/pipeline/detection/profile_sources.py",
+        "src/pipeline/detection/profile_sources_batch_sr.py",
+        "src/pipeline/steps/staff_strokes.py",
+        "src/pipeline/steps/probe_scan.py",
+    ):
+        text = (PROJECT_ROOT / module).read_text(encoding="utf-8")
+        for token in ("omr_dln", "omr_sr", "current_omr", "omr_boxes", "ultralytics"):
+            assert token not in text, (module, token)
 
 
 @pytest.mark.parametrize(

@@ -17,7 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.pipeline.probe_detector import detect_probe_scan as src_detect_probe_scan
 from src.pipeline.probe_detector.bands import build_row_stats
-from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan as tools_detect_probe_scan
+from tools.probe_evaluation_helpers import detect_probe_scan as tools_detect_probe_scan
 
 
 def _load_json(path: Path) -> Any:

@@ -1,6 +1,6 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"190fe7024de2037474d129d7b60afc5acbddd437793626dbbacf4fa8fe5eacca"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"888c2c510aced17388e79740dc9c29fac3911578fd5795869227a6809929dba3"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
@@ -12,7 +12,7 @@
 
 ### `pdfscore_pipeline_gpu`
 
-これは、保守対象となっている本番専用のフルパイプライン Docker イメージです。このイメージの `/opt` ペイロードには過去の Stage-E ランタイムは含まれていません。保持されている互換性ツールでは、別イメージである `pdfscore_stage_e_reproduction` を使用します。
+これは、保守対象となっている本番専用のフルパイプライン Docker イメージです。このイメージの `/opt` ペイロードには過去の Stage-E ランタイムは含まれていません。歴史的再現にはcommit `f6bbd1c0`を使用します。
 
 - Dockerfile: `Dockerfile`
 - ビルドターゲット: `make docker-build`
@@ -43,7 +43,6 @@
 | 検証済みの過去 Stage-E HOMR スタック | 再現用イメージのみ | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
 | Real-ESRGAN x2/x4 重み | Docker イメージ | `/opt/pdfscore-assets/realesrgan` |
 | 標準スモーク CNN バイトデータ | Docker イメージ（追跡対象の #315 マニフェストから派生） | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
-| OMR-DLN `YOLOv8m_Measures.pt` | オペレータ／外部アセット | ホスト共通モデルキャッシュ内の選択されたマニフェストバージョン（`/opt/pdfscore-external/omr-dln-measures/<version>/` 配下に読み取り専用でマウント） |
 | リポジトリのソース／設定／入力データ | アクティブなチェックアウト | `/workspace` にバインドマウント |
 | 生成された実行アーティファクト | アクティブなチェックアウト／オペレータ | Git 管理外の `logs/`、`artifacts/`、および設定された出力パス |
 
@@ -53,14 +52,7 @@ Real-ESRGAN リゾルバはイメージ内の `PDFSCORE_REALESRGAN_WEIGHTS_DIR` 
 
 イメージが所有するスモーク CNN パスはレガシー／ワークフロー専用のフィクスチャ向けに引き続き利用可能ですが、標準の精度スモークテストではなく、本番精度のエビデンスとして使用してはなりません。標準のスモークテストでは、`configs/dense_full_pipeline.yaml` と同じ `models/barline_cnn/manifest.json`、しきい値、dense 検出器ルート、および x4 サポートコントラクトを使用します。Docker は引き続き `src.common.model_artifacts` を通じて追跡対象マニフェストを実体化（SHA-256 チェックを含む）し、検証済みのバイトデータを上記の安定したスモーク専用互換パスで公開します。
 
-OMR-DLN の重みは扱いが異なります。これは外部で配布されているものであり、Docker ビルドによって暗黙的にダウンロード、再配布、または代替されることはありません。選択された公式の `YOLOv8m_Measures.pt` を、以下のコマンドで一度だけ共通キャッシュに登録してください。
-
-```bash
-python3 -m src.common.model_artifacts import \
-  models/omr_dln/manifest.json /path/to/official/YOLOv8m_Measures.pt
-```
-
-インポート処理では、選択されたバージョンのダイジェストを検証した上で、ファイルをアトミックにキャッシュへ公開します。標準の `make verify-gpu-smoke` は、その選択されたキャッシュエントリを自身で解決し、マニフェストで宣言されたコンテナパスに読み取り専用でマウントします。`OMR_DLN_MODEL_PATH` は引き続き明示的な互換性オーバーライドとして機能し、使用前に同じ選択バージョンのダイジェストに対して検証されます。従来のリポジトリローカルな OMR-DLN パスも互換性のために引き続き受け入れられますが、標準のステージングワークフローではありません。
+オペレータ／外部の検出器の重みは不要です。#522 以降、検出処理は OMR-DLN 小節検出器（`YOLOv8m_Measures.pt`）とその Ultralytics ランタイムを使用しません。hybrid の支持は x4 HOMR から得ます。OMR-DLN を指定したままの設定やハンドオフは、明示的にエラーになります。
 
 ### ソースとイメージの互換性
 
@@ -155,27 +147,12 @@ dense 本番ルートでは、不変の保守対象オリジナル画像 HOMR �
 configs/detector_profiles/maintained_original_homr.json
 ```
 
-過去の Stage-E プロファイルは、保持されている過去のツール向けの分離された互換性コンポーネントとして引き続き利用可能です。これは本番環境の依存関係ではありません。ルートの `Dockerfile` には、過去の venv、クローンされたソース、モデルのダウンロード、またはマーカーは一切含まれていません。標準のプリフライトは、保守対象プロファイルのパスと、そのマニフェストに記載された正確な HOMR／評価器マーカー値を検証します。
-
-本番イメージから再現用拡張イメージを明示的にビルドするには、以下を実行します。
-
-```bash
-make docker-build
-make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
-make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
-```
-
-この拡張は `docker/Dockerfile.stage-e` であり、デフォルトの出力イメージ名は `pdfscore_stage_e_reproduction` です。分離されたビルドを行う場合は、これらの Make コマンドで `ISSUE120_PRODUCTION_IMAGE=<production-image>` および `ISSUE120_STAGE_E_IMAGE=<reproduction-image>` を設定してください。再現プロビナンスを保持する場合は、ベースイメージを不変のイメージ ID にピン留めしてください。このイメージには個別のアセットコントラクトラベルが付与されるため、本番プリフライトへの明示的なオーバーライドを含め、標準のイメージ解決からは除外されます。この拡張は過去のソースコミット、モデルの SHA-256 チェック、および分離された依存関係バージョンを保持しますが、本番環境向けに過去のプロファイルを選択するものではありません。
-
-旧来の Stage-E という名称は、#120 のツール、マニフェスト、および承認済みの過去の結果に対する互換性識別子として保持されています。残されている目的は、保持されているツールやコンポーネント比較実験に対して、ピン留めされたコンポーネントを公開することです。この拡張は現在の本番メイン venv を継承するため、過去の完全な 2 系統 HOMR（two-HOMR）環境を再構築するものではなく、その full68 メトリクスを保証するものでもありません。過去の環境の完全な再現は #398 の受け入れ基準の対象外です。標準の `maintained_original` ルートはこれを必要としません。この互換性コントラクトの削除やインターフェースの名称変更は別途の廃止決定事項となり、ここで過去のデータ、ソースのピン留め、またはプロファイルが削除されることはありません。後述のマイルストーンに記録されているとおり、正確な入力画像は引き続き外部の前提条件となります。
-
-コンポーネントプロファイルの正確なプロビナンス、パッケージバージョン、モデルハッシュ、および `/opt/` のランタイムパスは以下に保存されています。
-
-```text
-configs/detector_profiles/stage_e_verified_homr.json
-```
-
-保守対象のオリジナルプロファイルと `current_x4_support` で使用される現行ランタイムの HOMR は、メインのイメージおよびランタイムを共有しますが、個別の入力コントラクトおよび座標コントラクトを保持しています。標準の dense ルートでは過去のプロファイルは選択されません。再現要件については `TWO_HOMR_MILESTONE.md` を参照してください。
+#522で歴史的Stage-Eの実行経路を廃止しました。現行の検出入口で選択できるのは
+`maintained_original`のみです。歴史的Stage-Eの環境、Docker拡張、実行は別worktreeの
+commit `f6bbd1c0`から再現してください。
+`configs/detector_profiles/stage_e_verified_homr.json`は来歴（source pin、モデルhash、
+受入指標）として保持し、実行可能なprofile selectorとしては使用しません。
+共通のモデル契約、コネクタ処理、HOMR API互換ヘルパーは保持します。
 
 ## 過去の評価環境
 
@@ -192,7 +169,7 @@ configs/detector_profiles/stage_e_verified_homr.json
 - ローカルのスクラッチ／ワークベンチ用データは Git 管理外の `tmp/` 配下に配置してください。追跡対象の `data/workbench/` ツリーを再作成してはなりません。
 - CNN データセットの作業では、一括処理を行う前にアクティブなデータセットをリポジトリの `datasets/` 配下にステージングしてください。`/mnt/*` はメタデータ処理の重いスクラッチ領域としてではなく、ソース／アーカイブとして使用してください。
 
-承認済みの 2 系統 HOMR（two-HOMR）マイルストーンは、現在の互換性拡張だけでは**新規クローンからそのまま再現することはできません**。正確な評価画像は引き続き外部にあり、またこの拡張は過去の完全なメイン依存関係スタックを再構築しないためです。マイルストーンのドキュメントでは、それらの要件を、保持されている Stage-E コンポーネントのピン留めから分離して記載しています。Docker スモークテストでは、以前の Git 管理外／ローカル専用の CNN 依存関係が解消されています。OMR-DLN は引き続き明示的な外部アセットですが、選択されたバージョンを共通モデルキャッシュに一度登録すれば、標準スモークテストが場当たり的なチェックアウトローカルのモデルパスに依存することはなくなります。
+承認済みの 2 系統 HOMR（two-HOMR）マイルストーンは、現在の互換性拡張だけでは**新規クローンからそのまま再現することはできません**。正確な評価画像は引き続き外部にあり、またこの拡張は過去の完全なメイン依存関係スタックを再構築しないためです。マイルストーンのドキュメントでは、それらの要件を、保持されている Stage-E コンポーネントのピン留めから分離して記載しています。Docker スモークテストでは、以前の Git 管理外／ローカル専用の CNN 依存関係が解消されています。また #522 以降、外部の OMR-DLN 重みも不要です。
 
 ## pytest 実行可能な永続パイプラインコンテナ
 
@@ -200,21 +177,16 @@ configs/detector_profiles/stage_e_verified_homr.json
 
 この共有コンテナの作成や検査は、マネージャーチェックアウトから行ってください。このコンテナの `/workspace` マウントは `.worktrees/` 配下に Issue 用 worktree を公開するため、[Local validation](LOCAL_VALIDATION.md#python-and-pytest) に従って、ネストされた worktree パスとそれに対応する `PYTHONPATH` を指定して pytest を実行してください。以下のコマンドはマネージャーチェックアウト自体に対して実行するものです。分離された候補環境から直接マウントされた専用コンテナは明示的な例外です。ブラウザチェックには、[Local validation](LOCAL_VALIDATION.md#browser-validation) に記載されている別のランナーを使用します。
 
-コンテナが存在しない場合は作成します。このコンテナでパイプラインチェックを実行できるよう、本番タグを検証済みの不変イメージに解決し、登録済みの外部 OMR-DLN 重みをマウントします。
+コンテナが存在しない場合は作成します。本番タグを検証済みの不変イメージに解決します。
 
 ```bash
 image_id=$(python3 scripts/docker_image_resolver.py resolve \
   --repo-root . --image-ref pdfscore_pipeline_gpu --explicit)
-omr_host=$(python3 -m src.common.model_artifacts verify models/omr_dln/manifest.json)
-omr_runtime=$(python3 -c \
-  'import json; print(json.load(open("models/omr_dln/manifest.json"))["runtime_path"])')
 docker run -dit --gpus all \
   --name pdfscore_pipeline_pytest_dev \
   -v "$PWD":/workspace \
-  -v "$omr_host:$omr_runtime:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  -e OMR_DLN_MODEL_PATH="$omr_runtime" \
   "$image_id" bash
 ```
 

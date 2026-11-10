@@ -8,11 +8,12 @@ review detections, record corrections, and generate a corrected final PDF.
 The supported runtime is Linux with NVIDIA GPU support and Docker. Start with the
 [User guide](docs/USER_GUIDE.md) for installation, model registration, PDF processing,
 review, and troubleshooting. For a first run, obtain the stable `main` distribution,
-prepare the host, build the image, import the external model, run preflight and process
+prepare the host, build the image, run preflight and process
 a PDF as described there. A validated extracted distribution can also be used directly.
 
 The production model manifests in `models/` record the selected versions, SHA-256
-identities, and ownership. OMR-DLN weights require a separate operator import.
+identities, and ownership. No operator-supplied model import is required: since #522 the
+detector no longer uses the external OMR-DLN measure detector.
 
 Use `main` for the supported stable distribution and `develop` for active integration.
 Release candidates and distributions include `DISTRIBUTION_PROVENANCE.json` with the

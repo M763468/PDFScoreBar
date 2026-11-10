@@ -1,10 +1,10 @@
 # PDFScoreBar ユーザーガイド
 
-<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"74c6f59d8518c3e03ed98d82fbd243116e4a073f49023dfed703026c93223aaf"},"state":"reviewed"} -->
+<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"6ce452a54a0d57bbbac0de7bb614e158a211a34fb5fc413861940fc8ad7e66a6"},"state":"reviewed"} -->
 
 [English / 原文](USER_GUIDE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `74c6f59d8518c3e03ed98d82fbd243116e4a073f49023dfed703026c93223aaf`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `6ce452a54a0d57bbbac0de7bb614e158a211a34fb5fc413861940fc8ad7e66a6`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 ## 配布物を入手する
 
@@ -52,14 +52,13 @@ python3 docker/distribution.py build
 
 別のイメージを選択するには、コマンドの前に `--image YOUR_TAG` を指定します。ランチャーは本番アセットラベル、不変のイメージ ID、ランタイム互換性フィンガープリントを確認します。ビルドに成功すると、ソースコミットとフィンガープリントのラベルがイメージに保持されます。イメージはビルドされたランタイムのひな形であり、各コマンドで作成される一時コンテナーとは異なります。既定のイメージタグは `pdfscore_pipeline_gpu` です。別のタグを選ぶ場合は、各 `build`、`preflight`、`run`、`review` サブコマンドの前に同じ `--image YOUR_TAG` を指定します。
 
-[OMR-DLN](https://github.com/dmgonzalez8/OMR) は運用者が用意するモデルで、配布物には含まれず自動ダウンロードもされません。`models/omr_dln/manifest.json` に記載された[公式モデルフォルダー](https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing)を開き、`YOLOv8m_Measures.pt` を手動でダウンロードしてください。選択されたバージョンは `phase1-validated-v1`、manifest の SHA-256 は `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212` です。上流リポジトリは自動再配布を明示的に許可するライセンスを公開していません。フォルダーにアクセスできない場合は上流の提供者にアクセスを確認し、未検証の重みを代用しないでください。以下のパスをダウンロードしたファイルの絶対パスに置き換え、一度インポートします。
+運用者が用意するモデルは不要です。#522 以降、検出処理は外部の OMR-DLN 小節検出器（`YOLOv8m_Measures.pt`）を使用しません。ダウンロードやマウントはしないでください。preflight を実行します。
 
 ```bash
-python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /absolute/path/YOLOv8m_Measures.pt
 python3 docker/distribution.py preflight
 ```
 
-インポート時にはホストのモデルキャッシュに配置する前に manifest の SHA-256 を検証します。preflight は CUDA、ONNX CUDA プロバイダー、必須モデル、固定された HOMR ランタイムの来歴を確認します。外部の重みはランタイムに読み取り専用でマウントされます。キャッシュを共有するにはホストで `PDFSCOREBAR_MODEL_CACHE` を設定します。既定のキャッシュルートは `~/.cache/pdfscorebar/models` です。`XDG_CACHE_HOME` が設定されている場合は `$XDG_CACHE_HOME/pdfscorebar/models` が使われ、`PDFSCOREBAR_MODEL_CACHE` を設定した場合はそちらが優先されます。同じファイル名でもバイト列が異なればハッシュ検証は失敗します。検証を回避せず、上流から選択されたバイト列を入手して再試行してください。モデルのバイト列を変更する場合は新しい manifest／バージョンが必要です。ビルドの成功だけでは外部モデルや GPU は確認されません。preflight はそれらを確認しますが、楽譜の正確性は保証しません。
+preflight は CUDA、ONNX CUDA プロバイダー、必須モデル、固定された HOMR ランタイムの来歴を確認します。必須モデルはすべてイメージ内蔵、または SHA-256 で検証される追跡対象の manifest です。モデルのバイト列を変更する場合は新しい manifest／バージョンが必要です。ビルドの成功だけでは GPU は確認されません。preflight はそれを確認しますが、楽譜の正確性は保証しません。
 
 ## PDF を処理する
 
@@ -127,7 +126,7 @@ Docker Desktop のホストネットワークは WSL や Windows と共有され
 - ポートが使用中: 空いている `--port` を選び、localhost のそのポートを開きます。
 - レビューの URL を開けない: Docker Desktop では、そのポートが Windows と WSL の両方で空いていることを確認します。ブラウザーとホストネットワークを共有しないその他の Docker 構成はサポート対象外です。
 - GPU／プロバイダーが見つからない: Docker から GPU にアクセスできることを確認し、preflight を再実行します。ホストで GPU が検出されただけではコンテナー内の CUDA を利用できるとは限りません。
-- モデルの欠落または破損: 選択された manifest を使って検証付きインポートをやり直します。ハッシュが一致しない場合は別のモデルを選択せず失敗します。
+- モデルの欠落または破損: イメージを再ビルドするか、追跡対象の manifest の成果物を復元します。ハッシュが一致しない場合は別のモデルを選択せず失敗します。
 - ランタイムの不一致: この配布物を別のイメージタグでビルドし、そのタグを使用します。
 - レビュー／適用の失敗: ジョブディレクトリ全体を保持し、表示されたアプリケーションエラーを確認します。移動または部分コピーされたパッケージでは元の manifest／成果物が欠けている場合があります。
 - 英語／日本語 UI: 両方の辞書はローカルアセットであり、翻訳サービスは不要です。

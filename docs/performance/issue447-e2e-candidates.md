@@ -1,5 +1,7 @@
 # Issue 447: repeated E2E and integrated OMR reuse PoCs
 
+> **Note (#522):** the OMR reuse candidates (O/C), `tools/issue447/omr_reuse_poc.py`, `e2e_candidate_matrix.py` and `e2e_summarize.py` were removed with OMR-DLN. Reproduce this record from commit `4f1594bc`.
+
 This extends [the previous continuation](issue447-deepening.md). This is the retained measurement-stage record; final disposition is in
 [the consolidated results](issue447-results.md). No production files, models, thresholds, dependencies or runtime configuration were
 changed. Full68 and formal implementation were explicitly excluded. No new Issue/PR was created;

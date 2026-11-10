@@ -241,9 +241,6 @@ def replay(retained: Path, output: Path) -> dict:
             apply_measure_overrides=True,
             overlay=False,
         )
-        # All model steps are skipped. This selector only bypasses preparation
-        # of fresh MMR support; the original predictions remain authoritative.
-        config["detection"]["detector_route"] = "standard"
         first = pages[0]
         config["inputs"].update(
             pdf_to_images={"output_dir": str(images), "image_glob": "page_*.png"},

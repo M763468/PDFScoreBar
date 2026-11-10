@@ -1,10 +1,10 @@
 # 手動補正レビューワークフロー
 
-<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"42feff3633e0c9392477cd907266dc70bd389f37b861880d790ec295ba903c51"},"state":"reviewed"} -->
+<!-- translation: {"original":"manual_correction_review_package.md","source":{"sha256":"32107c0a1111381d7313e83b05fc2378b3f37349537c167be59c7849a16d45d1"},"state":"reviewed"} -->
 
 [English / 原文](manual_correction_review_package.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `42feff3633e0c9392477cd907266dc70bd389f37b861880d790ec295ba903c51`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `32107c0a1111381d7313e83b05fc2378b3f37349537c167be59c7849a16d45d1`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この開発者・運用担当者向けリファレンスは、現在の config-first の手動補正ワークフローを説明します。一つのパイプライン実行を既存の手動 GUI に接続し、パッケージ内に補正を保存して、補正を使ってパイプラインを再実行し、補正済みの小節番号付き最終 PDF を生成できます。
 
@@ -202,18 +202,13 @@ review/corrections/
 
 管理対象のパイプラインランタイムで既存の適用ヘルパーを使います。次のコマンドは GUI コマンドと同じ workspace を仮定します。すなわち `<review_root>` は `/workspace` にマウントされたリポジトリ内です。外部の絶対 review root の場合は、そのパッケージの bind mount を明示的に追加し、コンテナから見える handoff のパスを指定してください。handoff 内の保持済み元成果物パスにもコンテナ内からアクセスできる必要があります。
 
-OMR-DLN が共有ホストキャッシュに登録されている場合、選択した検証済み成果物を manifest に宣言されたランタイムパスへマウントします。
+外部の検出器の重みはマウントしません（OMR-DLN は #522 で削除しました）。
 
 ```bash
-OMR_HOST="$HOME/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
-OMR_RUNTIME="/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
-
 docker run --rm --gpus all \
   -v "$PWD":/workspace \
-  -v "$OMR_HOST:$OMR_RUNTIME:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  -e OMR_DLN_MODEL_PATH="$OMR_RUNTIME" \
   pdfscore_pipeline_gpu \
   /opt/venv_pipeline/bin/python -m src.pipeline.review.apply_corrections \
   <review_root>/manual_correction_input.json \
@@ -228,7 +223,7 @@ docker run --rm --gpus all \
 2. GUI の staging ファイルを正規形式に変換します。
 3. 該当する場合、既存の補正入力を引き継ぎます。
 4. レビューした元の実行から保持した成果物に再実行を固定します。
-5. PDF 描画、HOMR、Real-ESRGAN、OMR-DLN、probe 生成、CNN scoring を再実行せず、レビュー済み小節線成果物に新しい小節線補正を適用します。
+5. PDF 描画、HOMR、Real-ESRGAN、probe 生成、CNN scoring を再実行せず、レビュー済み小節線成果物に新しい小節線補正を適用します。
 6. 変更された小節線に直接触れる小節以外では以前の自動 MMR 結果を再利用します。
 7. 触れた小節に限って MMR を選択的に再実行し、明示的な手動 MMR 補正が既にある小節は除外します。
 8. 必要な箇所のみ最終番号付けを再生成し、開始番号がまだ有効な変更のないレビュー済み最終ページはそのままコピーします。

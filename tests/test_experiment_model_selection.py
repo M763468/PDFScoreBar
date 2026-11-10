@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import hashlib
 import json
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,21 +12,17 @@ from src.pipeline.detection.model_selection import (
     model_observation,
     model_validation_mode,
     resolve_cnn_candidate,
-    resolve_omr_model,
 )
 
 
 def _candidate_config(tmp_path):
     cnn = tmp_path / "candidate.pth"
-    omr = tmp_path / "candidate.pt"
     cnn.write_bytes(b"cnn v1")
-    omr.write_bytes(b"omr v1")
     return {
         "model_validation": "exploration",
         "cnn_model_path": str(cnn),
         # Copied production manifest must not shadow an explicit research path.
         "cnn_model_manifest": "models/barline_cnn/manifest.json",
-        "omr_dln_model_path": str(omr),
         "cnn_threshold": 0.2,
         "cnn_apply_nms": False,
         "homr_profile": "maintained_original",
@@ -42,10 +36,9 @@ def test_exploration_observes_repeated_replacement_without_registration(tmp_path
     cfg = _candidate_config(tmp_path)
     first = model_observation(cfg, tmp_path)
     Path(cfg["cnn_model_path"]).write_bytes(b"cnn v2")
-    Path(cfg["omr_dln_model_path"]).write_bytes(b"omr v2")
     second = model_observation(cfg, tmp_path)
     assert first["cnn"]["sha256"] != second["cnn"]["sha256"]
-    assert first["omr_dln"]["sha256"] != second["omr_dln"]["sha256"]
+    assert set(second) == {"cnn"}  # #522: no OMR-DLN model is selected or observed
     assert not (tmp_path / "models").exists()
 
 
@@ -54,9 +47,6 @@ def test_missing_explicit_candidate_never_falls_back_to_manifest(tmp_path):
     Path(cfg["cnn_model_path"]).unlink()
     with pytest.raises(FileNotFoundError):
         resolve_cnn_candidate(cfg, tmp_path)
-    Path(cfg["omr_dln_model_path"]).unlink()
-    with pytest.raises(FileNotFoundError):
-        resolve_omr_model(cfg, tmp_path)
 
 
 def test_comparison_freezes_observed_bytes_only_when_requested(tmp_path):
@@ -67,33 +57,9 @@ def test_comparison_freezes_observed_bytes_only_when_requested(tmp_path):
         model_observation(cfg, tmp_path)
     cfg["model_sha256"] = {role: item["sha256"] for role, item in observed.items()}
     assert model_observation(cfg, tmp_path) == observed
-    Path(cfg["omr_dln_model_path"]).write_bytes(b"updated")
+    Path(cfg["cnn_model_path"]).write_bytes(b"updated")
     with pytest.raises(ModelArtifactIntegrityError):
         model_observation(cfg, tmp_path)
-
-
-def test_production_omr_override_still_requires_selected_sha(tmp_path):
-    cfg = _candidate_config(tmp_path)
-    cfg["model_validation"] = "production"
-    manifest = tmp_path / "models/omr_dln/manifest.json"
-    manifest.parent.mkdir(parents=True)
-    manifest.write_text(
-        json.dumps(
-            {
-                "schema_version": "pdfscorebar.model_artifact.v1",
-                "model_id": "omr",
-                "version": "selected",
-                "architecture": "yolo",
-                "distribution": {"mode": "operator-supplied", "asset": "model.pt"},
-                "sha256": hashlib.sha256(b"selected").hexdigest(),
-                "cache_path": "omr/model.pt",
-            }
-        )
-    )
-    with pytest.raises(ModelArtifactIntegrityError):
-        resolve_omr_model(cfg, tmp_path)
-    Path(cfg["omr_dln_model_path"]).write_bytes(b"selected")
-    assert resolve_omr_model(cfg, tmp_path) == Path(cfg["omr_dln_model_path"])
 
 
 def test_unknown_mode_is_rejected():
@@ -163,30 +129,11 @@ def test_candidate_loader_rejects_incompatible_head(tmp_path):
 def test_requested_cuda_never_falls_back(tmp_path, monkeypatch):
     import torch
 
-    from src.pipeline.detection.omr_dln_worker import load_candidate
     from src.pipeline.steps.cnn_scoring import _select_device
 
     monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
     with pytest.raises(RuntimeError, match="refusing CPU fallback"):
         _select_device("cuda")
-    checkpoint = tmp_path / "candidate.pt"
-    checkpoint.write_bytes(b"checkpoint")
-    with pytest.raises(RuntimeError, match="refusing CPU fallback"):
-        load_candidate(checkpoint, "cuda")
-
-
-def test_omr_candidate_rejects_wrong_task(tmp_path, monkeypatch):
-    from src.pipeline.detection.omr_dln_worker import load_candidate
-
-    checkpoint = tmp_path / "candidate.pt"
-    checkpoint.write_bytes(b"checkpoint")
-    monkeypatch.setitem(
-        sys.modules,
-        "ultralytics",
-        SimpleNamespace(YOLO=lambda p: SimpleNamespace(task="classify", names={0: "measure"})),
-    )
-    with pytest.raises(ValueError, match="detection checkpoint"):
-        load_candidate(checkpoint, "cpu")
 
 
 def test_candidate_run_records_current_hashes_and_rejects_mid_run_changes(tmp_path, monkeypatch):
@@ -218,7 +165,7 @@ def test_candidate_run_records_current_hashes_and_rejects_mid_run_changes(tmp_pa
         orchestrator.run_detection()
 
 
-@pytest.mark.parametrize("key", ["cnn_device", "omr_dln_device"])
+@pytest.mark.parametrize("key", ["cnn_device"])
 def test_candidate_device_must_be_explicit_supported_value(key):
     with pytest.raises(ValueError, match=key):
         model_validation_mode(
@@ -272,11 +219,9 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
 
     from docker import runtime_contract
     from src.common import model_artifacts
-    from src.pipeline.detection import omr_dln_worker
     from src.pipeline.steps import cnn_scoring
 
     cfg = _candidate_config(tmp_path)
-    cfg["omr_dln_device"] = "cpu"
     config = tmp_path / "config.yaml"
     config.write_text(yaml.safe_dump({"detection": cfg}))
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
@@ -288,6 +233,7 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
         "resolve_realesrgan_weight",
         lambda *args, **kwargs: Path(cfg["cnn_model_path"]),
     )
+
     monkeypatch.setattr(cnn_scoring, "validate_cnn_candidate", lambda *args: None)
     monkeypatch.setattr(
         torch.cuda, "is_available", lambda: os.environ.get("CUDA_VISIBLE_DEVICES") != "-1"
@@ -296,12 +242,6 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
     monkeypatch.setattr(torch.cuda, "get_device_name", lambda device: "test GPU")
     monkeypatch.setattr(onnxruntime, "get_available_providers", lambda: ["CUDAExecutionProvider"])
 
-    class CpuCandidate:
-        def predict(self, *args, **kwargs):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-            return [SimpleNamespace(boxes=[])]
-
-    monkeypatch.setattr(omr_dln_worker, "load_candidate", lambda *args: CpuCandidate())
     assert (
         runtime_contract.run_preflight(
             tmp_path, config, tmp_path / "none", expected_fingerprint_value="matching"
@@ -313,8 +253,8 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
 
 
 @pytest.mark.parametrize("mode", ["exploration", "comparison"])
-@pytest.mark.parametrize("route", [None, "standard", "unsupported_route"])
-def test_candidate_routes_are_rejected_before_standard_dispatch(tmp_path, monkeypatch, mode, route):
+@pytest.mark.parametrize("route", ["standard", "unsupported_route"])
+def test_candidate_modes_reject_removed_or_unknown_routes(tmp_path, monkeypatch, mode, route):
     import yaml
 
     from src.pipeline import detection
@@ -322,15 +262,9 @@ def test_candidate_routes_are_rejected_before_standard_dispatch(tmp_path, monkey
 
     cfg = _candidate_config(tmp_path)
     cfg["model_validation"] = mode
-    if route is None:
-        cfg.pop("detector_route")
-    else:
-        cfg["detector_route"] = route
+    cfg["detector_route"] = route
     config = {"detection": cfg}
-    monkeypatch.setattr(
-        detection, "_install_standard_detector_hooks", lambda: pytest.fail("standard route entered")
-    )
-    message = "requires detector_route='dense_full_pipeline'"
+    message = "only detector route is 'dense_full_pipeline'"
     with pytest.raises(ValueError, match=message):
         detection.DetectorOrchestrator(config, [], "test", tmp_path / "run", dry_run=False)
     with pytest.raises(ValueError, match=message):
@@ -342,7 +276,7 @@ def test_candidate_routes_are_rejected_before_standard_dispatch(tmp_path, monkey
 
 
 @pytest.mark.parametrize("mode", ["exploration", "comparison"])
-@pytest.mark.parametrize("route", [None, "standard", "unsupported_route"])
+@pytest.mark.parametrize("route", ["standard", "unsupported_route"])
 def test_preflight_rejects_candidate_routes_before_gpu_or_model_work(
     tmp_path, monkeypatch, capsys, mode, route
 ):
@@ -351,9 +285,7 @@ def test_preflight_rejects_candidate_routes_before_gpu_or_model_work(
 
     from docker import runtime_contract
 
-    cfg = {"model_validation": mode}
-    if route is not None:
-        cfg["detector_route"] = route
+    cfg = {"model_validation": mode, "detector_route": route}
     config = tmp_path / "candidate.yaml"
     config.write_text(yaml.safe_dump({"detection": cfg}))
     monkeypatch.setattr(runtime_contract, "runtime_fingerprint", lambda root: "matching")
@@ -371,7 +303,24 @@ def test_preflight_rejects_candidate_routes_before_gpu_or_model_work(
     )
     result = json.loads(capsys.readouterr().err)
     assert result["status"] == "fail"
-    assert "requires detector_route='dense_full_pipeline'" in result["errors"][0]
+    assert "only detector route is 'dense_full_pipeline'" in result["errors"][0]
+
+
+@pytest.mark.parametrize("mode", ["exploration", "comparison"])
+def test_candidate_mode_with_omitted_route_uses_the_dense_route(tmp_path, mode):
+    from src.pipeline import detection
+    from src.pipeline.detection import dense_orchestrator_batch_sr
+
+    cfg = _candidate_config(tmp_path)
+    observed = model_observation(cfg, tmp_path)
+    cfg["model_validation"] = mode
+    cfg.pop("detector_route")
+    if mode == "comparison":
+        cfg["model_sha256"] = {role: model["sha256"] for role, model in observed.items()}
+    built = detection.DetectorOrchestrator(
+        {"detection": cfg}, [], "t", tmp_path / "r", dry_run=False
+    )
+    assert isinstance(built, dense_orchestrator_batch_sr.DetectorOrchestrator)
 
 
 @pytest.mark.parametrize("mode", ["exploration", "comparison"])

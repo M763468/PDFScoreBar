@@ -55,11 +55,6 @@ def run(request_path: Path, result_path: Path) -> Path:
         profile_name=profile_name,
     )
     sr_arguments = {} if mode == "page_local" else {"precomputed_sr": precomputed_sr}
-    precomputed_omr = request.get("precomputed_omr")
-    if precomputed_omr is not None:
-        if mode == "page_local":
-            raise ValueError("An OMR job handoff requires the dedicated SR batch")
-        sr_arguments["precomputed_omr"] = precomputed_omr
     payload = detector._generate_one_page_sources_in_process(
         image=image,
         baseline_output=baseline_output,

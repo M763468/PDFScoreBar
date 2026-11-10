@@ -13,7 +13,7 @@ Examples:
     logs/issue43/full68_x_domain_ab/issue43_full68_01/retained_upstream_manifest.json
 
 Runs the Issue #43 A/B inside the canonical compatible GPU image, bind-mounting
-the active checkout and the manifest-verified external OMR-DLN artifact.
+the active checkout.
 
 Environment:
   PDFSCORE_EVAL2_IMAGES_ROOT  Optional host path to canonical evaluation2/images.
@@ -48,16 +48,6 @@ image_id="$(
   python3 "$repo_root/scripts/docker_image_resolver.py" "${resolver_args[@]}"
 )"
 
-omr_manifest="$repo_root/models/omr_dln/manifest.json"
-omr_host="$(
-  PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify "$omr_manifest"
-)"
-omr_host="$(realpath "$omr_host")"
-omr_container="$(
-  python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtime_path"])' \
-    "$omr_manifest"
-)"
-
 extra_mounts=()
 if [[ -n "${PDFSCORE_EVAL2_IMAGES_ROOT:-}" ]]; then
   images_root="$(realpath "${PDFSCORE_EVAL2_IMAGES_ROOT}")"
@@ -70,11 +60,9 @@ fi
 
 docker run --rm --gpus all \
   -v "$repo_root:/workspace" \
-  -v "$omr_host:$omr_container:ro" \
   "${extra_mounts[@]}" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  -e "OMR_DLN_MODEL_PATH=$omr_container" \
   -e "ISSUE43_SOURCE_COMMIT=$source_commit" \
   "$image_id" \
   /opt/venv_pipeline/bin/python \

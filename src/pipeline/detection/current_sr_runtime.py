@@ -9,7 +9,7 @@ and weights remain unchanged, while two execution details are optimized:
   CPU output image instead of building a full x4 FP16 CUDA output tensor.
 
 The runtime object owns only model-lifetime state so one dedicated SR process can
-reuse it across pages and then exit before HOMR/OMR workers start.
+reuse it across pages and then exit before HOMR workers start.
 """
 
 from __future__ import annotations

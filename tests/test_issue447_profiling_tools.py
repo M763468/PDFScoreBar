@@ -147,32 +147,24 @@ def test_host_timeline_does_not_correlate_unaligned_gpu_or_epoch_clocks(tmp_path
     ("command", "expected"),
     [
         ("python -m src.pipeline.detection.maintained_source_page_worker --request a", True),
-        ("python -m tools.issue447.omr_reuse_poc --request a --result b", True),
-        ("python -m tools.issue447.omr_reuse_poc --request /tmp/--support.json", True),
-        ("python -m tools.issue447.omr_reuse_poc --support --request a", False),
         ("python -m src.pipeline.detection.current_support_worker --request a", False),
-        ("python -m tools.issue447.omr_reuse_poc_other --request a", False),
         ("python -m other --request /tmp/maintained_source_page_worker.json", False),
-        ("python /tmp/tools.issue447.omr_reuse_poc --request a", False),
         ("python -m", False),
     ],
 )
-def test_source_worker_entrypoint_distinguishes_reuse_parent_and_support(command, expected):
+def test_source_worker_entrypoint_matches_only_the_source_page_worker(command, expected):
     from tools.issue447.deepening_analyze import is_source_worker
 
     assert is_source_worker(command) is expected
 
 
-@pytest.mark.parametrize("reuse", [False, True])
 @pytest.mark.parametrize("workers", [1, 2])
-def test_host_timeline_assigns_same_source_intervals_for_both_entrypoints(tmp_path, reuse, workers):
+def test_host_timeline_assigns_source_intervals_without_multiplying_nested_support(
+    tmp_path, workers
+):
     from tools.issue447.deepening_analyze import timeline
 
-    module = (
-        "tools.issue447.omr_reuse_poc"
-        if reuse
-        else "src.pipeline.detection.maintained_source_page_worker"
-    )
+    module = "src.pipeline.detection.maintained_source_page_worker"
     parents = [
         {"pid": pid, "start_ticks": pid, "command": f"python -m {module} --request page_{pid}"}
         for pid in range(1, workers + 1)
@@ -180,7 +172,7 @@ def test_host_timeline_assigns_same_source_intervals_for_both_entrypoints(tmp_pa
     support = {
         "pid": 10,
         "start_ticks": 10,
-        "command": "python -m tools.issue447.omr_reuse_poc --support --request a",
+        "command": "python -m src.pipeline.detection.current_support_worker --request a",
     }
     sr = {"pid": 11, "start_ticks": 11, "command": "python -m current_sr_batch_worker"}
     # A support-only sample must not invent a top-level source worker. Parallel
@@ -215,9 +207,8 @@ def test_source_checks_accepts_alternate_score_folder(tmp_path, monkeypatch):
         original.parent.mkdir(parents=True)
         original.write_text(json.dumps({"artifacts": {}}))
         current = root / "current_support/alternate-score/page_001/artifacts"
-        (current / "omr_sr/page_001").mkdir(parents=True)
+        current.mkdir(parents=True)
         (current / "current_homr_result.json").write_text("{}")
-        (current / "omr_sr/page_001/predictions.json").write_text("{}")
     monkeypatch.setattr(analyzer, "compare_bundle", lambda *a, **kw: {"equal": True})
     checks = analyzer.source_checks(
         tmp_path,

@@ -1,12 +1,4 @@
-ISSUE120_STAGE_E_IMAGE ?= pdfscore_stage_e_reproduction
-ISSUE120_PRODUCTION_IMAGE ?= pdfscore_pipeline_gpu
-
-.PHONY: docker-build-stage-e run-issue120-stage-e-full eval-issue120-stage-e-full eval-issue120-stage-e-smoke
-
-docker-build-stage-e: ## Build the historical reproduction extension from an explicit production image
-	docker build -f docker/Dockerfile.stage-e --build-arg PRODUCTION_IMAGE=$(ISSUE120_PRODUCTION_IMAGE) -t $(ISSUE120_STAGE_E_IMAGE) .
-
-ISSUE120_STAGE_E_CONFIG ?= configs/issue120_stage_e_full_pipeline.yaml
+# Historical execution/build removed in #522; reproduce from f6bbd1c0.
 ISSUE120_STAGE_E_OUTPUT ?= logs/issue120_e2e_recovery
 ISSUE120_STAGE_E_RUN_ROOT ?= $(ISSUE120_STAGE_E_OUTPUT)/stage_e_full_pipeline
 ISSUE120_STAGE_E_EVAL_INPUTS_DIR ?= $(ISSUE120_STAGE_E_RUN_ROOT)/eval_inputs
@@ -17,18 +9,11 @@ ISSUE120_STAGE_E_STAFF_UNITS_JSON ?= data/evaluation2/staff_units.json
 ISSUE120_STAGE_E_SCORE_THRESHOLD ?= 0.1
 ISSUE120_STAGE_E_XDIST_UNIT_RATIO ?= 0.5
 ISSUE120_STAGE_E_SMOKE_PAGES ?= 2
-ISSUE120_STAGE_E_EXTRA_ARGS ?=
 ISSUE120_STAGE_E_EVAL_EXTRA_ARGS ?=
 
-run-issue120-stage-e-full: ## Run the full 68-page pipeline inside the historical reproduction container
-	@echo "Running Full Stage E Pipeline inside $(ISSUE120_STAGE_E_IMAGE)..."
-	@docker run --rm --gpus all -v $(PWD):/workspace -w /workspace \
-		-e PYTHONPATH=/workspace \
-		-e PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS \
-		-e PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS \
-		-e PDFSCORE_SR_TILE_LOGS \
-		$(ISSUE120_STAGE_E_IMAGE) \
-		/bin/sh -lc '/opt/venv_pipeline/bin/python tools/issue120/run_stage_e_full_pipeline.py --config $(ISSUE120_STAGE_E_CONFIG) --output-root $(ISSUE120_STAGE_E_OUTPUT) $(ISSUE120_STAGE_E_EXTRA_ARGS); status=$$?; chmod -R a+rwX $(ISSUE120_STAGE_E_RUN_ROOT) 2>/dev/null || true; exit $$status'
+# run-issue120-stage-e-full was removed in #522: it executed the removed standard
+# detector route. Reproduce that historical run from commit 4f1594bc; the eval targets
+# below still score retained Stage E artifacts.
 
 eval-issue120-stage-e-full: ## Build Stage E eval inputs and write detector contract outputs
 	@echo "Evaluating Stage E Detector Contract from full-pipeline artifacts..."

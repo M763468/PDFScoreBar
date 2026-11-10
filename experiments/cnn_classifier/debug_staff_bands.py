@@ -8,7 +8,7 @@ import cv2
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(REPO_ROOT))
 
-from tools.run_gt_rebuild_hybrid_eval import staff_bands_from_mask
+from tools.probe_evaluation_helpers import staff_bands_from_mask
 
 
 def debug_page(image_path, mask_path):

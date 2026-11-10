@@ -1,10 +1,10 @@
 # Script management and directory rules
 
-<!-- translation: {"original":"SCRIPT_MANAGEMENT.md","source":{"sha256":"134f38cc9a2828f86d7db10763f6309b666e040a1a7d6560ea70a57ae125ce6e"},"state":"reviewed"} -->
+<!-- translation: {"original":"SCRIPT_MANAGEMENT.md","source":{"sha256":"f904cc76bf0d589c50c76425431b2c169c1f9f0de67b2600144a0dcf53ec8731"},"state":"reviewed"} -->
 
 [日本語 / Original](SCRIPT_MANAGEMENT.md) (Japanese original)
 
-Translation source: same PR / SHA-256 `134f38cc9a2828f86d7db10763f6309b666e040a1a7d6560ea70a57ae125ce6e`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
+Translation source: same PR / SHA-256 `f904cc76bf0d589c50c76425431b2c169c1f9f0de67b2600144a0dcf53ec8731`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
 
 This document defines where scripts belong in the current repository and when they are promoted, retained or deleted. The historical per-file move list remains in Git history and Issue #45 / PR #184; this document covers only the current rules.
 
@@ -25,7 +25,7 @@ Current production behavior belongs here. Production code must not import `tools
 
 Logic adopted from an experiment is explicitly promoted to the production side together with the required tests, config and provenance.
 
-Existing exceptions (confirmed in #480; this rules document does not change the behavior): `src/pipeline/detection/hybrid.py`, used by the standard `detection.detector_route: standard`, launches OMR-DLN as an `experiments/models/eval_omr_dln.py` subprocess, and the Issue #120 module `src/pipeline/detector_routes/dense_probe_candidate.py` imports `tools.issue120.eval_full68_from_intermediates`. A reference check in `MINIMAL_MAINLINE_SURFACE.json` confirms that the support worker used by the current canonical route (`dense_full_pipeline`), `src/pipeline/detection/current_support_worker.py`, does not reference `experiments/models/eval_omr_dln.py`. Do not add more exceptions of this kind in new code. Whether to remove them is a separate implementation decision.
+Existing exceptions (confirmed in #480; this rules document does not change the behavior): the Issue #120 module `src/pipeline/detector_routes/dense_probe_candidate.py` imports `tools.issue120.eval_full68_from_intermediates`. The former exception, in which `src/pipeline/detection/hybrid.py` (used by the standard `detection.detector_route: standard`) launched `experiments/models/eval_omr_dln.py`, was removed together with OMR-DLN in #522. A reference check in `MINIMAL_MAINLINE_SURFACE.json` confirms that the support worker `src/pipeline/detection/current_support_worker.py` does not reference OMR-DLN. Do not add more exceptions of this kind in new code. Whether to remove them is a separate implementation decision.
 
 ### `tools/`
 

@@ -6,6 +6,15 @@
 > **法的助言ではない。** 本文書はライセンス文、上流の表示、現行ソースから読み取れる事実と一般的な解釈を整理したもの。
 > 「未確定」と書いた項目は推測で埋めず、必要なら専門家確認を経て判断する。
 
+## 0. 追補: #522 による変更（2026-11-08、PR merge 時点で有効）
+
+以下の §2 以降は `develop@3f7c8a632c6b` 時点の snapshot として残す。[#522](https://github.com/M763468/PDFScoreBar/issues/522) は production の構成を次のように変えるため、該当する行はこの追補が優先する。
+
+- **OMR-DLN 配布重み `YOLOv8m_Measures.pt`**: 取得・import・マウント・ロード・推論のいずれも不要になった。`models/omr_dln/manifest.json`、OMR-DLN worker と job 経路、`OMR_DLN_MODEL_PATH` を削除した。hybrid の支持は x4 HOMR の五線片支持に置き換えた（受入は #522 の Full68 / 下流 / fresh E2E の記録を参照）。§3 と §6 の「未許諾の重みへの依存」は production から解消される。研究実験としての旧重みの利用歴と、#416／#519 までの受入結果の来歴は残る。
+- **Ultralytics（AGPL-3.0）**: `pyproject.toml` から削除し、イメージにも含まれない（`importlib.util.find_spec("ultralytics") is None` を build 後に確認）。§5 の結合著作物の検討対象から外れる。
+- **変わらないもの**: HOMR（AGPL-3.0、改変版を同一プロセスで使用）と PyMuPDF（AGPL-3.0／商用の二重ライセンス）は残る。そのため、結合したものを渡す・ネットワーク越しに提供する際の AGPL の義務（§4／§5）と、#505 の first-party ライセンス決定の必要性は**変わらない**。HOMR ONNX 重みの条件、ImageNet 初期化の first-party 重み（MMR）の条件も、従来どおり未確定である。
+- **副作用**: Ultralytics を除去した build では torch が 2.15.0 になった（同日に build した develop の image は 2.14.0。依存解決上の原因は未確認）。受入済み runtime と一致させるため、`torch==2.14.0`、`torchvision==0.29.0` を明示的に固定した。`psutil==7.2.2` も、Ultralytics 経由でしか入っていなかったため明示した。
+
 ## 1. 位置付けと証拠
 
 - 調査日: 2026-11-07。対象: `develop@3f7c8a632c6b`（PR #516 統合後）の source、`pyproject.toml`、`Dockerfile`、

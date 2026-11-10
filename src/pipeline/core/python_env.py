@@ -62,11 +62,11 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
     """Returns the appropriate Python interpreter command (possibly with docker exec).
 
     Args:
-        step_name: Optional step name (e.g., 'detection', 'homr', 'omr_dln', 'sr',
+        step_name: Optional step name (e.g., 'detection', 'homr', 'sr',
             'pdf_to_images', 'numbering').
 
     Order of preference:
-    1. For heavy steps (detection/homr/omr_dln/sr):
+    1. For heavy steps (detection/homr/sr):
        a. If in the maintained container: /opt/venv_pipeline/bin/python.
        b. If on the host and the maintained container is running:
           docker exec pdfscore_pipeline_gpu /opt/venv_pipeline/bin/python.
@@ -77,7 +77,7 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
     """
     env_python = os.environ.get("PIPELINE_PYTHON")
 
-    if step_name in ("detection", "homr", "omr_dln", "sr"):
+    if step_name in ("detection", "homr", "sr"):
         if is_in_container():
             if Path("/opt/venv_pipeline/bin/python").exists():
                 return ["/opt/venv_pipeline/bin/python"]

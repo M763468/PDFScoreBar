@@ -17,7 +17,7 @@ application, or a future service without turning service/control-plane concerns 
 responsibilities.
 
 This document owns the **future responsibility boundary and architectural direction**. It does not
-redefine detector, HOMR, OMR-DLN, numbering, MMR, or current process/memory behavior.
+redefine detector, HOMR, numbering, MMR, or current process/memory behavior.
 
 Current behavior remains authoritative in:
 
@@ -432,6 +432,6 @@ This architecture document does not:
 - design authentication, accounts, or billing;
 - duplicate the exact serialized schemas owned by `ENGINE_JOB_CONTRACT.md`;
 - replace the current manual-correction operating guide;
-- redefine detector/HOMR/OMR-DLN/MMR/numbering behavior;
+- redefine detector/HOMR/MMR/numbering behavior;
 - require Phase 3 or later service code to live in this repository;
 - turn speculative service implementation details into current runtime contracts.

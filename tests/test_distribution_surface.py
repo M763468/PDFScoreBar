@@ -316,9 +316,6 @@ def test_release_launcher_uses_pinned_image_and_isolated_paths(tmp_path, monkeyp
     )
     monkeypatch.setattr(distribution, "runtime_fingerprint", lambda root: "runtime")
     monkeypatch.setattr(
-        distribution, "resolve_model_artifact", lambda *a, **k: tmp_path / "weight.pt"
-    )
-    monkeypatch.setattr(
         distribution.subprocess, "call", lambda command, **kw: calls.append(command) or 0
     )
     pdf = tmp_path / "source.pdf"
@@ -344,6 +341,8 @@ def test_release_launcher_uses_pinned_image_and_isolated_paths(tmp_path, monkeyp
     assert f"{(tmp_path / 'output').resolve()}:/results" in calls[1]
     assert "-m" in calls[1] and "docker.distribution_job" in calls[1]
     assert "--expected-fingerprint-value" in calls[0]
+    # #522: the release launcher mounts no OMR-DLN weight.
+    assert not any("OMR_DLN_MODEL_PATH" in part for part in calls[1])
 
     # A later review uses the same external output without dirtying the distribution.
     handoff = tmp_path / "output/job-one/review/manual_correction_input.json"
@@ -391,9 +390,6 @@ def _review_on_docker_desktop(tmp_path, monkeypatch, port_args):
         lambda: {"source_commit": "fixture", "source_branch": "release"},
     )
     monkeypatch.setattr(distribution, "runtime_fingerprint", lambda root: "runtime")
-    monkeypatch.setattr(
-        distribution, "resolve_model_artifact", lambda *a, **k: tmp_path / "weight.pt"
-    )
     monkeypatch.setattr(
         distribution.subprocess, "call", lambda command, **kw: calls.append(command) or 0
     )

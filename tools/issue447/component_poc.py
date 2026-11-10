@@ -248,33 +248,6 @@ def homr_profile(output: Path) -> dict:
     }
 
 
-def omr_profile(output: Path) -> dict:
-    from src.pipeline.detection.omr_dln_worker import run
-
-    reference_root = Path("logs/issue447/runs/single-off-warm/pipeline")
-    reference = json.loads(next(reference_root.rglob("_sr_batch/result.json")).read_text())[
-        "outputs"
-    ][0]
-    profiler = cProfile.Profile()
-    started = time.perf_counter()
-    profiler.runcall(
-        run,
-        [Path(reference["image"])],
-        output_dir=output / "omr",
-        precomputed_sr=Path(reference["sr_image"]),
-    )
-    elapsed = time.perf_counter() - started
-    write_profile(profiler, output)
-    old = json.loads(next(reference_root.rglob("omr_sr/page_013/predictions.json")).read_text())
-    new = json.loads((output / "omr/page_013/predictions.json").read_text())
-    return {
-        "status": "completed",
-        "scope": "retained-input OMR component CPU profile; not an E2E stage duration",
-        "profiled_wall_seconds": elapsed,
-        "ordered_predictions_equal": old == new,
-    }
-
-
 def model_wall(output: Path, kind: str) -> dict:
     """Monotonic call spans independent of cProfile's call graph accounting."""
     import cv2
@@ -307,12 +280,8 @@ def model_wall(output: Path, kind: str) -> dict:
     import onnxruntime as ort
     import torch
 
-    if kind == "homr-wall":
-        from src.pipeline.detection.current_homr_worker import run
-    else:
-        import ultralytics
+    from src.pipeline.detection.current_homr_worker import run
 
-        from src.pipeline.detection.omr_dln_worker import run
     events.append(
         {
             "name": "runtime_imports",
@@ -326,46 +295,14 @@ def model_wall(output: Path, kind: str) -> dict:
     for attribute in ("__init__", "run", "run_with_iobinding"):
         wrap(ort.InferenceSession, attribute, "onnx_session." + attribute)
     reference_root = Path("logs/issue447/runs/single-off-warm/pipeline")
-    if kind == "homr-wall":
-        from src.homr_runtime.predictor import HomrPredictor
+    from src.homr_runtime.predictor import HomrPredictor
 
-        wrap(HomrPredictor, "predict", "homr.predict")
-        request = json.loads(next(reference_root.rglob("current_homr_request.json")).read_text())
-        request["output_root"] = str((output / "homr").resolve())
-        request_path = output / "request.json"
-        request_path.write_text(json.dumps(request, indent=2) + "\n")
-        measure("worker.run", run, request_path, output / "homr-result.json")
-    else:
-        original_yolo = measure("yolo.class_resolution", getattr, ultralytics, "YOLO")
-
-        def load_yolo(*args, **kwargs):
-            model = measure("yolo.model_load", original_yolo, *args, **kwargs)
-            original_predict = model.predict
-
-            def predict(*a, **k):
-                result = measure("yolo.first_predict_including_setup", original_predict, *a, **k)
-                model_devices.append(
-                    {
-                        "model_device": str(model.device),
-                        "predictor_device": str(model.predictor.device),
-                    }
-                )
-                return result
-
-            model.predict = predict
-            return model
-
-        ultralytics.YOLO = load_yolo
-        reference = json.loads(next(reference_root.rglob("_sr_batch/result.json")).read_text())[
-            "outputs"
-        ][0]
-        measure(
-            "worker.run",
-            run,
-            [Path(reference["image"])],
-            output_dir=output / "omr",
-            precomputed_sr=Path(reference["sr_image"]),
-        )
+    wrap(HomrPredictor, "predict", "homr.predict")
+    request = json.loads(next(reference_root.rglob("current_homr_request.json")).read_text())
+    request["output_root"] = str((output / "homr").resolve())
+    request_path = output / "request.json"
+    request_path.write_text(json.dumps(request, indent=2) + "\n")
+    measure("worker.run", run, request_path, output / "homr-result.json")
     torch.cuda.synchronize()
     return {
         "status": "completed",
@@ -437,10 +374,8 @@ def main() -> None:
         choices=(
             "sr-screen",
             "homr-profile",
-            "omr-profile",
             "source-parallel",
             "homr-wall",
-            "omr-wall",
         ),
         required=True,
     )
@@ -453,9 +388,7 @@ def main() -> None:
         result = sr_screen(config, args.output)
     elif args.kind == "homr-profile":
         result = homr_profile(args.output)
-    elif args.kind == "omr-profile":
-        result = omr_profile(args.output)
-    elif args.kind in {"homr-wall", "omr-wall"}:
+    elif args.kind == "homr-wall":
         result = model_wall(args.output, args.kind)
     else:
         result = source_parallel(args.output)

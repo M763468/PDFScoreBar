@@ -5,7 +5,7 @@ import pytest
 from src.pipeline.detection.current_sr_batch_worker import _items
 from src.pipeline.detection.current_sr_runtime import normalize_compile_mode
 from src.pipeline.detection.current_support_worker import _require_precomputed_sr
-from src.pipeline.detection.profile_hybrid_batch_sr import BatchSRVerifiedProfileHybridDetector
+from src.pipeline.detection.maintained_profile_hybrid import BatchSRVerifiedProfileHybridDetector
 
 
 def _detector(tmp_path: Path, images: list[Path]) -> BatchSRVerifiedProfileHybridDetector:
@@ -20,7 +20,7 @@ def _detector(tmp_path: Path, images: list[Path]) -> BatchSRVerifiedProfileHybri
         project_root=tmp_path,
         dry_run=True,
         skip_existing=False,
-        profile_name="stage_e_verified_homr",
+        profile_name="maintained_original",
     )
 
 
@@ -119,7 +119,7 @@ def test_verified_dry_run_declares_one_all_pages_sr_phase(tmp_path: Path) -> Non
         "dedicated_sr_batch_then_top_level_python_per_page"
     )
     assert result["sr_model_lifetime"] == "one_per_detection_call"
-    assert result["sr_memory_boundary"] == "batch_process_exits_before_homr_omr"
+    assert result["sr_memory_boundary"] == "batch_process_exits_before_homr"
     assert result["homr_neural_inference_count_per_page"] == 2
     assert result["x4_homr_neural_inference_count_per_page"] == 1
     assert result["source_generation_phases"][0] == "current_x4_sr_batch_all_pages"

@@ -1,12 +1,12 @@
 # Development model exploration, fixed comparison, and production selection
 
-<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"a4c37e44712a82d71f7139798fdfe2f1bcdd9d3673ece62025686c8ce2c66308"},"state":"reviewed"} -->
+<!-- translation: {"original":"EXPERIMENT_MODEL_SELECTION.md","source":{"sha256":"c749cbf7e096fccef5b43873f66e3f8d54442c6b14ef783ff12dc864b51b48a7"},"state":"reviewed"} -->
 
 [日本語 / Original](EXPERIMENT_MODEL_SELECTION.md) (Japanese original)
 
-Translation source: same PR / SHA-256 `a4c37e44712a82d71f7139798fdfe2f1bcdd9d3673ece62025686c8ce2c66308`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
+Translation source: same PR / SHA-256 `a397e8584724e880665dafe728a063b7d5700e41259f7f022f145b8eade0dce1`. State: `reviewed`. Meaning, constraints and exceptions were checked against the original, and English readability was reviewed.
 
-CNN and OMR-DLN candidates can be tried through explicit paths in an existing config.
+CNN candidates can be tried through explicit paths in an existing config (OMR-DLN was removed in #522 and is no longer a candidate role).
 You do not need to register a version/SHA/provenance or edit the production manifest for each exploration.
 
 For the canonical current production contract, see the [model artifact contract](../contracts/MODEL_ARTIFACT_CONTRACT.md),
@@ -15,14 +15,14 @@ the [model registration procedure](MODEL_ARTIFACTS.md), and the [validation poli
 ## Validation modes
 
 Set `detection.model_validation`. It defaults to `production`; unknown values are errors.
-`exploration` / `comparison` are supported only with `detection.detector_route: dense_full_pipeline`.
-Combinations with an omitted route (standard), the standard route, or an unknown route are rejected at both the preflight and direct pipeline entry points.
+The only detector route is `dense_full_pipeline`, which is also selected when the route is omitted (#522).
+The removed `standard` route and unknown routes are rejected in every mode at both the preflight and direct pipeline entry points.
 
 | Setting | Model selection and validation | Pinning / recording |
 | --- | --- | --- |
 | `exploration` | Actually loads the current checkpoint at the explicit path. Checks supported architecture, tensor shapes, I/O, and the requested device. Does not require a match with adopted bytes | Records the current hash automatically at run time. No prior registration. Weights at the same path can be updated and rerun |
-| `comparison` | Same selection/load path as exploration, plus a required match with `model_sha256.cnn` / `model_sha256.omr_dln` | Copy the hashes from the exploration result to pin them. Also fix the evaluation inputs, config, runtime, metric, seed and tolerance before the experiment |
-| `production` | Validates the existing CNN manifest/architecture/threshold contract, the OMR-DLN selected manifest SHA, the maintained runtime, and the distribution inventory | Keeps the adopted version/provenance/integrity contract |
+| `comparison` | Same selection/load path as exploration, plus a required match with `model_sha256.cnn` | Copy the hashes from the exploration result to pin them. Also fix the evaluation inputs, config, runtime, metric, seed and tolerance before the experiment |
+| `production` | Validates the existing CNN manifest/architecture/threshold contract, the maintained runtime, and the distribution inventory | Keeps the adopted version/provenance/integrity contract |
 
 Preflight success, pipeline-run success, passing an accuracy comparison, and production adoption are separate decisions.
 Docker runs in candidate modes do not automatically reuse the production-only accuracy smoke.
@@ -36,15 +36,13 @@ For a fixed comparison, run the pre-declared evaluation command and every regres
 | CNN architecture | ResNet18 / EfficientNet-B0 as supported by the existing loader. Validates the binary head and state_dict shapes | Keeps EfficientNet-B0 | `steps/cnn_scoring.py`. The EfficientNet-B0-only check is excluded for exploration, and the actual load path is shared |
 | CNN threshold | Explicit in config, finite, 0–1. Need not match the manifest `production_contract` | Keeps the match with the manifest threshold | `dense_orchestrator.py`. Threshold search is stated as a comparison condition |
 | CNN NMS/crop/geometry | Existing I/O/scoring conditions such as NMS=false on the dense route are kept | Unchanged | Downstream semantic contract separate from model identity |
-| OMR-DLN path | `omr_dln_model_path` first, then the environment variable. No fallback from an explicitly specified missing/corrupt candidate to another model | Production manifest SHA check is required even with the same override | `model_selection.py`. Resolution/check logic previously duplicated in the Docker launcher is shared |
-| OMR-DLN compatibility | Validates native `.pt`, detection task and box I/O, explicit device, and prediction I/O. The candidate author guarantees that the model's meaning is "measure" | The existing selected model | `omr_dln_worker.py`. Exported ONNX/TensorRT candidates are not supported |
 | Weight hash/version | Exploration records the actual hash automatically; only comparison checks a specified hash | Validates the SHA of the manifest-selected version | No obligation to pre-register SHA/version/provenance for every candidate |
 | Reuse of old detection output | Detection skip-existing is disabled so old results are not used after a model swap | Unchanged | `dense_orchestrator.py`. Supports rerunning weights retrained at the same path |
 | HOMR source pin/marker | Uses the current maintained runtime as-is. Candidate HOMR replacement is not supported | Required | `profile_contract.py` / `maintained_homr_worker.py`. An unsupported runtime is not treated as runnable by removing checks |
 | SR / MMR / OCR | Validation of candidate replacement is out of scope | Keeps existing settings and assets | SR is image-owned. The MMR raw-path existence check is not a full weight SHA validation |
 | Image/runtime compatibility | Keeps image existence, immutable ID, and runtime fingerprint checks | Required | `scripts/docker_image_resolver.py` / `docker/runtime_contract.py` |
 | Source provenance | Records the source fingerprint and the executed source. A source mismatch with image build time is not itself a rejection condition | Frozen distributions add inventory/hash/dirty checks | Runtime compatibility and source identity are separate concepts |
-| Provider/device | CNN/OMR candidates explicitly use `cpu` or `cuda`; default `cuda`. No fallback from a CUDA request to CPU | Keeps the current CUDA/ONNX/maintained contract | A GPU listing alone is not treated as a successful load. MMR OCR fallback after a warning is outside the candidate guarantee |
+| Provider/device | CNN candidates explicitly use `cpu` or `cuda`; default `cuda`. No fallback from a CUDA request to CPU | Keeps the current CUDA/ONNX/maintained contract | A GPU listing alone is not treated as a successful load. MMR OCR fallback after a warning is outside the candidate guarantee |
 | Input/weight existence and mounts | Checks visibility from the container and mounts candidates read-only | Unchanged | An absolute symlink target on the host is not necessarily visible in the container |
 | Distribution identity | Rejects candidate modes from a frozen distribution; use a development checkout | Strictly validates schema/inventory/path/hash/release provenance | `distribution.py:source_identity` / `runtime_contract.py:validate_distribution_provenance` |
 
@@ -67,12 +65,9 @@ detection:
   cnn_model_path: /absolute/path/to/candidate.pth
   cnn_threshold: 0.5
   cnn_device: cuda
-  omr_dln_model_path: /absolute/path/to/measure_candidate.pt
-  omr_dln_device: cuda
 ```
 
 The original CNN manifest may remain. Removing `cnn_model_path` returns to manifest selection.
-When trying only one model, the other can use the existing manifest/cache or the adopted path.
 After saving new weights to the same path, you can rerun without editing the config or the preflight itself.
 Even during exploration, avoid rewriting a checkpoint while a run is in progress. If a change is detected between the start and end of a run, the results are invalid and the run stops.
 
@@ -81,7 +76,7 @@ bash scripts/docker_runtime_validation.sh --config experiments/my_candidate.yaml
 bash scripts/docker_runtime_validation.sh --config experiments/my_candidate.yaml
 ```
 
-The existing launcher resolves the candidate paths, mounts the CNN/OMR read-only, and runs preflight and the pipeline with the same config.
+The existing launcher resolves the candidate paths, mounts the CNN read-only, and runs preflight and the pipeline with the same config.
 Mount external PDFs and similar inputs with `DOCKER_EXTRA_ARGS` as before.
 If HOMR/SR runtime compatibility does not change, no image rebuild is needed to update a checkpoint.
 There is no new selection manifest or dedicated runner for candidates.
@@ -90,7 +85,7 @@ but mounting external paths and recording image provenance are the caller's resp
 
 ## Fixed comparison and reproduction
 
-A candidate run's `<run-dir>/model_selection.json` records the selected CNN/OMR paths and actual SHAs,
+A candidate run's `<run-dir>/model_selection.json` records the selected CNN path and actual SHA,
 the config, input image SHAs, source/runtime fingerprints, and the source commit/image ID passed from the launcher.
 `status: selected` is an observation record, not a declaration that the pipeline or accuracy evaluation succeeded.
 Keep the detection source manifest/result, pipeline log, and evaluation result in the same Issue root.

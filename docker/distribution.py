@@ -17,7 +17,6 @@ from docker.runtime_contract import (
     source_fingerprint,
     validate_distribution_provenance,
 )
-from src.common.model_artifacts import resolve_model_artifact
 
 
 def capture(command: list[str]) -> str:
@@ -183,9 +182,6 @@ def main() -> int:
         raise ValueError(
             "Image runtime contract differs from distribution; build this distribution first"
         )
-    manifest = ROOT / "models/omr_dln/manifest.json"
-    omr = resolve_model_artifact(manifest, project_root=ROOT).resolve()
-    runtime_path = json.loads(manifest.read_text())["runtime_path"]
     common = [
         "docker",
         "run",
@@ -196,14 +192,10 @@ def main() -> int:
         "none",
         "-v",
         f"{ROOT}:/workspace:ro",
-        "-v",
-        f"{omr}:{runtime_path}:ro",
         "-w",
         "/workspace",
         "-e",
         "PYTHONPATH=/workspace",
-        "-e",
-        f"OMR_DLN_MODEL_PATH={runtime_path}",
         "-e",
         f"PDFSCORE_HOST_SOURCE_COMMIT={commit}",
         "-e",

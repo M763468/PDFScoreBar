@@ -1,9 +1,8 @@
 import json
 from pathlib import Path
 
-import src.pipeline.detection.profile_hybrid as profile_hybrid
-import src.pipeline.detection.profile_hybrid_batch_sr as profile_hybrid_batch_sr
-import src.pipeline.detection.verified_source_page_worker as source_worker
+import src.pipeline.detection.maintained_profile_hybrid as profile_hybrid
+import src.pipeline.detection.maintained_source_page_worker as source_worker
 
 
 def _detector(tmp_path: Path, images: list[Path]) -> profile_hybrid.VerifiedProfileHybridDetector:
@@ -84,19 +83,15 @@ def test_one_page_source_worker_runs_two_homr_sources_in_order(tmp_path: Path, m
         detection = (
             artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
         )
-        omr = artifacts / "omr_sr" / image.stem / "predictions.json"
         sr.parent.mkdir(parents=True)
         detection.parent.mkdir(parents=True)
-        omr.parent.mkdir(parents=True)
         sr.write_bytes(b"sr")
         detection.write_text("[]\n", encoding="utf-8")
-        omr.write_text("[]\n", encoding="utf-8")
         return (
             {
                 "status": "completed",
                 "sr_image": str(sr),
                 "current_sr_detection": str(detection),
-                "current_omr": str(omr),
                 "historical_detector_artifact_runtime_input": False,
             },
             ["support", image.stem],
@@ -117,7 +112,7 @@ def test_one_page_source_worker_runs_two_homr_sources_in_order(tmp_path: Path, m
     ]
     assert Path(payload["sr_image"]) == expected_sr()
     assert Path(payload["current_sr_detection"]) == expected_detection()
-    assert Path(payload["current_omr"]).is_file()
+    assert "current_omr" not in payload  # #522
     assert payload["commands"] == [
         ["baseline", "page_001"],
         ["support", "page_001"],
@@ -153,16 +148,12 @@ def test_verified_sources_launch_one_top_level_worker_per_page(tmp_path: Path, m
         detection = (
             artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
         )
-        omr = artifacts / "omr_sr" / image.stem / "predictions.json"
         detection.parent.mkdir(parents=True)
-        omr.parent.mkdir(parents=True)
         detection.write_text("[]\n", encoding="utf-8")
-        omr.write_text("[]\n", encoding="utf-8")
         return (
             {
                 "status": "completed",
                 "current_sr_detection": str(detection),
-                "current_omr": str(omr),
                 "commands": [["child", image.stem]],
                 "memory_boundary": "top_level_python_per_page",
                 "historical_detector_artifact_runtime_input": False,
@@ -175,14 +166,13 @@ def test_verified_sources_launch_one_top_level_worker_per_page(tmp_path: Path, m
 
     monkeypatch.setattr(detector, "_source_page_worker", fake_source_worker)
 
-    current_sr_detections, omr_predictions, commands = detector._generate_page_sources(
+    current_sr_detections, commands = detector._generate_page_sources(
         baseline_output=baseline_output,
         support_output=support_output,
     )
 
     assert calls == images
     assert list(current_sr_detections) == images
-    assert list(omr_predictions) == images
     assert commands == [
         ["worker", "page_001"],
         ["child", "page_001"],
@@ -207,7 +197,8 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
                 "image": str(image),
                 "run_id": "test",
                 "project_root": str(tmp_path),
-                "profile_name": "stage_e_verified",
+                "profile_name": "maintained_original",
+                "sr_mode": "page_local",
                 "baseline_output": str(tmp_path / "baseline"),
                 "support_output": str(tmp_path / "support"),
             }
@@ -217,17 +208,14 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
 
     sr = tmp_path / "generated/page_001.png"
     detection = tmp_path / "generated/page_001_detections.json"
-    omr = tmp_path / "generated/predictions.json"
     sr.parent.mkdir(parents=True)
     sr.write_bytes(b"sr")
     detection.write_text("[]\n", encoding="utf-8")
-    omr.write_text("[]\n", encoding="utf-8")
 
     def fake_generate(self, **_kwargs):
         return {
             "sr_image": str(sr),
             "current_sr_detection": str(detection),
-            "current_omr": str(omr),
             "commands": [["phase"]],
             "historical_detector_artifact_runtime_input": False,
             "homr_neural_inference_count": 2,
@@ -236,7 +224,7 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
         }
 
     monkeypatch.setattr(
-        profile_hybrid_batch_sr.BatchSRVerifiedProfileHybridDetector,
+        profile_hybrid.VerifiedProfileHybridDetector,
         "_generate_one_page_sources_in_process",
         fake_generate,
     )
@@ -249,7 +237,7 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
     assert payload["memory_boundary"] == "top_level_python_per_page"
     assert payload["sr_image"] == str(sr)
     assert payload["current_sr_detection"] == str(detection)
-    assert payload["current_omr"] == str(omr)
+    assert "current_omr" not in payload
     assert payload["historical_detector_artifact_runtime_input"] is False
     assert payload["homr_neural_inference_count"] == 2
     assert payload["x4_homr_neural_inference_count"] == 1

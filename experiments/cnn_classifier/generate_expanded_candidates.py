@@ -12,7 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(REPO_ROOT))
 
 # Import logic from the existing tool
-from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan
+from tools.probe_evaluation_helpers import detect_probe_scan
 
 
 def process_page(run_dir: Path, image_root: Path):

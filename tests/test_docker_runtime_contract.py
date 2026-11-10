@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.common.model_artifacts import resolve_omr_dln_model_path, resolve_realesrgan_weight
+from src.common.model_artifacts import resolve_realesrgan_weight
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -47,15 +47,11 @@ def test_realesrgan_weight_override_is_independent_of_workspace(tmp_path: Path) 
     assert resolved == expected
 
 
-def test_omr_dln_model_accepts_explicit_external_asset(tmp_path: Path) -> None:
-    expected = tmp_path / "YOLOv8m_Measures.pt"
-
-    resolved = resolve_omr_dln_model_path(
-        repository_root=tmp_path / "workspace",
-        environment={"OMR_DLN_MODEL_PATH": str(expected)},
-    )
-
-    assert resolved == expected
+def test_runtime_contract_no_longer_requires_ultralytics_or_omr_dln() -> None:
+    contract = _load_runtime_contract_module()
+    assert "ultralytics" not in contract.RUNTIME_MODULES
+    text = (PROJECT_ROOT / "docker" / "runtime_contract.py").read_text(encoding="utf-8")
+    assert "OMR_DLN" not in text and "omr_dln" not in text
 
 
 def test_source_fingerprint_detects_source_config_and_checkpoint_drift(tmp_path: Path) -> None:
@@ -823,28 +819,7 @@ def test_production_preflight_checks_maintained_provenance_without_historical_as
     assert "runtime is incomplete" in errors[-1]
 
 
-def test_historical_reproduction_uses_separate_image() -> None:
+def test_historical_execution_build_is_retired() -> None:
     root = Path(__file__).resolve().parents[1]
-    production = (root / "Dockerfile").read_text()
-    assert "stage_e" not in production.lower()
-    assert "musicxml==1.4" not in production
-    reproduction = (root / "docker/Dockerfile.stage-e").read_text()
-    assert 'pdfscore.runtime.asset_contract="historical-stage-e-v1"' in reproduction
-    assert "FROM ${PRODUCTION_IMAGE}" in reproduction
-    assert "/opt/venv_stage_e_homr" in reproduction
-    result = subprocess.run(
-        [
-            "make",
-            "-f",
-            "tools/issue120/Makefile.stage_e.mk",
-            "-n",
-            "run-issue120-stage-e-full",
-            "ISSUE120_STAGE_E_IMAGE=repro:test",
-        ],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    assert "repro:test" in result.stdout
-    assert "pdfscore_pipeline_gpu" not in result.stdout
+    assert not (root / "docker/Dockerfile.stage-e").exists()
+    assert "docker-build-stage-e:" not in (root / "tools/issue120/Makefile.stage_e.mk").read_text()

@@ -7,14 +7,11 @@ production keeps the selected artifact manifests authoritative.
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 from typing import Any, Mapping
 
 from src.common.model_artifacts import (
     get_model_cache_root,
-    load_model_artifact_manifest,
-    model_artifact_path,
     resolve_model_artifact,
     sha256_file,
     verify_model_artifact,
@@ -22,17 +19,17 @@ from src.common.model_artifacts import (
 
 
 def model_validation_mode(detection: Mapping[str, Any]) -> str:
+    from .config import validate_detection_config
+
+    validate_detection_config(dict(detection))
     mode = detection.get("model_validation", "production")
     if mode not in ("production", "exploration", "comparison"):
         raise ValueError(f"Unknown detection.model_validation: {mode!r}")
     if mode != "production":
-        route = detection.get("detector_route", "standard")
-        if route != "dense_full_pipeline":
-            raise ValueError(
-                f"detection.model_validation={mode!r} requires "
-                f"detector_route='dense_full_pipeline'; got {route!r}"
-            )
-        for key in ("cnn_device", "omr_dln_device"):
+        from .config import resolve_detector_route
+
+        resolve_detector_route(detection)
+        for key in ("cnn_device",):
             if detection.get(key, "cuda") not in ("cpu", "cuda"):
                 raise ValueError(f"Unsupported detection.{key}; use cpu or cuda")
     return str(mode)
@@ -72,35 +69,10 @@ def resolve_cnn_candidate(detection: Mapping[str, Any], root: Path) -> Path:
     return _comparison_check(path, detection, "cnn")
 
 
-def resolve_omr_model(detection: Mapping[str, Any], root: Path) -> Path:
-    mode = model_validation_mode(detection)
-    explicit = detection.get("omr_dln_model_path") or os.environ.get("OMR_DLN_MODEL_PATH")
-    manifest_path = root / "models/omr_dln/manifest.json"
-    if explicit:
-        path = _file(explicit, root)
-        if mode == "production":
-            manifest = load_model_artifact_manifest(manifest_path)
-            verify_model_artifact(path, expected_sha256=manifest.sha256)
-    else:
-        manifest = load_model_artifact_manifest(manifest_path)
-        cached = model_artifact_path(manifest, project_root=root)
-        if cached.exists() or cached.is_symlink():
-            path = resolve_model_artifact(manifest_path, project_root=root)
-        else:
-            # Retain the verified legacy location, never fallback from corrupt cache.
-            legacy = root / "external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
-            if legacy.is_file():
-                path = verify_model_artifact(legacy, expected_sha256=manifest.sha256)
-            else:
-                path = resolve_model_artifact(manifest_path, project_root=root)
-    return _comparison_check(path, detection, "omr_dln")
-
-
 def model_observation(detection: Mapping[str, Any], root: Path) -> dict[str, Any]:
     """Observe selected files without requiring exploration users to register them."""
     paths = {
         "cnn": resolve_cnn_candidate(detection, root),
-        "omr_dln": resolve_omr_model(detection, root),
     }
     return {role: {"path": str(path), "sha256": sha256_file(path)} for role, path in paths.items()}
 
@@ -111,7 +83,7 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("config", type=Path)
-    parser.add_argument("--role", choices=("mode", "cnn", "omr_dln", "cache"), required=True)
+    parser.add_argument("--role", choices=("mode", "cnn", "cache"), required=True)
     parser.add_argument("--container-path", action="store_true")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
@@ -122,14 +94,10 @@ def main() -> int:
     elif args.role == "cache":
         print(get_model_cache_root(project_root=root))
     else:
-        path = (
-            resolve_cnn_candidate(detection, root)
-            if args.role == "cnn"
-            else resolve_omr_model(detection, root)
-        )
+        path = resolve_cnn_candidate(detection, root)
         if args.container_path:
             # Preserve explicit absolute config paths; map checkout-relative ones.
-            value = detection.get("cnn_model_path" if args.role == "cnn" else "omr_dln_model_path")
+            value = detection.get("cnn_model_path")
             if value and Path(value).expanduser().is_absolute():
                 path = Path(value).expanduser()
             else:

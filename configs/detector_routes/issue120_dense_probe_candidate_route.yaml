@@ -1,7 +1,7 @@
 dense_probe_candidate_route:
   # Detector-level partial route only:
   # dense candidate/bands generation -> filtering -> probe rescue -> CNN scoring -> detector eval.
-  # This does not run slow HOMR/SR/OMR upstream generation or downstream measure numbering.
+  # This does not run slow HOMR/SR upstream generation or downstream measure numbering.
   inventory: logs/issue36_prep/20260208_bench_inventory.json
   exclude: logs/issue36_prep/excluded_pages_for_gt_prep.json
   image_root: data/evaluation2/images

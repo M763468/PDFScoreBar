@@ -23,11 +23,6 @@ def main() -> int:
     parser.add_argument("--compile-mode", choices=("production", "off"), default="production")
     parser.add_argument("--trace", action="store_true")
     parser.add_argument(
-        "--omr-reuse",
-        action="store_true",
-        help="Experimental fresh same-run OMR phase; requires source-workers",
-    )
-    parser.add_argument(
         "--source-workers",
         type=int,
         choices=(1, 2),
@@ -46,22 +41,16 @@ def main() -> int:
         choices=(
             "sr-screen",
             "homr-profile",
-            "omr-profile",
             "source-parallel",
             "homr-wall",
-            "omr-wall",
             "source-paired",
             "python-imports",
-            "omr-serial",
-            "omr-batch",
             "compiled-tiles1",
             "compiled-tiles2",
         ),
     )
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
-    if args.omr_reuse and (args.source_workers is None or args.component):
-        parser.error("OMR reuse requires E2E with explicit source-workers")
     if args.component == "source-paired" and args.source_workers is None:
         parser.error("source-paired requires explicit --source-workers")
     if args.component not in (None, "source-paired") and args.source_workers is not None:
@@ -120,8 +109,6 @@ def main() -> int:
         config["detection"]["sr_compile_mode"] = None
     config_path = dest / "config.yaml"
     config_path.write_text(yaml.safe_dump(config, sort_keys=False))
-    omr_manifest = json.loads((root / "models/omr_dln/manifest.json").read_text())
-    omr = omr_manifest["runtime_path"]
     name = "pdfscore-issue454-" + args.label
     command = [
         "docker",
@@ -145,8 +132,6 @@ def main() -> int:
         f"{cache}:/model-cache:ro",
         "-v",
         f"{compile_cache}:/compile-cache",
-        "-v",
-        f"{cache / omr_manifest['cache_path']}:{omr}:ro",
         "-e",
         "PDFSCOREBAR_MODEL_CACHE=/model-cache",
         "-e",
@@ -157,8 +142,6 @@ def main() -> int:
         f"PDFSCORE_DOCKER_IMAGE_ID={args.image}",
         "-e",
         "PYTHONPATH=/workspace",
-        "-e",
-        f"OMR_DLN_MODEL_PATH={omr}",
     ]
     if (
         args.component is None
@@ -175,8 +158,6 @@ def main() -> int:
             "-e",
             "PYTHONPYCACHEPREFIX=/python-cache",
         ]
-    if args.omr_reuse:
-        command += ["-e", "ISSUE447_OMR_REUSE=1"]
     if args.source_workers is not None:
         command += [
             "-e",
@@ -205,8 +186,6 @@ def main() -> int:
         ]
     elif args.component in {
         "python-imports",
-        "omr-serial",
-        "omr-batch",
         "compiled-tiles1",
         "compiled-tiles2",
     }:

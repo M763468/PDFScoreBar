@@ -1,219 +1,172 @@
-import tempfile
-import unittest
+"""Single detector route contract (#522): dense_full_pipeline only, removed routes fail."""
+
 from pathlib import Path
-from unittest.mock import patch
 
-from src.pipeline.detection import run_detection_step
-from src.pipeline.detection.hybrid import HybridDetector
+import pytest
 
-
-class TestPipelineDetection(unittest.TestCase):
-    def _base_config(self):
-        return {
-            "inputs": {"pdf_to_images": {"output_dir": "data/evaluation2/images"}},
-            "detection": {
-                "cnn_model_path": "experiments/cnn_classifier/checkpoints/best_model.pth",
-                "ink_threshold": 230,
-                "min_ratio": 0.7,
-                "min_height_ratio": 0.012,
-                "cnn_threshold": 0.1,
-            },
-        }
-
-    def test_run_detection_step_uses_orchestrator(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            hybrid_output_dir = Path(tmpdir) / "hybrid"
-            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
-
-            config = self._base_config()
-            images = [Path("data/evaluation2/images/page_001.png")]
-            page_ids = ["page_001"]
-
-            with (
-                patch.object(
-                    HybridDetector,
-                    "run",
-                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
-                ),
-                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
-            ):
-                result = run_detection_step(
-                    config=config,
-                    images=images,
-                    page_ids=page_ids,
-                    run_id="run123",
-                    run_dir=Path(tmpdir),
-                    dry_run=False,
-                )
-
-            self.assertIn("commands", result)
-            self.assertEqual(result["hybrid_output_dir"], hybrid_output_dir)
-            self.assertTrue(str(result["probe_output_dir"]).endswith("intermediate/probe_scan"))
-            expected_contract_path = Path(tmpdir) / "intermediate" / "detector_input_contract.json"
-            self.assertEqual(result["detector_input_contract_path"], expected_contract_path)
-            self.assertTrue(expected_contract_path.is_file())
-
-            mock_probe.assert_called_once()
-            mock_cnn.assert_called_once()
-
-            commands = result["commands"]
-            self.assertEqual(commands[0], ["hybrid"])
-            self.assertIn("inprocess:probe_scan", commands[1][0])
-            self.assertIn("inprocess:cnn_scoring", commands[2][0])
-            self.assertEqual(mock_cnn.call_args.kwargs["apply_nms_enabled"], False)
-            self.assertEqual(commands[2][-1], "False")
-
-    def test_run_detection_step_allows_explicit_cnn_nms_opt_in(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            hybrid_output_dir = Path(tmpdir) / "hybrid"
-            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
-
-            config = self._base_config()
-            config["detection"]["cnn_apply_nms"] = True
-            images = [Path("data/evaluation2/images/page_001.png")]
-            page_ids = ["page_001"]
-
-            with (
-                patch.object(
-                    HybridDetector,
-                    "run",
-                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
-                ),
-                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch"),
-                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
-            ):
-                result = run_detection_step(
-                    config=config,
-                    images=images,
-                    page_ids=page_ids,
-                    run_id="run123",
-                    run_dir=Path(tmpdir),
-                    dry_run=False,
-                )
-
-            self.assertEqual(mock_cnn.call_args.kwargs["apply_nms_enabled"], True)
-            self.assertEqual(result["commands"][2][-1], "True")
-
-    def test_run_detection_step_skips_probe_and_cnn_on_dry_run(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            hybrid_output_dir = Path(tmpdir) / "hybrid"
-            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
-
-            config = self._base_config()
-            images = [Path("data/evaluation2/images/page_001.png")]
-            page_ids = ["page_001"]
-
-            with (
-                patch.object(
-                    HybridDetector,
-                    "run",
-                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
-                ),
-                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
-            ):
-                result = run_detection_step(
-                    config=config,
-                    images=images,
-                    page_ids=page_ids,
-                    run_id="run123",
-                    run_dir=Path(tmpdir),
-                    dry_run=True,
-                )
-
-            mock_probe.assert_not_called()
-            mock_cnn.assert_not_called()
-            self.assertEqual(result["commands"][0], ["hybrid"])
-            self.assertIn("inprocess:probe_scan", result["commands"][1][0])
-            self.assertIn("inprocess:cnn_scoring", result["commands"][2][0])
-
-    def test_probe_score_name_is_forwarded_to_probe_and_cnn(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            hybrid_output_dir = Path(tmpdir) / "hybrid"
-            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
-
-            config = self._base_config()
-            config["detection"]["probe_score_name"] = "FixedScore"
-            images = [Path("data/evaluation2/images/page_001.png")]
-            page_ids = ["page_001"]
-
-            with (
-                patch.object(
-                    HybridDetector,
-                    "run",
-                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
-                ),
-                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
-            ):
-                run_detection_step(
-                    config=config,
-                    images=images,
-                    page_ids=page_ids,
-                    run_id="run123",
-                    run_dir=Path(tmpdir),
-                    dry_run=False,
-                )
-
-            self.assertEqual(mock_probe.call_args.kwargs["score_name"], "FixedScore")
-            self.assertEqual(mock_cnn.call_args.kwargs["score_name"], "FixedScore")
-
-    def test_precomputed_probe_candidates_are_copied_and_scored_with_cnn_bands(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp = Path(tmpdir)
-            hybrid_output_dir = tmp / "hybrid"
-            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
-            precomputed_root = tmp / "precomputed"
-            precomputed_dir = precomputed_root / "eval2_Score_page_001"
-            precomputed_dir.mkdir(parents=True, exist_ok=True)
-            (precomputed_dir / "pipeline2_no_peak_candidates.json").write_text("[]")
-            cnn_bands_from = tmp / "filtered_bands"
-            cnn_bands_from.mkdir(parents=True, exist_ok=True)
-
-            config = self._base_config()
-            config["detection"].update(
-                {
-                    "precomputed_probe_candidates_root": str(precomputed_root),
-                    "cnn_bands_from": str(cnn_bands_from),
-                    "probe_use_original_images": True,
-                }
-            )
-            images = [Path("data/evaluation2/images/Score_page_001.png")]
-            page_ids = ["Score_page_001"]
-
-            with (
-                patch.object(
-                    HybridDetector,
-                    "run",
-                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
-                ),
-                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
-            ):
-                result = run_detection_step(
-                    config=config,
-                    images=images,
-                    page_ids=page_ids,
-                    run_id="run123",
-                    run_dir=tmp,
-                    dry_run=False,
-                )
-
-            copied = (
-                tmp
-                / "intermediate"
-                / "probe_scan"
-                / "eval2_images_Score_page_001"
-                / "pipeline2_no_peak_candidates.json"
-            )
-            self.assertTrue(copied.exists())
-            mock_probe.assert_not_called()
-            mock_cnn.assert_called_once()
-            self.assertEqual(mock_cnn.call_args.kwargs["bands_from"], cnn_bands_from)
-            self.assertIn("--precomputed-candidates-root", result["commands"][1])
-            self.assertIn("--bands-from", result["commands"][2])
+from src.pipeline import detection
+from src.pipeline.detection import dense_orchestrator_batch_sr
+from src.pipeline.detection.config import DENSE_ROUTE_NAME, resolve_detector_route
+from src.pipeline.orchestrator import PipelineOrchestrator
 
 
-if __name__ == "__main__":
-    unittest.main()
+def _detection(**extra):
+    return {"homr_profile": "maintained_original", **extra}
+
+
+def test_omitted_route_selects_dense_full_pipeline():
+    assert resolve_detector_route({}) == DENSE_ROUTE_NAME
+    assert resolve_detector_route(None) == DENSE_ROUTE_NAME
+    assert resolve_detector_route({"detector_route": DENSE_ROUTE_NAME}) == DENSE_ROUTE_NAME
+
+
+@pytest.mark.parametrize("route", ["standard", "stage_e", ""])
+def test_removed_or_unknown_routes_raise_instead_of_being_reinterpreted(route):
+    with pytest.raises(ValueError, match="only detector route is 'dense_full_pipeline'"):
+        resolve_detector_route({"detector_route": route})
+
+
+def test_standard_route_error_names_migration_and_historical_commit():
+    with pytest.raises(ValueError, match=r"was removed in #522.*4f1594bc"):
+        resolve_detector_route({"detector_route": "standard"})
+
+
+def test_public_constructor_always_builds_the_dense_orchestrator(tmp_path):
+    orchestrator = detection.DetectorOrchestrator(
+        {"detection": _detection()}, [], "run", tmp_path, dry_run=True
+    )
+    assert isinstance(orchestrator, dense_orchestrator_batch_sr.DetectorOrchestrator)
+    assert orchestrator.detector_route == DENSE_ROUTE_NAME
+
+
+def test_public_entrypoints_reject_standard_before_any_detector_work(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        dense_orchestrator_batch_sr,
+        "run_detection_step",
+        lambda *a, **k: pytest.fail("dense detector entered for a removed route"),
+    )
+    config = {"detection": _detection(detector_route="standard")}
+    with pytest.raises(ValueError, match="was removed in #522"):
+        detection.DetectorOrchestrator(config, [], "run", tmp_path, dry_run=True)
+    with pytest.raises(ValueError, match="was removed in #522"):
+        detection.run_detection_step(config, [], [], "run", tmp_path, dry_run=True)
+
+
+def test_run_detection_step_delegates_to_the_dense_route(tmp_path, monkeypatch):
+    calls = []
+
+    def dense(config, images, page_ids, run_id, run_dir, *, dry_run, in_memory_images=None):
+        calls.append((images, page_ids, run_id, dry_run, in_memory_images))
+        return {"detector_route": DENSE_ROUTE_NAME}
+
+    monkeypatch.setattr(dense_orchestrator_batch_sr, "run_detection_step", dense)
+    images = [tmp_path / "Score" / "page_001.png"]
+    result = detection.run_detection_step(
+        {"detection": _detection()}, images, ["page_001"], "run", tmp_path, dry_run=True
+    )
+    assert result == {"detector_route": DENSE_ROUTE_NAME}
+    assert calls == [(images, ["page_001"], "run", True, None)]
+
+
+def test_duplicate_image_stems_are_rejected(tmp_path):
+    images = [tmp_path / "a" / "page_001.png", tmp_path / "b" / "page_001.png"]
+    with pytest.raises(ValueError, match="unique image stems"):
+        detection.run_detection_step(
+            {"detection": _detection()}, images, ["a", "b"], "run", tmp_path, dry_run=True
+        )
+
+
+def _pipeline_config(**pdf_opts):
+    return {
+        "inputs": {"pdf_path": "missing.pdf", "pdf_to_images": dict(pdf_opts)},
+        "steps": {"pdf_to_images": True, "detection": True},
+        "detection": _detection(),
+    }
+
+
+def test_pipeline_rejects_removed_route_at_construction(tmp_path):
+    config = _pipeline_config(output_dir="images")
+    config["detection"]["detector_route"] = "standard"
+    with pytest.raises(ValueError, match="was removed in #522"):
+        PipelineOrchestrator(config, "run", tmp_path)
+
+
+def test_in_memory_pdf_rendering_is_rejected_with_detection(tmp_path):
+    with pytest.raises(ValueError, match="In-memory PDF rendering"):
+        PipelineOrchestrator(_pipeline_config(output_dir=None), "run", tmp_path)
+
+
+def test_in_memory_pdf_rendering_remains_available_without_detection(tmp_path):
+    config = _pipeline_config(output_dir=None)
+    config["steps"]["detection"] = False
+    PipelineOrchestrator(config, "run", tmp_path)
+
+
+def test_persisted_pdf_rendering_with_detection_is_accepted(tmp_path):
+    PipelineOrchestrator(_pipeline_config(output_dir="images"), "run", tmp_path)
+    PipelineOrchestrator(_pipeline_config(), "run", Path(tmp_path))
+
+
+def _ctx(tmp_path, *mask_present):
+    ctx = {}
+    for index, present in enumerate(mask_present, start=1):
+        mask = tmp_path / f"page_{index:03d}_staff_mask.png"
+        if present:
+            mask.write_bytes(b"mask")
+        ctx[f"page_{index:03d}"] = {"resolved": {"current_homr_staff_mask": str(mask)}}
+    return ctx
+
+
+def test_mmr_support_is_required_after_detection_in_this_run(tmp_path):
+    ctx = _ctx(tmp_path, False)
+    assert PipelineOrchestrator._mmr_uses_current_x4_support(True, list(ctx), set(), ctx)
+
+
+def test_precomputed_inputs_use_support_only_when_every_page_has_a_mask(tmp_path):
+    full = _ctx(tmp_path, True, True)
+    assert PipelineOrchestrator._mmr_uses_current_x4_support(False, list(full), set(), full)
+    (tmp_path / "none").mkdir()
+    none = _ctx(tmp_path / "none", False, False)
+    assert not PipelineOrchestrator._mmr_uses_current_x4_support(False, list(none), set(), none)
+
+
+def test_precomputed_inputs_with_partial_masks_are_rejected(tmp_path):
+    ctx = _ctx(tmp_path, True, False)
+    with pytest.raises(ValueError, match="only some pages"):
+        PipelineOrchestrator._mmr_uses_current_x4_support(False, list(ctx), set(), ctx)
+    # An excluded page without a mask does not make the set partial.
+    assert PipelineOrchestrator._mmr_uses_current_x4_support(False, list(ctx), {"page_002"}, ctx)
+
+
+def test_correction_reapplies_mmr_in_the_source_run_mode(tmp_path):
+    from src.pipeline.review.apply_corrections import _source_used_mmr_support
+
+    assert _source_used_mmr_support({"mmr_support": {}}, source_root=tmp_path, page_id="p")
+    assert not _source_used_mmr_support({}, source_root=tmp_path, page_id="p")
+    support = tmp_path / "intermediate" / "p" / "mmr_support.json"
+    support.parent.mkdir(parents=True)
+    support.write_text("{}")
+    assert _source_used_mmr_support({}, source_root=tmp_path, page_id="p")
+
+
+def test_correction_of_a_standard_route_review_package_is_not_rejected(tmp_path):
+    # Correction never reruns detection: the recorded route of a historical source run
+    # is provenance, so packages produced by the removed standard route stay correctable.
+    from src.pipeline.review.apply_corrections import _run_retained_artifact_correction
+
+    canonical = {
+        "measure_overrides": tmp_path / "measure_overrides.json",
+        "barline_overrides": tmp_path / "barline_overrides.json",
+    }
+    summary = _run_retained_artifact_correction(
+        normalized_handoff={"pages": []},
+        package_root=tmp_path,
+        source_manifest={"pages": []},
+        source_root=tmp_path,
+        source_config={"detection": {"detector_route": "standard"}},
+        canonical_paths=canonical,
+        staging_paths={},
+        new_run_dir=tmp_path / "corrected",
+        movement_boundary_input=({}, None, None),
+    )
+    assert isinstance(summary, dict)

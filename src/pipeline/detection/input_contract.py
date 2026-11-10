@@ -1,6 +1,6 @@
 """Classify whether detector candidates come from fresh upstream or overrides.
 
-A run may execute HOMR/SR/OMR while still replacing the authoritative probe or
+A run may execute HOMR/SR while still replacing the authoritative probe or
 CNN inputs with precomputed artifacts. Metrics from that route are useful as a
 checkpoint, but they are not evidence that fresh upstream regeneration works.
 This module keeps that distinction machine-readable and records the selected
@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
+
+from .config import resolve_detector_route
 
 FRESH_UPSTREAM_MODE = "fresh_upstream"
 PRECOMPUTED_CANDIDATE_MODE = "precomputed_candidate_route"
@@ -38,7 +40,7 @@ def build_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[str, Any]:
         "hybrid_detection_may_execute": True,
         "hybrid_output_authoritative_for_probe": not uses_precomputed_probe,
         "hybrid_output_authoritative_for_cnn_bands": not uses_cnn_bands_override,
-        "detector_route": str(det_cfg.get("detector_route", "standard")),
+        "detector_route": resolve_detector_route(dict(det_cfg)),
         "homr_profile": det_cfg.get("homr_profile"),
         "sr_scale": int(det_cfg.get("sr_scale", 2)),
         "probe_use_original_images": bool(det_cfg.get("probe_use_original_images", False)),
@@ -65,6 +67,6 @@ def require_fresh_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[st
         raise ValueError(
             "Fresh detector validation rejects candidate-source overrides: "
             f"{keys}. A run that uses these keys is a checkpoint/precomputed route, "
-            "even if HOMR/SR/OMR also execute."
+            "even if HOMR/SR also execute."
         )
     return contract

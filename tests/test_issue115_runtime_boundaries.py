@@ -3,7 +3,7 @@ import importlib
 import importlib.util
 import sys
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import ModuleType
 
 import numpy as np
 import pytest
@@ -145,53 +145,16 @@ def test_maintained_batch_workflow_uses_its_own_worker_and_backend(tmp_path, mon
 
 
 @pytest.mark.parametrize("batch", [False, True])
-def test_dense_dispatch_preserves_explicit_historical_profile(tmp_path, monkeypatch, batch):
-    if batch:
-        import src.pipeline.detection.dense_orchestrator_batch_sr as dense
-        import src.pipeline.detection.profile_hybrid_batch_sr as historical
+def test_dense_dispatch_rejects_historical_profile(tmp_path, batch):
+    from src.pipeline.detection.config import resolve_detector_route
 
-        name = "BatchSRVerifiedProfileHybridDetector"
-    else:
-        import src.pipeline.detection.dense_orchestrator as dense
-        import src.pipeline.detection.profile_hybrid as historical
-
-        name = "VerifiedProfileHybridDetector"
-    seen = []
-
-    class HistoricalDetector:
-        def __init__(self, **kwargs):
-            seen.append(kwargs["profile_name"])
-
-        def run(self):
-            return {"profile": "stage_e_verified"}
-
-    monkeypatch.setattr(historical, name, HistoricalDetector)
-    state = SimpleNamespace(
-        homr_profile="stage_e_verified",
-        det_cfg={},
-        images=[],
-        run_id="compatibility",
-        dry_run=True,
-        skip_existing=False,
-        in_memory_images=None,
-    )
-    assert dense.DetectorOrchestrator._run_hybrid_detection(state) == {
-        "profile": "stage_e_verified"
-    }
-    assert seen == ["stage_e_verified"]
+    with pytest.raises(ValueError, match="detection.homr_profile"):
+        resolve_detector_route({"homr_profile": "stage_e_verified"})
 
 
 def test_batch_workflows_preserve_profile_detector_subclass_contract():
-    from src.pipeline.detection import (
-        maintained_profile_hybrid,
-        profile_hybrid,
-        profile_hybrid_batch_sr,
-    )
+    from src.pipeline.detection import maintained_profile_hybrid
 
-    assert issubclass(
-        profile_hybrid_batch_sr.BatchSRVerifiedProfileHybridDetector,
-        profile_hybrid.VerifiedProfileHybridDetector,
-    )
     assert issubclass(
         maintained_profile_hybrid.BatchSRVerifiedProfileHybridDetector,
         maintained_profile_hybrid.VerifiedProfileHybridDetector,

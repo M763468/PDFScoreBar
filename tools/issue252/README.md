@@ -11,7 +11,8 @@ Forensic discussion remains in [Issue #252](https://github.com/M763468/PDFScoreB
 
 - `probe_boundary.py`: pure report and first-loss helpers.
 - `trace_prokofiev_probe_boundary.py`: validates the detector-input contract,
-  reproduces hybrid consensus, and traces probe stages.
+  traces probe stages from the saved hybrid (its OMR-DLN consensus reproduction was
+  removed in #522; the recorded #252 run reproduced it at the time).
 - `run_grouped_final_numbering_comparison.py`: runs two candidate sets through the
   production CNN, grouping, MMR and final-numbering order.
 - `audit_grouped_semantic_impact.py`: compares connector-supported grouped results
@@ -101,7 +102,6 @@ COMMON_ARGS=(
   --expected-image-sha256 27755b1ece7abd5cf967cd49020279e3688cc7bdd5618b4690ed8e58136065d1
   --fresh-baseline logs/issue245_fresh_upstream_full68_probe/pages/045_vaprokofievsymphony1page004/evaluator/issue245_fresh_upstream_full68_045/page_004/page_004_detections.json
   --current-sr logs/issue244_full_regression/hybrid/production_default_full68/sr/batch/Va_Prokofiev_Symphony1_page_004/Va_Prokofiev_Symphony1_page_004_detections.json
-  --current-omr logs/issue244_full_regression/hybrid/production_default_full68/omr_sr/Va_Prokofiev_Symphony1_page_004/predictions.json
   --hybrid logs/issue245_accuracy_first_mixed_route/mixed_hybrid/Va_Prokofiev_Symphony1/page_004_hybrid.json
   --staff-mask "$PROBE_STAFF_MASK"
   --allow-zero-clef-mask

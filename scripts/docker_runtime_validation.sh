@@ -6,12 +6,7 @@ usage() {
 Usage: scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke] [--pipeline-only]
 
 Validates the canonical Docker runtime contract, then runs the configured pipeline smoke.
-OMR-DLN is an external/operator-supplied artifact. Canonical validation resolves the
-selected, digest-verified version from the common model cache. One-time registration:
-
-  python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
-
-OMR_DLN_MODEL_PATH remains a verified explicit compatibility override in production.
+No OMR-DLN measure-detector weight is required since #522 (hybrid support uses x4 HOMR).
 Exploration/comparison use detection.model_validation and explicit model paths in config.
 
 Environment:
@@ -19,7 +14,6 @@ Environment:
   DOCKER_EXTRA_ARGS         Extra arguments passed to docker run.
   PDFSCORE_SR_COMPILER_CACHE Optional pre-provisioned private host compiler-cache root (opt-in).
   PDFSCOREBAR_MODEL_CACHE   Optional shared host model-cache root. Default: XDG/user cache
-  OMR_DLN_MODEL_PATH        Optional explicit OMR-DLN compatibility override.
 USAGE
 }
 
@@ -124,13 +118,8 @@ fi
 selection=(python3 -m src.pipeline.detection.model_selection "$config_host")
 model_mode="$(PYTHONPATH="$repo_root" "${selection[@]}" --role mode)"
 model_cache_root="$(PYTHONPATH="$repo_root" "${selection[@]}" --role cache)"
-omr_host="$(PYTHONPATH="$repo_root" "${selection[@]}" --role omr_dln)"
-omr_host="$(realpath "$omr_host")"
-omr_manifest="$repo_root/models/omr_dln/manifest.json"
-omr_container="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["runtime_path"])' "$omr_manifest")"
 candidate_mounts=()
 if [[ "$model_mode" != production ]]; then
-  omr_container="$(PYTHONPATH="$repo_root" "${selection[@]}" --role omr_dln --container-path)"
   cnn_host="$(PYTHONPATH="$repo_root" "${selection[@]}" --role cnn)"
   cnn_container="$(PYTHONPATH="$repo_root" "${selection[@]}" --role cnn --container-path)"
   candidate_mounts=(-v "$(realpath "$cnn_host"):$cnn_container:ro")
@@ -174,11 +163,9 @@ common_args=(
   "${network_args[@]}"
   "${compiler_cache_args[@]}"
   -v "$repo_root:/workspace"
-  -v "$omr_host:$omr_container:ro"
   "${candidate_mounts[@]}"
   -w /workspace
   -e PYTHONPATH=/workspace
-  -e "OMR_DLN_MODEL_PATH=$omr_container"
   -e "PDFSCORE_HOST_SOURCE_ROOT=$repo_root"
   -e "PDFSCORE_HOST_SOURCE_BRANCH=$host_branch"
   -e "PDFSCORE_HOST_SOURCE_COMMIT=$host_commit"
@@ -199,9 +186,6 @@ Canonical Docker validation provenance:
   runtime_fingerprint: $host_runtime_fingerprint
   model_cache: $model_cache_root
   model_validation: $model_mode
-  omr_manifest: models/omr_dln/manifest.json (production default only)
-  omr_host:    $omr_host
-  omr_runtime: $omr_container
 EOF
 
 echo "Validating Docker runtime contract..."

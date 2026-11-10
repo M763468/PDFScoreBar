@@ -14,12 +14,6 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
         detector_cls = BatchSRVerifiedProfileHybridDetector
-        if self.homr_profile != "maintained_original":
-            from .profile_hybrid_batch_sr import (
-                BatchSRVerifiedProfileHybridDetector as HistoricalProfileDetector,
-            )
-
-            detector_cls = HistoricalProfileDetector
         detector = detector_cls(
             det_cfg=self.det_cfg,
             images=self.images,

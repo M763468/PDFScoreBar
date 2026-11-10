@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the pinned historical Stage-E evaluator across compatible HOMR APIs.
+"""Compatibility helpers retained for HOMR API contract tests.
 
 Maintained/current workers use ``src.homr_runtime.api_compat`` directly. This
 entrypoint retains historical evaluator adaptation and re-exports the shared
@@ -244,20 +244,3 @@ def _run_entrypoint(evaluator: Any, argv: list[str]) -> None:
         sys.argv = original_argv
     if isinstance(result, int) and result != 0:
         raise SystemExit(result)
-
-
-def main() -> int:
-    from src.homr_eval_scripts import homr_evaluator
-
-    modes = install_homr_api_compat(homr_evaluator)
-    argv = _prepare_evaluator_argv(
-        homr_evaluator,
-        sys.argv[1:],
-        segnet_cache_mode=str(modes["segnet_cache_mode"]),
-    )
-    _run_entrypoint(homr_evaluator, argv)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

@@ -187,13 +187,6 @@ if __name__ == "__main__":
     if "--source-component" in sys.argv:
         component_main()
     else:
-        if os.environ.get("ISSUE447_OMR_REUSE") == "1":
-            if os.environ.get("ISSUE459_JOB_PROTOCOL") == "1":
-                from tools.issue459.omr_reuse_candidate import install
-            else:
-                from tools.issue447.omr_reuse_poc import install
-
-            install()
         workers = int(os.environ["ISSUE447_SOURCE_WORKERS"])
         events_value = os.environ.get("ISSUE447_SOURCE_EVENTS")
         install_source_prefetch(workers, Path(events_value) if events_value else None)

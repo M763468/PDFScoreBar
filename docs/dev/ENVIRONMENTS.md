@@ -11,8 +11,7 @@ unless an active Issue explicitly revives them.
 ### `pdfscore_pipeline_gpu`
 
 This is the maintained production-only full-pipeline Docker image. Its `/opt` payload
-contains no historical Stage-E runtime; retained compatibility tooling uses the separate
-`pdfscore_stage_e_reproduction` image.
+contains no historical Stage-E runtime. Historical reproduction uses commit `f6bbd1c0`.
 
 - Dockerfile: `Dockerfile`
 - Build target: `make docker-build`
@@ -59,7 +58,6 @@ The ownership rules are:
 | verified historical Stage-E HOMR stack | reproduction image only | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
 | Real-ESRGAN x2/x4 weights | Docker image | `/opt/pdfscore-assets/realesrgan` |
 | canonical smoke CNN bytes | Docker image, derived from the tracked #315 manifest | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
-| OMR-DLN `YOLOv8m_Measures.pt` | operator/external asset | selected manifest version in the common host model cache, mounted read-only below `/opt/pdfscore-external/omr-dln-measures/<version>/` |
 | repository source/config/input data | active checkout | bind-mounted at `/workspace` |
 | generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
 
@@ -83,21 +81,9 @@ and x4 support contract as `configs/dense_full_pipeline.yaml`. Docker still mate
 tracked manifest through `src.common.model_artifacts`, including its SHA-256 check, and exposes
 the verified bytes at the stable smoke-only compatibility path above.
 
-The OMR-DLN weight is different: it is externally distributed and is not silently downloaded,
-redistributed, or substituted by the Docker build. Register the selected official
-`YOLOv8m_Measures.pt` once in the common cache with:
-
-```bash
-python3 -m src.common.model_artifacts import \
-  models/omr_dln/manifest.json /path/to/official/YOLOv8m_Measures.pt
-```
-
-The import verifies the selected version digest before atomically publishing the file to the
-cache. Canonical `make verify-gpu-smoke` resolves that selected cache entry itself and mounts
-it read-only at the manifest-declared container path. `OMR_DLN_MODEL_PATH` remains an explicit
-compatibility override and is verified against the same selected-version digest before use.
-The legacy repository-local OMR-DLN path also remains accepted for compatibility, but it is
-not the canonical staging workflow.
+No operator/external detector weight is required. Since #522 the detector no longer uses the
+OMR-DLN measure detector (`YOLOv8m_Measures.pt`) or its Ultralytics runtime; hybrid support
+comes from x4 HOMR. Settings or handoffs that still name OMR-DLN fail explicitly.
 
 ### Source/image compatibility
 
@@ -243,47 +229,12 @@ commit and runtime paths are stored in:
 configs/detector_profiles/maintained_original_homr.json
 ```
 
-The historical Stage-E profile remains available as an isolated compatibility component
-for retained historical tooling. It is not a production dependency: the root `Dockerfile` contains no historical venv, cloned source,
-model downloads, or markers. Canonical preflight validates the maintained profile paths
-and the exact HOMR/evaluator marker values from its manifest.
-
-Build the reproduction extension explicitly from a production image:
-
-```bash
-make docker-build
-make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
-make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
-```
-
-The extension is `docker/Dockerfile.stage-e`; its default output is
-`pdfscore_stage_e_reproduction`. For an isolated build, set
-`ISSUE120_PRODUCTION_IMAGE=<production-image>` and `ISSUE120_STAGE_E_IMAGE=<reproduction-image>`
-on those Make commands. Pin the base to an immutable image ID when retaining reproduction
-provenance. Its separate asset-contract label excludes it from canonical image resolution,
-including explicit overrides to production preflight. This extension retains the historical
-source commits, model SHA-256 checks, and isolated dependency versions; it does not select the historical profile for production.
-
-The old Stage-E name is retained as a compatibility identifier for #120 tools, manifests,
-and accepted historical results. Its remaining purpose is exposing the pinned component to
-retained tooling and component comparison experiments. This extension inherits the current production main
-venv; it does not reconstruct the complete historical two-HOMR environment or guarantee
-its full68 metrics. Full historical environment reproduction is outside #398 acceptance.
-The canonical `maintained_original` route does not need it. Removing that compatibility contract or renaming its interfaces would be a separate retirement decision;
-no historical data, source pins, or profile is deleted here. The exact input images are still
-an external prerequisite, as recorded in the milestone below.
-
-The component profile's exact provenance, package versions, model hashes, and `/opt/` runtime
-paths are stored in:
-
-```text
-configs/detector_profiles/stage_e_verified_homr.json
-```
-
-The maintained original profile and current-runtime HOMR used by `current_x4_support` share
-the main image/runtime but retain separate input and coordinate contracts. The historical
-profile is not selected by the canonical dense route. See `TWO_HOMR_MILESTONE.md` for
-reproduction requirements.
+Historical Stage-E execution was retired in #522. The current detection entrance
+accepts only `maintained_original`. Reproduce historical Stage-E environments,
+Docker extension builds and runs from commit `f6bbd1c0` in a separate checkout.
+`configs/detector_profiles/stage_e_verified_homr.json` remains historical provenance
+(source pins, model hashes and accepted metrics), not an executable profile selector.
+Shared HOMR model contracts, connector processing and API compatibility helpers remain.
 
 ## Historical evaluation environments
 
@@ -314,9 +265,7 @@ The accepted two-HOMR milestone is **not fresh-clone reproducible** through the 
 compatibility extension: its exact evaluation images remain external, and the extension does
 not reconstruct the complete historical main dependency stack. The milestone doc separates
 those requirements from the retained Stage-E component pins. The Docker smoke removes the
-former ignored/local-only CNN dependency. OMR-DLN remains an explicit external asset, but once its
-selected version is registered in the common model cache, canonical smoke no longer depends
-on an ad-hoc checkout-local model path.
+former ignored/local-only CNN dependency, and since #522 no external OMR-DLN weight is needed.
 
 ## Persistent pytest-capable pipeline container
 
@@ -331,22 +280,16 @@ The commands below run against the manager checkout itself. A dedicated containe
 directly from an isolated candidate is an explicit exception. Browser checks use the separate
 runner described in [Local validation](LOCAL_VALIDATION.md#browser-validation).
 
-Create the container when absent. Resolve the production tag to a verified immutable image,
-and mount the registered external OMR-DLN weight so this container can run pipeline checks:
+Create the container when absent. Resolve the production tag to a verified immutable image:
 
 ```bash
 image_id=$(python3 scripts/docker_image_resolver.py resolve \
   --repo-root . --image-ref pdfscore_pipeline_gpu --explicit)
-omr_host=$(python3 -m src.common.model_artifacts verify models/omr_dln/manifest.json)
-omr_runtime=$(python3 -c \
-  'import json; print(json.load(open("models/omr_dln/manifest.json"))["runtime_path"])')
 docker run -dit --gpus all \
   --name pdfscore_pipeline_pytest_dev \
   -v "$PWD":/workspace \
-  -v "$omr_host:$omr_runtime:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  -e OMR_DLN_MODEL_PATH="$omr_runtime" \
   "$image_id" bash
 ```
 

@@ -1,10 +1,10 @@
 # パイプラインの設定と実行入口のリファレンス
 
-<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"085ef04ad1268157e34828b596e214d8aa163bf04059599a82c57ce890dba261"},"state":"reviewed"} -->
+<!-- translation: {"original":"CONFIGURATION_REFERENCE.md","source":{"sha256":"9970bf32c914cc282b13bd905aff35392f5d2181280669d1f50531ab7e490ec8"},"state":"reviewed"} -->
 
 [English / 原文](CONFIGURATION_REFERENCE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `085ef04ad1268157e34828b596e214d8aa163bf04059599a82c57ce890dba261`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `c55b2c357606fef11b63413268199a5a51e202fc725cb8afbefbc0858758f029`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 このリファレンスは、開発用パイプラインの起動方法と、正規の本番設定 `configs/dense_full_pipeline.yaml` の各キーが何を制御するかをまとめたものです。現在のソースの挙動を説明するもので、既定値を変えたり新しい設定を定めたりはしません。PR検証ワークフローで実行する `tests/test_configuration_reference.py` は、正規の設定のキーが本書または英語の原文のキーの表にない場合、複数回記載されている場合、記載した値が正規の値と異なる場合に失敗します。意味の列は検査しません。
 
@@ -15,7 +15,7 @@
 | 入口 | 対象 | 補足 |
 | --- | --- | --- |
 | `python3 docker/distribution.py build / preflight / run / review` | 配布パッケージの利用者 | [利用者ガイド](../USER_GUIDE.ja.md)を参照してください。 |
-| `bash scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke] [--pipeline-only]` | 開発者 | Docker ランタイムの契約を検証し、指定した config（既定は `configs/smoke_test.yaml`）を実行します。環境変数: `DOCKER_IMAGE`、`DOCKER_EXTRA_ARGS`、`PDFSCORE_SR_COMPILER_CACHE`、`PDFSCOREBAR_MODEL_CACHE`、`OMR_DLN_MODEL_PATH`。 |
+| `bash scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke] [--pipeline-only]` | 開発者 | Docker ランタイムの契約を検証し、指定した config（既定は `configs/smoke_test.yaml`）を実行します。環境変数: `DOCKER_IMAGE`、`DOCKER_EXTRA_ARGS`、`PDFSCORE_SR_COMPILER_CACHE`、`PDFSCOREBAR_MODEL_CACHE`。 |
 | `python -m src.pipeline.main --config PATH [options]` | 開発者（準備済みの環境内） | パイプラインを直接実行します。マウントとイメージの来歴は呼び出し側の責任です。 |
 | `make <target>` | 開発者 | [Makefile サーフェス](MAKEFILE_SURFACE.ja.md)を参照してください。 |
 
@@ -77,15 +77,12 @@
 | `detection.source_concurrency.workers` | `1` | SR の終了後に並行して動かすページソースの worker 数。2 worker は検証済みの環境でだけ選ぶ任意の設定です。[source の並行処理](../performance/issue458-source-concurrency.md)を参照してください。 |
 | `detection.source_concurrency.timeout_sec` | `900` | ページソースの処理のタイムアウト。 |
 | `detection.source_concurrency.on_unavailable` | `error` | 要求した並行数を使えない場合の挙動。同じ文書を参照してください。 |
-| `detection.omr_job_reuse.mode` | `auto` | `auto` は下記の実測済み範囲で OMR-DLN をジョブ単位で1回だけ起動します（順序付き全ページでモデルを1回ロード）。`off` はページごとに OMR プロセスを起動します。経路はジョブ開始前に確定し、失敗時にもう一方の経路へフォールバックしません。[OMR job reuse](../performance/issue459-omr-job-reuse.md) を参照。 |
-| `detection.omr_job_reuse.min_pages` | `2` | ジョブ経路を使う最小ページ数。1ページのジョブはページ単位の経路を使います。 |
-| `detection.omr_job_reuse.allowed_uids` | `[0]` | ジョブ経路を使うプロセス UID。標準 deployment は root です。それ以外の UID はページ単位の経路を使います。 |
-| `detection.omr_job_reuse.timeout_sec` | `900` | OMR job worker のタイムアウト。超過するとプロセスグループを kill し、ジョブは失敗します。 |
+| `detection.omr_job_reuse`、`detection.omr_dln_model_path`、`detection.omr_dln_device` | 廃止（#522） | OMR-DLN は使用しなくなりました。これらのキーを設定したままの config は検出処理が拒否します。 |
 | `detection.enable_sr` | `true` | HOMR の推論の前に超解像を実行します。 |
 | `detection.sr_scale` | `4` | 超解像の倍率。 |
 | `detection.sr_compile_mode` | `reduce-overhead` | バッチ SR worker のモデルのコンパイルモード。 |
 | `detection.homr_profile` | `maintained_original` | 保守対象の HOMR ランタイムのプロファイル。 |
-| `detection.detector_route` | `dense_full_pipeline` | 検出器の経路。探索・比較のモデルモードはこの経路を必要とします。 |
+| `detection.detector_route` | `dense_full_pipeline` | 検出器の経路。`dense_full_pipeline`が唯一の経路で、省略時もこの経路になります。削除済みの`standard`と未知の値はエラーになります（#522）。 |
 | `detection.probe_use_original_images` | `true` | 探査検出は、SR の出力ではなく元のページ画像を読みます。 |
 | `detection.crop_recenter_on_bbox_ink` | `true` | CNN の切り出しをボックス内のインクに合わせて中心を調整します。 |
 | `detection.hybrid_output_root` | `logs/full_pipeline_runs/dense_full_pipeline/hybrid_output` | 検出器の中間成果物の出力ルート。 |
@@ -154,7 +151,7 @@
 
 | キー | 所有文書 |
 | --- | --- |
-| `detection.model_validation`、`detection.cnn_model_path`、`detection.cnn_device`、`detection.omr_dln_model_path`、`detection.omr_dln_device`、`detection.model_sha256` | [開発用モデルの選定](EXPERIMENT_MODEL_SELECTION.md) |
+| `detection.model_validation`、`detection.cnn_model_path`、`detection.cnn_device`、`detection.model_sha256` | [開発用モデルの選定](EXPERIMENT_MODEL_SELECTION.md) |
 | その他の `detection.source_concurrency` の設定 | [source の並行処理](../performance/issue458-source-concurrency.md) |
 | `mmr.rapidocr_provider` | [MMR RapidOCR のプロバイダモード](MMR_RAPIDOCR_PROVIDER.ja.md) |
 | `inputs.movement_boundaries` | [楽章境界の契約](../contracts/MOVEMENT_BOUNDARY_CONTRACT.ja.md) |

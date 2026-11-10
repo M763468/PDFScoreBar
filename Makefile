@@ -1,4 +1,4 @@
-.PHONY: help lint format clean-artifacts clean-logs docker-clean docker-clean-full docker-build promote-log run-smoke run-smoke-sr test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-service-readiness-container verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links run-pipeline eval-issue120-full verify-issue120-stage-b verify-issue120-stage-b-native regen-issue120-stage-d-upstream verify-issue120-stage-d summarize-issue120-stage-d compare-issue120-stage-d-boxes repo-tree check-makefile test issue-post-mortem visual-diff
+.PHONY: help lint format clean-artifacts clean-logs docker-clean docker-clean-full docker-build promote-log run-smoke run-smoke-sr test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-service-readiness-container verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links run-pipeline eval-issue120-full verify-issue120-stage-b verify-issue120-stage-b-native verify-issue120-stage-d summarize-issue120-stage-d compare-issue120-stage-d-boxes repo-tree check-makefile test issue-post-mortem visual-diff
 
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
@@ -216,23 +216,6 @@ verify-issue120-stage-b-native: ## [issue #120 reproduction] Re-score candidates
 		--staff-units-json "$(ISSUE120_STAFF_UNITS_JSON)" \
 		--xdist-unit-ratio "$(ISSUE120_XDIST_UNIT_RATIO)" \
 		$$BANDS_ARG $$CLEAN_ARG
-
-regen-issue120-stage-d-upstream: ## [issue #120 reproduction] Regenerate Stage-D upstream artifacts in Docker/GPU
-	@mkdir -p artifacts
-	@LOG_FILE="artifacts/issue120_stage_d_regen_$$(date +%Y%m%d_%H%M%S).log"; \
-	CLEAN_ARG=""; \
-	SCORES_ARG=""; \
-	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
-	if [ -n "$(ISSUE120_STAGE_D_SCORES)" ]; then SCORES_ARG="--scores $(ISSUE120_STAGE_D_SCORES)"; fi; \
-	echo "Running Issue #120 Stage-D upstream regeneration. Logging to $$LOG_FILE..."; \
-	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
-		$(ISSUE120_DOCKER_PYTHON) tools/issue120/run_stage_d_upstream_regen.py \
-		--image-root "$(ISSUE120_IMAGE_ROOT)" \
-		--output-root "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
-		--compose-source "$(ISSUE120_STAGE_D_COMPOSE_SOURCE)" \
-		$$CLEAN_ARG $$SCORES_ARG > "$$LOG_FILE" 2>&1 || \
-		(EXIT_CODE=$$?; echo "Stage-D upstream regeneration failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
-	echo "Stage-D upstream regeneration complete. See $$LOG_FILE"
 
 verify-issue120-stage-d: ## [issue #120 reproduction] Run Stage-C verifier against regenerated Stage-D upstream artifacts
 	@mkdir -p artifacts

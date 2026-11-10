@@ -17,7 +17,6 @@ from src.pipeline.core.manifest import build_manifest
 from src.pipeline.detection.connector_artifacts import (
     capture_homr_threshold_masks,
     install_homr_connector_artifact_capture,
-    install_homr_skip_existing_guard,
 )
 
 
@@ -271,28 +270,3 @@ def test_predictor_failure_invalidates_previous_semantic_pair(tmp_path: Path) ->
 
     assert not (tmp_path / "score_connector_symbols.png").exists()
     assert not (tmp_path / "score_connector_brace_dot.png").exists()
-
-
-def test_skip_existing_requires_complete_connector_artifacts(tmp_path: Path) -> None:
-    class FakeDetector:
-        def _all_stems_exist(self, base_dir, stems_to_check, glob_pattern):
-            return True
-
-    assert install_homr_skip_existing_guard(FakeDetector)
-    detector = FakeDetector()
-    assert not detector._all_stems_exist(tmp_path, ["score"], "batch/*/*.json")
-
-    page_dir = tmp_path / "batch" / "score"
-    page_dir.mkdir(parents=True)
-    _write_mask(page_dir / "score_staff_mask.png", np.zeros((10, 10), dtype=np.uint8))
-    write_connector_masks(
-        page_dir,
-        "score",
-        {
-            "symbols": np.zeros((10, 10), dtype=np.uint8),
-            "brace_dot": np.zeros((10, 10), dtype=np.uint8),
-        },
-    )
-
-    assert detector._all_stems_exist(tmp_path, ["score"], "batch/*/*.json")
-    assert detector._all_stems_exist(tmp_path, ["score"], "other/*.json")

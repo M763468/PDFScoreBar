@@ -6,14 +6,157 @@
 > **法的助言ではない。** 本文書はライセンス文、上流の表示、現行ソースから読み取れる事実と一般的な解釈を整理したもの。
 > 「未確定」と書いた項目は推測で埋めず、必要なら専門家確認を経て判断する。
 
-## 0. 追補: #522 による変更（2026-11-08、PR merge 時点で有効）
+## 0. 現行運用監査（2026-11-11 JST、`develop@52da54ec7a8f`）
 
-以下の §2 以降は `develop@3f7c8a632c6b` 時点の snapshot として残す。[#522](https://github.com/M763468/PDFScoreBar/issues/522) は production の構成を次のように変えるため、該当する行はこの追補が優先する。
+**この節が現在の監査の入口・提供判断の正本。** 以下の §1–§10 は PR #518 により採用された
+`develop@3f7c8a632c6b`（2026-11-07）時点の監査スナップショットであり、歴史的証拠として保持する。
+旧節の「現行」「必須」「ブロッカー」の記述が本節と矛盾する場合は本節を優先する。
+本節は法律上の最終判断ではない。上流表示・依存定義・実際のイメージ同梱・提供方法を区別する。
 
-- **OMR-DLN 配布重み `YOLOv8m_Measures.pt`**: 取得・import・マウント・ロード・推論のいずれも不要になった。`models/omr_dln/manifest.json`、OMR-DLN worker と job 経路、`OMR_DLN_MODEL_PATH` を削除した。hybrid の支持は x4 HOMR の五線片支持に置き換えた（受入は #522 の Full68 / 下流 / fresh E2E の記録を参照）。§3 と §6 の「未許諾の重みへの依存」は production から解消される。研究実験としての旧重みの利用歴と、#416／#519 までの受入結果の来歴は残る。
-- **Ultralytics（AGPL-3.0）**: `pyproject.toml` から削除し、イメージにも含まれない（`importlib.util.find_spec("ultralytics") is None` を build 後に確認）。§5 の結合著作物の検討対象から外れる。
-- **変わらないもの**: HOMR（AGPL-3.0、改変版を同一プロセスで使用）と PyMuPDF（AGPL-3.0／商用の二重ライセンス）は残る。そのため、結合したものを渡す・ネットワーク越しに提供する際の AGPL の義務（§4／§5）と、#505 の first-party ライセンス決定の必要性は**変わらない**。HOMR ONNX 重みの条件、ImageNet 初期化の first-party 重み（MMR）の条件も、従来どおり未確定である。
-- **副作用**: Ultralytics を除去した build では torch が 2.15.0 になった（同日に build した develop の image は 2.14.0。依存解決上の原因は未確認）。受入済み runtime と一致させるため、`torch==2.14.0`、`torchvision==0.29.0` を明示的に固定した。`psutil==7.2.2` も、Ultralytics 経由でしか入っていなかったため明示した。
+### 0.1 対象と確定した変更
+
+- 基点: `develop@52da54ec7a8fe7e65434abc8bfcd23306f0e4cee`
+  （[PR #523](https://github.com/M763468/PDFScoreBar/pull/523)、2026-11-11 JST マージ）。
+  `main@d8c54148a275dbd74411f2012f44da92b6fbe74c` は別のリリースツリーで、まだ
+  `ultralytics==8.3.239` と `models/omr_dln/manifest.json` を持つ。**`develop` の監査結果を
+  `main`/既配布物へ自動的に適用しない。**
+- `develop` の production は OMR-DLN 重み `YOLOv8m_Measures.pt` の取得・import・mount・load・推論を
+  行わず、Ultralytics も直接依存から削除された。検出は
+  `dense_full_pipeline` / `maintained_original` と x4 HOMR 五線片支持で実行する。
+  廃止した OMR の設定は未知キーとして拒否する。旧 OMR 関連コード・重みの法的な調査は歴史的証拠に
+  留め、**現在の配布ブロッカーや新規再学習タスクとして再掲しない**。
+- [#519](https://github.com/M763468/PDFScoreBar/issues/519) の単純な no-OMR ablation は
+  TP3559 / FP0 / FN8 で旧ゲート FAIL のまま保持。採用された #522 / #523 の
+  **retained-producer Full68 replay** は TP3560 / FP0 / FN7、物理小節3287、
+  MMR 171/3/3/0。OMR 重みなしの **fresh 1ページ E2E** は 85/85 で成功。
+  **fresh Full68 の再推論を実施した結果ではない。**
+- 今回の調査は source/manifest/上流表示の読み取りであり、最新イメージの
+  `importlib.metadata` 全件再取得・GPU実行・コンテナ再ビルドは **未実施**。
+  §1 にある「102 distribution」は旧イメージの記録であり、今回の最新SBOMではない。
+
+### 0.2 現行の主要コード依存・改変・通知
+
+| 対象 | `develop` の固定対象/取得経路 | 権利・結合上の整理 | 必要な継続作業 |
+| --- | --- | --- | --- |
+| **HOMR** | `Dockerfile` の git commit `457e7c6518a10ba755db2e60883419e56c4d7369` | [固定版の AGPL-3.0](https://github.com/liebharc/homr/blob/457e7c6518a10ba755db2e60883419e56c4d7369/LICENSE)。engine が同一プロセスで利用。`docker/patch_homr_onnx_provider.py` のインストール済みソース書換え、および `src/homr_runtime/api_compat.py` の実行時互換処理がある | 改変箇所・日付・提供すべき差分、ビルド/モデル初期化手順と対応ソース範囲を確定 |
+| **PyMuPDF / MuPDF** | `PyMuPDF==1.26.4`（直接固定） | [AGPL-3.0 と商用ライセンスの二重体系](https://pymupdf.io/licensing)。PDF描画・入力検査・最終PDF・番号レイヤ・補正/再開に使用。改変は旧監査時点でなし | 出力/補正と入力描画を分け、結合範囲・通知・代替評価を管理 |
+| **Real-ESRGAN** | git `a4abfb2979a7bbff3f69f58f58ae324608821e27` | BSD-3-Clause、SR worker で使用 | ソースのBSD表示、リリース重みの個別条件を区別 |
+| **BasicSR** | Real-ESRGAN 経由、旧画像では `1.4.2` | Apache-2.0。`Dockerfile` が `basicsr/data/degradations.py` の import 1行を変更 | **改変通知**と該当ソース/patch、最新版の解決版を記録 |
+| **RapidOCR / ONNX Runtime GPU** | `rapidocr-onnxruntime==1.4.4` / `onnxruntime-gpu==1.24.4` | RapidOCR: Apache-2.0、ONNX Runtime: MIT。OCR/推論経路 | 同梱 ONNX 重み・依存の NOTICE とモデル別権利を確認 |
+| **PyTorch / torchvision** | `torch==2.14.0` / `torchvision==0.29.0` を直接固定 | BSD系。Ultralytics削除による間接解決差を抑制 | CUDA/triton等を含む実インストール版・NOTICE をSBOMで確認 |
+| **OpenCV / NumPy等** | `pyproject.toml` の直接固定（`psutil==7.2.2` を含む） | 主として permissive。完全な間接依存一覧は未取得 | 新しい固定イメージでライセンス・配布ファイルを再照合 |
+| **CUDA / Ubuntu** | `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04` | NVIDIA独自条件、OSのGPL/LGPL等を含む。Docker image を渡す場合は別の配布義務が生じ得る | イメージ再配布か利用者自身のビルドかを明示して扱う |
+| **OMR-DLN / Ultralytics** | `develop` production から除去 | **現在は不使用**。§2/§6 の旧監査記載は #523 前の証拠 | 既配布 `main` と履歴再現環境のみ別管理。置換・再学習は不要 |
+
+`pyproject.toml` の直接依存と `Dockerfile` で導入するVCS依存は固定されているが、
+`uv.lock` による完全な間接依存固定はない。旧イメージでの
+`pypdfium2==5.13.0` 等の実在は**最新ビルドのインストール保証ではない**。
+必ず「source定義」「実際のsite-packages」「image中の配布・重み」を分ける。
+
+### 0.3 モデル重み・学習データの権利を分離する
+
+| 資産 | 現行の導入/配布 | 2026-11-11時点で言えること・未確定点 |
+| --- | --- | --- |
+| **HOMR segmentation / transformer / ONNX** | `python -m homr.main --init --gpu force` でイメージに取得 | 上流の [LICENSE_FAQ.md](https://github.com/liebharc/homr/blob/main/LICENSE_FAQ.md)（2026年10月公開）および [作者回答](https://github.com/liebharc/homr/issues/187#issuecomment-6170272605) は**重みもAGPLで公開する意向**を明示。§3の「重みの個別ライセンス表示なし」だけでは現状を説明しきれない。ただし FAQ は固定コードcommitより後の説明であり、実際に取得されるrelease asset/checkpoint/hashへの対応の照合が残る |
+| HOMR segmentation の学習データ | DeepScoresV2 | 上流FAQによれば CC BY 4.0。重みと学習データを同一の権利物と推定しない |
+| HOMR transformer の学習データ | OpenScore Lieder / StringQuartets、GrandStaff、Camera-PrIMuS 等 | 上流FAQによれば OpenScore はCC0、GrandStaffは取得元に明示表示なし（HF複製はMIT）、**PrIMuSは元配布先に表示なし、HF複製はCC BY-NC 4.0**。全公開Transformer checkpointにPrIMuSが含まれるとの上流説明。さらに世代によってPDMX等の混入が異なる。**非商用条件が重みへ波及するかは上流も法的に未確定と認める**。商用配布/提供を自動許諾されたと判断しない |
+| Real-ESRGAN x2/x4 | `Dockerfile` で上流releaseから取得、SHA-256照合後にimage同梱 | リポジトリのBSD-3-Clauseだけで各checkpointの来歴・再配布条件を確定しない |
+| RapidOCRモデル | 関連wheel/初期化資産 | コード・モデルそれぞれの表示と同梱物を次回SBOMで確認 |
+| Barline CNN | `models/barline_cnn/manifest.json` の固定GitHub release | first-party学習。重みの付与条件と初期化元を #505 と区別して確認 |
+| MMR | `models/mmr/mmr_classifier_best.pth` をgit管理 | first-party学習、ImageNet事前学習を使った履歴あり。出典・派生条件を確認しないままコードのLICENSEを適用しない |
+| 評価GT / fixture / 利用者PDF | 権利・取得元が異なる | 元の楽譜著作物、座標ラベル、合成fixture、ユーザーPDFを一括で再許諾しない。#505の権利分類を参照 |
+| **OMR-DLN重み** | 現行の取得・配置・推論なし | 旧 §3/§6 は歴史的研究の証拠。production の重み・クラウド許諾ブロッカーから除外 |
+
+上流FAQの「重みはAGPL」という記述は、**学習データを含むあらゆる権利の保証ではない**。
+とくに商用化時は実際のcheckpoint/学習データと利用形態を特定したうえで、必要なら法律専門家に確認する。
+作者への新規問い合わせは本Issueの現行方針では行わない。
+
+### 0.4 現行の結合と提供形態（要件の判断表）
+
+engine（`src/pipeline`、`src/homr_runtime`）はHOMRを直接利用し、PDF処理・補正/再開経路には
+PyMuPDF が入る。`docker/review_relay.py` は `tools.review_correction.server.create_server` を
+同一プロセスで読み込むため、単なる独立ネットワークプロキシとしてAGPL検討範囲から除外しない。
+ブラウザ側HTML/JSとランチャー、将来の独立Web入口は結合/著作物の境界を個別に検討する。
+**単に別リポジトリ・別プロセスとすることだけで独立とは結論しない。**
+
+以下は公開条文に基づく**遵守計画上の分類**であり、個別の結合著作物の法的判断を確定しない。
+典拠: [AGPLv3 §1/§4–6/§13](https://www.gnu.org/licenses/agpl-3.0.html)、
+[GNU FAQ](https://www.gnu.org/licenses/gpl-faq.html)、
+[PyMuPDF licensing](https://pymupdf.io/licensing)、
+[HOMR FAQ](https://github.com/liebharc/homr/blob/main/LICENSE_FAQ.md)。
+
+| 項目 | (a) 内部実験 | (b) 配布（実行物/フォルダ/image） | (c) 招待制GPU/Web |
+| --- | --- | --- | --- |
+| AGPLの対応ソース・著作権/ライセンス通知 | 通常 **対象外**（第三者への複製物提供・遠隔ユーザーなし） | **必須**（AGPL対象のobject codeを受領者へ渡す場合）。改変版と構成・ビルド手順等を含む対応ソースを実行物と整合させる | **条件付き必須**（改変AGPL版にネットワーク経由で利用者が対話する場合、§13の無償ソース取得機会を提示）。ユーザーとの対話経路と対象ソース範囲を確定 |
+| 自前のfirst-partyコードの利用許諾 | 内部開発は継続 | **未整備の提供ゲート**。結合物に必要な互換許諾を満たす方法を #505 のリリース判断に接続 | **未整備の提供ゲート**。AGPL結合の扱いとSource案内を具体化。独立Web入口全体が自動的にAGPLとは限らない |
+| HOMR のpatch・互換処理 | 使用する版を保持 | **必須/要確認**: 改変表示、日付、取得元、差分/ビルド手順を含む対応ソース | **条件付き必須**: 実際の改変・ネットワーク提供と結合範囲で判定 |
+| PyMuPDF のライセンス | 利用条件を確認 | **必須**: AGPL経路を取る場合は対象物の対応ソース・通知等、または必要な商用許諾 | **条件付き/要確認**: AGPL結合・ネットワーク提供の実態を評価し、必要な場合Source案内 |
+| **HOMR / 他モデル重み** | 学習元などの不確実性は残る | **未確定**: image同梱checkpointと学習データ由来の条件を要確認 | **未確定**: 同じ重みを第三者サービスに使う権利はAGPL表記だけでは確定しない |
+| Ubuntu/GPL・NVIDIA等 | 自身の環境で使用 | **条件付き必須**: ビルド済みimage等を渡す場合、個別の再配布・ソース/通知条件を確認 | **条件付き**: imageを利用者に渡さない場合は配布義務と分けるが、運用・利用条件は別途確認 |
+| OMR-DLN/Ultralytics | 現行runtimeから除去 | **対象外**（新しい`develop` runtimeの配布） | **対象外**（新しい`develop` runtimeの実行） |
+
+「試用者が少人数だから免除」「公開GitHubならすべて満たせる」「全周辺サービスのソースが必須」
+のいずれとも断定しない。実際の対象版、提供相手、object codeの有無、遠隔利用、改変の有無を
+案件ごとに記録する。受領者自身がソースからビルドする方式は、**当方がobject codeを渡す方式とは
+区別**するが、それだけでfirst-partyの許諾問題や必要な通知を解決したことにはしない。
+
+### 0.5 解消済み事項、残るブロッカーと #505 / #508 への引継ぎ
+
+**解消済み（`develop`限定）:** OMR-DLN の出所不明な配布重みを
+取得/配置する必要と、その推論に伴うUltralytics依存。#519/#522はClosed。
+#523で Full68 replay・下流・補正・fresh 1ページの検証結果は確定した。
+PDF出力4ページの配置失敗は OMR と独立の [#524](https://github.com/M763468/PDFScoreBar/issues/524)
+で管理し、本監査のライセンス課題と混同しない。
+
+**未解消:** HOMRの対応ソース/改変通知、HOMR重み（特にPrIMuS）の権利・checkpoint同定、
+PyMuPDFのAGPL結合範囲、第三者NOTICE、各資産を含む新イメージの依存SBOM、
+配布時のUbuntu/NVIDIA条件、実行版と一致するSource配布手順。
+
+**#505の方針は変更しない。** 現時点で `develop` にfirst-partyの
+`LICENSE`/`NOTICE`/`REUSE.toml`/`pyproject.toml license` を追加することはしない。
+AGPL-3.0-or-laterをfirst-partyの第一候補とする意思は維持し、OMR除去を含む必要な整備と
+`main` への昇格を済ませた**正式リリース時**に、対象ツリーと整合したライセンス付与を行う。
+[#505](https://github.com/M763468/PDFScoreBar/issues/505) のオーナー決定・focusedなrelease PRとは分離する。
+**first-party LICENSEがまだないことは、第三者ライセンス義務を消さない。**
+
+**#508への試用ゲート:** 実際に使用するbranch/image/方式を指定し、上表 (b)/(c) の該当項目に
+許諾・通知・Source案内を対応させる。`main` と現在の配布物がOMR依存を持つ間は
+「OMR不要」としてGo判定しない。試用者に渡す版がどれかを固定する。
+
+### 0.6 permissive代替の再優先順位（本Issueは評価計画まで）
+
+1. **PyMuPDFの最終PDF・番号レイヤ・補正/再開:** `pikepdf`/`pypdf` 等と機能・低水準PDF操作を比較。
+   AGPL結合面積を減らせる見込みがある一方、原注釈・所有レイヤ・undo/resume・フォント/幾何が難所。
+   [#524](https://github.com/M763468/PDFScoreBar/issues/524) の既存renderer失敗を候補回帰と誤分類しない。
+   対象版・基準renderer・入力・出力契約・rollbackを固定して別Issueで評価する。
+2. **PyMuPDFの入力レンダリング:** `pypdfium2`/PDFiumを候補とするが、レンダリング差は
+   認識器入力も変える。出力経路置換とは分離し、Full68 GT・小節番号・PDF geometry・性能を検証する。
+   旧イメージの間接インストール情報だけで最新イメージに存在すると仮定しない。
+3. **HOMR:** 中核依存。現時点で精度同等のpermissiveな既存代替の採用根拠なし。
+   一律置換は目的化せず、法的な遵守策と重みの不確実性の解消を先行する。
+4. **OMR-DLN代替モデル/独立再学習:** #522/#523で不要と判断済み。
+   新たな性能・精度・権利問題の根拠がない限り再開しない。§7の旧候補は歴史的計画。
+
+各置換のproduction化は本Issueの範囲外。必要なときだけ focused Issue/PR に切り出し、
+合意済みの検出/番号/補正/再開/PDF幾何/性能ゲートを変更せず、失敗も保持する。
+
+### 0.7 次の監査証拠と終了条件
+
+1. **最新imageのSBOM（未実施）:** `develop@52da54ec7a8f` の検証済みimage digestと
+   source fingerprint、pip/importlib の全distribution（版・license/SPDX/URL/著作権/同梱 LICENSE）、
+   VCS `direct_url.json`、`dpkg-query`、CUDA/NVIDIA wheel、実際のHOMR/Real-ESRGAN/OCR資産と
+   digestを機械可読で保存する。旧 §1 の102 distributionは照合用であり再利用して終わりにしない。
+2. **対応ソースを実物で再構成:** imageに含まれるHOMR commit、パッチ、BasicSR改変、
+   `Dockerfile`、source tree/manifest、モデル取得処理を固定し、第三者通知の版と一致させる。
+3. **モデル権利を照合:** `homr.main --init` が選ぶrelease/checkpointと現物hashを上流FAQの
+   モデル世代へ突き合わせ、PrIMuS学習元・商用利用リスクを「確定/未確定」に分ける。
+   不足している許諾を推測で補完しない。
+4. **提供前に適用:** (b)/(c)の実際の配布候補についてNOTICE/対応ソース/配布手段を照合し、
+   #505のfirst-partyライセンス正式適用および#508のGo/No-goへ具体的に渡す。
+5. **置換課題は分割:** PyMuPDF出力系と描画系の実装・回帰検証は別のfocused Issueへ。
+   #504は長期監査トラックとしてOpenを維持し、後続Issueがあるだけで監査文書のマージを止めない。
+
+---
 
 ## 1. 位置付けと証拠
 

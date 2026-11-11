@@ -24,6 +24,7 @@ from src.pipeline.review.final_output import (
     _first_page_payload,
     _resolve_package_path,
     _row_label_records,
+    _show_row_label,
     first_five_line_run,
 )
 
@@ -73,12 +74,17 @@ def records_from_run(handoff, run):
         )
         with Image.open(source_image) as image:
             size = image.size
+        suppressed_rows: list[str] = []
         result.append(
             {
                 "source_pixels": size,
                 "rows": _row_label_records(
-                    page_id=page["page_id"], page_number=page["page_number"], page_payload=payload
+                    page_id=page["page_id"],
+                    page_number=page["page_number"],
+                    page_payload=payload,
+                    suppressed_rows=suppressed_rows,
                 ),
+                "suppressed_number_one_rows": suppressed_rows,
             }
         )
     return result
@@ -325,12 +331,22 @@ def write_number_layer(
             # PyMuPDF otherwise adds its q/Q wrapper streams during the first insertion.
             page.wrap_contents()
             contents = page.get_contents()
-            current = {"source_contents": contents, "number_streams": [], "labels": []}
+            current = {
+                "source_contents": contents,
+                "number_streams": [],
+                "labels": [],
+                "suppressed_number_one_rows": list(
+                    numbering[index].get("suppressed_number_one_rows", [])
+                ),
+            }
             occupied = []
             previous_top = None
             width, height = numbering[index]["source_pixels"]
             sx, sy = page.mediabox.width / width, page.mediabox.height / height
             for row in numbering[index]["rows"]:
+                if not _show_row_label(row["row_start_measure_number"]):
+                    current["suppressed_number_one_rows"].append(row["row_id"])
+                    continue
                 x0, y0, x1, y1 = row["top_staff_bbox"]
                 staff = fitz.Rect(
                     x0 * sx - page.cropbox.x0,

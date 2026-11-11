@@ -14,6 +14,15 @@ request and write. Recorded correction outputs remain in that package's `review/
 attempts and copied inputs are isolated under `review/application_runs/`; the corrected final PDF
 stays in each attempt's `corrected/final/` directory.
 
+Both PDF outputs omit row-start number 1, including after a movement reset. Pickup number
+0 and subsequent row-start numbers are eligible for display. The final summary and annotated
+PDF sidecar list intentionally suppressed row IDs separately from drawn labels.
+For raster output, the renderer first searches near the 9pt staff-relative slot. It then
+checks the left gutter and above the staff start, with a vertical limit of 36pt upward
+and 12pt downward from the slot. The page bounds and clearance around score ink still apply.
+If a displayed label cannot be safely placed, the attempt reports a placement error and
+publishes no new numbered PDF (or layer sidecar).
+
 `tools/gt_relabel_gui/server.py` is the separate developer entrypoint. Its `gt`, `rest`, and
 `relabel` modes may edit canonical GT/evaluation data or relabel templates. Its legacy `manual`
 mode and arbitrary config/root options are developer-only compatibility surfaces; they are not

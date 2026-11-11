@@ -1,14 +1,17 @@
 # 利用者の補正と GT ツールの境界
 
-<!-- translation: {"original":"USER_CORRECTION_BOUNDARY.md","source":{"sha256":"622a71e06f827ba35a8294f03692dacdd253a5217f2baa7e4b639a6eed4ebe58"},"state":"reviewed"} -->
+<!-- translation: {"original":"USER_CORRECTION_BOUNDARY.md","source":{"sha256":"09562f25ece242160a44e74f4d7b0865b1cc1c3c7f51799806560bb3b62d1e03"},"state":"reviewed"} -->
 
 [English / 原文](USER_CORRECTION_BOUNDARY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `622a71e06f827ba35a8294f03692dacdd253a5217f2baa7e4b639a6eed4ebe58`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `09562f25ece242160a44e74f4d7b0865b1cc1c3c7f51799806560bb3b62d1e03`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 この開発者向けリファレンスは、利用者向け補正ツールと GT ツールの責務と永続化の境界を説明します。通常の利用者操作は[ユーザーガイド](../USER_GUIDE.ja.md)を参照してください。
 
 サポート対象の利用者向け補正アプリケーションは `tools/review_correction/server.py` です。検証済みの `review/manual_correction_input.json` パッケージを一つ開きます。handoff はページ、読み取り可能な成果物、補正の出力先を指定します。サーバーは手動レビュー UI とその UI に必要なルートだけを公開します。`127.0.0.1` で待ち受け、そのローカルアドレスを HTTP host として受け入れ、書き込みには同一 origin の JSON リクエストを要求します。ファイルの要求と書き込みのたびに、シンボリックリンクを含む解決後のパスを再検査します。記録された補正はそのパッケージの `review/corrections/` に残ります。適用の試行とコピーされた入力は `review/application_runs/` に分離され、補正済み最終 PDF は各試行の `corrected/final/` に置かれます。
+
+通常 PDF と書き込み入り PDF では、楽章リセット後も含めて行頭番号 1 を表示しません。アウフタクトの 0 と後続の行頭番号は表示対象です。最終サマリーと番号レイヤーの sidecar は、意図的に非表示にした段 ID を描画済みラベルと分けて記録します。
+通常 PDF は五線を基準とする 9pt の位置の近傍を優先し、空きがなければ左余白と五線左端の上方を探します。上下の探索は基本位置から上に 36pt、下に 12pt までで、ページ境界と印刷インクからの間隔を守ります。表示対象の番号に安全な位置がなければ配置エラーを報告し、新しい番号付き PDF と sidecar は公開しません。
 
 `tools/gt_relabel_gui/server.py` は別の開発者向け入口です。`gt`、`rest`、`relabel` モードは正規 GT／評価データや relabel テンプレートを編集する場合があります。旧 `manual` モードと任意の config／root オプションは開発者専用の互換機能であり、利用者の補正セッションを開くサポート対象の方法ではありません。GT エディターの動作はここでは変更されません。
 

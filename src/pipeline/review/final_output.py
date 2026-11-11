@@ -24,6 +24,7 @@ _LABEL_FONT_CANDIDATES = (
 _LABEL_FONT_POINTS = 9.0
 _LABEL_GAP_POINTS = 1.75
 _LABEL_SEARCH_POINTS = 12.0
+_LABEL_ABOVE_SEARCH_POINTS = 36.0
 _LABEL_DARK_THRESHOLD = 160
 STAFF_LINE_COVERAGE = 0.5
 STAFF_LINE_WINDOW_FRACTIONS = (0.2, 0.1, 0.05)
@@ -225,11 +226,17 @@ def _measure_number(raw_measure: dict[str, Any]) -> int | None:
     return None
 
 
+def _show_row_label(number: int | str) -> bool:
+    # A movement reset can assign 1 again. Keep pickup 0 and continuation numbers.
+    return int(number) != 1
+
+
 def _row_label_records(
     *,
     page_id: str,
     page_number: int,
     page_payload: dict[str, Any],
+    suppressed_rows: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     systems = page_payload.get("systems")
     if not isinstance(systems, list):
@@ -269,6 +276,11 @@ def _row_label_records(
         ]
         if not staff_bboxes:
             continue
+        row_id = f"row_{row_index + 1:03d}"
+        if not _show_row_label(first_measure[1]):
+            if suppressed_rows is not None:
+                suppressed_rows.append(row_id)
+            continue
         measure_bboxes = [
             _bbox_values(
                 measure.get("bbox"),
@@ -284,7 +296,7 @@ def _row_label_records(
             {
                 "page_id": page_id,
                 "page_number": page_number,
-                "row_id": f"row_{row_index + 1:03d}",
+                "row_id": row_id,
                 "row_bbox": list(row_bbox),
                 "top_staff_bbox": list(top_staff_bbox),
                 "row_start_measure_number": first_measure[1],
@@ -354,6 +366,8 @@ def _draw_row_start_labels(
     reach = round(_LABEL_SEARCH_POINTS * pixels_per_point)
 
     for record in records:
+        if not _show_row_label(record["row_start_measure_number"]):
+            continue
         text = str(record["row_start_measure_number"])
         top_staff = record["top_staff_bbox"]
         row_left = record["row_bbox"][0]
@@ -389,10 +403,29 @@ def _draw_row_start_labels(
             None,
         )
         if found is None:
+            # Use the gutter up to the page edge and the space above the staff
+            # start. Try each pixel so the coarse grid cannot miss a clear slot.
+            above_reach = round(_LABEL_ABOVE_SEARCH_POINTS * pixels_per_point)
+            candidates = (
+                (x, y)
+                for y in range(max(padding, slot_y - above_reach), slot_y + reach + 1)
+                for x in range(padding, min(int(row_left), width - text_w - padding) + 1)
+                if clear(x, y)
+            )
+            found = min(
+                candidates,
+                key=lambda point: (
+                    (point[0] - slot_x) ** 2 + (point[1] - slot_y) ** 2,
+                    abs(point[1] - slot_y),
+                ),
+                default=None,
+            )
+        if found is None:
             # Never paint over the score to make room for a label.
             raise CorrectedFinalOutputError(
                 f"{record['page_id']}: no safe {_LABEL_FONT_POINTS:g}pt placement for row-start "
-                f"label {text} ({record['row_id']}) near staff top {anchor_y:.0f}px"
+                f"label {text} ({record['row_id']}) near staff top {anchor_y:.0f}px "
+                "(local, left gutter and above-staff search exhausted; PDF not published)"
             )
         x, y = found
         record["placement"] = (
@@ -413,11 +446,15 @@ def _render_final_page_image(
     page_id: str,
     page_number: int,
     page_width_points: float,
+    suppressed_rows: list[str] | None = None,
 ) -> tuple[Image.Image, list[dict[str, Any]]]:
     numbering_payload = _load_json_object(numbering_path, description=f"{page_id}.numbering_final")
     page_payload = _first_page_payload(numbering_payload, numbering_path)
     records = _row_label_records(
-        page_id=page_id, page_number=page_number, page_payload=page_payload
+        page_id=page_id,
+        page_number=page_number,
+        page_payload=page_payload,
+        suppressed_rows=suppressed_rows,
     )
     with Image.open(source_image_path) as image:
         rendered = _draw_row_start_labels(
@@ -525,14 +562,16 @@ def materialize_corrected_final_outputs(
 
             with Image.open(source_image) as probe:
                 page_size_points = _physical_page_size(page, probe, warnings)
+            suppressed_rows: list[str] = []
             rendered, row_records = _render_final_page_image(
                 source_image_path=source_image,
                 numbering_path=corrected_numbering,
                 page_id=page_id,
                 page_number=page_number,
                 page_width_points=page_size_points[0],
+                suppressed_rows=suppressed_rows,
             )
-            if not row_records:
+            if not row_records and not suppressed_rows:
                 warnings.append(f"{page_id}: no row-start labels were rendered")
             rendered_pages.append(rendered)
             page_summaries.append(
@@ -543,6 +582,7 @@ def materialize_corrected_final_outputs(
                     "corrected_numbering_final": str(corrected_numbering),
                     "rendered_row_labels": len(row_records),
                     "row_labels": row_records,
+                    "suppressed_number_one_rows": suppressed_rows,
                     "page_size_points": list(page_size_points),
                 }
             )

@@ -95,6 +95,6 @@ jobs:
       - name: Install lightweight test dependencies
         run: python -m pip install pytest Pillow PyMuPDF PyYAML psutil numpy opencv-python-headless scipy
       - name: Run maintained fast tests
-        run: make test-fast PYTHON=python
+        run: make test-fast PYTHON=python || { cat artifacts/test_fast.log; exit 1; }
       - name: Run Node contracts
         run: make test-node-contract PYTHON=python

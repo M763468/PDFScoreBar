@@ -79,3 +79,22 @@ jobs:
           tests/test_engine_service_readiness.py
           tests/test_corrected_final_output.py
           tests/test_final_pdf_page_size.py
+
+  lightweight-tests:
+    name: fast and Node contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install lightweight test dependencies
+        run: python -m pip install pytest Pillow PyMuPDF PyYAML psutil numpy opencv-python-headless scipy
+      - name: Run maintained fast tests
+        run: make test-fast PYTHON=python
+      - name: Run Node contracts
+        run: make test-node-contract PYTHON=python

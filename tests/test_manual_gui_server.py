@@ -130,6 +130,7 @@ def test_manual_handoff_config_uses_strict_review_package_root(tmp_path):
             "mmr": "pages/page_001/mmr_overrides.json",
             "barlines": "pages/page_001/barlines_review.json",
             "review_overlay": "pages/page_001/review_overlay.png",
+            "movement_boundary_resolved_output": "corrections/movement_boundaries.json",
         }
     ]
 

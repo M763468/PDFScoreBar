@@ -106,6 +106,9 @@ run-smoke: ## [maintained validation] Run production-representative detector acc
 
 run-smoke-sr: run-smoke ## [legacy alias] Alias for run-smoke (deprecated)
 
+test-node-contract: ## [maintained validation] Run Node-backed review contracts (Python and Node required)
+	PYTHONPATH=. $(PYTHON) -m pytest tests/test_issue361_localization.py tests/test_issue396_review_ui.py tests/test_review_correction_client.py
+
 test-fast: ## [maintained validation] Run maintained lightweight tests without GPU or real-data requirements
 	@mkdir -p artifacts
 	@PYTHON_BIN="$(PYTHON)"; \

@@ -104,6 +104,7 @@ def verify_pdf_images(summary: dict) -> list[dict]:
                 numbering_path=Path(page["corrected_numbering_final"]),
                 page_id=page["page_id"],
                 page_number=page["page_number"],
+                page_width_points=page["page_size_points"][0],
             )
             buffer = io.BytesIO()
             expected.save(buffer, format="JPEG")

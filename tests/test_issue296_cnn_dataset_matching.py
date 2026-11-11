@@ -25,6 +25,7 @@ def _run_builder(script: Path, args: list[str], *, cwd: Path):
 def _verified_orchestrator(tmp_path: Path, det_cfg: dict):
     obj = object.__new__(DetectorOrchestrator)
     obj.det_cfg = det_cfg
+    obj.model_validation = "production"
     obj._dense_route = None
     obj.dry_run = True
     obj.run_dir = tmp_path

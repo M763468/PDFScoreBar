@@ -2,7 +2,8 @@ import pytest
 
 pytest.importorskip("homr")
 
-import shutil
+import os
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -12,23 +13,29 @@ from src.pipeline.main import run_pipeline
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.skipif(
+    os.environ.get("PDFSCORE_RUN_REAL_INTEGRATION") != "1",
+    reason="real PDF, models and GPU integration requires explicit opt-in",
+)
 class TestPipelineIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_run_id = "integration_test_run"
-        cls.output_root = PROJECT_ROOT / "logs" / "test_runs"
+        cls.temp_dir = tempfile.TemporaryDirectory(prefix="pdfscore-integration-")
+        cls.addClassCleanup(cls.temp_dir.cleanup)
+        isolated = Path(cls.temp_dir.name)
+        cls.output_root = isolated / "runs"
         cls.run_dir = cls.output_root / cls.test_run_id
 
-        # Clean up only once at the very beginning
-        if cls.run_dir.exists():
-            shutil.rmtree(cls.run_dir)
-
         cls.base_config_path = PROJECT_ROOT / "configs" / "evaluation2_e2e_subset.yaml"
-        cls.test_config_path = PROJECT_ROOT / "configs" / "tmp_integration_test.yaml"
+        cls.test_config_path = isolated / "integration.yaml"
 
         config = load_yaml(cls.base_config_path)
         config["run"]["run_id"] = cls.test_run_id
         config["run"]["output_root"] = str(cls.output_root)
+        config["inputs"]["pdf_path"] = str(PROJECT_ROOT / config["inputs"]["pdf_path"])
+        config["inputs"]["pdf_to_images"]["output_dir"] = str(isolated / "images")
+        config["detection"]["hybrid_output_root"] = str(isolated / "hybrid")
         config["inputs"]["pdf_to_images"]["pages"] = "1"
 
         # Dummy values that will be overridden by detection step

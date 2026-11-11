@@ -350,6 +350,28 @@ def _load_label_font(size: int) -> ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
+def _substantial_ink(dark: np.ndarray, *, max_dot_area: int) -> np.ndarray:
+    """Keep connected ink larger than a scan dot, including clipped components."""
+    height, width = dark.shape
+    remaining = set(zip(*dark.nonzero(), strict=True))
+    substantial = dark.copy()
+    while remaining:
+        component = [remaining.pop()]
+        touches_edge = False
+        for y, x in component:
+            touches_edge |= y in (0, height - 1) or x in (0, width - 1)
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    neighbor = (y + dy, x + dx)
+                    if neighbor in remaining:
+                        remaining.remove(neighbor)
+                        component.append(neighbor)
+        if not touches_edge and len(component) <= max_dot_area:
+            for y, x in component:
+                substantial[y, x] = False
+    return substantial
+
+
 def _draw_row_start_labels(
     image: Image.Image, records: list[dict[str, Any]], *, pixels_per_point: float
 ) -> Image.Image:
@@ -379,7 +401,7 @@ def _draw_row_start_labels(
         slot_x = int(row_left - gap - text_w)
         slot_y = int(anchor_y - gap - text_h)
 
-        def clear(x: int, y: int) -> bool:
+        def valid(x: int, y: int) -> bool:
             if x - padding < 0 or y - padding < 0:
                 return False
             if x + text_w + padding > width or y + text_h + padding > height:
@@ -387,8 +409,15 @@ def _draw_row_start_labels(
             # Stay above or left of the staff, never inside it.
             if x + text_w > row_left - gap and y + text_h > anchor_y - gap:
                 return False
-            box = dark[y - padding : y + text_h + padding, x - padding : x + text_w + padding]
-            return not box.any()
+            return True
+
+        def clear(x: int, y: int) -> bool:
+            return (
+                valid(x, y)
+                and not dark[
+                    y - padding : y + text_h + padding, x - padding : x + text_w + padding
+                ].any()
+            )
 
         offsets = sorted(
             (
@@ -402,6 +431,50 @@ def _draw_row_start_labels(
             ((slot_x + dx, slot_y + dy) for dx, dy in offsets if clear(slot_x + dx, slot_y + dy)),
             None,
         )
+        placement = "nearby_clear_space"
+        if found is None:
+            # A scan dot in the padded rectangle can reject an otherwise clear
+            # glyph. Keep the usual clearance for connected print, and require
+            # pure white under every pixel the glyph would change.
+            left = min(width, max(0, slot_x - reach - padding))
+            top = min(height, max(0, slot_y - reach - padding))
+            right = max(left, min(width, slot_x + reach + text_w + padding))
+            bottom = max(top, min(height, slot_y + reach + text_h + padding))
+            substantial = _substantial_ink(
+                dark[top:bottom, left:right],
+                max_dot_area=max(1, round(0.36 * pixels_per_point**2)),
+            )
+            white = (np.asarray(output.crop((left, top, right, bottom))) == 255).all(axis=2)
+            glyph = Image.new("L", (text_w, text_h))
+            ImageDraw.Draw(glyph).text((-ink_left, -ink_top), text, font=font, fill=255)
+            glyph_pixels = np.asarray(glyph) > 0
+
+            def glyph_clear(x: int, y: int) -> bool:
+                if not valid(x, y):
+                    return False
+                x -= left
+                y -= top
+                return (
+                    not substantial[
+                        y - padding : y + text_h + padding, x - padding : x + text_w + padding
+                    ].any()
+                    and white[y : y + text_h, x : x + text_w][glyph_pixels].all()
+                )
+
+            local_offsets = sorted(
+                ((dx, dy) for dx in range(-reach, reach + 1) for dy in range(-reach, reach + 1)),
+                key=lambda point: (point[0] ** 2 + point[1] ** 2, abs(point[1])),
+            )
+            found = next(
+                (
+                    (slot_x + dx, slot_y + dy)
+                    for dx, dy in local_offsets
+                    if glyph_clear(slot_x + dx, slot_y + dy)
+                ),
+                None,
+            )
+            if found is not None:
+                placement = "nearby_clear_glyph"
         if found is None:
             # Use the gutter up to the page edge and the space above the staff
             # start. Try each pixel so the coarse grid cannot miss a clear slot.
@@ -429,7 +502,9 @@ def _draw_row_start_labels(
             )
         x, y = found
         record["placement"] = (
-            "primary_left_gutter" if found == (slot_x, slot_y) else "nearby_clear_space"
+            "primary_left_gutter"
+            if found == (slot_x, slot_y) and placement != "nearby_clear_glyph"
+            else placement
         )
         draw.text((x - ink_left, y - ink_top), text, fill="black", font=font)
         record["label_font_size"] = font_size

@@ -469,3 +469,28 @@ def test_360_dpi_row_label_can_use_clear_space_beyond_36_points():
 
     assert row["label_font_size"] == 45
     assert row["label_bbox"][3] <= 476
+
+
+def test_nearby_glyph_can_fit_between_dots_without_changing_source_ink():
+    pixels = np.full((500, 700, 3), 255, dtype=np.uint8)
+    for y in range(180, 335, 20):
+        pixels[y, 125:345:20] = 0
+    pixels[294:330, 300:302] = 0  # Connected print near the staff start.
+    row = {
+        "page_id": "page_001",
+        "row_id": "row_005",
+        "row_start_measure_number": 53,
+        "row_bbox": [300, 300, 680, 355],
+        "top_staff_bbox": [300, 300, 680, 355],
+    }
+
+    output = _draw_row_start_labels(Image.fromarray(pixels), [row], pixels_per_point=300 / 72)
+
+    assert row["placement"] == "nearby_clear_glyph"
+    x0, y0, x1, y1 = row["label_bbox"]
+    assert abs(300 - y1) <= 15
+    assert x1 <= 297  # Preserve clearance from the connected print.
+    assert (pixels[y0:y1, x0:x1] == 0).any()
+    changed = (np.asarray(output) != pixels).any(axis=2)
+    assert changed.any()
+    assert (pixels[changed] == 255).all()

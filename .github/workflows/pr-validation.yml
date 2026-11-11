@@ -93,7 +93,9 @@ jobs:
         with:
           node-version: "22"
       - name: Install lightweight test dependencies
-        run: python -m pip install pytest Pillow PyMuPDF PyYAML psutil numpy opencv-python-headless scipy
+        run: python -m pip install pytest Pillow PyMuPDF==1.26.4 PyYAML psutil numpy opencv-python-headless scipy tqdm
+      - name: Install CPU PyTorch
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Run maintained fast tests
         run: make test-fast PYTHON=python || { cat artifacts/test_fast.log; exit 1; }
       - name: Run Node contracts

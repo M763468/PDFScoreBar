@@ -1,12 +1,16 @@
 """Single detector route contract (#522): dense_full_pipeline only, removed routes fail."""
 
+import json
 from pathlib import Path
 
+import fitz
 import pytest
 
 from src.pipeline import detection
+from src.pipeline.core import write_yaml
 from src.pipeline.detection import dense_orchestrator_batch_sr
 from src.pipeline.detection.config import DENSE_ROUTE_NAME, resolve_detector_route
+from src.pipeline.main import run_pipeline
 from src.pipeline.orchestrator import PipelineOrchestrator
 
 
@@ -170,3 +174,45 @@ def test_correction_of_a_standard_route_review_package_is_not_rejected(tmp_path)
         movement_boundary_input=({}, None, None),
     )
     assert isinstance(summary, dict)
+
+
+def test_synthetic_pdf_reaches_manifest_with_detector_outputs(tmp_path, monkeypatch):
+    pdf = tmp_path / "score.pdf"
+    with fitz.open() as document:
+        document.new_page(width=144, height=180)
+        document.save(pdf)
+
+    calls = []
+
+    def detector(config, images, page_ids, run_id, run_dir, *, dry_run, in_memory_images):
+        assert page_ids == ["page_001"]
+        assert len(images) == 1 and images[0].is_file()
+        assert not dry_run and in_memory_images is None
+        calls.append("detector")
+        probe = run_dir / "synthetic_probe"
+        hybrid = run_dir / "synthetic_hybrid"
+        result = hybrid / "hybrid_results" / "page_001_hybrid.json"
+        result.parent.mkdir(parents=True)
+        result.write_text('{"barlines": []}', encoding="utf-8")
+        probe.mkdir()
+        return {
+            "commands": [["synthetic-detector"]],
+            "probe_output_dir": probe,
+            "hybrid_output_dir": hybrid,
+        }
+
+    monkeypatch.setattr("src.pipeline.orchestrator.run_detection_step", detector)
+    config = {
+        "inputs": {"pdf_path": str(pdf), "pdf_to_images": {"pages": "1", "dpi": 72}},
+        "steps": {"pdf_to_images": True, "detection": True},
+        "detection": {"homr_profile": "maintained_original", "staff_mask_dir": None},
+    }
+    config_path = tmp_path / "config.yaml"
+    write_yaml(config_path, config)
+    run_dir = run_pipeline(config_path, run_id="synthetic", output_root=tmp_path / "runs")
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert calls == ["detector"]
+    assert (run_dir / "inputs/images/page_001.png").is_file()
+    assert len(manifest["pages"]) == 1
+    assert "synthetic-detector" in json.dumps(manifest)
+    assert "page_001_hybrid.json" in json.dumps(manifest)

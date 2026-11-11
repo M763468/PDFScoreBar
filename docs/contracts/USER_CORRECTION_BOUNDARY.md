@@ -18,7 +18,7 @@ Both PDF outputs omit row-start number 1, including after a movement reset. Pick
 0 and subsequent row-start numbers are eligible for display. The final summary and annotated
 PDF sidecar list intentionally suppressed row IDs separately from drawn labels.
 For raster output, the renderer first searches near the 9pt staff-relative slot. It then
-checks the left gutter and above the staff start, with a vertical limit of 36pt upward
+checks the left gutter and above the staff start, with a vertical limit of 45pt upward
 and 12pt downward from the slot. The page bounds and clearance around score ink still apply.
 If a displayed label cannot be safely placed, the attempt reports a placement error and
 publishes no new numbered PDF (or layer sidecar).

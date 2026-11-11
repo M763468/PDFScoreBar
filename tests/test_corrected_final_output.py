@@ -450,3 +450,22 @@ def test_row_label_falls_back_outside_blocked_local_search(number, blocks):
     assert (pixels[y0 - 2 : y1 + 2, x0 - 2 : x1 + 2] == 255).all()
     assert (np.asarray(output)[pixels.min(axis=2) == 0] == 0).all()
     assert (np.asarray(output)[y0:y1, x0:x1] < 255).any()
+
+
+def test_360_dpi_row_label_can_use_clear_space_beyond_36_points():
+    # A wide label on a 360 DPI scan needs an above-staff slot when the
+    # existing number and scan marks occupy the left gutter.
+    pixels = np.full((900, 1000, 3), 255, dtype=np.uint8)
+    pixels[480:750, :320] = 0
+    row = {
+        "page_id": "page_025",
+        "row_id": "row_005",
+        "row_start_measure_number": 1090,
+        "row_bbox": [191, 700, 900, 820],
+        "top_staff_bbox": [191, 700, 900, 820],
+    }
+
+    _draw_row_start_labels(Image.fromarray(pixels), [row], pixels_per_point=5.0)
+
+    assert row["label_font_size"] == 45
+    assert row["label_bbox"][3] <= 476

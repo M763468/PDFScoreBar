@@ -141,7 +141,7 @@ def test_materialize_corrected_final_outputs_uses_cross_page_final_numbers_for_r
     handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
     handoff = json.loads(handoff_path.read_text(encoding="utf-8"))
 
-    for page_number, first_measure_number in ((2, 44), (3, 1)):
+    for page_number, first_measure_number in ((2, 44), (3, 1), (4, 0), (5, 2)):
         page_id = f"page_{page_number:03d}"
         source_path = handoff_path.parent / "pages" / page_id / "source.png"
         source_path.parent.mkdir(parents=True, exist_ok=True)
@@ -189,11 +189,20 @@ def test_materialize_corrected_final_outputs_uses_cross_page_final_numbers_for_r
     summary = json.loads(
         (corrected_run / "review" / "corrected_final_summary.json").read_text(encoding="utf-8")
     )
-    assert [page["row_labels"][0]["row_start_measure_number"] for page in summary["pages"]] == [
-        42,
-        44,
-        1,
-    ]
+    assert [
+        [label["row_start_measure_number"] for label in page["row_labels"]]
+        for page in summary["pages"]
+    ] == [[42], [44], [], [0], [2]]
+    reset_page = summary["pages"][2]
+    assert reset_page["rendered_row_labels"] == 0
+    assert reset_page["suppressed_number_one_rows"] == ["row_001"]
+    assert all("no row-start labels" not in warning for warning in summary["warnings"])
+    assert (
+        json.loads((corrected_run / "outputs/page_003/numbering_final.json").read_text())["pages"][
+            0
+        ]["systems"][0]["measures"][0]["number"]
+        == 1
+    )
 
 
 def test_materialize_corrected_final_outputs_uses_explicit_output_name(tmp_path):
@@ -329,7 +338,7 @@ def test_row_labels_use_one_physical_size_and_stay_near_printed_staff_line():
     pixels[120:130, 400:420] = 0
     records = [
         {
-            "row_start_measure_number": 1,
+            "row_start_measure_number": 2,
             "row_bbox": [200, 120, 950, 400],
             "top_staff_bbox": [200, 120, 950, 250],
         },
@@ -377,7 +386,7 @@ def test_row_label_moves_to_clear_space_without_erasing_score_ink():
 def test_row_label_without_clear_space_fails_instead_of_erasing_score_ink():
     # Ink covers the whole search area around the slot, but the rest of the page is blank.
     pixels = np.full((600, 600, 3), 255, dtype=np.uint8)
-    pixels[200:350, 100:300] = 0
+    pixels[180:350, :300] = 0
     source = Image.fromarray(pixels)
     records = [
         {
@@ -410,3 +419,78 @@ def test_materialize_corrected_final_outputs_writes_no_pdf_without_safe_label_pl
         )
 
     assert not list(final_root.glob("*.pdf"))
+
+
+@pytest.mark.parametrize(
+    ("number", "blocks"),
+    [
+        (53, [(100, 110, 370, 311)]),
+        (285, [(140, 190, 370, 311)]),
+        (1047, [(0, 245, 370, 311)]),
+        (1075, [(0, 265, 200, 311), (210, 245, 370, 311)]),
+    ],
+)
+def test_row_label_falls_back_outside_blocked_local_search(number, blocks):
+    pixels = np.full((500, 600, 3), 255, dtype=np.uint8)
+    for x0, y0, x1, y1 in blocks:
+        pixels[y0:y1, x0:x1] = 0
+    row = {
+        "page_id": "page_001",
+        "row_id": "row_004",
+        "row_start_measure_number": number,
+        "row_bbox": [230, 300, 580, 350],
+        "top_staff_bbox": [230, 300, 580, 350],
+    }
+
+    output = _draw_row_start_labels(Image.fromarray(pixels), [row], pixels_per_point=2.0)
+
+    x0, y0, x1, y1 = row["label_bbox"]
+    assert row["label_font_size"] == 18
+    assert x1 <= 226 or y1 <= 296
+    assert (pixels[y0 - 2 : y1 + 2, x0 - 2 : x1 + 2] == 255).all()
+    assert (np.asarray(output)[pixels.min(axis=2) == 0] == 0).all()
+    assert (np.asarray(output)[y0:y1, x0:x1] < 255).any()
+
+
+def test_360_dpi_row_label_can_use_clear_space_beyond_36_points():
+    # A wide label on a 360 DPI scan needs an above-staff slot when the
+    # existing number and scan marks occupy the left gutter.
+    pixels = np.full((900, 1000, 3), 255, dtype=np.uint8)
+    pixels[480:750, :320] = 0
+    row = {
+        "page_id": "page_025",
+        "row_id": "row_005",
+        "row_start_measure_number": 1090,
+        "row_bbox": [191, 700, 900, 820],
+        "top_staff_bbox": [191, 700, 900, 820],
+    }
+
+    _draw_row_start_labels(Image.fromarray(pixels), [row], pixels_per_point=5.0)
+
+    assert row["label_font_size"] == 45
+    assert row["label_bbox"][3] <= 476
+
+
+def test_nearby_glyph_can_fit_between_dots_without_changing_source_ink():
+    pixels = np.full((500, 700, 3), 255, dtype=np.uint8)
+    for y in range(180, 335, 20):
+        pixels[y, 125:345:20] = 0
+    pixels[294:330, 300:302] = 0  # Connected print near the staff start.
+    row = {
+        "page_id": "page_001",
+        "row_id": "row_005",
+        "row_start_measure_number": 53,
+        "row_bbox": [300, 300, 680, 355],
+        "top_staff_bbox": [300, 300, 680, 355],
+    }
+
+    output = _draw_row_start_labels(Image.fromarray(pixels), [row], pixels_per_point=300 / 72)
+
+    assert row["placement"] == "nearby_clear_glyph"
+    x0, y0, x1, y1 = row["label_bbox"]
+    assert abs(300 - y1) <= 15
+    assert x1 <= 297  # Preserve clearance from the connected print.
+    assert (pixels[y0:y1, x0:x1] == 0).any()
+    changed = (np.asarray(output) != pixels).any(axis=2)
+    assert changed.any()
+    assert (pixels[changed] == 255).all()

@@ -62,7 +62,11 @@ def test_audit_rejects_changed_geometry_and_missing_override_target():
 def test_pdf_verification_reads_embedded_pixels_and_detects_stale_labels(tmp_path):
     source = tmp_path / "source.png"
     Image.new("RGB", (300, 200), "white").save(source)
-    numbering = page("page_001", [1, 2], 3)
+    numbering = page("page_001", [2, 3], 4)
+    system = numbering["pages"][0]["systems"][0]
+    system["staves"][0]["bbox"] = [80, 100, 240, 140]
+    for index, measure in enumerate(system["measures"]):
+        measure["bbox"] = [80 + index * 70, 100, 149 + index * 70, 140]
     numbering_path = tmp_path / "outputs/page_001/numbering_final.json"
     write_json(numbering_path, numbering)
     handoff = tmp_path / "handoff.json"

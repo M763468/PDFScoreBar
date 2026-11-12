@@ -1,10 +1,10 @@
 # ローカル検証環境
 
-<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"0aae4fc6bad97c007f9360c9ec5ce833652b209c9769fe2957fa622ec7282c30"},"state":"reviewed"} -->
+<!-- translation: {"original":"LOCAL_VALIDATION.md","source":{"sha256":"37f619a685c9ff1891d55b70661c10f8cede51516aa3ffe2b0e96d9efc5481db"},"state":"reviewed"} -->
 
 [English / 原文](LOCAL_VALIDATION.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `ec8d7387b0dd01e18a7d5ffa16d7b3fc8f9981716814d95a1abb42f573f04371`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `37f619a685c9ff1891d55b70661c10f8cede51516aa3ffe2b0e96d9efc5481db`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 アクティブな Issue ワークツリーに対して必要なチェックを実行できる環境を選択してください。
 このガイドは [Validation Policy](VALIDATION_POLICY.md) の検証レベルと併せて使用します。以前に確認されたツールやコンテナは検証の手がかりにすぎず、現在も存在することや互換性があることを保証するものではありません。本番イメージや他のワークツリーで使用されているコンテナはそのまま維持してください。
@@ -142,6 +142,12 @@ fi
 ```
 
 特定のスイートに絞って実行する場合は、テスト配列を選択したパスやオプションに置き換えてください。`make test-fast` は、`PYTHON` が設定されていても `.venv_pdf/bin/python` が存在すればそちらを優先します。コンテナのインタープリタを直接呼び出すことで、ホストやワークツリーのインタープリタが暗黙のうちに選択されるのを防げます。pytest が存在しないことを確認するためだけにホストで `make test-fast` を実行しないでください。出力ディレクトリは実行ユーザーとして作成し、リダイレクトを行うコマンドを実行する前に既存ログの所有者を確認してください。
+
+## Node 契約テスト
+
+Python pytest コンテナに Node があるとは限りません。Python、pytest、Node が揃った既存ホストで `make test-node-contract PYTHON=python3` を実行してください。このテストは模擬 DOM を使い、下記のブラウザ受入試験とは別です。依存関係が不足した場合は実行不可であり、合格ではありません。CI は軽量ゲートとして実ブラウザ受入とは別に実行します。
+
+実 PDF の `tests/test_pipeline_integration.py` は `PDFSCORE_RUN_REAL_INTEGRATION=1` による明示的実行です。設定された PDF、モデル、互換 GPU 環境、入力の来歴を確認してから実行してください。設定と出力は一時ディレクトリに隔離されます。skip は合格と区別して報告してください。
 
 ## ブラウザ検証
 

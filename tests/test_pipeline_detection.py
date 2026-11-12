@@ -1,12 +1,16 @@
 """Single detector route contract (#522): dense_full_pipeline only, removed routes fail."""
 
+import json
 from pathlib import Path
 
+import fitz
 import pytest
 
 from src.pipeline import detection
+from src.pipeline.core import write_yaml
 from src.pipeline.detection import dense_orchestrator_batch_sr
 from src.pipeline.detection.config import DENSE_ROUTE_NAME, resolve_detector_route
+from src.pipeline.main import run_pipeline
 from src.pipeline.orchestrator import PipelineOrchestrator
 
 
@@ -170,3 +174,116 @@ def test_correction_of_a_standard_route_review_package_is_not_rejected(tmp_path)
         movement_boundary_input=({}, None, None),
     )
     assert isinstance(summary, dict)
+
+
+def test_synthetic_pdf_reaches_manifest_with_detector_outputs(tmp_path, monkeypatch):
+    pdf = tmp_path / "score.pdf"
+    with fitz.open() as document:
+        document.new_page(width=144, height=180)
+        document.save(pdf)
+
+    calls = []
+
+    def detector(config, images, page_ids, run_id, run_dir, *, dry_run, in_memory_images):
+        assert page_ids == ["page_001"]
+        assert len(images) == 1 and images[0].is_file()
+        assert not dry_run and in_memory_images is None
+        calls.append("detector")
+        probe = run_dir / "synthetic_probe"
+        hybrid = run_dir / "synthetic_hybrid"
+        result = hybrid / "hybrid_results" / "page_001_hybrid.json"
+        result.parent.mkdir(parents=True)
+        result.write_text('{"barlines": []}', encoding="utf-8")
+        probe.mkdir()
+        return {
+            "commands": [["synthetic-detector"]],
+            "probe_output_dir": probe,
+            "hybrid_output_dir": hybrid,
+        }
+
+    monkeypatch.setattr("src.pipeline.orchestrator.run_detection_step", detector)
+    config = {
+        "inputs": {"pdf_path": str(pdf), "pdf_to_images": {"pages": "1", "dpi": 72}},
+        "steps": {"pdf_to_images": True, "detection": True},
+        "detection": {"homr_profile": "maintained_original", "staff_mask_dir": None},
+    }
+    config_path = tmp_path / "config.yaml"
+    write_yaml(config_path, config)
+    run_dir = run_pipeline(config_path, run_id="synthetic", output_root=tmp_path / "runs")
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert calls == ["detector"]
+    assert (run_dir / "inputs/images/page_001.png").is_file()
+    assert len(manifest["pages"]) == 1
+    assert "synthetic-detector" in json.dumps(manifest)
+    assert "page_001_hybrid.json" in json.dumps(manifest)
+
+
+@pytest.mark.parametrize("scenario", ["disabled", "missing", "available"])
+def test_real_integration_opt_in_dependency_gate(tmp_path, scenario):
+    """Exercise collection and class setup without loading a model or touching a GPU."""
+    import os
+    import subprocess
+    import sys
+
+    plugin = tmp_path / "integration_gate_probe.py"
+    plugin.write_text(
+        """import importlib.util
+import os
+from pathlib import Path
+
+_original = importlib.util.find_spec
+
+def pytest_collection_modifyitems(items):
+    scenario = os.environ["INTEGRATION_GATE_SCENARIO"]
+    def find_spec(name, *args, **kwargs):
+        if name == "homr":
+            return object() if scenario == "available" else None
+        return _original(name, *args, **kwargs)
+    importlib.util.find_spec = find_spec
+    if scenario == "available":
+        def stop_before_pipeline(config_path):
+            assert Path(config_path).is_file()
+            assert Path(config_path).parent.name.startswith("pdfscore-integration-")
+            raise RuntimeError("TEST_REACHED_PIPELINE_WITH_ISOLATED_CONFIG")
+        items[0].module.run_pipeline = stop_before_pipeline
+""",
+        encoding="utf-8",
+    )
+    root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join([str(tmp_path), str(root)])
+    env["INTEGRATION_GATE_SCENARIO"] = scenario
+    env.pop("PDFSCORE_RUN_REAL_INTEGRATION", None)
+    if scenario != "disabled":
+        env["PDFSCORE_RUN_REAL_INTEGRATION"] = "1"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "-rs",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "integration_gate_probe",
+            "tests/test_pipeline_integration.py::TestPipelineIntegration::test_full_sequence",
+        ],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    output = result.stdout + result.stderr
+    if scenario == "disabled":
+        assert result.returncode == 0 and "1 skipped" in output
+        assert "requires explicit opt-in" in output
+    elif scenario == "missing":
+        assert result.returncode != 0
+        assert "Real PDF integration requires HOMR" in output
+        assert "1 skipped" not in output
+    else:
+        assert result.returncode != 0
+        assert "TEST_REACHED_PIPELINE_WITH_ISOLATED_CONFIG" in output
+        assert "1 skipped" not in output

@@ -187,6 +187,19 @@ container interpreter directly avoids silently selecting a host/worktree interpr
 run host `make test-fast` just to discover that pytest is absent. Create output directories as
 the executing user and check existing log ownership before commands that redirect to them.
 
+## Node contract tests
+
+The Python pytest container does not necessarily include Node. Use an existing host
+with Python, pytest and Node installed to run `make test-node-contract PYTHON=python3`.
+This uses Node's simulated DOM and is distinct from the browser acceptance below.
+Missing dependencies block the check; they are not evidence of a passing test. CI
+runs this lightweight gate separately from real-browser acceptance.
+
+The real-PDF `tests/test_pipeline_integration.py` is opt-in via
+`PDFSCORE_RUN_REAL_INTEGRATION=1`; only run it after verifying the configured PDF,
+model assets, compatible GPU runtime and input provenance. Its config and output are
+isolated in a temporary directory. Report its skip separately from passed tests.
+
 ## Browser validation
 
 Use the prepared Node/Playwright/Chromium runner when the Python container lacks browser

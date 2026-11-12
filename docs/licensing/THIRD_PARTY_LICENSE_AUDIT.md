@@ -6,7 +6,7 @@
 > **法的助言ではない。** 本文書はライセンス文、上流の表示、現行ソースから読み取れる事実と一般的な解釈を整理したもの。
 > 「未確定」と書いた項目は推測で埋めず、必要なら専門家確認を経て判断する。
 
-## 0. 現行運用監査（2026-11-13 JST、`develop@82853c5b1cab`）
+## 0. 現行運用監査（2026-11-13 JST、`develop@6263350755f5`）
 
 **この節が現在の監査の入口・提供判断の正本。** 以下の §1–§10 は PR #518 により採用された
 `develop@3f7c8a632c6b`（2026-11-07）時点の監査スナップショットであり、歴史的証拠として保持する。
@@ -41,7 +41,7 @@ pypdfium2は5.15.1。Ultralytics distributionおよび `YOLOv8m_Measures.pt` は
 | Transformer 426 encoder FP16 | `cd2da3ddec91af046d274506947f01da079c4ec5908ba0dd4c0c5985f780c82a` |
 | Transformer 426 decoder FP16 | `58d55eebe22788ce98f0fc7730480a79c9f56534db064e8d32b1d5fe2579904a` |
 
-ファイル名は固定ソースの選択資産と一致するが、上流ZIPの取得・展開後bytesとの独立比較は未実施。
+上流ZIPの取得・公開digestとの照合、および展開後ONNXとイメージ内ONNXの独立比較は3件すべて一致（§0.0.1）。
 上流の重みAGPL表明と、PrIMuS等の学習データ由来の法的不確実性は別の問題である。
 
 HOMRの固定source、`docker/patch_homr_onnx_provider.py`、`src/homr_runtime/api_compat.py`、
@@ -52,8 +52,54 @@ Ubuntuの各パッケージのライセンスと対応ソース、[Ubuntu商標�
 [NVIDIAの各版・各部品の再配布条件](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html)を
 配布候補ごとに確認する。現時点では一覧の取得であり、全パッケージの通知・対応ソース確認は未完了。
 
-**状態:** 実環境の追加調査は進んだが、配布用NOTICEとOS/NVIDIAの部品別条件、対応ソース全体の提供手順、
-上流ZIPとの実bytes照合が未完了。現フェーズの完了を宣言する前に不足証拠を確認する。
+**状態:** 実環境の特定と根拠・未確定事項の分類は本節と §0.0.1 に記録。配布用NOTICE、対応ソースの実装、OS/NVIDIAの部品別条件の最終確認は配布前ゲートであり、本監査の完了と区別する。
+
+### 0.0.1 今回の監査成果と配布前の引継ぎ
+
+対象sourceは `develop@6263350755f5ddd6fe0371aa0fb061bf8b675077`、イメージのbuild sourceは
+`97b8bc3c4179ff3882d85c4b0c28941e5ce1be0f`。`git diff --name-status 82853c5b 62633507` に依存・モデル・Dockerの変更はなく、
+`git diff --name-status 97b8bc3c 62633507 -- Dockerfile pyproject.toml docker/patch_homr_onnx_provider.py models` も空。
+resolverは環境契約の一致を示すが、source treeの同一性やイメージ自体に最新sourceが同梱されたことは示さない。
+各配布候補のsource/image/実行時mountを固定する。
+
+**Python 99件:** [全件の分類表](PYTHON_IMAGE_LICENSE_LEDGER.md) とローカル `logs/issue504/environment-audit/python-license-ledger.json` を参照。
+Verified 3（HOMR、BasicSR、Real-ESRGANの最上位コードライセンスと記録された改変に限定）、Metadata only 94、
+Unresolved 1（`cuda-toolkit==13.0.3.0` は宣言・同梱ライセンス未特定）、Not applicable 1（first-party `pdfscore-pipeline`）。
+Metadata onlyの全94件は表に列挙し、いずれも最終配布物の条件確認は未了。特に `flatbuffers`、`rapidocr-onnxruntime`、
+`tensorboard-data-server`、`types-Pillow` はdistribution管理ファイル中にLICENSE/NOTICEが見つからず、上流・配布アーカイブを照合する。
+`pypdfium2` には多数の `licenses/` が実在し、同梱依存を別途評価する。分類は通知の自動作成・権利許諾ではない。
+PyMuPDFはAGPL/商用二重表示を確認したが、wheel内の全構成物の条件確認を完了したわけではないためMetadata only。
+
+**Ubuntu / NVIDIA:** `dpkg-query` 422行中、各packageに対応するcopyrightファイルを419件で検出、
+`cuda-compat-12-3`、`cuda-keyring`、`cuda-libraries-12-3` の3件は通常の位置で未検出。
+copyright全文の単純検索による候補はGPL 313、LGPL 196、AGPL 2、MPL 12、Apache 52（重複あり。文章・引用を含むためライセンス確定数ではない）。
+`os-license-ledger.json` にbinary/source版と根拠pathを保持。配布前に候補と3例外の実際のソース・ライセンスを検証する。
+OS内CUDA 12.3、cuDNN 9.0.0.312、NCCL 2.20.3 と、Python側のNVIDIA関連16 distribution（cuDNN 9.24を含む）は異なる層。
+15件はNVIDIA独自条件を宣言、`nvidia-nvtx` はApache-2.0を宣言。各版・パス・ライセンス所在は `nvidia-inventory.txt` とPython台帳。
+CUDA 12.3.2については[該当版EULA](https://docs.nvidia.com/cuda/archive/12.3.2/eula/index.html)を参照し、
+wheel/cuDNNその他の版は同梱文書と対象製品の条件を別に照合する。(b)ではredistributableの範囲、通知・条件、Ubuntu各sourceと[商標](https://ubuntu.com/legal/intellectual-property-policy)を確認。(c)ではimageを渡さない場合の配布と利用条件を分ける。
+
+**HOMRの独立照合:** `release.json` の上流公開ZIP SHA-256と、取得した3 ZIPの実測SHA-256はすべて一致。
+`homr-release-validation.txt` にはZIP名・ZIP hash・各1ファイルの展開後ONNX hashを保存し、§0.0のイメージ内hashと3件とも一致。
+この一致はモデルの来歴確認であり、学習データ由来の権利問題を解決しない。
+
+**対応ソース手順（設計）:**
+1. 配布対象imageのimmutable ID、label、source commit/fingerprintとbind mountされたsource版を固定し、この監査のIDと比較。再ビルド・依存変化があれば再採取する。
+2. HOMR `457e7c6518a10ba755db2e60883419e56c4d7369`、BasicSR 1.4.2の上流source・LICENSEを取得し、`source/homr.patch` / `source/basicsr.patch` とイメージ内ファイルを照合。HOMRのencoder/decoderのHEURISTIC化、BasicSRのimport変更を記録。
+3. `Dockerfile`、`pyproject.toml`、`docker/patch_homr_onnx_provider.py`、`src/homr_runtime/api_compat.py`、モデル取得処理、依存・build/installに必要なファイルと、該当ライセンス・NOTICEを対応ソース候補に含める。HOMR patch現行形の履歴は `437dffeec2a3`（2026-09-20）、BasicSR import変更導入は `8cf075692310`（2026-04-19）。これはgit記録の日付で、実際の個別image build日時とは区別する。
+4. 改変表示と受領者／ネットワーク利用者への提供手段を準備し、実行版と提供sourceの一致を確認。結合著作物の厳密な範囲は法的に未確定。
+
+**A/B/C:** A（現行source・対象imageの依存、主要モデル、改変、提供形態・未確定事項の調査と再検証証拠）は今回の監査範囲を完了。
+B（最終配布物の全LICENSE/NOTICEと対応ソース提供の実装、上記未確認条件、HOMRデータ由来の判断、#505の正式LICENSE、fingerprintと方式ごとのGo/No-go）は
+[#508](https://github.com/M763468/PDFScoreBar/issues/508) と #505 の正式リリース・試用判断前に完了させる。
+(b) の配布は全NOTICE、ソース、NVIDIA条件と重み権利の確認まで保留。(c) は対象AGPL版のsource案内、first-party権限とモデル権利・運用条件の確認まで保留。
+(a) は内部実験のまま継続し、第三者提供の許可とはしない。C（PyMuPDFの出力/補正と入力描画の別々の代替評価、HOMRや重みの長期対策）は
+#504で継続管理し、着手可能な作業単位が成立した時点で重複を確認してfocused Issue化する。候補の回帰契約は §0.6。
+
+証拠のSHA-256: Python台帳 `9585ec643a1a201bba63577014958a36f5dc0a31f52472887a8f3ab0dae77a06`、
+OS台帳 `b751da8fd478abc9d8c01a50f68a1b2aea4f84cc81459394e63adaa9de84b0fa`、
+モデル照合 `c78d496dfabfa403558c131195d0b5c0477ee3968b6ac6f68429fff9ba46b409`。
+ローカル証拠は `logs/issue504/environment-audit/`。生成スクリプトと実行方法、未解決の範囲も同ディレクトリに保持。
 
 ### 0.1 対象と確定した変更
 
@@ -86,7 +132,7 @@ Ubuntuの各パッケージのライセンスと対応ソース、[Ubuntu商標�
 | **BasicSR** | Real-ESRGAN 経由、旧画像では `1.4.2` | Apache-2.0。`Dockerfile` が `basicsr/data/degradations.py` の import 1行を変更 | **改変通知**と該当ソース/patch、最新版の解決版を記録 |
 | **RapidOCR / ONNX Runtime GPU** | `rapidocr-onnxruntime==1.4.4` / `onnxruntime-gpu==1.24.4` | RapidOCR: Apache-2.0、ONNX Runtime: MIT。OCR/推論経路 | 同梱 ONNX 重み・依存の NOTICE とモデル別権利を確認 |
 | **PyTorch / torchvision** | `torch==2.14.0` / `torchvision==0.29.0` を直接固定 | BSD系。Ultralytics削除による間接解決差を抑制 | CUDA/triton等を含む実インストール版・NOTICE をSBOMで確認 |
-| **OpenCV / NumPy等** | `pyproject.toml` の直接固定（`psutil==7.2.2` を含む） | 主として permissive。完全な間接依存一覧は未取得 | 新しい固定イメージでライセンス・配布ファイルを再照合 |
+| **OpenCV / NumPy等** | `pyproject.toml` の直接固定（`psutil==7.2.2` を含む） | 主として permissive。対象imageの間接依存一覧は §0.0.1 | 新しい固定イメージでライセンス・配布ファイルを再照合 |
 | **CUDA / Ubuntu** | `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04` | NVIDIA独自条件、OSのGPL/LGPL等を含む。Docker image を渡す場合は別の配布義務が生じ得る | イメージ再配布か利用者自身のビルドかを明示して扱う |
 | **OMR-DLN / Ultralytics** | `develop` production から除去 | **現在は不使用**。§2/§6 の旧監査記載は #523 前の証拠 | 既配布 `main` と履歴再現環境のみ別管理。置換・再学習は不要 |
 
@@ -99,7 +145,7 @@ Ubuntuの各パッケージのライセンスと対応ソース、[Ubuntu商標�
 
 | 資産 | 現行の導入/配布 | 2026-11-11時点で言えること・未確定点 |
 | --- | --- | --- |
-| **HOMR segmentation / transformer / ONNX** | `python -m homr.main --init --gpu force` でイメージに取得 | 上流の [LICENSE_FAQ.md](https://github.com/liebharc/homr/blob/main/LICENSE_FAQ.md)（2026年10月公開）および [作者回答](https://github.com/liebharc/homr/issues/187#issuecomment-6170272605) は**重みもAGPLで公開する意向**を明示。§3の「重みの個別ライセンス表示なし」だけでは現状を説明しきれない。ただし FAQ は固定コードcommitより後の説明であり、実際に取得されるrelease asset/checkpoint/hashへの対応の照合が残る |
+| **HOMR segmentation / transformer / ONNX** | `python -m homr.main --init --gpu force` でイメージに取得 | 上流の [LICENSE_FAQ.md](https://github.com/liebharc/homr/blob/main/LICENSE_FAQ.md)（2026年10月公開）および [作者回答](https://github.com/liebharc/homr/issues/187#issuecomment-6170272605) は**重みもAGPLで公開する意向**を明示。§3の「重みの個別ライセンス表示なし」だけでは現状を説明しきれない。ただし FAQ は固定コードcommitより後の説明であり、実際のrelease assetとimage内hashは §0.0.1 で照合した。学習データ由来の法的判断は残る |
 | HOMR segmentation の学習データ | DeepScoresV2 | 上流FAQによれば CC BY 4.0。重みと学習データを同一の権利物と推定しない |
 | HOMR transformer の学習データ | OpenScore Lieder / StringQuartets、GrandStaff、Camera-PrIMuS 等 | 上流FAQによれば OpenScore はCC0、GrandStaffは取得元に明示表示なし（HF複製はMIT）、**PrIMuSは元配布先に表示なし、HF複製はCC BY-NC 4.0**。全公開Transformer checkpointにPrIMuSが含まれるとの上流説明。さらに世代によってPDMX等の混入が異なる。**非商用条件が重みへ波及するかは上流も法的に未確定と認める**。商用配布/提供を自動許諾されたと判断しない |
 | Real-ESRGAN x2/x4 | `Dockerfile` で上流releaseから取得、SHA-256照合後にimage同梱 | リポジトリのBSD-3-Clauseだけで各checkpointの来歴・再配布条件を確定しない |
@@ -126,7 +172,7 @@ HOMR固定commitの
 典拠: [HOMR `onnx_checkpoints` release](https://github.com/liebharc/homr/releases/tag/onnx_checkpoints)
 の資産メタデータ（2026-11-11確認）。**これはGitHubが表示する配布ZIPのdigestであって、
 当方がダウンロードして検算した値でも、解凍後のONNX単体のhashでもない。**
-実イメージのONNX hashとsource fingerprintは §0.0。上流ZIPとのbytes照合は未実施。
+実イメージのONNX hashとsource fingerprintは §0.0。上流ZIPとのbytes照合は §0.0.1。
 また、上流FAQの歴史的なcheckpoint 396の例を現行の **426** と混同せず、
 426の正確な学習元は上流FAQ/Training資料との個別照合を残す。
 
@@ -204,7 +250,7 @@ AGPL-3.0-or-laterをfirst-partyの第一候補とする意思は維持し、OMR�
    対象版・基準renderer・入力・出力契約・rollbackを固定して別Issueで評価する。
 2. **PyMuPDFの入力レンダリング:** `pypdfium2`/PDFiumを候補とするが、レンダリング差は
    認識器入力も変える。出力経路置換とは分離し、Full68 GT・小節番号・PDF geometry・性能を検証する。
-   旧イメージの間接インストール情報だけで最新イメージに存在すると仮定しない。
+   対象イメージでは5.15.1を確認したが、再ビルド後の存在・版は再確認する。
 3. **HOMR:** 中核依存。現時点で精度同等のpermissiveな既存代替の採用根拠なし。
    一律置換は目的化せず、法的な遵守策と重みの不確実性の解消を先行する。
 4. **OMR-DLN代替モデル/独立再学習:** #522/#523で不要と判断済み。
@@ -213,21 +259,11 @@ AGPL-3.0-or-laterをfirst-partyの第一候補とする意思は維持し、OMR�
 各置換のproduction化は本Issueの範囲外。必要なときだけ focused Issue/PR に切り出し、
 合意済みの検出/番号/補正/再開/PDF幾何/性能ゲートを変更せず、失敗も保持する。
 
-### 0.7 次の監査証拠と終了条件
+### 0.7 配布前と長期改善の終了条件
 
-1. **imageのSBOM（§0.0で部分実施）:** `develop@52da54ec7a8f` の検証済みimage digestと
-   source fingerprint、pip/importlib の全distribution（版・license/SPDX/URL/著作権/同梱 LICENSE）、
-   VCS `direct_url.json`、`dpkg-query`、CUDA/NVIDIA wheel、実際のHOMR/Real-ESRGAN/OCR資産と
-   digestを機械可読で保存する。旧 §1 の102 distributionは照合用であり再利用して終わりにしない。
-2. **対応ソースを実物で再構成:** imageに含まれるHOMR commit、パッチ、BasicSR改変、
-   `Dockerfile`、source tree/manifest、モデル取得処理を固定し、第三者通知の版と一致させる。
-3. **モデル権利を照合:** `homr.main --init` が選ぶrelease/checkpointと現物hashを上流FAQの
-   モデル世代へ突き合わせ、PrIMuS学習元・商用利用リスクを「確定/未確定」に分ける。
-   不足している許諾を推測で補完しない。
-4. **提供前に適用:** (b)/(c)の実際の配布候補についてNOTICE/対応ソース/配布手段を照合し、
-   #505のfirst-partyライセンス正式適用および#508のGo/No-goへ具体的に渡す。
-5. **置換課題は分割:** PyMuPDF出力系と描画系の実装・回帰検証は別のfocused Issueへ。
-   #504は長期監査トラックとしてOpenを維持し、後続Issueがあるだけで監査文書のマージを止めない。
+- #508の具体的な配布候補ごとに、§0.0.1のPython/OS台帳と実物を照合し、未確認ライセンス・通知・NVIDIA条件・対応ソースの提供を解決する。再ビルド時は新しいimageで再採取する。
+- #505で正式リリース対象のfirst-partyライセンス・権利境界と第三者通知を確認する。HOMRの学習データ・重みに関する未確定事項は提供形態ごとに判断する。
+- #504で出力/補正と入力描画を別々に評価し、精度・PDF幾何・注釈・履歴・性能の契約とrollbackを固定してから、必要に応じ重複のないfocused Issueに分ける。
 
 ---
 

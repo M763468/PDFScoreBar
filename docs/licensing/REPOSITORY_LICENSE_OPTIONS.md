@@ -1,134 +1,203 @@
-# リポジトリ自身のライセンスと著作権境界（#505 検討）
+# リポジトリ自身のライセンス方針と適用準備（#505）
 
-[#505](https://github.com/M763468/PDFScoreBar/issues/505) の検討記録。原文は日本語（正本）。英語版は未作成。
+[#505](https://github.com/M763468/PDFScoreBar/issues/505) の方針・準備記録。原文は日本語（正本）。英語版は未作成。
 第三者部品の義務は [第三者ライセンス監査（#504）](THIRD_PARTY_LICENSE_AUDIT.md) を入力とし、ここでは重複しない。
 
-> **本文書は提案であり、ライセンスはまだ決定していない。** 最終選択はリポジトリオーナーの明示的な決定とする。
+> **本文書はライセンスの許諾ではない。** 本文書の記述、および本文書を含む `develop` / `main` のどの版によっても、
+> PDFScoreBar の first-party のコード・文書・その他の資料について、利用・改変・再配布の許諾は与えられない。
+> リポジトリには `LICENSE` がなく、正式な許諾は将来の `main` リリースで `LICENSE` 一式を追加した版から始まる。
 > 法的助言ではない。
 
-## 1. 現状（2026-11-07、`develop@3f7c8a632c6b`）
+## 1. 現在の方針と状態（2026-11-13、`develop@04c16674d7e6`）
 
-- ルートに `LICENSE` / `NOTICE` / `COPYING` がない。`pyproject.toml` に `license` 欄がない。SPDX 表示もない。
-- リポジトリは GitHub で公開されている。公開されていることだけでは、利用・改変・再配布の一般的許諾にはならない
-  （GitHub 利用規約に基づく GitHub 上での閲覧・fork を除く）。
-- #504 のとおり、配布・クラウド提供する runtime は AGPL-3.0 部品と結合しているため、**LICENSE がない状態では (b) / (c) の提供ができない**。
+オーナー決定（#505、2026-11-08 以降のコメント）:
 
-## 2. 権利台帳の骨子
+1. first-party コードには **`AGPL-3.0-or-later`** を採用する。ライセンスの選択は再検討しない。
+2. 他者の商用利用は禁止しない。改変版を非公開のまま囲い込んだネットワーク提供を抑えることを重視する。
+3. **現時点で `develop` には `LICENSE` を付与しない。**
+4. OMR-DLN 除去等の整備と `main` への昇格の後、正式リリース対象の `main` に適用する。**保留しているのは適用時期だけ。**
+5. 第三者のコード・重み・データを first-party のライセンスで再許諾しない。
 
-| 区分 | 範囲 | 所有者・取得経路 | ライセンス付与の扱い（案） |
-| --- | --- | --- | --- |
-| first-party コード | `src/`、`tools/`、`docker/`、`scripts/`、`tests/`（fixture 除く）、`experiments/`、`Makefile`、`Dockerfile*`、`configs/` | リポジトリオーナー。§3 の寄与者確認を参照 | 選択したライセンスで許諾 |
-| first-party 文書 | `docs/`、`README*`、`AGENTS.md`、`.github/` テンプレート | 同上 | コードと同じライセンス（文書だけ CC BY 4.0 にする選択肢もある） |
-| GUI 資産 | `tools/review_correction/*.html` / `*.js` 等 | first-party。外部ライブラリ・CDN を含まない | コードと同じ |
-| 第三者コード片 | `docker/patch_homr_onnx_provider.py` 内の、置換対象として引用した HOMR のソース断片（数行） | HOMR 作者（AGPL-3.0） | 再許諾しない。断片は AGPL-3.0 の下にあると注記する |
-| 第三者コード（未同梱） | HOMR、PyMuPDF、Real-ESRGAN 等は build 時に取得（Ultralytics は #522 で除去）。`external/` は #382 で廃止済み | 各上流 | 対象外。`THIRD_PARTY_NOTICES` で案内 |
-| first-party 重み | `models/mmr/mmr_classifier_best.pth`（git 管理）、barline CNN（本リポジトリの GitHub release、manifest のみ git 管理） | オーナーが学習。MMR は torchvision の ImageNet 事前学習重みから初期化。学習データは楽譜由来 | **コードと分けて決める**。§4 参照 |
-| 第三者重み | HOMR、OMR-DLN、Real-ESRGAN、RapidOCR | 各上流（#504 §3） | 対象外。git には manifest と SHA-256 のみ |
-| 評価・学習データ | `data/evaluation2/annotations/**`（座標 JSON、git 管理）。楽譜画像・PDF は git 管理外 | ラベルは first-party。元の楽譜は第三者著作物（保護期間内の作品を含む） | ラベルは許諾対象にできるが、楽譜画像・PDF は含めない |
-| テスト fixture 画像 | `tests/fixtures/system_grouping/*.png`（#218 で追加） | 出典記録なし | **出典確認まで許諾対象から除外**（または出典確認後に判断） |
-| 利用者が提供する PDF と出力 | git 管理外 | 利用者 | リポジトリのライセンスは及ばない。利用者の権利のまま |
+現状:
 
-## 3. 寄与者の確認
+- ルートに `LICENSE` / `NOTICE` / `COPYING` / `REUSE.toml` はなく、`pyproject.toml` に `license` 欄はない。
+- GitHub で公開されていることだけでは、利用・改変・再配布の一般的な許諾にならない（GitHub 利用規約に基づく GitHub 上での閲覧・fork を除く）。
+- そのため、`develop` を基にした実行物を第三者へ配布・提供するには、#504 の第三者義務とは別に first-party の権利処理が必要である。
+  限定試用（[#508](https://github.com/M763468/PDFScoreBar/issues/508)）との関係は §6 を参照。
 
-`git log` の author と `Co-authored-by` trailer を確認した（2026-11-07）。
+AGPL についての注意（オーナー方針の前提。2026-11-08 の #505 コメント）:
 
-| identity | 件数（author） | 判断 |
-| --- | --- | --- |
-| M763468 / Masaki Muramatsu（複数のメールアドレス） | 807 | オーナー |
-| `masaki.muramatsu <agent@example.com>`、`Codex Agent <agent@example.com>` | 614 | オーナー環境の AI エージェント |
-| `google-labs-jules[bot]` | 11 | オーナーが起動した AI エージェント |
-| `Distribution test` / `Release tests`（`example.invalid`） | 109 | テストが作業リポジトリへ commit したテスト用 identity と考えられる（オーナー環境で作成）。**オーナー確認事項** |
-| `Co-authored-by: Claude Opus 5.5`、`github-actions[bot]` | trailer のみ | AI エージェント / CI |
+- AGPL は商用利用や第三者のサービス提供を禁止しない。
+- §13 の対応ソース提供は、**改変版**をネットワーク越しに利用者に操作させる場合に関わる。提供先は受領者・ネットワーク利用者であり、
+  GitHub での公開や、オーナー・上流への還元を義務付けるものではない。
+- オーナーは自分が権利を持つ first-party コードに別の商用条件を提示できるが、HOMR・PyMuPDF 等の第三者 AGPL を代行・免除できない。
+- 一度 AGPL で公開した版の許諾は取り消せない。
 
-オーナー以外の人間の寄与者は見つからなかった。したがって**ライセンス付与・将来の変更にオーナー以外の同意は不要**と見込める。
-AI 生成部分の著作物性は法域により扱いが異なるが、第三者が権利を主張する構造ではない。
-今後外部の寄与を受ける場合は、DCO（`Signed-off-by`）か CLA を事前に決めておくと、再ライセンスの柔軟性を保てる。
+## 2. 経緯
 
-## 4. ライセンス選択肢の比較
-
-前提（#504 から）: 結合した runtime を渡す・(c) で提供するときは、first-party コードが AGPL-3.0 と互換であればよい。
-MIT、Apache-2.0、GPL-3.0、AGPL-3.0 はすべて互換。いずれを選んでも、**現時点で配布する結合物全体は AGPL-3.0 の条件で受領者に渡ることになる**。
-
-| 選択肢 | 他者に許すこと | AGPL 部品との互換 | 配布・クラウド提供への影響 | 長所 | 短所 |
-| --- | --- | --- | --- | --- | --- |
-| LICENSE なし（現状維持） | GitHub 上の閲覧・fork のみ | **不可**（受領者に追加制限を課す） | (b)(c) の提供ができない | なし | #504 の遵守策が満たせない |
-| MIT | 改変・再配布・商用を広く許可。著作権表示のみ要求 | 互換 | 結合物は AGPL として渡す。first-party 部分は単独でも再利用可能 | 最も単純 | 特許許諾の明示なし。SaaS 化された改変の source 公開は求められない |
-| **Apache-2.0** | MIT と同等に広い。改変の明示、NOTICE 保持、特許許諾と特許報復条項 | 互換（GPLv3 / AGPLv3 と互換） | 同上 | 特許条項。将来 AGPL 部品を置き換えた部分は、そのまま緩い条件で再利用できる | MIT より手続き（NOTICE、改変の明示）が少し多い |
-| AGPL-3.0-or-later | 改変版をネットワーク提供する者にも source 提供を要求 | 同一 | 現在の結合物の条件と一致し、説明が単純 | 他者が改変して閉じた SaaS にすることを防げる | #504 で AGPL 部品を置換しても first-party 部分の負担は残る。再利用の敷居が高い |
-| GPL-3.0-or-later | 配布時の source 提供を要求（ネットワーク条項なし） | 互換（GPLv3 §13 / AGPLv3 §13） | 結合物は AGPL の条件になる | — | 中間的で、現状の AGPL 結合とも将来の緩い条件とも合わず利点が少ない |
-| MPL-2.0 | ファイル単位のコピーレフト | 互換（GPL 系との併用条項） | 同上 | 改変ファイルの公開を求めつつ結合は自由 | 運用が分かりにくい |
-| 領域別の複数ライセンス | 例: engine は AGPL、補正 GUI・ランチャー・将来の Web 入口は Apache-2.0 | 各領域で互換 | 領域境界が明確なら柔軟 | 将来の別リポジトリ Web 入口と整合しやすい | 境界管理・SPDX 管理の手間。#504 の結合関係が未確定な領域に適用すると誤解を招く |
-
-engine と将来の control-plane（#449、別リポジトリ想定）は同じライセンスである必要はない。
-control-plane が engine の AGPL 部品と結合しない（ジョブ投入とデータ受け渡しのみ）設計であれば独自に選べるが、その判断は #504 §4 の未確定事項に依存する。
-
-## 5. 推奨候補（未採択。オーナー決定待ち）
-
-**Apache-2.0 は推奨候補であり、採択済みではない。** 決定前に次の二点を判断する。
-
-1. **第三者が first-party コードを改変し、非公開のまま商用製品や SaaS に使うことを認めるか。**
-   Apache-2.0 / MIT は認める。AGPL-3.0-or-later はネットワーク提供を含めて改変ソースの公開を求める。
-2. **将来、AGPL 依存を減らした部分を緩い条件で再利用できるようにしたいか。**
-   Apache-2.0 / MIT ならそのまま再利用できる。AGPL-3.0-or-later では first-party 部分にも AGPL の条件が残る。
-
-どれを選んでも、**HOMR・PyMuPDF と結合した runtime を渡す・提供するときの AGPL 遵守義務は消えない**（#504 §5。Ultralytics は #522 で runtime から除去）。
-#504 の方針では HOMR / PyMuPDF は遵守を前提に原則維持するため、runtime 全体はしばらく AGPL の条件で提供することになる。
-また、一度 Apache-2.0 / MIT で公開した版の許諾は取り消せない。後の版から別ライセンスに変えることはできる。
-
-| 候補 | 向いている判断 | 要点 |
-| --- | --- | --- |
-| **Apache-2.0**（推奨候補） | 1 = 認める、2 = したい | 特許許諾と特許報復条項、改変の明示と NOTICE 保持。外部寄与を受けるときも扱いが明確 |
-| MIT | 1 = 認める、2 = したい。手続きを最小にしたい | 最も簡潔。特許許諾の明示がない |
-| AGPL-3.0-or-later | 1 = 認めない | 改変版の閉じた SaaS 利用を防げる。依存を減らしても first-party の再利用の敷居は残る |
-
-推奨候補の内容:
-
-1. **first-party コード・文書・GUI 資産に Apache-2.0 を付与する。**
-   理由: AGPL 部品と互換で (b)(c) の遵守策を満たせる。AGPL 部品を置き換えた部分は緩い条件のまま再利用できる。
-   特許許諾条項があり、外部寄与を受けるときも扱いが明確。
-2. **第三者のコード・重みは再許諾しない。** `NOTICE` と `THIRD_PARTY_NOTICES` で、配布する runtime 結合物が AGPL-3.0 部品を含み、
-   その条件で提供されることを明記する。
-3. **first-party 重みは今回の付与対象から外す**（「別途定める」と明記）。ImageNet 初期化と楽譜由来の学習データの条件を確認したうえで、
-   後日 Apache-2.0 等を付けるか決める。配布 runtime に含まれる MMR 分類器は、それまで「PDFScoreBar の実行目的に限り利用可」等の限定条件を
-   付けるかもオーナー決定事項。
-4. **データと fixture 画像は除外する。** `data/evaluation2/annotations/**` は CC BY 4.0 等を後日検討。`tests/fixtures/**/*.png` は出典確認まで除外。
-
-## 6. 反映計画（承認後の focused PR）
-
-| 項目 | 内容 |
+| 日付 | 出来事 |
 | --- | --- |
-| `LICENSE` | 選択したライセンスの全文（Apache-2.0 の場合は公式全文） |
-| `NOTICE` | `Copyright 2026 Masaki Muramatsu`（年・表記はオーナー確認）、第三者部品と AGPL 結合の注記、除外範囲（重み・データ・fixture） |
-| `THIRD_PARTY_NOTICES.md` | #504 §2・§3 の台帳から作成。部品、版、ライセンス、取得元、改変の有無（HOMR、BasicSR） |
-| `pyproject.toml` | `license = "Apache-2.0"` と `license-files = ["LICENSE", "NOTICE"]`（PEP 639） |
-| README（英・日） | ライセンス節: first-party の条件、第三者部品と AGPL の関係、除外範囲 |
-| SPDX | 全ファイルへの header 一括追加は行わず、`REUSE.toml` で path 単位に宣言する（第三者断片を含む `docker/patch_homr_onnx_provider.py`、除外する重み・データ・fixture を明示）。新規ファイルの header は任意 |
-| 配布 manifest | `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md` を `docs/MINIMAL_MAINLINE_SURFACE.json` の配布 metadata に追加。配布選択の変更として、同 PR で surface 検査と関連テストを実施 |
-| 版管理 | 付与 commit 以降の版に適用すると明記する。過去 commit へ遡及適用するかはオーナー決定 |
+| 2026-11-07 | 本文書の初版。Apache-2.0 を推奨候補とし、オーナー決定待ちとした（比較は §8 に履歴として保持） |
+| 2026-11-08 | オーナー意向により AGPL-3.0-or-later を第一候補に見直し、採用を指示 |
+| 2026-11-08 | PR #521（`docs/issue505-agpl-license`）で `LICENSE`・`NOTICE`・`THIRD_PARTY_NOTICES.md`・`REUSE.toml`・`LICENSES/`・`pyproject.toml`・README・配布 manifest を実装し検証 |
+| 2026-11-08 | オーナー方針を更新: 正式な適用は将来の `main` リリース時に限る |
+| 2026-11-08 | **PR #521 を取り下げ。** 公開 Draft PR の head 自体が LICENSE 全文と許諾表示を含み、Draft・未マージでも許諾と解釈される余地があるため、revert commit `b73e8a64` を通常の push で追加して Close した。実装一式は git 管理外の非公開領域へ退避 |
+| 2026-11-11 | PR #523 で OMR-DLN 重みと Ultralytics を production から除去（#522） |
+| 2026-11-13 | PR #525 で #504 監査の現行節（§0）と Python 台帳を追加 |
+| 2026-11-13 | 退避した実装一式を最新 `develop` に合わせて再構成し、非公開の環境で適用リハーサルを実施（§5） |
 
-`main` への反映は通常の `develop → main` 昇格 PR で行い、自動昇格しない。
+公開済みの commit `966ce854`・`c091ad48` は、ブランチ履歴、PR の記録、取得済みの複製やフォークに残り得る。
+revert や Close によってそれらの効力が消えたとは断定しない。必要であれば法律の専門家に確認する。
 
-## 7. オーナー決定・専門家確認が必要な事項
+## 3. 権利台帳（正式適用時の分類）
 
-オーナー決定:
+正式適用時は `REUSE.toml` で path 単位に宣言する（各ファイルへの header 一括追加はしない）。
+`LicenseRef-PDFScoreBar-NotLicensed` は「本リポジトリのライセンスを適用せず、何も許諾しない」ことを示す識別子。
 
-- [ ] first-party コードのライセンス（推奨候補 Apache-2.0。ほかに MIT、AGPL-3.0-or-later。§5 の二つの判断による）
-- [ ] 文書を同一ライセンスにするか、CC BY 4.0 にするか
-- [ ] first-party 重み（MMR、barline CNN）の扱い
-- [ ] GT ラベルと fixture 画像の扱い
-- [ ] 著作権表示の名義と年
-- [ ] 過去 commit への遡及の有無
-- [ ] 外部寄与を受ける場合の DCO / CLA
-- [ ] `Distribution test` / `Release tests` identity の commit がオーナー環境で作成されたものであることの確認
+| 区分 | 範囲 | 権利者・出所 | 適用時の扱い | 通知 |
+| --- | --- | --- | --- | --- |
+| first-party コード | `src/`、`tools/`、`docker/`、`scripts/`、`tests/`（下記 fixture を除く）、`experiments/`、`configs/`、`Makefile`、`Dockerfile*` | オーナー（§4 の寄与者確認） | `AGPL-3.0-or-later` | `LICENSE`、`NOTICE` |
+| first-party 文書 | `docs/`、`README*`、`AGENTS.md`、`.github/` | 同上 | コードと同じ `AGPL-3.0-or-later` | 同上 |
+| 補正 GUI | `tools/review_correction/*.html` / `*.js` 等 | first-party。外部ライブラリ・CDN を含まない | `AGPL-3.0-or-later` | 同上 |
+| HOMR の引用断片 | `docker/patch_homr_onnx_provider.py` 内の置換対象として引用した数行 | HOMR 作者（上流は `AGPL-3.0` と表示し、only / or-later を明示しない） | ファイル全体を `AGPL-3.0-or-later AND AGPL-3.0-only` と宣言。断片は再許諾しない | `NOTICE`、`THIRD_PARTY_NOTICES.md` |
+| 第三者コード（未同梱） | HOMR、PyMuPDF、Real-ESRGAN、BasicSR 等。build 時に取得 | 各上流 | 対象外 | `THIRD_PARTY_NOTICES.md`（HOMR・BasicSR の改変表示を含む） |
+| first-party 重み: MMR | `models/mmr/mmr_classifier_best.pth`（git 管理、配布物に含まれる） | オーナーが学習。torchvision の ImageNet 事前学習重みから初期化。学習データは楽譜由来 | `NotLicensed` | `NOTICE` |
+| first-party 重み: barline CNN | 本リポジトリの GitHub release。git には `models/barline_cnn/manifest.json` のみ | オーナーが学習 | git 管理外のため `REUSE.toml` の対象外。重み自体は許諾しない（`NOTICE` に記載） | `NOTICE`、`THIRD_PARTY_NOTICES.md` |
+| 第三者重み | HOMR ONNX、Real-ESRGAN、RapidOCR 同梱モデル | 各上流（#504 §0.3） | 対象外。git には manifest と SHA-256 のみ | `THIRD_PARTY_NOTICES.md` |
+| 初期化元・学習データ | ImageNet（torchvision 事前学習重み）、楽譜画像 | 第三者 | 本リポジトリに含めない。重みへの条件の波及は未確定（§4） | — |
+| 評価・GT データ | `data/evaluation2/**`（GT 座標 JSON 等）、`configs/cnn_barline_runs/issue44_baseline_v1/fixtures/**`、`experiments/issue333/{corpus.json,phase25_ground_truth.json,results/**}` | ラベルは first-party。元の楽譜は第三者著作物（保護期間内の作品を含む） | `NotLicensed` | `NOTICE` |
+| 楽譜由来の評価証拠・reviewed GT | `tools/issue522/evidence/*.jpg`（楽譜ページの切り抜き）、`tools/issue522/evidence/review_audit.json`、`tools/issue415/reviewed_gt.json`、`tools/issue415/row_start_samples.json`、`tools/issue416/production_validation.json` | 同上 | `NotLicensed`（2026-11-13 の再分類で追加） | `NOTICE` |
+| 楽譜由来の test fixture | `tests/fixtures/expected_overrides_page_*.json`、`tests/fixtures/movement_boundaries/**`、`tests/fixtures/system_grouping/issue218_{la_mer,measure_gt,real_detection,real_score}.json` | 第三者の楽譜（IMSLP 等）から作った座標・期待値 | `NotLicensed` | `NOTICE` |
+| 合成 fixture（#218） | `tests/fixtures/system_grouping/issue218_3div*` / `4div*`（PNG 6、JSON 2） | first-party。`generate_issue218.py` で 8 ファイルとも byte 一致で再生成できる（2026-11-08、2026-11-13 に再確認） | `AGPL-3.0-or-later`。#504 旧監査の「出典記録なし」はこれで訂正 | — |
+| Graphify 参照資料 | `.agents/skills/graphify/references/**`（8 件） | 第三者。導入済み `graphifyy 0.9.41` の `graphify/skills/*/references/` と byte 一致（2026-11-13 に再確認）。パッケージは `Apache-2.0` | `Apache-2.0`。Graphify の NOTICE をルート `NOTICE` に転記。開発用で配布物に含めない | `NOTICE`、`LICENSES/Apache-2.0.txt` |
+| Graphify 生成物 | `graphify-out/**`、`.agents/skills/graphify/.graphify_version` | first-party source から code-only モードで生成 | `AGPL-3.0-or-later` | — |
+| 利用者の PDF と出力 | git 管理外 | 利用者 | リポジトリのライセンスは及ばない | — |
 
-専門家確認（必要に応じて）:
+分類規則: 第三者の楽譜ページの画像・切り抜き、またはそのページ上の GT・座標・評価出力を含む追跡ファイルは `NotLicensed` とする。
+集計値だけのファイル（例: `tools/issue522/evidence/summary.json`）、入力のハッシュ・パスだけの契約ファイルは first-party とする。
+この規則に基づく点検は heuristic であり、正式適用時に対象版で再実行する（§7 の G3）。
 
-- ImageNet 事前学習重みから初期化した重み、および保護期間内の楽譜から作った学習・評価データについて、重みやラベルへ条件が及ぶか。
-- AI エージェントが生成したコード部分の著作権表示の書き方。
+## 4. 確定した事項と残る判断
 
-## 8. #504 から受け取る事項
+確定（既定値。オーナーが変更しない限りこの内容で適用する）:
 
-確定: 結合物の提供に AGPL 互換の first-party ライセンスが必要であること、第三者部品を再許諾できないこと、HOMR・BasicSR に改変があること。
-未確定: OMR-DLN と HOMR の重みの条件、別プロセス・別リポジトリの結合関係、(c) での §13 の範囲。
-これらは本リポジトリのライセンス選択を左右しないが、`NOTICE` と提供手順の記述に反映する。
-[#519](https://github.com/M763468/PDFScoreBar/issues/519) の OMR-DLN 代替検証の結果も、ライセンス選択の前提にはしない。
+| 事項 | 内容 | 根拠 |
+| --- | --- | --- |
+| ライセンス | `AGPL-3.0-or-later`（GNU 公式 `agpl-3.0.txt` 全文、SHA-256 `0d96a4ff68ad…abcb0`） | オーナー決定 |
+| 著作権表示 | `Copyright (C) 2025-<適用年> Masaki Muramatsu` | 最初の commit は 2025-09-15。オーナー以外の人間の寄与者なし（下記） |
+| 文書 | コードと同じ `AGPL-3.0-or-later`。CC BY 4.0 等への分離はしない | #521 の判断を維持。分ける必要が生じたら後の版で変更できる |
+| 過去 commit への遡及 | 明示しない。`LICENSE` を含む版から適用する | 公開済みの #521 commit は §2 の注意のとおり |
+| HOMR 断片の SPDX | `AGPL-3.0-or-later AND AGPL-3.0-only` | 上流が only / or-later を明示しないため保守的に宣言 |
+| 重み・データ・fixture | §3 の `NotLicensed` 一覧 | 権利が確認できるまで許諾しない |
+
+寄与者の確認（2026-11-13、`develop` の author と `Co-authored-by`）:
+
+| identity | 判断 |
+| --- | --- |
+| M763468 / Masaki Muramatsu | オーナー |
+| `masaki.muramatsu <agent@example.com>`、`Codex Agent <agent@example.com>`、`google-labs-jules[bot]`（オーナーのメールアドレス） | オーナー環境で起動した AI エージェント |
+| `Distribution test` / `Release tests`（`example.invalid`）、109 件 | 2026-10-20〜10-31 の commit。内容は #492 等のオーナー作業。テストの fixture が共有 `.git/config` に `[user]` を書き込んだ不具合（#513、修正済み）でオーナー環境の commit がこの名義になったもの。**確認済み** |
+| `Co-authored-by: Claude Opus 5.5`、`github-actions[bot]` | AI エージェント / CI |
+
+オーナー以外の人間の寄与者はいない。適用にオーナー以外の同意は不要と見込める。
+
+残るオーナー判断・専門家確認（いずれも `LICENSE` 適用自体のブロッカーではない）:
+
+- [ ] **適用するリリースの決定**（§7 の手順の開始）。
+- [ ] **MMR 重みの扱い。** 配布物に含まれ実行に必要だが `NotLicensed` のため、正式リリースの受領者は MMR 重みの許諾を得ない。
+  ImageNet 事前学習重みと楽譜由来の学習データの条件が重みに及ぶかは未確定。ライセンスを付けるか、PDFScoreBar の実行に限る許諾を付けるか、
+  現状のままとするかを、配布・試用の前に判断する（§6）。barline CNN の release asset も同じ。
+- [ ] GT ラベル（座標）に別ライセンスを付けるか（後日。付けるまで `NotLicensed`）。
+- [ ] 外部の寄与を受け始める前に DCO / CLA を決める（別管理。first-party の別商用条件を維持するなら CLA 等が必要）。
+- 専門家確認（必要に応じて）: 上記の重み・データの条件、AI エージェント生成部分の表示、公開済み #521 commit の効力。
+
+## 5. 適用準備の状況
+
+**非公開の適用パッケージ**（オーナーのローカル作業領域、git 管理外の `logs/issue505/`。公開リモートへ送らない）:
+
+- 退避した #521 の 2 commit（`966ce854`、`c091ad48`）を `develop@04c16674` に再適用し、1 commit に再構成した。
+- #521 からの更新: Ultralytics・OMR-DLN の記載を削除（#522 / #523）。`THIRD_PARTY_NOTICES.md` を #504 §0 の監査対象イメージ
+  （`sha256:71cbccf6d7f7…`、Python 99 件）に合わせた（pypdfium2、NVIDIA / `cuda-toolkit`、HOMR 重みの上流 FAQ と学習データの注意を追加）。
+  `NotLicensed` に §3 の楽譜由来の評価証拠・reviewed GT を追加。配布 manifest は 117 → 124 ファイル。
+- 変更対象: `LICENSE`、`LICENSES/`（`AGPL-3.0-or-later`、`AGPL-3.0-only`、`Apache-2.0`、`LicenseRef-PDFScoreBar-NotLicensed`）、`NOTICE`、
+  `THIRD_PARTY_NOTICES.md`、`REUSE.toml`、`pyproject.toml`（`license = "AGPL-3.0-or-later"`）、README（英・日）、
+  `docs/MINIMAL_MAINLINE_SURFACE.json` / `.md` / `.ja.md`。
+
+**非公開の適用リハーサル**（2026-11-13、リモートを持たない使い捨てのクローンと独立リポジトリ）:
+
+| 検査 | 結果 |
+| --- | --- |
+| repository surface / 翻訳 metadata | Passed（surface 124 件、翻訳 43 ファイル） |
+| `reuse lint`（パッケージ適用後のリポジトリ） | Passed（REUSE 3.3、2023 / 2023 files） |
+| リリース候補の生成・検査（`tools/release_candidate.py`） | Passed（124 files。候補ツリーでも `reuse lint` Passed、120 / 120） |
+| ライセンスなし昇格の後にライセンスだけを入れる候補 | Passed。差分は `LICENSE` 一式・README・`pyproject.toml`・manifest と provenance だけ |
+| wheel メタデータ（`uv build --wheel`） | `License-Expression: AGPL-3.0-or-later`。`LICENSE` / `NOTICE` 同梱時は `License-File` も出る |
+| targeted pytest（配布面・リリース候補・runtime 契約・翻訳・#100 surface） | 128 passed |
+| runtime fingerprint | `pyproject.toml` の変更で `177fe356…` → `b3d4ae1d…` に変わる。既存イメージは再ビルドが必要 |
+| Docker 再ビルド | Passed（イメージの `/workspace` に `LICENSE` / `NOTICE` / `THIRD_PARTY_NOTICES.md` が入る。editable install の dist-info に `License-File` は入らない） |
+| focused smoke（`configs/smoke_test.yaml`、再ビルドしたイメージ） | Passed（preflight の fingerprint 一致、85 / 85、hard FP 0、FN 0） |
+
+**リハーサルで確認した注意点:**
+
+1. **`main` だけにライセンスを入れると、次の昇格で消える。** リリース候補は source commit の manifest 選択ファイルだけで作られる。
+   ライセンスのない `develop` から次の候補を作ると、`LICENSE` 一式の削除を含む候補が静的検査を通過する（リハーサルで再現）。
+   正式適用の直後に同じ変更を `develop` へ入れる必要がある（§7 の手順 6）。この時点では `main` で公開済みのため、早期付与にはならない。
+2. **Docker イメージは build context 全体を `/workspace` に COPY する。** 開発用 checkout から作ったイメージには、`NotLicensed` の
+   楽譜切り抜き・GT も入る。イメージを配布する場合は、リリース候補ツリー（124 ファイル）から build することを条件にする（§6）。
+
+## 6. #504・#508 との境界
+
+- **#505 は first-party の許諾**、**#504 は第三者の義務**。`LICENSE` を付けても HOMR・PyMuPDF 等の AGPL 義務、Ubuntu・NVIDIA の条件、
+  第三者重みの権利は消えない。逆に第三者義務を満たしても、first-party の許諾がなければ受領者は PDFScoreBar を利用・再配布できない。
+- 限定試用（#508）の方式別の前提:
+
+| 方式 | first-party（#505）の前提 | 主な第三者・重みの条件（#504） |
+| --- | --- | --- |
+| (a) 利用者 PC への portable 実行物の配布 | 正式ライセンス済みの版から作る。または、その版の適用前に試用者へ個別に書面で許諾する。MMR / CNN 重みの許諾 | 同梱する全部品の LICENSE / NOTICE、HOMR・PyMuPDF の対応ソースと改変表示、Python の Metadata only 94 件・Unresolved 1 件の照合、NVIDIA 部品の再配布条件、HOMR 重みの学習データ |
+| (b) Docker イメージ等の配布 | (a) と同じ。イメージはリリース候補ツリーから build し、`/workspace` に `LICENSE` 一式が入ることを確認 | (a) に加え、Ubuntu の各パッケージの通知・対応ソースと商標、CUDA ベースイメージの再配布条件 |
+| (c) 時間限定のクラウド GPU・リモート提供 | 実行物を渡さないため first-party の許諾は配布ほど必須ではないが、提供する版と対応ソースの案内を固定する | 改変版 HOMR を利用者に操作させるため §13 の対応ソース提供、HOMR 重みの学習データ（Camera-PrIMuS の HF 複製は CC BY-NC 4.0）、NVIDIA・クラウドの利用条件 |
+
+- 試用の人数が少ないことを理由に未解決の権利問題を許容しない。方式の選択と Go/No-go は #508 で行う。
+- #505 の正式適用は `main` リリースに連動する。(a) / (b) を正式ライセンス済みの版で行う場合は、その版の昇格と §7 の適用が試用開始の前提になる。
+
+## 7. 正式適用の手順と最終ゲート
+
+前提: 適用対象のリリース（`develop` の凍結 commit `S`）を決め、OMR-DLN 除去後の内容で `main` へ昇格できる状態にする。
+
+1. 非公開パッケージを、オーナーのローカルで `S` に適用し、ライセンス commit `L` を作る（衝突時はパッケージを内容の正本として手で合わせる）。
+   適用年を著作権表示に反映する。
+2. 方式を選ぶ。
+   - 方式 A（推奨。オーナー方針の「main 向け focused PR」と一致）: `S` を通常どおり昇格した後、`L` を source、昇格後の `main` を parent として
+     `tools/release_candidate.py create` で候補を作る。候補の差分はライセンス一式だけになる。
+   - 方式 B: `L` を source に昇格候補を作り、昇格とライセンス適用を 1 回で行う。
+3. 最終ゲート（対象版で実施。過去のリハーサル結果では代用しない）:
+   - G1 `python3 tools/check_repository_surface.py`、`python3 tools/verification/check_doc_translations.py`、`git diff --check`
+   - G2 `uvx reuse lint`（ソースと候補ツリーの両方）
+   - G3 楽譜由来ファイルの点検（パッケージ同梱の点検スクリプト）。新しい hit は §3 の規則で分類
+   - G4 `LICENSE` を GNU 公式 `agpl-3.0.txt` と SHA-256 照合
+   - G5 `tools/release_candidate.py check`、候補に `LICENSE` / `NOTICE` / `THIRD_PARTY_NOTICES.md` / `REUSE.toml` / `LICENSES/` があること
+   - G6 `THIRD_PARTY_NOTICES.md` が対象版の依存・イメージ（#504 の再採取）と一致すること
+   - G7 wheel の `License-Expression`、runtime fingerprint の変化の記録、Docker 再ビルドと focused smoke
+   - G8 Git 依存の pytest（`docs/dev/LOCAL_VALIDATION.md` の使い捨てコンテナ）
+4. ライセンスを含む候補ブランチを push し、`main` 向け PR を作る。**push と PR の作成が許諾の公開になる**ため、オーナーの明示的な承認後に行う。
+5. オーナーがマージする。
+6. **直後に `L` と同じ変更を `develop` へ入れる PR を作る**（注意点 1）。以後の昇格 PR では `LICENSE` 一式の削除がないことを確認する。
+7. #505 と本文書を「適用済み」に更新する。
+
+最終リリース対象に依存する検証（対象 commit との fingerprint 一致、最終イメージ内の通知、第三者部品の版）は、その時点で再実施する。
+
+## 8. 履歴: 2026-11-07 のライセンス比較（取り下げ済みの推奨を含む）
+
+以下は初版の比較の要約で、**現在の方針ではない**。Apache-2.0 の推奨は 2026-11-08 のオーナー決定で置き換えた。
+
+| 選択肢 | 他者に許すこと | 当時の評価 |
+| --- | --- | --- |
+| LICENSE なし（現状） | GitHub 上の閲覧・fork のみ | 結合物の (b)(c) 提供ができない |
+| MIT | 改変・再配布・商用を広く許可 | 最も簡潔。特許許諾の明示なし。改変版の非公開 SaaS も認める |
+| Apache-2.0（当時の推奨候補） | MIT と同等に広い。特許許諾、NOTICE 保持 | AGPL 依存を減らした部分を緩い条件で再利用できる。改変版の非公開 SaaS も認める |
+| **AGPL-3.0-or-later（採用）** | 改変版をネットワーク提供する者にも対応ソースの提供を要求 | 改変版の囲い込みを防げる。first-party 部分の再利用の敷居は残る |
+| GPL-3.0-or-later、MPL-2.0、領域別の複数ライセンス | — | 利点が少ない、または境界管理の手間が大きい |
+
+当時の判断軸は「第三者が改変版を非公開のまま商用製品・SaaS に使うことを認めるか」と「AGPL 依存を減らした部分を緩い条件で再利用したいか」だった。
+オーナーは前者を認めない方針を選んだ。MIT、Apache-2.0、GPL-3.0、AGPL-3.0 はいずれも HOMR・PyMuPDF の AGPL と互換で、
+どれを選んでも結合した runtime を渡す・提供するときの AGPL 遵守義務は残る。

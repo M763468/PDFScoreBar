@@ -1,11 +1,10 @@
-import pytest
-
-pytest.importorskip("homr")
-
+import importlib.util
 import os
 import tempfile
 import unittest
 from pathlib import Path
+
+import pytest
 
 from src.pipeline.core import load_json, load_yaml, write_yaml
 from src.pipeline.main import run_pipeline
@@ -20,6 +19,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 class TestPipelineIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if importlib.util.find_spec("homr") is None:
+            pytest.fail("Real PDF integration requires HOMR; install it in the selected runtime")
         cls.test_run_id = "integration_test_run"
         cls.temp_dir = tempfile.TemporaryDirectory(prefix="pdfscore-integration-")
         cls.addClassCleanup(cls.temp_dir.cleanup)

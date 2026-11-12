@@ -216,3 +216,74 @@ def test_synthetic_pdf_reaches_manifest_with_detector_outputs(tmp_path, monkeypa
     assert len(manifest["pages"]) == 1
     assert "synthetic-detector" in json.dumps(manifest)
     assert "page_001_hybrid.json" in json.dumps(manifest)
+
+
+@pytest.mark.parametrize("scenario", ["disabled", "missing", "available"])
+def test_real_integration_opt_in_dependency_gate(tmp_path, scenario):
+    """Exercise collection and class setup without loading a model or touching a GPU."""
+    import os
+    import subprocess
+    import sys
+
+    plugin = tmp_path / "integration_gate_probe.py"
+    plugin.write_text(
+        """import importlib.util
+import os
+from pathlib import Path
+
+_original = importlib.util.find_spec
+
+def pytest_collection_modifyitems(items):
+    scenario = os.environ["INTEGRATION_GATE_SCENARIO"]
+    def find_spec(name, *args, **kwargs):
+        if name == "homr":
+            return object() if scenario == "available" else None
+        return _original(name, *args, **kwargs)
+    importlib.util.find_spec = find_spec
+    if scenario == "available":
+        def stop_before_pipeline(config_path):
+            assert Path(config_path).is_file()
+            assert Path(config_path).parent.name.startswith("pdfscore-integration-")
+            raise RuntimeError("TEST_REACHED_PIPELINE_WITH_ISOLATED_CONFIG")
+        items[0].module.run_pipeline = stop_before_pipeline
+""",
+        encoding="utf-8",
+    )
+    root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join([str(tmp_path), str(root)])
+    env["INTEGRATION_GATE_SCENARIO"] = scenario
+    env.pop("PDFSCORE_RUN_REAL_INTEGRATION", None)
+    if scenario != "disabled":
+        env["PDFSCORE_RUN_REAL_INTEGRATION"] = "1"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "-rs",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "integration_gate_probe",
+            "tests/test_pipeline_integration.py::TestPipelineIntegration::test_full_sequence",
+        ],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    output = result.stdout + result.stderr
+    if scenario == "disabled":
+        assert result.returncode == 0 and "1 skipped" in output
+        assert "requires explicit opt-in" in output
+    elif scenario == "missing":
+        assert result.returncode != 0
+        assert "Real PDF integration requires HOMR" in output
+        assert "1 skipped" not in output
+    else:
+        assert result.returncode != 0
+        assert "TEST_REACHED_PIPELINE_WITH_ISOLATED_CONFIG" in output
+        assert "1 skipped" not in output

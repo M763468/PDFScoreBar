@@ -93,10 +93,19 @@ jobs:
         with:
           node-version: "22"
       - name: Install lightweight test dependencies
-        run: python -m pip install pytest Pillow PyMuPDF==1.26.4 PyYAML psutil numpy opencv-python-headless scipy tqdm
+        run: python -m pip install -r .github/requirements-lightweight-ci.txt
       - name: Install CPU PyTorch
-        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+        run: python -m pip install -c .github/requirements-lightweight-ci.txt torch==2.15.0+cpu --index-url https://download.pytorch.org/whl/cpu
+      - name: Record test environment
+        run: |
+          python --version
+          node --version
+          python -m pip freeze
       - name: Run maintained fast tests
-        run: make test-fast PYTHON=python || { cat artifacts/test_fast.log; exit 1; }
+        shell: bash
+        run: |
+          mapfile -t fast_tests < <(sed -n 's/^FAST_TESTS ?= //p' Makefile | tr ' ' '\n')
+          test "${#fast_tests[@]}" -gt 0
+          PYTHONPATH=. python -m pytest -ra "${fast_tests[@]}"
       - name: Run Node contracts
         run: make test-node-contract PYTHON=python

@@ -181,7 +181,7 @@ class AnnotatedNumberLayerTests(unittest.TestCase):
                     # The first bbox starts 20 pt above its staff, as with high notes.
                     {
                         "row_id": "row_001",
-                        "row_start_measure_number": 1,
+                        "row_start_measure_number": 2,
                         "top_staff_bbox": [60, 100, 180, 142],
                     },
                     {
@@ -204,6 +204,23 @@ class AnnotatedNumberLayerTests(unittest.TestCase):
             second["staff_start"][1] - second["rect"][3],
             delta=0.5,
         )
+
+    def test_suppresses_number_one_when_replacing_existing_layer(self):
+        source = self.root / "source.pdf"
+        data = fixture(source)
+        first = self.root / "first.pdf"
+        sidecar, _ = write_number_layer(source, source, data, first)
+        data[0]["rows"][0]["row_start_measure_number"] = 1
+        second = self.root / "second.pdf"
+
+        _, report = write_number_layer(first, source, data, second, previous_sidecar=sidecar)
+
+        self.assertEqual(report["label_count"], 0)
+        self.assertEqual(report["pages"][0]["number_streams"], [])
+        self.assertEqual(
+            report["pages"][0]["suppressed_number_one_rows"], [data[0]["rows"][0]["row_id"]]
+        )
+        self.assertTrue(report["previous_layer_removed_to_exact_original"])
 
     def test_unwrapped_page_content_gets_one_number_stream_per_label(self):
         source = self.root / "source.pdf"

@@ -6,12 +6,54 @@
 > **法的助言ではない。** 本文書はライセンス文、上流の表示、現行ソースから読み取れる事実と一般的な解釈を整理したもの。
 > 「未確定」と書いた項目は推測で埋めず、必要なら専門家確認を経て判断する。
 
-## 0. 現行運用監査（2026-11-11 JST、`develop@52da54ec7a8f`）
+## 0. 現行運用監査（2026-11-13 JST、`develop@82853c5b1cab`）
 
 **この節が現在の監査の入口・提供判断の正本。** 以下の §1–§10 は PR #518 により採用された
 `develop@3f7c8a632c6b`（2026-11-07）時点の監査スナップショットであり、歴史的証拠として保持する。
 旧節の「現行」「必須」「ブロッカー」の記述が本節と矛盾する場合は本節を優先する。
 本節は法律上の最終判断ではない。上流表示・依存定義・実際のイメージ同梱・提供方法を区別する。
+
+### 0.0 実イメージ追跡の追加結果（2026-11-13）
+
+調査対象は `develop@82853c5b1cab106fdc85e550944bcc6dcc9e0c0c`。実物は既存の
+`pdfscore_issue522_candidate@sha256:71cbccf6d7f7bba3b96989f8043e1b6b991a3d90122bfe6afda0aae82d99610a`。
+image label の source commit は `97b8bc3c4179ff3882d85c4b0c28941e5ce1be0f` であり、
+最新developと同一commitではない。resolver は runtime environment contract の一致を報告し、アプリsourceは
+bind mount する前提。元commitとの差分にはPDF修正等がある。イメージ内のsourceと最新develop全体が一致する証拠ではない。
+`Dockerfile`、`pyproject.toml`、HOMR patch は両commit間で差分なし。
+
+実物を読み取った証拠はローカル git 管理外 `logs/issue504/environment-audit/` に保持する。
+`image-inspect.json`、`resolver.txt`、`source-diff.txt`、`python-sbom.json`（99 distributionsの版・
+メタデータ・依存・VCS・検出された通知ファイルとハッシュ）、`dpkg.txt`（422行）、
+`image-inventory.txt`（モデルhashとpip一覧）。メタデータとファイル名抽出は完全なライセンス判定や
+配布用NOTICEではなく、個別レビュー・不足ファイルの確認が必要。例えばpypdfium2には `licenses/` 以下に
+複数ライセンスがあり、単純なファイル名抽出では拾い切れない。
+HOMR `direct_url.json` は `457e7c6518a10ba755db2e60883419e56c4d7369`、Real-ESRGANは
+`a4abfb2979a7bbff3f69f58f58ae324608821e27`、BasicSRは1.4.2、PyMuPDFは1.26.4、
+pypdfium2は5.15.1。Ultralytics distributionおよび `YOLOv8m_Measures.pt` は実イメージの検索で見つからなかった。
+これは対象イメージの観測で、他の履歴イメージへの主張ではない。
+
+実イメージのONNX SHA-256（ZIPのhashではない）:
+
+| 資産 | SHA-256 |
+| --- | --- |
+| SegNet 308 FP16 | `60f495496cb41473c0521d0811d8f44b9d5cff892d287974a8aebb3eaee2fa83` |
+| Transformer 426 encoder FP16 | `cd2da3ddec91af046d274506947f01da079c4ec5908ba0dd4c0c5985f780c82a` |
+| Transformer 426 decoder FP16 | `58d55eebe22788ce98f0fc7730480a79c9f56534db064e8d32b1d5fe2579904a` |
+
+ファイル名は固定ソースの選択資産と一致するが、上流ZIPの取得・展開後bytesとの独立比較は未実施。
+上流の重みAGPL表明と、PrIMuS等の学習データ由来の法的不確実性は別の問題である。
+
+HOMRの固定source、`docker/patch_homr_onnx_provider.py`、`src/homr_runtime/api_compat.py`、
+Dockerfileと取得手順が対応ソース候補。BasicSR 1.4.2はDockerfileの `functional_tensor` →
+`functional` のimport書換えがある。実際の改変済みソースと上流との差分の再構成・改変日・通知の完成は提供前に必要。
+対応ソースの法的な結合範囲は未確定であり、単にURLを並べるだけで充足したとは扱わない。
+Ubuntuの各パッケージのライセンスと対応ソース、[Ubuntu商標方針](https://ubuntu.com/legal/intellectual-property-policy)、
+[NVIDIAの各版・各部品の再配布条件](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html)を
+配布候補ごとに確認する。現時点では一覧の取得であり、全パッケージの通知・対応ソース確認は未完了。
+
+**状態:** 実環境の追加調査は進んだが、配布用NOTICEとOS/NVIDIAの部品別条件、改変差分の再構成、
+上流ZIPとの実bytes照合が未完了。現フェーズの完了を宣言する前に不足証拠を確認する。
 
 ### 0.1 対象と確定した変更
 
@@ -30,8 +72,8 @@
   **retained-producer Full68 replay** は TP3560 / FP0 / FN7、物理小節3287、
   MMR 171/3/3/0。OMR 重みなしの **fresh 1ページ E2E** は 85/85 で成功。
   **fresh Full68 の再推論を実施した結果ではない。**
-- 今回の調査は source/manifest/上流表示の読み取りであり、最新イメージの
-  `importlib.metadata` 全件再取得・GPU実行・コンテナ再ビルドは **未実施**。
+- 2026-11-11時点の調査は source/manifest/上流表示の読み取りであり、当時の最新イメージの
+  `importlib.metadata` 全件再取得・GPU実行・コンテナ再ビルドは **未実施**。追加実測は §0.0。
   §1 にある「102 distribution」は旧イメージの記録であり、今回の最新SBOMではない。
 
 ### 0.2 現行の主要コード依存・改変・通知
@@ -84,7 +126,7 @@ HOMR固定commitの
 典拠: [HOMR `onnx_checkpoints` release](https://github.com/liebharc/homr/releases/tag/onnx_checkpoints)
 の資産メタデータ（2026-11-11確認）。**これはGitHubが表示する配布ZIPのdigestであって、
 当方がダウンロードして検算した値でも、解凍後のONNX単体のhashでもない。**
-実際のイメージ内のmodel bytes・hash・source fingerprintが一致するかは**未実施**。
+実イメージのONNX hashとsource fingerprintは §0.0。上流ZIPとのbytes照合は未実施。
 また、上流FAQの歴史的なcheckpoint 396の例を現行の **426** と混同せず、
 426の正確な学習元は上流FAQ/Training資料との個別照合を残す。
 
@@ -137,8 +179,7 @@ PyMuPDF が入る。`docker/review_relay.py` は `tools.review_correction.server
 **解消済み（`develop`限定）:** OMR-DLN の出所不明な配布重みを
 取得/配置する必要と、その推論に伴うUltralytics依存。#519/#522はClosed。
 #523で Full68 replay・下流・補正・fresh 1ページの検証結果は確定した。
-PDF出力4ページの配置失敗は OMR と独立の [#524](https://github.com/M763468/PDFScoreBar/issues/524)
-で管理し、本監査のライセンス課題と混同しない。
+PDF出力4ページの配置問題は [#526](https://github.com/M763468/PDFScoreBar/pull/526) で修正され #524 は Closed。#523 の当時の失敗は履歴として保持する。
 
 **未解消:** HOMRの対応ソース/改変通知、HOMR重み（特にPrIMuS）の権利・checkpoint同定、
 PyMuPDFのAGPL結合範囲、第三者NOTICE、各資産を含む新イメージの依存SBOM、
@@ -159,7 +200,7 @@ AGPL-3.0-or-laterをfirst-partyの第一候補とする意思は維持し、OMR�
 
 1. **PyMuPDFの最終PDF・番号レイヤ・補正/再開:** `pikepdf`/`pypdf` 等と機能・低水準PDF操作を比較。
    AGPL結合面積を減らせる見込みがある一方、原注釈・所有レイヤ・undo/resume・フォント/幾何が難所。
-   [#524](https://github.com/M763468/PDFScoreBar/issues/524) の既存renderer失敗を候補回帰と誤分類しない。
+   [#526](https://github.com/M763468/PDFScoreBar/pull/526) の修正後を基準とし、旧renderer失敗を候補回帰と誤分類しない。
    対象版・基準renderer・入力・出力契約・rollbackを固定して別Issueで評価する。
 2. **PyMuPDFの入力レンダリング:** `pypdfium2`/PDFiumを候補とするが、レンダリング差は
    認識器入力も変える。出力経路置換とは分離し、Full68 GT・小節番号・PDF geometry・性能を検証する。

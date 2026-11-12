@@ -182,7 +182,7 @@ PyMuPDF が入る。`docker/review_relay.py` は `tools.review_correction.server
 PDF出力4ページの配置問題は [#526](https://github.com/M763468/PDFScoreBar/pull/526) で修正され #524 は Closed。#523 の当時の失敗は履歴として保持する。
 
 **未解消:** HOMRの対応ソース/改変通知、HOMR重み（特にPrIMuS）の権利・checkpoint同定、
-PyMuPDFのAGPL結合範囲、第三者NOTICE、各資産を含む新イメージの依存SBOM、
+PyMuPDFのAGPL結合範囲、第三者NOTICE、依存SBOMの不足通知の点検、
 配布時のUbuntu/NVIDIA条件、実行版と一致するSource配布手順。
 
 **#505の方針は変更しない。** 現時点で `develop` にfirst-partyの
@@ -215,7 +215,7 @@ AGPL-3.0-or-laterをfirst-partyの第一候補とする意思は維持し、OMR�
 
 ### 0.7 次の監査証拠と終了条件
 
-1. **最新imageのSBOM（未実施）:** `develop@52da54ec7a8f` の検証済みimage digestと
+1. **imageのSBOM（§0.0で部分実施）:** `develop@52da54ec7a8f` の検証済みimage digestと
    source fingerprint、pip/importlib の全distribution（版・license/SPDX/URL/著作権/同梱 LICENSE）、
    VCS `direct_url.json`、`dpkg-query`、CUDA/NVIDIA wheel、実際のHOMR/Real-ESRGAN/OCR資産と
    digestを機械可読で保存する。旧 §1 の102 distributionは照合用であり再利用して終わりにしない。

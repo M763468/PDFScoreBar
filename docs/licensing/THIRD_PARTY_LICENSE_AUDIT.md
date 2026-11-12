@@ -46,13 +46,13 @@ pypdfium2は5.15.1。Ultralytics distributionおよび `YOLOv8m_Measures.pt` は
 
 HOMRの固定source、`docker/patch_homr_onnx_provider.py`、`src/homr_runtime/api_compat.py`、
 Dockerfileと取得手順が対応ソース候補。BasicSR 1.4.2はDockerfileの `functional_tensor` →
-`functional` のimport書換えがある。実際の改変済みソースと上流との差分の再構成・改変日・通知の完成は提供前に必要。
+`functional` のimport書換えがある。実イメージのHOMR encoder/decoderと固定上流、およびBasicSR 1.4.2上流と改変済みファイルの差分は `logs/issue504/environment-audit/source/` に保持。HOMRはprovider設定2か所、BasicSRはimport 1行。改変日と通知の完成、配布物に含む対応ソース全体の照合は提供前に必要。
 対応ソースの法的な結合範囲は未確定であり、単にURLを並べるだけで充足したとは扱わない。
 Ubuntuの各パッケージのライセンスと対応ソース、[Ubuntu商標方針](https://ubuntu.com/legal/intellectual-property-policy)、
 [NVIDIAの各版・各部品の再配布条件](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html)を
 配布候補ごとに確認する。現時点では一覧の取得であり、全パッケージの通知・対応ソース確認は未完了。
 
-**状態:** 実環境の追加調査は進んだが、配布用NOTICEとOS/NVIDIAの部品別条件、改変差分の再構成、
+**状態:** 実環境の追加調査は進んだが、配布用NOTICEとOS/NVIDIAの部品別条件、対応ソース全体の提供手順、
 上流ZIPとの実bytes照合が未完了。現フェーズの完了を宣言する前に不足証拠を確認する。
 
 ### 0.1 対象と確定した変更

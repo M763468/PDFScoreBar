@@ -8,7 +8,7 @@ import os
 import re
 import stat
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Sequence
 
 from src.pipeline.engine_contract import (
@@ -199,7 +199,11 @@ def validate_local_input_reference(reference: str) -> str:
             "input_reference_invalid",
             "The input PDF reference is invalid.",
         )
-    if _has_control_character(reference) or _URI_SCHEME.match(reference):
+    # Issue #506 PoC: a Windows drive-qualified path ("S:\...") is not a URI scheme.
+    is_windows_drive_path = os.name == "nt" and bool(PureWindowsPath(reference).drive)
+    if _has_control_character(reference) or (
+        _URI_SCHEME.match(reference) and not is_windows_drive_path
+    ):
         raise _error(
             ErrorCategory.INPUT,
             "input_reference_not_allowed",

@@ -415,7 +415,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                         "available_ram_gib": ram,
                         "available_vram_gib": vram,
                         "device": device,
-                        "uid": os.getuid(),
+                        "uid": getattr(os, "getuid", lambda: None)(),  # Issue #506 PoC
                     },
                     indent=2,
                 )
@@ -429,7 +429,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                     **self._source_admission,
                     "policy": policy,
                     "sr_status": batch_payload.get("status"),
-                    "uid": os.getuid(),
+                    "uid": getattr(os, "getuid", lambda: None)(),  # Issue #506 PoC
                 },
                 indent=2,
             )

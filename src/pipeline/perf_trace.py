@@ -11,8 +11,12 @@ import contextlib
 import contextvars
 import json
 import os
-import resource
 import time
+
+try:  # Issue #506 PoC: resource is POSIX-only.
+    import resource
+except ImportError:  # pragma: no cover - Windows
+    resource = None
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any
@@ -27,6 +31,9 @@ def enabled() -> bool:
 
 
 def _cpu_seconds() -> float:
+    if resource is None:
+        times = os.times()
+        return float(times.user + times.system)
     usage = resource.getrusage(resource.RUSAGE_SELF)
     return float(usage.ru_utime + usage.ru_stime)
 

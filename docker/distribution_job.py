@@ -44,7 +44,10 @@ def prepare_local_review(package: Path) -> str:
             return {key: relocate(item) for key, item in value.items()}
         if isinstance(value, list):
             return [relocate(item) for item in value]
-        if isinstance(value, str) and (value == old_root or value.startswith(old_root + "/")):
+        # Issue #506 PoC: also relocate Windows separators.
+        if isinstance(value, str) and (
+            value == old_root or value.startswith(old_root + "/") or value.startswith(old_root + "\\")
+        ):
             return str(retained) + value[len(old_root) :]
         return value
 

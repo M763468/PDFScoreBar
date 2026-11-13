@@ -17,12 +17,12 @@
     "connector_capture": true
   },
   "runtime": {
-    "python": "/opt/venv_pipeline/bin/python",
-    "homr_source": "/opt/venv_pipeline/lib/python3.12/site-packages",
-    "pdfscore_source": "/workspace",
-    "homr_commit_marker": "/opt/homr_maintained_profile_commit.txt",
-    "pdfscore_commit_marker": "/opt/pdfscore_maintained_profile_commit.txt",
-    "compat_entrypoint": "/workspace/src/pipeline/detection/maintained_homr_worker.py"
+    "python": "S:\\workspace\\ws_PDFScoreBar\\issue506_poc\\venv_cu126\\Scripts\\python.exe",
+    "homr_source": "S:\\workspace\\ws_PDFScoreBar\\issue506_poc\\venv_cu126\\Lib\\site-packages",
+    "pdfscore_source": "S:\\workspace\\ws_PDFScoreBar\\PDFScoreBar\\.worktrees\\issue506",
+    "homr_commit_marker": "S:\\workspace\\ws_PDFScoreBar\\issue506_poc\\markers\\homr_maintained_profile_commit.txt",
+    "pdfscore_commit_marker": "S:\\workspace\\ws_PDFScoreBar\\issue506_poc\\markers\\pdfscore_maintained_profile_commit.txt",
+    "compat_entrypoint": "S:\\workspace\\ws_PDFScoreBar\\PDFScoreBar\\.worktrees\\issue506\\src\\pipeline\\detection\\maintained_homr_worker.py"
   },
   "production_dispatch": {
     "role": "authoritative_original_baseline",

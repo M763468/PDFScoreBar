@@ -1,0 +1,13 @@
+numpy==2.5.3
+PyMuPDF==1.26.4
+opencv-python==4.11.0.86
+onnxruntime-gpu==1.24.4
+pillow==12.3.0
+scipy==1.18.1
+scikit-learn==1.9.1
+matplotlib==3.10.6
+coloredlogs==15.0.1
+rapidocr-onnxruntime==1.4.4
+psutil==7.2.2
+torch==2.14.0
+torchvision==0.29.0

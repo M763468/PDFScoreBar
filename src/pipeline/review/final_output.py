@@ -15,6 +15,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 _LABEL_FONT_CANDIDATES = (
+    # Issue #506 PoC: distribution-owned copy of the Docker image font.
+    r"S:\workspace\ws_PDFScoreBar\issue506_poc\assets\fonts\DejaVuSans-Bold.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
     "DejaVuSans-Bold.ttf",

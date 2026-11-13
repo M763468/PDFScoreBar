@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 import math
+import os
 import re
 import unicodedata
 from pathlib import Path
@@ -15,6 +16,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 _LABEL_FONT_CANDIDATES = (
+    # Issue #506 PoC: distribution-owned font path supplied by the portable launcher.
+    *((os.environ["PDFSCORE_LABEL_FONT"],) if os.environ.get("PDFSCORE_LABEL_FONT") else ()),
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
     "DejaVuSans-Bold.ttf",

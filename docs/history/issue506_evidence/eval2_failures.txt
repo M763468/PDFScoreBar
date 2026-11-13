@@ -1,0 +1,4 @@
+Shostakovich-Sym5-Va.log failed {'processed': 0, 'requested': 25, 'skipped': 0} internal_error ['page_001'] Current x4 support requires a complete connector semantic pair
+Va__Prokofiev_Symphony5.log failed {'processed': 0, 'requested': 23, 'skipped': 0} internal_error ['page_006'] Current x4 support requires a complete connector semantic pair
+Shostakovich-Sym5-Va.log failed {'processed': 0, 'requested': 25, 'skipped': 0} internal_error ['page_001'] Current x4 support requires a complete connector semantic pair
+Va__Prokofiev_Symphony5.log failed {'processed': 0, 'requested': 23, 'skipped': 0} internal_error ['page_006'] Current x4 support requires a complete connector semantic pair

@@ -1,0 +1,299 @@
+{
+  "a": "baseline_eval2\\Shostakovich-Festival_Overture_Va\\job-b20189137d654260b1f857ecb4bb7057",
+  "b": "S:\\i5f\\n1\\job-f17ab134e9f14bf6b66d80ebae7e63a5",
+  "pages": {
+    "page_001": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        32,
+        32
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        8,
+        8
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        32,
+        32
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_002": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        35,
+        35
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        9,
+        9
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        34,
+        34
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_003": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        40,
+        40
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        10,
+        10
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        40,
+        40
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_004": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        33,
+        33
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        9,
+        9
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        33,
+        33
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_005": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        41,
+        41
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        10,
+        10
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        40,
+        40
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_006": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        40,
+        40
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        10,
+        10
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        40,
+        40
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_007": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        48,
+        48
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        10,
+        10
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        48,
+        48
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_008": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        47,
+        47
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        10,
+        10
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        46,
+        46
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_009": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        37,
+        37
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3034,
+          4296
+        ],
+        [
+          3034,
+          4296
+        ]
+      ],
+      "system_count": [
+        9,
+        9
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        36,
+        36
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    }
+  },
+  "final_pdf": {
+    "page_count": [
+      9,
+      9
+    ],
+    "page_rects_equal": true,
+    "rotation_equal": true,
+    "drawings_count": [
+      0,
+      0
+    ],
+    "byte_equal": false
+  },
+  "semantic_equal": true
+}

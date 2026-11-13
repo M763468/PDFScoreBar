@@ -1,0 +1,206 @@
+{
+  "a": "baseline_eval2\\Va_Prokofiev_Symphony1\\job-715a33e04f2b47339e9c74cb4d74d363",
+  "b": "S:\\i5f\\n4\\job-ebb52c07ee904a9ab414470c0cafc1e9",
+  "pages": {
+    "page_001": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        85,
+        85
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        78,
+        78
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_002": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        80,
+        80
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        77,
+        77
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_003": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        83,
+        83
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        75,
+        75
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_004": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        123,
+        123
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        101,
+        101
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_005": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        80,
+        80
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        74,
+        74
+      ],
+      "measure_max_bbox_delta_px": 2,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_006": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        104,
+        104
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        13,
+        13
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        99,
+        99
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    }
+  },
+  "final_pdf": {
+    "page_count": [
+      6,
+      6
+    ],
+    "page_rects_equal": true,
+    "rotation_equal": true,
+    "drawings_count": [
+      0,
+      0
+    ],
+    "byte_equal": false
+  },
+  "semantic_equal": false
+}

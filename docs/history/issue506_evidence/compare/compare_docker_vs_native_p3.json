@@ -1,0 +1,113 @@
+{
+  "a": "baseline3\\job-cfc7e535dd4042638b86c710112f3436",
+  "b": "S:\\i5\\p3\\job-8f965c24fcbc4cce944cc827e769cdba",
+  "pages": {
+    "page_001": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        85,
+        85
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        78,
+        78
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_002": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        80,
+        80
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        77,
+        77
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_003": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        83,
+        83
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        75,
+        75
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    }
+  },
+  "final_pdf": {
+    "page_count": [
+      3,
+      3
+    ],
+    "page_rects_equal": true,
+    "rotation_equal": true,
+    "drawings_count": [
+      0,
+      0
+    ],
+    "byte_equal": false
+  },
+  "semantic_equal": true
+}

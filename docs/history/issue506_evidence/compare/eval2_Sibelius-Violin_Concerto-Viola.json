@@ -1,0 +1,330 @@
+{
+  "a": "baseline_eval2\\Sibelius-Violin_Concerto-Viola\\job-8e13e4965a864bfbb13ff7f9d97355cf",
+  "b": "S:\\i5f\\n3\\job-ab2dba9c136043a2a877b286ad693c06",
+  "pages": {
+    "page_001": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        50,
+        50
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        9,
+        9
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        40,
+        40
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_002": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        83,
+        83
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        9,
+        9
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        59,
+        59
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_003": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        80,
+        80
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        10,
+        10
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        64,
+        64
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_004": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        114,
+        114
+      ],
+      "barline_max_bbox_delta_px": 2,
+      "barline_boxes_differing": 1,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        10,
+        10
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        68,
+        68
+      ],
+      "measure_max_bbox_delta_px": 2,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_005": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        93,
+        93
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        11,
+        11
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        83,
+        83
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_006": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        52,
+        52
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        50,
+        50
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_007": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        74,
+        74
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        13,
+        13
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        72,
+        72
+      ],
+      "measure_max_bbox_delta_px": 1,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_008": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        69,
+        69
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        11,
+        11
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        66,
+        66
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_009": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        58,
+        58
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        11,
+        11
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        57,
+        57
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    },
+    "page_010": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        54,
+        54
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        11,
+        11
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        52,
+        52
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    }
+  },
+  "final_pdf": {
+    "page_count": [
+      10,
+      10
+    ],
+    "page_rects_equal": true,
+    "rotation_equal": true,
+    "drawings_count": [
+      0,
+      0
+    ],
+    "byte_equal": false
+  },
+  "semantic_equal": false
+}

@@ -1,0 +1,18 @@
+page 1: pixels=8775000 differing=12054 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 2: pixels=8775000 differing=13536 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 3: pixels=8775000 differing=14610 max=109
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 4: pixels=8775000 differing=15012 max=111
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 5: pixels=8775000 differing=14874 max=213
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 6: pixels=8775000 differing=15153 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0

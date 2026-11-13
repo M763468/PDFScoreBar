@@ -1,0 +1,8 @@
+page_001 numbers_equal True first [1, 2, 3] last [96] bbox_max_delta 0 meta_equal True
+page_002 numbers_equal True first [97, 98, 99] last [174] bbox_max_delta 0 meta_equal True
+page_003 numbers_equal True first [179, 180, 181] last [262] bbox_max_delta 0 meta_equal True
+page_004 numbers_equal True first [263, 264, 265] last [366] bbox_max_delta 0 meta_equal True
+page_005 numbers_equal True first [367, 368, 369] last [444] bbox_max_delta 2 meta_equal True
+page_006 numbers_equal True first [445, 446, 447] last [550] bbox_max_delta 0 meta_equal True
+applied_measure_overrides.json equal True
+corrected numbering semantic equal: True

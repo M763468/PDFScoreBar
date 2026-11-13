@@ -1,0 +1,51 @@
+{
+  "a": "S:\\i5\\p1g\\job-3cdbee9c40704a83bf0f499505ea3a47",
+  "b": "S:\\i5\\p1h\\job-eb879328de9b4d3f85eda8211c35a80b",
+  "pages": {
+    "page_001": {
+      "source_png_sha_equal": true,
+      "barline_count": [
+        85,
+        85
+      ],
+      "barline_max_bbox_delta_px": 0,
+      "barline_boxes_differing": 0,
+      "page_size": [
+        [
+          3000,
+          3900
+        ],
+        [
+          3000,
+          3900
+        ]
+      ],
+      "system_count": [
+        12,
+        12
+      ],
+      "measure_numbers_equal": true,
+      "measure_count": [
+        78,
+        78
+      ],
+      "measure_max_bbox_delta_px": 0,
+      "numbering_metadata_equal": true,
+      "mmr_overrides_equal": true
+    }
+  },
+  "final_pdf": {
+    "page_count": [
+      1,
+      1
+    ],
+    "page_rects_equal": true,
+    "rotation_equal": true,
+    "drawings_count": [
+      0,
+      0
+    ],
+    "byte_equal": false
+  },
+  "semantic_equal": true
+}

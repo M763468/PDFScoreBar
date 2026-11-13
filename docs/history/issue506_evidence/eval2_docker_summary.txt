@@ -1,0 +1,6 @@
+preflight rc=0
+Shostakovich-Festival_Overture_Va rc=0 elapsed=774s
+Shostakovich-Sym5-Va rc=1 elapsed=774s
+Sibelius-Violin_Concerto-Viola rc=0 elapsed=841s
+Va_Prokofiev_Symphony1 rc=0 elapsed=592s
+Va__Prokofiev_Symphony5 rc=1 elapsed=1156s

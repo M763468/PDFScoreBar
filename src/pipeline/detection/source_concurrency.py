@@ -91,8 +91,13 @@ def select_workers(policy, images, *, available_ram_gib, available_vram_gib, dev
 
 def available_resources():
     """Respect both host available memory and remaining cgroup-v2 allowance."""
-    mem = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
-    ram = int(mem["MemAvailable"].split()[0]) * 1024
+    if os.name == "nt":  # Issue #506 PoC: no /proc on Windows.
+        import psutil
+
+        ram = psutil.virtual_memory().available
+    else:
+        mem = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
+        ram = int(mem["MemAvailable"].split()[0]) * 1024
     limit = Path("/sys/fs/cgroup/memory.max")
     if limit.exists() and limit.read_text().strip() != "max":
         ram = min(
@@ -153,7 +158,18 @@ class SourceJobs:
         finally:
             # Kill the entire session group, including descendants after leader exit.
             try:
-                os.killpg(process.pid, signal.SIGKILL)
+                if os.name == "nt":  # Issue #506 PoC: no process groups on Windows.
+                    import psutil
+
+                    try:
+                        for child in psutil.Process(process.pid).children(recursive=True):
+                            child.kill()
+                    except psutil.NoSuchProcess:
+                        pass
+                    if process.poll() is None:
+                        process.kill()
+                else:
+                    os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             process.wait()

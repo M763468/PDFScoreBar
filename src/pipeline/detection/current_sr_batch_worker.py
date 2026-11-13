@@ -200,7 +200,7 @@ def main() -> int:
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(
-                {"status": "failed", "error_type": type(error).__name__, "error": str(error)},
+                {"status": "failed", "error_type": type(error).__name__, "error": str(error), "poc_traceback": __import__("traceback").format_exc()[-1500:]},
                 ensure_ascii=False,
             )
         )

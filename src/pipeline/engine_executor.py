@@ -294,7 +294,8 @@ class PipelineJobExecutor:
 
         detection = config.get("detection")
         if isinstance(detection, dict):
-            detection["hybrid_output_root"] = str(work_root / "runs" / job_id / "hybrid_output")
+            # Issue #506 PoC: shorten the internal path to fit Windows MAX_PATH.
+            detection["hybrid_output_root"] = str(work_root / "h")
 
         review = outputs.setdefault("review", {})
         if not isinstance(review, dict):

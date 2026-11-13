@@ -13,7 +13,7 @@ patches, scripts (`tools/issue506/`), and the small evidence files under
 | Question | Answer (scope of this record only) |
 | --- | --- |
 | Can the existing engine and review application run natively on Windows without Docker/WSL2? | **Yes, on one machine with PoC patches.** Automatic processing, numbered PDF, review save → corrected PDF regeneration, server-restart resume, and resume-in-new-session ran natively. |
-| Does unmodified `develop` run on Windows? | **No.** It fails at input validation, and twelve further Windows blockers follow (see Blockers). |
+| Does unmodified `develop` run on Windows? | **No.** It fails at input validation, and eleven further Windows blockers follow, plus three not reached (see Blockers). |
 | Is the Windows runtime equivalent to the Docker runtime? | **Not identical.** On evaluation2 (25 successful pages) 22 pages are exactly equal; 3 pages keep identical barline counts, measure numbers, MMR and numbering metadata but 1–2 px bbox differences. Final PDF row-label glyphs differ by 1–2 px. A different runtime (torch cu126 / cuDNN 9.10 / triton-windows) would need its own accepted regression gate before production use. |
 | Is a distributable portable build proven? | **No.** A relocated portable *folder* ran on the same machine with the originals hidden. Clean machines, other GPUs, AV, signing, normal user paths and Japanese output paths are not proven (Japanese output paths fail). |
 | Third-party distribution | **No-go** until #504/#505 rights, #508 Phase 0 device conditions, and the gates below pass. |

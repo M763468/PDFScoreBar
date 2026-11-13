@@ -1,0 +1,9 @@
+page 1: pixels=8775000 differing=12054 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 2: pixels=8775000 differing=13536 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 3: pixels=8775000 differing=14610 max=109
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0

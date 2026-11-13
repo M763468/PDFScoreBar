@@ -1,0 +1,12 @@
+Pillow features: 
+raqm False freetype 2.14.3
+region y=1412: docker_ink_bbox=(13, 14, 58, 41) native_ink_bbox=(14, 14, 59, 41) ink_px=586/588 differing=847
+region y=1644: docker_ink_bbox=(15, 18, 79, 57) native_ink_bbox=(16, 18, 79, 57) ink_px=711/710 differing=1386
+region y=1868: docker_ink_bbox=(18, 18, 79, 56) native_ink_bbox=(19, 18, 79, 56) ink_px=676/683 differing=1500
+region y=2108: docker_ink_bbox=(17, 14, 79, 53) native_ink_bbox=(18, 14, 79, 53) ink_px=753/758 differing=1318
+region y=2332: docker_ink_bbox=(18, 17, 79, 56) native_ink_bbox=(18, 17, 79, 56) ink_px=782/786 differing=1558
+region y=2572: docker_ink_bbox=(17, 14, 79, 51) native_ink_bbox=(18, 14, 79, 51) ink_px=701/704 differing=1234
+region y=2812: docker_ink_bbox=(13, 13, 79, 52) native_ink_bbox=(14, 13, 79, 52) ink_px=808/811 differing=1306
+region y=3052: docker_ink_bbox=(12, 12, 79, 52) native_ink_bbox=(14, 12, 79, 52) ink_px=693/694 differing=1156
+region y=3292: docker_ink_bbox=(12, 14, 79, 54) native_ink_bbox=(13, 14, 79, 54) ink_px=825/823 differing=1264
+region y=3508: docker_ink_bbox=(15, 18, 79, 57) native_ink_bbox=(16, 18, 79, 57) ink_px=845/848 differing=1570

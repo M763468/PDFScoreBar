@@ -1,0 +1,5 @@
+Shostakovich-Festival_Overture_Va rc=0 elapsed=1433s out=S:/i5f/n1
+Shostakovich-Sym5-Va rc=1 elapsed=1796s out=S:/i5f/n2
+Sibelius-Violin_Concerto-Viola rc=0 elapsed=1276s out=S:/i5f/n3
+Va_Prokofiev_Symphony1 rc=0 elapsed=747s out=S:/i5f/n4
+Va__Prokofiev_Symphony5 rc=1 elapsed=1415s out=S:/i5f/n5

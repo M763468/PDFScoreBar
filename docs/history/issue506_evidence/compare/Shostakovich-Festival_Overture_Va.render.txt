@@ -1,0 +1,27 @@
+page 1: pixels=9775548 differing=5679 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 2: pixels=9775548 differing=10698 max=108
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 3: pixels=9775548 differing=11604 max=109
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 4: pixels=9775548 differing=9957 max=111
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 5: pixels=9775548 differing=11271 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 6: pixels=9775548 differing=12462 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 7: pixels=9775548 differing=12207 max=146
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 8: pixels=9775548 differing=12195 max=109
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0
+page 9: pixels=9775548 differing=11169 max=110
+text a: 0 b: 0 annots: 0 0
+xobjects/ocgs a: 0 b: 0

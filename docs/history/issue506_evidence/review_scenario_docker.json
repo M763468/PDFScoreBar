@@ -1,0 +1,379 @@
+{
+  "initial_counts": {
+    "pending": 0,
+    "recorded": 0,
+    "not_recorded": 24,
+    "current": 0,
+    "stale": 0,
+    "not_applied": 24,
+    "applying": 0,
+    "error": 0
+  },
+  "save": {
+    "output": "/results/job-715a33e04f2b47339e9c74cb4d74d363/review/corrections/mmr_measure_spans.json",
+    "correction_type": "mmr_measure_span",
+    "count": 1,
+    "page_count": 1,
+    "checkpoint_id": "cp_0fc7ec84b4b52f4a437c8f93de123743dc8f8cd7769a751fb500643ec1cc4b1b"
+  },
+  "apply_start": {
+    "schema_version": 1,
+    "package": {
+      "status": "mixed",
+      "counts": {
+        "pending": 0,
+        "recorded": 1,
+        "not_recorded": 23,
+        "current": 0,
+        "stale": 0,
+        "not_applied": 0,
+        "applying": 24,
+        "error": 0
+      },
+      "current_result": null,
+      "last_successful_result": null,
+      "current_identity": {
+        "identity_version": 2,
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "corrections_identity": "f1a04a43ad92d8e9e2903361693e6a8f9d01bd0809d3f7425a4b6508972f023b",
+        "identity": "7fefde81121baca43c8df25f333ace279db6398723838cb5c6c348427c49b4a9"
+      },
+      "last_application": {
+        "status": "running",
+        "identity": {
+          "identity_version": 2,
+          "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+          "corrections_identity": "f1a04a43ad92d8e9e2903361693e6a8f9d01bd0809d3f7425a4b6508972f023b",
+          "identity": "7fefde81121baca43c8df25f333ace279db6398723838cb5c6c348427c49b4a9"
+        },
+        "started_at": "2026-11-13T17:04:31.206430+00:00"
+      }
+    },
+    "states": [
+      {
+        "page": "0",
+        "page_id": "page_001",
+        "correction_type": "mmr_measure_span",
+        "edit_status": "none",
+        "recording_status": "recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": "641a9636a8c382d8dba3a6418082905e9a0a58272d7b38c5a715bc4b00880735",
+        "applied_identity": null
+      },
+      {
+        "page": "0",
+        "page_id": "page_001",
+        "correction_type": "measure_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "0",
+        "page_id": "page_001",
+        "correction_type": "barline_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "0",
+        "page_id": "page_001",
+        "correction_type": "movement_boundary",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "1",
+        "page_id": "page_002",
+        "correction_type": "mmr_measure_span",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "1",
+        "page_id": "page_002",
+        "correction_type": "measure_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "1",
+        "page_id": "page_002",
+        "correction_type": "barline_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "1",
+        "page_id": "page_002",
+        "correction_type": "movement_boundary",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "2",
+        "page_id": "page_003",
+        "correction_type": "mmr_measure_span",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "2",
+        "page_id": "page_003",
+        "correction_type": "measure_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "2",
+        "page_id": "page_003",
+        "correction_type": "barline_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "2",
+        "page_id": "page_003",
+        "correction_type": "movement_boundary",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "3",
+        "page_id": "page_004",
+        "correction_type": "mmr_measure_span",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "3",
+        "page_id": "page_004",
+        "correction_type": "measure_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "3",
+        "page_id": "page_004",
+        "correction_type": "barline_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "3",
+        "page_id": "page_004",
+        "correction_type": "movement_boundary",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "4",
+        "page_id": "page_005",
+        "correction_type": "mmr_measure_span",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "4",
+        "page_id": "page_005",
+        "correction_type": "measure_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "4",
+        "page_id": "page_005",
+        "correction_type": "barline_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "4",
+        "page_id": "page_005",
+        "correction_type": "movement_boundary",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "5",
+        "page_id": "page_006",
+        "correction_type": "mmr_measure_span",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "5",
+        "page_id": "page_006",
+        "correction_type": "measure_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "5",
+        "page_id": "page_006",
+        "correction_type": "barline_construction",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      },
+      {
+        "page": "5",
+        "page_id": "page_006",
+        "correction_type": "movement_boundary",
+        "edit_status": "none",
+        "recording_status": "not_recorded",
+        "application_status": "applying",
+        "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf",
+        "recorded_identity": null,
+        "applied_identity": null
+      }
+    ],
+    "labels": {
+      "none": "No unrecorded edit",
+      "pending": "Edit not recorded",
+      "not_recorded": "No correction recorded",
+      "recorded": "Correction recorded",
+      "not_applied": "No corrected result yet",
+      "current": "Corrected result is current",
+      "stale": "Recorded corrections changed since this result",
+      "applying": "Generating corrected result",
+      "error": "Needs attention",
+      "mixed": "Review has different correction states",
+      "package_mixed": "Review has different correction states"
+    }
+  },
+  "apply_wall_sec": 8.4,
+  "apply_result": {
+    "checkpoint_id": "cp_0fc7ec84b4b52f4a437c8f93de123743dc8f8cd7769a751fb500643ec1cc4b1b",
+    "final_pdf_sha256": "bfbbb4e7a114e8a00ad837473d79b367e596d6bfbac7c9fa71ef25838e5c09ef",
+    "identity": "7fefde81121baca43c8df25f333ace279db6398723838cb5c6c348427c49b4a9",
+    "result_identity": "0ac886122ce7a1240e905616ec4992c460ae41b8f25219cba283f65f18fba28c",
+    "corrections_identity": "f1a04a43ad92d8e9e2903361693e6a8f9d01bd0809d3f7425a4b6508972f023b",
+    "source_identity": "3e1a2c4b910ac952799e07d830223e78ce9990b1d4c3018a7ceae9589a13c0bf"
+  },
+  "after_apply_counts": {
+    "pending": 0,
+    "recorded": 1,
+    "not_recorded": 23,
+    "current": 24,
+    "stale": 0,
+    "not_applied": 0,
+    "applying": 0,
+    "error": 0
+  },
+  "resume": {
+    "session": "s_36fcc16509c6415999c95b0f2bffbb1c",
+    "url": "/?session=s_36fcc16509c6415999c95b0f2bffbb1c"
+  },
+  "resumed_session_counts": {
+    "pending": 0,
+    "recorded": 1,
+    "not_recorded": 23,
+    "current": 0,
+    "stale": 0,
+    "not_applied": 24,
+    "applying": 0,
+    "error": 0
+  },
+  "resumed_mmr": {
+    "schema_version": 1,
+    "correction_type": "mmr_measure_span",
+    "items": [
+      {
+        "op": "set_measure_span",
+        "page": 0,
+        "system": 1,
+        "measure": 2,
+        "reason": "issue506 scripted correction",
+        "measure_span": 3
+      }
+    ]
+  }
+}

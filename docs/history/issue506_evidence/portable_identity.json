@@ -1,0 +1,17 @@
+{
+  "root": "S:\\pb",
+  "python_home": "S:\\pb\\python\\cpython-3.12.12-windows-x86_64-none",
+  "profile_sha256": "48903877a584830788bc110acc49907c96f9a57bf03dadabafa18ba6d08bb05e",
+  "assets": {
+    "assets/fonts/COPYRIGHT.fonts-dejavu-core": "63d3ba759d12804c5b31a9d5940d855c1820d1f5999e6b0872eb1c7ff045fbc9",
+    "assets/fonts/DejaVuSans-Bold.ttf": "d1c3ff99f1e1ce1827a33efd4dad81f40babda06bff9e43bd7591c86662a287b",
+    "assets/model-cache/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+    "assets/realesrgan/RealESRGAN_x2plus.pth": "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb",
+    "assets/realesrgan/RealESRGAN_x4plus.pth": "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1"
+  },
+  "homr_models": {
+    "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16.onnx": "60f495496cb41473c0521d0811d8f44b9d5cff892d287974a8aebb3eaee2fa83",
+    "decoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16.onnx": "58d55eebe22788ce98f0fc7730480a79c9f56534db064e8d32b1d5fe2579904a",
+    "encoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16.onnx": "cd2da3ddec91af046d274506947f01da079c4ec5908ba0dd4c0c5985f780c82a"
+  }
+}

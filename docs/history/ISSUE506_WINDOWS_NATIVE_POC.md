@@ -71,9 +71,11 @@ Windows effect; they are outside #506 and tracked in
 [#532](https://github.com/M763468/PDFScoreBar/issues/532) (`No noteheads found` on the proxy,
 then an incomplete connector pair aborts x4 support). The jobs stop at page 1 and page 6, so
 recognition equivalence of the 48 pages of those two PDFs is **not verified**; this record does
-not claim "all 73 pages succeeded/compared". Whether those pages are genuinely non-score pages
-(the #62/#63 contract: pages without staves yield an empty result and processing continues) is
-for #532; "no noteheads" alone does not establish an empty page. Native timings were measured
+not claim "all 73 pages succeeded/compared". A local render (visual check only) shows the
+failing pages are genuinely non-score pages: the Sym. 5 part's cover and a blank Prokofiev page
+with only a page number. Under the #62/#63 contract such pages yield an empty result and
+processing continues, so #532 is a regression of that contract on the current route ("no
+noteheads" alone would not establish an empty page). Native timings were measured
 with other disk/CPU work running and are not a performance comparison. Native-vs-native
 repetition was exactly equal including final PDF pixels. Details:
 [`compare/`](issue506_evidence/compare/), [`eval2_failures.txt`](issue506_evidence/eval2_failures.txt).

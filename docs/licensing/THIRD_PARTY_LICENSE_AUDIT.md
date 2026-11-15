@@ -6,12 +6,16 @@
 > **法的助言ではない。** 本文書はライセンス文、上流の表示、現行ソースから読み取れる事実と一般的な解釈を整理したもの。
 > 「未確定」と書いた項目は推測で埋めず、必要なら専門家確認を経て判断する。
 
-## 0. 現行運用監査（2026-11-13 JST、`develop@6263350755f5`）
+## 0. 現行運用監査（2026-11-13 JST、`develop@6263350755f5`。最終調査 2026-11-15、`develop@25d0dad7ac8f`）
 
 **この節が現在の監査の入口・提供判断の正本。** 以下の §1–§10 は PR #518 により採用された
 `develop@3f7c8a632c6b`（2026-11-07）時点の監査スナップショットであり、歴史的証拠として保持する。
 旧節の「現行」「必須」「ブロッカー」の記述が本節と矛盾する場合は本節を優先する。
 本節は法律上の最終判断ではない。上流表示・依存定義・実際のイメージ同梱・提供方法を区別する。
+
+**2026-11-15 の最終調査は [§0.8](#final-20261115) と、受入条件の照合は [§0.9](#acceptance-final)。**
+§0.0–§0.7 の 2026-11-13 時点の記述（Python 台帳の「Metadata only 94 / Unresolved 1」、OS の未検出 3 件、
+GPL/LGPL/AGPL の候補数、HOMR 重みの説明）は当時の結果として残す。分類と管理先が異なる場合は §0.8 を優先する。
 
 ### 0.0 実イメージ追跡の追加結果（2026-11-13）
 
@@ -264,6 +268,194 @@ AGPL-3.0-or-laterをfirst-partyの第一候補とする意思は維持し、OMR�
 - #508の具体的な配布候補ごとに、§0.0.1のPython/OS台帳と実物を照合し、未確認ライセンス・通知・NVIDIA条件・対応ソースの提供を解決する。再ビルド時は新しいimageで再採取する。
 - #505で正式リリース対象のfirst-partyライセンス・権利境界と第三者通知を確認する。HOMRの学習データ・重みに関する未確定事項は提供形態ごとに判断する。
 - #504で出力/補正と入力描画を別々に評価し、精度・PDF幾何・注釈・履歴・性能の契約とrollbackを固定してから、必要に応じ重複のないfocused Issueに分ける。
+  （2026-11-15 更新: この長期改善は [#533](https://github.com/M763468/PDFScoreBar/issues/533) に移管。§0.8.6）
+
+<a id="final-20261115"></a>
+
+### 0.8 最終調査（2026-11-15）
+
+**対象:** repository `develop@25d0dad7ac8f17d1b9f2ed1a8398cc12d96f58f6`（PR #530 マージ後）。実物は §0.0 と同じ
+`sha256:71cbccf6d7f7bba3b96989f8043e1b6b991a3d90122bfe6afda0aae82d99610a`（build source `97b8bc3c`）。
+`git diff --name-status 97b8bc3c 25d0dad7 -- Dockerfile pyproject.toml docker/patch_homr_onnx_provider.py models src/homr_runtime/api_compat.py`
+は空であり、依存定義・HOMR patch・モデル定義はこのイメージと一致する。**再ビルドはしていない。** 新しいimageを配布候補にする場合は
+同じ手順で再採取する。イメージは `--network none`、mountなしで読み取り専用に検査した。
+
+**証拠:** ローカル git 管理外の `logs/issue504/environment-audit/final-20261115/`。
+`py-license-text-review.json`（99 distributionsの同梱ライセンス本文の分類、同梱shared library、NOTICE。SHA-256 `18461ec4…5988411459`）、
+`os-dep5-review.json`（422 packagesのDEP-5 `License:` 欄。`95a9c812…8c42df2`）、
+`python-license-ledger-20261115.json`（2026-11-13 の状態を `status_20261113` として保持した最終台帳。`82c2c9d2…416b1bc`）、
+生成スクリプトとコマンドは同ディレクトリの `README.txt`。2026-11-13 の証拠ファイルは上書きしていない。
+本文の分類は正規表現による本文の特徴照合と目視確認の組合せで、法的結論ではない。
+
+#### 0.8.1 Python 99件の最終分類
+
+[台帳](PYTHON_IMAGE_LICENSE_LEDGER.md) を 2026-11-15 の分類に更新した。各distributionの同梱ライセンス本文を読み、宣言と照合した。
+
+| 2026-11-15 状態 | 件数 | 意味 | 対象 |
+| --- | --- | --- | --- |
+| Confirmed | 56 | 同梱本文が宣言と一致（または内容のないmeta-package）。通常の著作権・ライセンス表示の保持で足りる | 下記以外。`cuda-toolkit`、`facexlib`、`nvidia-nccl-cu13`（BSD-3）、`nvidia-nvtx`（Apache-2.0 WITH LLVM-exception）を含む |
+| Confirmed + conditions | 24 | ライセンスは確認済み。ただし同梱部品や本文欠落により配布時に追加の作業・条件がある | numpy、scipy、opencv-python、opencv-python-headless、shapely、pillow、torchvision、torch、pypdfium2、onnxruntime-gpu、scikit-learn、grpcio、llvmlite、numba、fonttools、matplotlib、pip、setuptools、**PyMuPDF**、rapidocr、rapidocr-onnxruntime、flatbuffers、tensorboard-data-server、types-Pillow |
+| Proprietary terms confirmed | 14 | NVIDIA独自条件の本文と該当条項を確認（§0.8.3） | CUDA Toolkit EULA 12件（cublas、cuda-cccl、cupti、nvrtc、cuda-runtime、cufft、cufile、curand、cusolver、cusparse、nvjitlink、nvshmem）、NVIDIA SDK License Agreement 2件（cudnn-cu13、cusparselt-cu13） |
+| Verified | 2 | 固定版の上流LICENSEと改変を確認（HOMR、Real-ESRGAN） | homr、realesrgan |
+| Legal review required | 2 | 非商用条件を含む同梱コードがあり、法的判断が必要（§0.8.5） | basicsr（2026-11-13 は Verified）、gfpgan |
+| Not applicable | 1 | first-party | pdfscore-pipeline |
+
+**2026-11-13 の未確定項目の解消:**
+- `cuda-toolkit==13.0.3.0`（Unresolved → Confirmed）: [PyPI](https://pypi.org/project/cuda-toolkit/13.0.3.0/) とイメージ内METADATAが
+  「ソフトウェアを含まずほかのpackageを入れるmeta-package」と示す。distribution自体に再配布するコードはない。torchの
+  `cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3` が選ぶ `nvidia-*` wheelの条件に従う。
+- LICENSEを同梱しない4件: `flatbuffers`（[上流](https://github.com/google/flatbuffers) Apache-2.0）、`rapidocr-onnxruntime`（[上流](https://github.com/RapidAI/RapidOCR) Apache-2.0）、
+  `tensorboard-data-server`（[上流](https://github.com/tensorflow/tensorboard) Apache-2.0）、`types-Pillow`（METADATA Apache-2.0、typeshed）。
+  宣言は上流と一致したが、**(b)ではライセンス本文を通知へ補う必要がある**。`types-Pillow` は型スタブでruntimeに不要。
+- `facexlib`: METADATAは Apache-2.0 だが、同梱本文と [上流](https://github.com/xinntao/facexlib) はMIT。本文を正とする。本番SR経路ではimportされない。
+- 宣言と同梱本文の不一致はこの1件のみ（自動照合で他の94件に不一致なし）。
+
+**同梱部品による追加条件（Confirmed + conditions の主な内容）:**
+- **LGPL部品**: opencv-python（Qt5 LGPL-3、FFmpeg LGPL-2.1+）、opencv-python-headless（FFmpeg）、shapely（GEOS LGPL-2.1）、
+  numpy / scipy（libquadmath LGPL-2.1+）、setuptools（vendored autocommand LGPL-3.0）。(b)ではLGPLの条件（ライセンス本文、
+  利用者による置換を妨げない形、該当版のソース入手手段）を満たす。いずれも未改変のshared libraryとして同梱。
+- **GPL-3 + GCC Runtime Library Exception**: libgfortran（numpy / scipy / opencv）、libgomp（scikit-learn）、pypdfium2のlibgcc/libstdc++表示。例外の範囲で通知保持。
+- **opencv-pythonとopencv-python-headlessの二重導入**: `Dockerfile` が `opencv-python==4.11.0.86` を `--no-deps` で再導入するため両方が残る。
+  通常版はQt5・X11系を含みLGPL部品が増える。ライセンス上の扱いは上記で足りるが、通常版が必要かは技術的に別判断（#533 の候補外。必要なら別Issue）。
+- **PyMuPDF**: wheelの `COPYING` は「Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License」の1行だけで、AGPL全文と、
+  同梱 `libmupdf.so` に含まれるMuPDFの第三者部品（FreeType、HarfBuzz、jbig2dec、libjpeg、lcms2mt、OpenJPEG、zlib 等）の通知を含まない。
+  [上流 MuPDF](https://github.com/ArtifexSoftware/mupdf) / [PyMuPDF](https://github.com/pymupdf/PyMuPDF) はAGPL-3.0。(b)ではAGPL全文、対応ソース（MuPDFを含む）、第三者通知を補う。
+- **torchvision**: CUDA EULAの部品 `libcudart`・`libnvjpeg` をwheel内に同梱するが、wheelのLICENSEはBSD部分のみ。NVIDIA部品は §0.8.3 の条件に従う。
+- **onnxruntime-gpu**（325 KBの `ThirdPartyNotices.txt`）、**torch**（90ファイル）、**pypdfium2**（37ファイル）、pillow（18 shared libraries）等は
+  同梱通知が多く、配布用NOTICEは自動抽出だけでなく同梱ファイルそのものを保持する方式が必要。
+
+#### 0.8.2 Ubuntu 422件
+
+全binary packageのcopyrightを再読し、DEP-5形式の `License:` 欄を抽出した（DEP-5 227件、自由形式 192件、copyrightなし 3件。source package 259件）。
+
+- **copyrightなし3件（未検出 → 内容確認済み）:** `cuda-keyring`（apt鍵とsource設定のみ）、`cuda-libraries-12-3`（ファイルなしのmeta-package）、
+  `cuda-compat-12-3`（source `cuda-drivers`、`libcuda.so.545.23.08` 等のドライバ互換ライブラリ）。前2件は再配布するコードを実質含まない。
+  `cuda-compat-12-3` は個別copyrightがなく、ベースイメージの [NGC Deep Learning Container License](#ngc-container-license)（`/NGC-DL-CONTAINER-LICENSE`）と
+  CUDA EULA Attachment A の「NVIDIA CUDA Driver Libraries」に該当する。**どちらの条項で再配布するかの解釈は法的確認事項**。
+- **2026-11-13 の「AGPL 2件」は誤検出**: `ca-certificates`、`publicsuffix` のcopyright中のMPL-2.0「Secondary License」定義文。DEP-5 `License:` 欄にAGPLはない。
+- **GPL/LGPL**: GPL系 `License:` 欄を含むpackage 245件（うちGPL-3系 98件）、LGPL系 192件、copyleft欄なし 122件。
+  複数ライセンスのpackageを重複して数えるため、「binaryがGPL」という件数ではない。自由形式の18件（`base-files`、`diffutils`、`patch` 等）は欄を抽出できず、本文を個別に読む必要がある。
+  `build-essential`（gcc/g++ 11、binutils 等）が最終imageに含まれる（`torch.compile` のため）。`python3.12` は Ubuntu ではなく `ppa:deadsnakes/ppa` から導入しており、ソースはPPA側で取得する。
+- **配布形態ごとの扱い:** (a) 対象外。(b) imageを渡す場合、GPL/LGPL packageの対応ソースを同梱するか、各ライセンスが認める書面の申し出等で提供し、
+  全copyrightを保持する。Ubuntu archiveへのリンクだけで義務を果たせるかは GPLv2 §3 / GPLv3 §6 の方式ごとの**法的確認事項**。
+  未改変パッケージの再配布は [Ubuntu IP policy](https://ubuntu.com/legal/intellectual-property-policy) の範囲で行う。
+  受領者が自分で `docker build` する方式では当方はこれらを配布しない。(c) imageを渡さない場合は配布義務の対象外。
+
+<a id="ngc-container-license"></a>
+
+#### 0.8.3 NVIDIA / CUDA / cuDNN（実同梱版）
+
+| 層 | 実同梱版（対象image） | 条件の根拠（確認した本文） | 再配布の要点 |
+| --- | --- | --- | --- |
+| ベースイメージ全体 | `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04` | `/NGC-DL-CONTAINER-LICENSE`（NVIDIA Deep Learning Container License） | §1(b) 自前インフラで第三者向けサービスを提供可（コンテナを配布せず、NVIDIA APIを利用者へ直接公開しない）。§1(c) コンテナ全体を含む「Compatible」な派生コンテナを配布可。§2 の「配布」はインターネット経由の第三者向けサービスでの展開を含み、実質的な追加機能、NVIDIA保護と同等以上の条件、不遵守時の通知が条件 |
+| OS CUDA | CUDA 12.3（cudart 12.3.101、nvrtc 12.3.107、cuBLAS/cuFFT/cuRAND/cuSOLVER/cuSPARSE/NPP/nvJPEG/nvJitLink/cuFile 12.3系） | 各copyright（CUDA EULA）、`/usr/local/cuda-12.3/gds/EULA.txt`、[CUDA 12.3.2 EULA](https://docs.nvidia.com/cuda/archive/12.3.2/eula/index.html) | Attachment A の部品、§2.3 のLinux向け未改変object code |
+| OS cuDNN | `libcudnn9-cuda-12` 9.0.0.312 | copyright = NVIDIA SDK License Agreement | runtime `.so`/`.h` のみ配布可、§1.2の条件、§2.5 OSSライセンスの対象化禁止 |
+| OS NCCL | `libnccl2` 2.20.3 | BSD-3-Clause | 通知保持 |
+| ドライバ互換 | `cuda-compat-12-3` 545.23.08 | 個別copyrightなし | 上記 §0.8.2。解釈は法的確認事項 |
+| Python CUDA 13 wheel | §0.8.1 の12件 | wheel同梱 `License.txt` = CUDA Toolkit EULA | §1.1.2: 実質的な追加機能をもつアプリへの組込み、アプリ経由のみのアクセス、NVIDIA保護と整合する配布条件、不遵守時の通知。Attachment A は CUDA Runtime、cuFFT、cuBLAS、cuSPARSE、cuSOLVER、cuRAND、NPP、nvJPEG、NVRTC、CUPTI、NVTX、Driver Libraries 等を列挙。**nvJitLink、cuFile、NVSHMEM、CCCL は列挙を確認できず**、§2.3（Linux向け部分は未改変なら再配布可）で足りるかは法的確認事項 |
+| Python cuDNN / cuSPARSELt | `nvidia-cudnn-cu13` 9.24.0.43、`nvidia-cusparselt-cu13` 0.8.1 | NVIDIA SDK License Agreement | OS cuDNN と同じ |
+| torchvision同梱 | `libcudart.so.13`、`libnvjpeg.so.13` | CUDA EULA（Attachment A掲載部品） | wheel LICENSEに現れないためNOTICEで補う |
+
+**AGPLとの関係:** NVIDIA SDK License §2.5 / CUDA EULA は「SDKをOSSライセンスの対象にする使い方」を禁じる。AGPL §1 は「System Libraries」等を対応ソースから除外するが、
+NVIDIA部品がこれに当たるか、**AGPL結合物と同じimageでNVIDIA部品を配布することが両条件と矛盾しないかは
+法的確認事項**として残す。(c) では当方がNVIDIA部品を利用者へ渡さないため、NGCライセンス§1(b)/§2の条件で扱う。
+
+#### 0.8.4 モデル重み・学習データ（公開情報で確認できた範囲）
+
+- **HOMR transformer checkpoint 426（実同梱）**: 上流 [Training.md の Run 426](https://github.com/liebharc/homr/blob/72fdfa85e59933abb84e5ac2815e5918b28c48d6/Training.md)
+  （commit `b6fd20809a8d`、2026-07-13）は「lieder+grandstaff+primux+pdmx+musetrainer」で学習したと記載。固定commit `457e7c65` の Training.md にも同じ記載がある。
+  **426がPrIMuSとMusetrainerを含むことは上流表示で確認済み。** 2026-11-12 時点の
+  [LICENSE_FAQ.md（`365283fef92a`）](https://github.com/liebharc/homr/blob/365283fef92a/LICENSE_FAQ.md) も「これまで公開したtransformer checkpointはすべてPrIMuSを含む」とする。
+  PrIMuSは [配布元](https://grfia.dlsi.ua.es/primus/) に条件の表示がなく、HF複製は CC BY-NC 4.0。Musetrainerの条件は本監査で確認していない。
+- **上流の変化（2026-11-13）**: Run 566（commit `ccd1cb311c36`）は「PrIMuS と Musetrainer を除外」と記載され、上流mainの既定checkpointは566に移った。
+  現行の [LICENSE_FAQ.md（main `72fdfa85e599`）](https://github.com/liebharc/homr/blob/72fdfa85e59933abb84e5ac2815e5918b28c48d6/LICENSE_FAQ.md) はPrIMuSを学習データ表から外し、
+  「非商用条件の学習データはない（GrandStaffは配布元に表示なし、HF複製はMIT）」とする一方、「変更前に公開した重みは当時の学習データのまま」と明記する。
+  したがって **現行固定版（426）の条件は改善されていない。** 566への更新は固定commit・APIの変更と認識精度の再評価を伴うため、#533 の候補とする。
+- **重みの権利**: 上流FAQは重みもAGPLで公開するとしつつ、「データセットの条件が重みに及ぶかは未解決の法的問題」「商用利用の法的リスクは利用者側」とする。**法的判断が必要。**
+- **HOMR segmentation（segnet 308）**: DeepScoresV2（CC BY 4.0）。帰属表示が必要。重みへの波及の解釈は transformer と同じく未確定。
+- **Real-ESRGAN x4plus / x2plus**: 上流 [Training.md](https://github.com/xinntao/Real-ESRGAN/blob/a4abfb2979a7bbff3f69f58f58ae324608821e27/docs/Training.md) によれば DF2K（DIV2K + Flickr2K）と OST で学習。
+  [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) は「学術研究目的に限り提供」と表示。重み自体の個別ライセンス表示はない。**HOMRと同じ種類の未確定事項**として扱う。
+- **RapidOCR同梱モデル**: `rapidocr_onnxruntime/models`（PP-OCRv4 det/rec、mobile cls）と `rapidocr/models`（PP-OCRv6 det/rec small、mobile cls）。
+  [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) はApache-2.0。学習データは追跡していない。
+- first-party重み（barline CNN、MMR）と評価データは #505 の範囲。変更なし。
+
+#### 0.8.5 新たに見つかった非商用条件のコード
+
+- **BasicSR 1.4.2**: `basicsr/ops/fused_act`、`basicsr/ops/upfirdn2d`（`.cu` を含む）は rosinality/stylegan2-pytorch からの改変とファイルに記載。
+  BasicSR上流の [LICENSE/](https://github.com/XPixelGroup/BasicSR/tree/v1.4.2/LICENSE) は `LICENSE-NVIDIA`（**Nvidia Source Code License-NC**、「非商用 = 研究・評価目的のみ」）を
+  StyleGAN2由来部分の条件として収録するが、wheelには Apache-2.0 の `LICENSE.txt` だけが入る。
+  本番SR経路の `from basicsr.archs.rrdbnet_arch import RRDBNet` は `basicsr.archs` パッケージの一括importにより
+  `basicsr.archs.stylegan2_arch`、`basicsr.ops.fused_act`、`basicsr.ops.upfirdn2d`、`basicsr.ops.dcn` を**読み込む**（2026-11-15 のimageで確認）。
+  RRDBNetはこれらを実行せず、CUDA拡張はビルドされていない。
+- **GFPGAN 1.3.8**: 同梱LICENSEに StyleGAN2 の NVIDIA ライセンス（非商用）と DFDNet 由来部分の CC BY-NC-SA 4.0 を含む。Real-ESRGANの依存として導入されるだけで、本番SR経路では読み込まれない。
+- **扱い:** (a) 研究・評価の内部実験は非商用条件の範囲と読める余地が大きい。(b) imageにはこれらのファイルが含まれるため、
+  非商用条件ファイルの再配布・商用試用との整合は**法的判断が必要**。(c) 実行コードとして読み込む点の評価も同様。
+  技術的な回避（BasicSRのRRDBNetのみを使う構成、gfpgan/facexlibの除外）は #533 の候補。今回は変更しない。
+
+#### 0.8.6 permissive代替候補と既存計画の十分性
+
+§0.6 の評価計画（PyMuPDF出力/補正と入力描画を分け、精度・PDF幾何・注釈/履歴・再開・性能のゲートとrollbackを事前固定）は、
+置換の有利・不利を判断する計画として十分と判断する。今回の調査で次を追加し、評価の管理先を
+[#533](https://github.com/M763468/PDFScoreBar/issues/533) に移す（#504の完了条件には含めない）。
+
+| 候補 | ライセンス上の効果 | 技術・評価上の注意 | 判断 |
+| --- | --- | --- | --- |
+| PyMuPDF出力・番号レイヤ・補正/再開 → `pikepdf`（MPL-2.0、qpdf Apache-2.0）/ `pypdf`（BSD-3-Clause） | engine・補正GUIからAGPL部品の一部を外せる | 低水準PDF操作・注釈・フォント・幾何の互換 | 有利（変更なし。§0.6 / §7） |
+| PyMuPDF入力描画 → `pypdfium2`（Apache-2.0 / BSD-3-Clause + 同梱依存。対象imageに 5.15.1 が既に存在） | 両方を置換すればPyMuPDFを除去できる | 描画差が認識入力を変える。Full68等のゲートが前提 | 条件付きで有利（変更なし） |
+| HOMR checkpoint 426 → 上流566以降 | PrIMuS（HF複製 CC BY-NC 4.0）由来の不確実性を除ける見込み。コードと重みのAGPLは残る | 固定commit・API互換・`api_compat.py`／ONNX provider patchの再確認、認識精度ゲート | **新規の有力候補**（#533） |
+| HOMR全体のpermissive代替 | — | 精度同等の既存代替なし | 現時点で不利（変更なし） |
+| BasicSRの非商用ops・GFPGANの回避 | 非商用条件ファイルの同梱・読み込みを除ける見込み | SR出力のbyte/数値同等性とFull68ゲート | **新規候補**（#533） |
+| Real-ESRGAN重みの代替 | DIV2K由来の学術限定表示を除ける見込み | 代替SRモデルは認識入力を変える | 必要時のみ（#533） |
+
+#### 0.8.7 配布形態ごとの義務（今回の追加分）
+
+§0.4 の表に次を加える。分類は**必須 / 条件付き / 対象外 / 未確定（法的判断）**。
+
+| 項目 | (a) 内部実験 | (b) 配布（実行物/フォルダ/image） | (c) 招待制GPU/Web |
+| --- | --- | --- | --- |
+| Confirmed 56件の通知 | 対象外 | **必須**: ライセンス・著作権表示の保持 | 条件付き: 複製物を渡さなければ通常不要。Source案内に併記が実務的 |
+| Confirmed + conditions 24件 | 対象外 | **必須**: 同梱ファイル一式の保持、本文欠落4件とPyMuPDF（AGPL全文・MuPDF通知）の補充、LGPL部品のソース入手手段 | 条件付き: PyMuPDFは §0.4 のAGPL評価に従う |
+| NVIDIA 14 wheel + OS CUDA/cuDNN | 対象外（GPU上の使用） | **条件付き**: CUDA EULA §1.1.2 / SDK License §1.2 / NGC §1(c)・§2 を満たす。nvJitLink・cuFile・NVSHMEM・CCCL・`cuda-compat` の根拠条項は**未確定（法的判断）** | **条件付き**: NGC §1(b)/§2（コンテナを配布しない、NVIDIA APIを直接公開しない、実質的な追加機能） |
+| Ubuntu GPL/LGPL | 対象外 | **必須**（imageを渡す場合）: 対応ソースと通知。提供方式の十分性は**未確定（法的判断）**。受領者が自分でbuildする方式なら当方は配布しない | 対象外 |
+| BasicSR NC ops / GFPGAN | 研究・評価の範囲と読める余地 | **未確定（法的判断）**: 非商用条件ファイルを含むimageの配布 | **未確定（法的判断）** |
+| HOMR 426 / Real-ESRGAN 重み | 研究・評価の範囲と読める余地 | **未確定（法的判断）**: 学習データ（PrIMuS、DIV2K）の条件が重みに及ぶか | **未確定（法的判断）** |
+| HOMR segnet / DeepScoresV2 | 対象外 | **必須**: CC BY 4.0 の帰属表示（重みに及ぶと解する場合を含め、表示しておく） | 条件付き: 同上を表示 |
+
+#### 0.8.8 確認できたこと・未確認のこと・法的判断が必要なこと
+
+| 区分 | 内容 |
+| --- | --- |
+| **確認済み** | Python 99件すべての宣言と同梱本文（不一致は `facexlib` 1件、本文なし4件は上流で確認）、`cuda-toolkit` がmeta-packageであること、同梱shared libraryとLGPL/GCC例外部品、PyMuPDF wheelにAGPL全文とMuPDF通知がないこと、OS 422件のDEP-5 `License:` 欄、copyrightなし3件の内容、OSの「AGPL」誤検出、NVIDIA各層の実同梱版と条件本文、Attachment Aの部品一覧、HOMR 426の学習データ構成（PrIMuS・Musetrainerを含む）と上流566での除外、Real-ESRGAN重みの学習データとDIV2Kの表示、BasicSR/GFPGANの非商用条件と本番経路での読み込み状況 |
+| **未確認（事実関係）** | 自由形式copyright 18件の本文の個別読解、Musetrainer・GrandStaff・Flickr2K・OST・PaddleOCR学習データの条件、HOMR 566 の精度・API互換、新しいimage（再ビルド時）の依存差分 |
+| **法的判断が必要** | AGPL結合物の厳密な範囲（§0.4）、学習データの条件が重みに及ぶか（HOMR、Real-ESRGAN）、NC条件コード（BasicSR ops、GFPGAN）を含むimageの配布と商用試用、NVIDIA部品のうちAttachment Aに列挙されないもの・`cuda-compat` の再配布根拠、NVIDIA独自条件とAGPL結合物の同時配布、Ubuntu GPL部品のソース提供方式の十分性 |
+
+#### 0.8.9 未解決事項の影響と管理先
+
+| 未解決事項 | 影響 | 管理先 |
+| --- | --- | --- |
+| 配布用 `THIRD_PARTY_NOTICES` の完成（同梱ファイル一式、本文欠落4件、PyMuPDF/MuPDF、torchvision内NVIDIA部品、DeepScoresV2帰属） | (b) の配布不可 | [#508](https://github.com/M763468/PDFScoreBar/issues/508)（試用の配布ゲート）、[#505](https://github.com/M763468/PDFScoreBar/issues/505) G6 |
+| 対応ソース一式（HOMR改変、BasicSR改変、PyMuPDF/MuPDF、LGPL部品、Ubuntu GPL）の提供手段 | (b) の配布不可、(c) の §13 案内不可 | #508 |
+| NVIDIA条件の適用条項（未列挙部品、`cuda-compat`）とAGPLとの同時配布 | image配布の (b) 不可。受領者build方式または (c) を選べば影響が縮小 | #508（方式選択）、必要なら専門家確認 |
+| HOMR 426・Real-ESRGAN重みの学習データ由来の権利、BasicSR/GFPGANの非商用条件 | (b)(c) の商用・第三者提供の判断不可。内部実験は継続 | #508（Go/No-go）、技術的回避は [#533](https://github.com/M763468/PDFScoreBar/issues/533) |
+| PyMuPDF / HOMR / SR関連のpermissive代替 | AGPL・NC負担の長期削減 | #533 |
+| first-partyライセンスの正式付与 | (b) の前提 | #505（`main` 正式リリース時） |
+
+<a id="acceptance-final"></a>
+
+### 0.9 #504 受入条件の最終照合と Close 判断の根拠
+
+| #504 受入条件 | 根拠 | 状態 |
+| --- | --- | --- |
+| 重要な第三者コード・重みごとにライセンスと証拠URL/版を追跡できる | §0.2、§0.3、§0.8.1–§0.8.4、[Python台帳](PYTHON_IMAGE_LICENSE_LEDGER.md)、ローカル `final-20261115/` | **充足**。Python 99件は全件で同梱本文または上流を確認し、Unresolved は 0 件。OS 422件・NVIDIA各層・重みは版と根拠を記録 |
+| 3提供形態の 必須 / 条件付き / 対象外 / 未確定 の表（コード領域・理由、AGPLの範囲） | §0.4、§0.8.7 | **充足**。AGPL結合の厳密な範囲は「未確定（法的判断）」として明示 |
+| 自プロジェクトのライセンス選択と独立し、互換性を引き継げる | §0.5、[REPOSITORY_LICENSE_OPTIONS.md](REPOSITORY_LICENSE_OPTIONS.md) §6 | **充足**。#505 の方針は変更なし |
+| OMR-DLNの明示許諾がない場合の不明点と確認/代替方針 | §6、§0.1、§0.5 | **充足**。#523 で `develop` production から除去済み。`main` と過去の配布物は別管理 |
+| permissive候補の比較計画と、置換が有利かの判断 | §0.6、§0.8.6、§7 | **充足**。候補ごとに有利/条件付き/不利を判断。置換・再学習・production変更はしていない |
+| 実装・配布・クラウド提供へ進むための未解決ブロッカーと専門家確認事項 | §0.8.8、§0.8.9 | **充足**。管理先は #508 / #505 / #533 |
+
+**Close 判断（推奨）:** 監査として求められた台帳・義務表・境界・代替評価計画・ブロッカーの整理は完了し、残る事項は
+(1) 配布物の作成と配布時のGo/No-go（#508 / #505）、(2) 法的判断、(3) 置換の実施（#533）であり、いずれも #504 の受入条件ではなく管理先がある。
+このため本PRの受入後に #504 を Close 可能と判断する。**Close は配布・商用利用の許可を意味しない。** 最終判断はオーナーが行う。
 
 ---
 

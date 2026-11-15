@@ -14,7 +14,7 @@ patches, scripts (`tools/issue506/`), and the small evidence files under
 | --- | --- |
 | Can the existing engine and review application run natively on Windows without Docker/WSL2? | **Yes, on one machine with PoC patches.** Automatic processing, numbered PDF, review save → corrected PDF regeneration, server-restart resume, and resume-in-new-session ran natively. |
 | Does unmodified `develop` run on Windows? | **No.** It fails at input validation, and eleven further Windows blockers follow, plus three not reached (see Blockers). |
-| Is the Windows runtime equivalent to the Docker runtime? | **Not identical.** On evaluation2 (25 successful pages) 22 pages are exactly equal; 3 pages keep identical barline counts, measure numbers, MMR and numbering metadata but 1–2 px bbox differences. Final PDF row-label glyphs differ by 1–2 px. A different runtime (torch cu126 / cuDNN 9.10 / triton-windows) would need its own accepted regression gate before production use. |
+| Is the Windows runtime equivalent to the Docker runtime? | **Not identical.** evaluation2 requested 73 pages (5 PDFs), but only 3 PDFs / 25 pages completed on both runtimes and could be compared; the remaining 48 pages of the two failed PDFs (#532) are **not** compared. Of the 25 compared pages, 22 pages are exactly equal; 3 pages keep identical barline counts, measure numbers, MMR and numbering metadata but 1–2 px bbox differences. Final PDF row-label glyphs differ by 1–2 px. A different runtime (torch cu126 / cuDNN 9.10 / triton-windows) would need its own accepted regression gate before production use. |
 | Is a distributable portable build proven? | **No.** A relocated portable *folder* ran on the same machine with the originals hidden. Clean machines, other GPUs, AV, signing, normal user paths and Japanese output paths are not proven (Japanese output paths fail). |
 | Third-party distribution | **No-go** until #504/#505 rights, #508 Phase 0 device conditions, and the gates below pass. |
 
@@ -53,7 +53,7 @@ portable `tools/issue506/portable/run_job.cmd`.
 | uv hardlink mode | In-place HOMR/BasicSR patches also modify uv's cache through hardlinks; `UV_LINK_MODE=copy` is required. |
 | Real per-session providers | ORT audit shim over the relocated 6-page run: 77 sessions in 13 processes; **all 41 CUDA-requesting sessions are active on `CUDAExecutionProvider`**, including current HOMR (x4) segnet/encoder/decoder and MMR RapidOCR; CPU-only RapidOCR/HOMR-OCR sessions were requested as CPU. One audit line was unparsable. [`portable_ort_audit_summary.txt`](issue506_evidence/portable_ort_audit_summary.txt). Production code still lacks a fail-fast for current HOMR (x4) and MMR RapidOCR CPU fallback. |
 
-### Docker vs native, evaluation2 (all pages, one job per PDF)
+### Docker vs native, evaluation2 (73 pages requested, 25 compared; one job per PDF)
 
 | PDF | Pages | Docker | Native | Semantic comparison |
 | --- | --- | --- | --- | --- |
@@ -67,10 +67,30 @@ Across the 25 successful pages, barline counts (1,635), measure counts (1,464), 
 numbers, MMR overrides, numbering metadata, page geometry and rendered source pages are equal.
 Differences are limited to the bboxes above (exact gate: **3 pages fail**). The two job
 failures are identical on both runtimes, so they are a pre-existing `82853c5b` behavior, not a
-Windows effect; they are outside #506 and need their own Issue. Native timings were measured
+Windows effect; they are outside #506 and tracked in
+[#532](https://github.com/M763468/PDFScoreBar/issues/532) (`No noteheads found` on the proxy,
+then an incomplete connector pair aborts x4 support). The jobs stop at page 1 and page 6, so
+recognition equivalence of the 48 pages of those two PDFs is **not verified**; this record does
+not claim "all 73 pages succeeded/compared". Whether those pages are genuinely non-score pages
+(the #62/#63 contract: pages without staves yield an empty result and processing continues) is
+for #532; "no noteheads" alone does not establish an empty page. Native timings were measured
 with other disk/CPU work running and are not a performance comparison. Native-vs-native
 repetition was exactly equal including final PDF pixels. Details:
 [`compare/`](issue506_evidence/compare/), [`eval2_failures.txt`](issue506_evidence/eval2_failures.txt).
+
+Comparison harness re-check (2026-11-15, PR #531 review). The first `compare_semantic.py`
+enumerated only side A's review pages (an empty or one-sided page set could pass), and did not
+gate `system_count` or PDF rotation; `compare_pdf_render.py` truncated to the shorter PDF. Both
+now fail fast: identical non-empty page-ID sets on both sides (optionally `--expected-pages N`),
+final PDF page count equal to that set, system count, page rects and rotation are part of the
+gate, and render comparison fails on page-count or rendered-size mismatch. All retained outputs
+were rescored without rerunning inference. evaluation2 with `--expected-pages` = input PDF page
+count (9 / 10 / 6): page sets equal, PDF page counts equal, system counts and rotation equal;
+verdicts unchanged (Festival Overture pass; Sibelius and Prokofiev 1 fail the exact gate on the
+same 3 pages). The p3, p1 repetition and portable comparisons also keep their verdicts. Negative
+checks: different page sets, wrong expected count, missing numbered PDF and mismatched PDF page
+counts all exit 1. Rescored files are `compare/eval2_v2_*.json`, `compare/v2_*`; the original
+files are kept as history.
 
 Final PDF rendering: the Docker image renders row labels with DejaVu Sans Bold; on Windows every
 font candidate fails and Pillow silently falls back to `load_default()` (tiny labels). With the
@@ -109,8 +129,19 @@ the HOMR profile runtime paths and markers for the current location and records
 
 - Prokofiev Sym. 1, 6 pages: succeeded in 961 s with a cold compile cache. Exactly equal to the
   in-place native run; versus Docker the same page_005 ±2 px.
-- `source_commit` is recorded as `unknown` because the folder has no Git checkout; a real build
-  must embed the commit.
+- The job result's `source_commit` is recorded as `unknown` because the folder has no Git
+  checkout; a real build must embed the commit.
+- `portable_identity.json` is a **limited PoC identity, not a runtime attestation**. The version
+  used for the runs ([v1](issue506_evidence/portable_identity.json)) held only the profile,
+  asset and HOMR ONNX hashes, although the `materialize.py` docstring claimed a runtime freeze.
+  After review, `materialize.py` also records the CPython version, a digest of the venv
+  distribution list ([`portable_freeze.txt`](issue506_evidence/portable_freeze.txt), 81
+  distributions), the `app` tree digest and `app/SOURCE_COMMIT`
+  ([v2](issue506_evidence/portable_identity_v2.json), re-materialized without rerunning jobs;
+  v1 fields unchanged). The v2 `app` tree digest (`eb5c7ce1…`, 2,122 files) equals the same
+  digest computed over `git archive 25310280`. It is still self-reported and unsigned, and it
+  does not hash installed package files or native DLLs. A production build needs a reproducible
+  source/runtime ID plus an independent verification step.
 - Japanese input path (`日本語入力\楽譜.pdf`) with ASCII output: succeeded.
 - Japanese **output** path (`日本語出力`): **failed** at `Failed to write image` (PDF to page
   image). OpenCV on Windows passes UTF-8 bytes to the ANSI (cp932) API: `cv2.imwrite` returned
@@ -131,7 +162,11 @@ paths (MAX_PATH below), update procedure.
 4. MAX_PATH: internal paths repeat the job id three times (~243 characters below the output
    root). Even `S:\workspace\i506` overflowed; the PoC shortened `hybrid_output_root` and used
    roots like `S:\i5`. Normal `C:\Users\<name>\…` roots will fail.
-5. `source_concurrency` reads `/proc/meminfo` and calls `os.killpg`.
+5. `source_concurrency` reads `/proc/meminfo` and calls `os.killpg`. The PoC kills the
+   `psutil` descendants of the worker, which cannot reach grandchildren once the worker has
+   already exited (`NoSuchProcess`, re-parented descendants are not tracked). Production needs an
+   owned process tree (for example a Job Object with kill-on-close) and tests for cancel,
+   timeout, parent-exits-first and surviving grandchildren.
 6. `profile_sources_batch_sr` calls `os.getuid`.
 7. The maintained HOMR profile hardcodes `/opt/venv_pipeline` and `/workspace`.
 8. `prepare_local_review` relocates only `old_root + "/"`: on Windows it relocated 0 of 23 paths
@@ -165,9 +200,13 @@ excluding device procurement and ongoing maintenance of a second CUDA/runtime co
   path validation, binary I/O, path length, non-ASCII output).
 - A Windows runtime contract checked by machine: torch/cuDNN/ORT/triton-windows identity, model
   and font hashes, resolved profile/markers, per-worker real-session CUDA providers with
-  fail-fast on CPU fallback, uv copy mode, embedded source commit.
+  fail-fast on CPU fallback, uv copy mode, and a reproducible source/runtime ID with a
+  verification step (the PoC `portable_identity.json` is not an attestation).
 - An agreed regression gate for the cu126/triton-windows runtime (this record: evaluation2 exact
-  gate fails on 3 pages by ≤2 px; numbering-level semantics equal).
+  gate fails on 3 of 25 compared pages by ≤2 px; numbering-level semantics equal; 48 pages behind
+  #532 not compared), using a comparison harness with explicit page-set, page-count, system and
+  rotation checks.
+- Windows process-tree ownership with cancel/timeout/orphan tests (blocker 5).
 - Clean-machine, other GPU, AV, Japanese path, and path-length acceptance; #508 Phase 0 device
   facts.
 - #504/#505: rights for triton-windows, CUDA/cuDNN redistributable DLLs, onnxruntime-gpu,

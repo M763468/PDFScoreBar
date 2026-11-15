@@ -3,6 +3,12 @@
 Compares, per page: page geometry, source render, barline boxes, measure numbering
 (system/measure count, numbers, bboxes), MMR overrides, and final PDF page geometry.
 Prints a JSON report; exit 0 only when every gate is equal (or within tolerance).
+
+Page-set gate (fail-fast, review of PR #531): both sides must expose the same non-empty
+set of review page IDs, optionally exactly ``--expected-pages N`` of them, and both final
+PDFs must have that many pages. Missing files raise instead of being skipped.
+
+Usage: compare_semantic.py <job_a> <job_b> [--expected-pages N]
 """
 
 from __future__ import annotations
@@ -70,15 +76,51 @@ def compare_pdf(a: Path, b: Path) -> dict:
     return out
 
 
+def page_ids(job: Path) -> set[str]:
+    root = job / "review" / "pages"
+    if not root.is_dir():
+        raise SystemExit(f"missing review pages directory: {root}")
+    return {p.name for p in root.iterdir() if p.is_dir()}
+
+
+def single_pdf(job: Path) -> Path:
+    found = sorted((job / "final").glob("*_score_numbered.pdf"))
+    if len(found) != 1:
+        raise SystemExit(f"expected exactly one numbered PDF under {job / 'final'}, found {len(found)}")
+    return found[0]
+
+
 def main() -> int:
-    ja, jb = Path(sys.argv[1]), Path(sys.argv[2])
-    report = {"a": str(ja), "b": str(jb), "pages": {}}
-    for page in sorted((ja / "review/pages").iterdir()):
-        report["pages"][page.name] = compare_page(page, jb / "review/pages" / page.name)
-    pdf_a = next((ja / "final").glob("*_score_numbered.pdf"))
-    pdf_b = next((jb / "final").glob("*_score_numbered.pdf"))
-    report["final_pdf"] = compare_pdf(pdf_a, pdf_b)
-    ok = all(
+    args = sys.argv[1:]
+    expected = None
+    if "--expected-pages" in args:
+        i = args.index("--expected-pages")
+        expected = int(args[i + 1])
+        del args[i : i + 2]
+    if len(args) != 2:
+        raise SystemExit(__doc__)
+    ja, jb = Path(args[0]), Path(args[1])
+    ids_a, ids_b = page_ids(ja), page_ids(jb)
+    report = {
+        "a": str(ja),
+        "b": str(jb),
+        "expected_pages": expected,
+        "page_ids": {"a_only": sorted(ids_a - ids_b), "b_only": sorted(ids_b - ids_a), "common": len(ids_a & ids_b)},
+        "pages": {},
+    }
+    page_set_ok = bool(ids_a) and ids_a == ids_b and (expected is None or len(ids_a) == expected)
+    report["page_set_equal"] = page_set_ok
+    for name in sorted(ids_a & ids_b):
+        report["pages"][name] = compare_page(ja / "review/pages" / name, jb / "review/pages" / name)
+    report["final_pdf"] = compare_pdf(single_pdf(ja), single_pdf(jb))
+    pdf = report["final_pdf"]
+    pdf_ok = (
+        pdf["page_count"][0] == pdf["page_count"][1] == len(ids_a)
+        and pdf["page_rects_equal"]
+        and pdf["rotation_equal"]
+        and pdf["drawings_count"][0] == pdf["drawings_count"][1]
+    )
+    ok = page_set_ok and pdf_ok and all(
         p["source_png_sha_equal"]
         and p["barline_count"][0] == p["barline_count"][1]
         and p.get("barline_boxes_differing", 1) == 0
@@ -87,8 +129,9 @@ def main() -> int:
         and p["numbering_metadata_equal"]
         and p["mmr_overrides_equal"]
         and p["page_size"][0] == p["page_size"][1]
+        and p["system_count"][0] == p["system_count"][1]
         for p in report["pages"].values()
-    ) and report["final_pdf"]["page_rects_equal"] and report["final_pdf"]["drawings_count"][0] == report["final_pdf"]["drawings_count"][1]
+    )
     report["semantic_equal"] = ok
     print(json.dumps(report, indent=2))
     return 0 if ok else 1

@@ -1,0 +1,35 @@
+{
+  "schema_version": "pdfscore.windows_portable.assets.v1",
+  "assets": [
+    {
+      "path": "assets/realesrgan/RealESRGAN_x4plus.pth",
+      "sha256": "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1",
+      "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+      "origin": "Real-ESRGAN v0.1.0 release (same bytes as the Dockerfile)"
+    },
+    {
+      "path": "assets/realesrgan/RealESRGAN_x2plus.pth",
+      "sha256": "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb",
+      "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
+      "origin": "Real-ESRGAN v0.2.1 release (same bytes as the Dockerfile)"
+    },
+    {
+      "path": "assets/model-cache/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth",
+      "sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+      "url": null,
+      "origin": "models/barline_cnn/manifest.json release asset model-barline-cnn-issue296-d27-v1; stage it with the repository's model cache tooling and pass --asset-source"
+    },
+    {
+      "path": "assets/fonts/DejaVuSans-Bold.ttf",
+      "sha256": "d1c3ff99f1e1ce1827a33efd4dad81f40babda06bff9e43bd7591c86662a287b",
+      "url": null,
+      "origin": "Debian/Ubuntu fonts-dejavu-core as installed in the Linux distribution image (/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf). The upstream 2.37 TTF has different bytes and changes row-label glyphs."
+    },
+    {
+      "path": "assets/fonts/COPYRIGHT.fonts-dejavu-core",
+      "sha256": null,
+      "url": null,
+      "origin": "/usr/share/doc/fonts-dejavu-core/copyright from the same image; notice file shipped beside the font"
+    }
+  ]
+}

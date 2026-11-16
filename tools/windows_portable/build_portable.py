@@ -1,0 +1,368 @@
+"""Build a Docker-free Windows portable folder from one source commit (#535).
+
+Run on Windows from a PDFScoreBar checkout with Python >= 3.11, Git and uv on PATH:
+
+    python tools\\windows_portable\\build_portable.py --output C:\\pb\\PDFScoreBar ^
+        --asset-source C:\\staged-assets [--commit <sha>] [--cache C:\\pb-cache]
+
+The folder is assembled only from pinned inputs: ``git archive`` of the commit, a
+uv-managed CPython, ``requirements-cu126.txt``, the HOMR/Real-ESRGAN commits of the
+Dockerfile, and the hash-pinned assets of ``assets.json``. Every input is checked, the
+installed distribution set must equal the lock, and ``runtime/build_manifest.json``
+records the provenance plus size/SHA-256 of every runtime file (including native
+DLLs) so ``PDFScoreBar.cmd verify --full`` can re-check the folder anywhere.
+
+Building is not permission to distribute: see tools/windows_portable/README.md.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import io
+import json
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import urllib.request
+import zipfile
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from manifest import (  # noqa: E402
+    MANIFEST_PATH,
+    MANIFEST_SCHEMA,
+    build_inventory,
+    sha256_file,
+    tree_digest,
+)
+
+CPYTHON_VERSION = "3.12.12"
+TORCH_INDEX = "https://download.pytorch.org/whl/cu126"
+HOMR_COMMIT = "457e7c6518a10ba755db2e60883419e56c4d7369"
+REALESRGAN_COMMIT = "a4abfb2979a7bbff3f69f58f58ae324608821e27"
+ORT_GPU = "onnxruntime-gpu==1.24.4"
+OPENCV = "opencv-python==4.11.0.86"
+LOCK = HERE / "requirements-cu126.txt"
+ASSETS = HERE / "assets.json"
+LAUNCHER_CMD = HERE / "PDFScoreBar.cmd"
+# Build tooling that is not part of the runtime lock.
+UNLOCKED = {"pip", "setuptools", "wheel", "homr", "realesrgan"}
+
+
+def log(message: str) -> None:
+    print(f"[build] {message}", flush=True)
+
+
+def run(command: list[str], *, env: dict[str, str], cwd: Path | None = None) -> str:
+    log(" ".join(command))
+    completed = subprocess.run(
+        command, env=env, cwd=cwd, check=True, text=True, capture_output=True
+    )
+    return completed.stdout
+
+
+def git(*args: str, repo: Path) -> str:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args], check=True, text=True, capture_output=True
+    ).stdout.strip()
+
+
+def read_lock() -> dict[str, str]:
+    pins: dict[str, str] = {}
+    for line in LOCK.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            name, version = line.split("==", 1)
+            pins[canonical(name)] = version
+    return pins
+
+
+def canonical(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def installed_distributions(site_packages: Path) -> dict[str, str]:
+    found: dict[str, str] = {}
+    for meta in site_packages.glob("*.dist-info/METADATA"):
+        text = meta.read_text(encoding="utf-8", errors="replace")
+        name = re.search(r"^Name: (.+)$", text, re.M)
+        version = re.search(r"^Version: (.+)$", text, re.M)
+        if name and version:
+            found[canonical(name.group(1).strip())] = version.group(1).strip()
+    return found
+
+
+def stage_source(repo: Path, commit: str, app: Path) -> None:
+    archive = subprocess.run(
+        ["git", "-C", str(repo), "archive", "--format=zip", commit],
+        check=True,
+        capture_output=True,
+    ).stdout
+    with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+        bundle.extractall(app)
+
+
+def install_cpython(target: Path, *, env: dict[str, str], cache: Path) -> Path:
+    install_dir = cache / "python"
+    run(
+        ["uv", "python", "install", CPYTHON_VERSION, "--install-dir", str(install_dir)],
+        env=env,
+    )
+    candidates = sorted(install_dir.glob(f"cpython-{CPYTHON_VERSION}-windows-x86_64-*"))
+    if len(candidates) != 1:
+        raise RuntimeError(f"Expected one CPython {CPYTHON_VERSION} install, found {candidates}")
+    shutil.copytree(candidates[0], target)
+    # The private copy is owned by this folder; uv's marker would refuse installs.
+    for marker in target.rglob("EXTERNALLY-MANAGED"):
+        marker.unlink()
+    python = target / "python.exe"
+    version = run([str(python), "-c", "import platform;print(platform.python_version())"], env=env)
+    if version.strip() != CPYTHON_VERSION:
+        raise RuntimeError(f"Bundled CPython version mismatch: {version.strip()}")
+    return python
+
+
+def install_packages(python: Path, *, env: dict[str, str]) -> None:
+    pip = ["uv", "pip", "install", "--python", str(python), "--link-mode", "copy"]
+    torch_index = ["--extra-index-url", TORCH_INDEX, "--index-strategy", "unsafe-best-match"]
+    lock = ["-c", str(LOCK)]
+    lock_pins = read_lock()
+    torch = f"torch=={lock_pins['torch']}"
+    torchvision = f"torchvision=={lock_pins['torchvision']}"
+    # Same order and pins as the Dockerfile; only the CUDA wheel flavour differs.
+    run([*pip, *torch_index, *lock, torch, torchvision], env=env)
+    run(
+        [
+            *pip,
+            *torch_index,
+            *lock,
+            f"git+https://github.com/xinntao/Real-ESRGAN.git@{REALESRGAN_COMMIT}",
+        ],
+        env=env,
+    )
+    run(
+        [*pip, *torch_index, *lock, f"git+https://github.com/liebharc/homr.git@{HOMR_COMMIT}"],
+        env=env,
+    )
+    commit = run(
+        [
+            str(python),
+            "-c",
+            "import importlib.metadata as m, json;"
+            "print(json.loads(m.distribution('homr').read_text('direct_url.json'))"
+            "['vcs_info']['commit_id'])",
+        ],
+        env=env,
+    ).strip()
+    if commit != HOMR_COMMIT:
+        raise RuntimeError(f"homr commit mismatch: {commit}")
+    run([*pip, *torch_index, *lock, ORT_GPU], env=env)
+    run([*pip, *torch_index, "-r", str(LOCK)], env=env)
+    run([*pip, "--force-reinstall", "--no-deps", OPENCV], env=env)
+    run(["uv", "pip", "uninstall", "--python", str(python), "onnxruntime"], env=env)
+    run([*pip, "--force-reinstall", "--no-deps", ORT_GPU], env=env)
+
+
+def patch_and_init(python: Path, app: Path, *, env: dict[str, str]) -> None:
+    run([str(python), str(app / "docker" / "patch_homr_onnx_provider.py")], env=env)
+    run(
+        [
+            str(python),
+            "-c",
+            "from pathlib import Path; import sysconfig;"
+            "p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py';"
+            "s = p.read_text();"
+            "p.write_text(s.replace('from torchvision.transforms.functional_tensor import "
+            "rgb_to_grayscale', 'from torchvision.transforms.functional import "
+            "rgb_to_grayscale'))",
+        ],
+        env=env,
+    )
+    run([str(python), "-m", "homr.main", "--init", "--gpu", "force"], env=env)
+
+
+def check_distributions(site_packages: Path) -> dict[str, str]:
+    expected = read_lock()
+    installed = installed_distributions(site_packages)
+    runtime = {name: version for name, version in installed.items() if name not in UNLOCKED}
+    if runtime != expected:
+        missing = sorted(set(expected) - set(runtime))
+        extra = sorted(set(runtime) - set(expected))
+        changed = sorted(
+            f"{name}: lock={expected[name]} installed={runtime[name]}"
+            for name in set(expected) & set(runtime)
+            if expected[name] != runtime[name]
+        )
+        raise RuntimeError(
+            f"Installed distributions differ from the lock: missing={missing} "
+            f"extra={extra} changed={changed}"
+        )
+    return installed
+
+
+def stage_assets(root: Path, source: Path | None, cache: Path) -> list[dict]:
+    records = []
+    for asset in json.loads(ASSETS.read_text(encoding="utf-8"))["assets"]:
+        target = root / asset["path"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        relative = Path(asset["path"]).relative_to("assets")
+        staged = source / relative if source else None
+        if staged is not None and staged.is_file():
+            shutil.copyfile(staged, target)
+            via = "asset-source"
+        elif asset.get("url"):
+            download = cache / "downloads" / relative
+            if not download.is_file():
+                download.parent.mkdir(parents=True, exist_ok=True)
+                log(f"download {asset['url']}")
+                with urllib.request.urlopen(asset["url"], timeout=120) as response:
+                    download.write_bytes(response.read())
+            shutil.copyfile(download, target)
+            via = "url"
+        else:
+            raise FileNotFoundError(
+                f"Asset {asset['path']} needs --asset-source ({asset['origin']})"
+            )
+        digest = sha256_file(target)
+        if asset.get("sha256") and digest != asset["sha256"]:
+            raise RuntimeError(f"Asset hash mismatch for {asset['path']}: {digest}")
+        records.append({"path": asset["path"], "sha256": digest, "via": via})
+    return records
+
+
+def runtime_identity(python: Path, *, env: dict[str, str]) -> dict:
+    probe = (
+        "import json, platform, torch, torchvision, onnxruntime, cv2, numpy;"
+        "import importlib.metadata as m;"
+        "print(json.dumps({'cpython': platform.python_version(),"
+        "'torch': torch.__version__, 'torch_cuda': torch.version.cuda,"
+        "'cudnn': torch.backends.cudnn.version(), 'torchvision': torchvision.__version__,"
+        "'onnxruntime': onnxruntime.__version__, 'opencv': cv2.__version__,"
+        "'numpy': numpy.__version__, 'triton_windows': m.version('triton-windows')}))"
+    )
+    return json.loads(run([str(python), "-c", probe], env=env))
+
+
+def build(args: argparse.Namespace) -> Path:
+    repo = Path(git("rev-parse", "--show-toplevel", repo=Path.cwd()))
+    commit = git("rev-parse", args.commit + "^{commit}", repo=repo)
+    root = args.output.resolve()
+    if root.exists() and any(root.iterdir()):
+        raise FileExistsError(f"Output folder must be new or empty: {root}")
+    if not str(root).isascii():
+        raise ValueError("Build the folder at an ASCII path; the launcher refuses others")
+    cache = (args.cache or root.parent / f"{root.name}-build-cache").resolve()
+    cache.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ)
+    env.update(
+        {
+            "UV_CACHE_DIR": str(cache / "uv"),
+            "UV_LINK_MODE": "copy",
+            "UV_PYTHON_INSTALL_BIN": "0",
+            "UV_PYTHON_INSTALL_REGISTRY": "0",
+            "UV_NO_CONFIG": "1",
+            "POETRY_DYNAMIC_VERSIONING_BYPASS": "0.1.0",
+            "PYTHONUTF8": "1",
+            "PYTHONNOUSERSITE": "1",
+        }
+    )
+    env.pop("PYTHONPATH", None)
+    started = dt.datetime.now(dt.timezone.utc)
+    root.mkdir(parents=True, exist_ok=True)
+
+    log(f"source {commit}")
+    stage_source(repo, commit, root / "app")
+    # Use the lock, asset list and launcher of the archived commit, not the working tree.
+    global LOCK, ASSETS, LAUNCHER_CMD
+    pinned = root / "app" / "tools" / "windows_portable"
+    LOCK, ASSETS, LAUNCHER_CMD = (
+        pinned / "requirements-cu126.txt",
+        pinned / "assets.json",
+        pinned / "PDFScoreBar.cmd",
+    )
+    python = install_cpython(root / "python", env=env, cache=cache)
+    install_packages(python, env=env)
+    patch_and_init(python, root / "app", env=env)
+    site_packages = root / "python" / "Lib" / "site-packages"
+    distributions = check_distributions(site_packages)
+    assets = stage_assets(root, args.asset_source, cache)
+
+    markers = root / "runtime" / "markers"
+    markers.mkdir(parents=True, exist_ok=True)
+    (markers / "homr_maintained_profile_commit.txt").write_text(HOMR_COMMIT + "\n")
+    (markers / "pdfscore_maintained_profile_commit.txt").write_text("workspace-runtime\n")
+    lines = LAUNCHER_CMD.read_text(encoding="utf-8").splitlines()
+    (root / "PDFScoreBar.cmd").write_bytes(("\r\n".join(lines) + "\r\n").encode("ascii"))
+    for cache_dir in root.rglob("__pycache__"):
+        shutil.rmtree(cache_dir, ignore_errors=True)
+
+    files = build_inventory(root)
+    manifest = {
+        "schema_version": MANIFEST_SCHEMA,
+        "source_commit": commit,
+        "built_at": started.isoformat(),
+        "builder": {
+            "host_python": platform.python_version(),
+            "uv": run(["uv", "--version"], env=env).strip(),
+            "windows": platform.platform(),
+        },
+        "pins": {
+            "cpython": CPYTHON_VERSION,
+            "torch_index": TORCH_INDEX,
+            "homr_commit": HOMR_COMMIT,
+            "realesrgan_commit": REALESRGAN_COMMIT,
+            "lock_sha256": sha256_file(LOCK),
+            "assets_sha256": sha256_file(ASSETS),
+        },
+        "runtime": runtime_identity(python, env=env),
+        "distributions": dict(sorted(distributions.items())),
+        "assets": assets,
+        "file_count": len(files),
+        "total_bytes": sum(size for size, _ in files.values()),
+        "tree_digest": tree_digest(files),
+        "files": files,
+    }
+    manifest_path = root / MANIFEST_PATH
+    manifest_path.write_text(json.dumps(manifest, indent=1) + "\n", encoding="utf-8")
+    digest = sha256_file(manifest_path)
+    # Keep an out-of-folder copy of the manifest digest beside the candidate.
+    (root.parent / f"{root.name}.build_manifest.sha256").write_text(
+        f"{digest}  {root.name}/{MANIFEST_PATH.as_posix()}\n", encoding="utf-8"
+    )
+    log(
+        f"done: {len(files)} files, {manifest['total_bytes'] / 2**30:.2f} GiB, "
+        f"tree {manifest['tree_digest']}, manifest {digest}"
+    )
+    return root
+
+
+def main() -> int:
+    if os.name != "nt":
+        print("The Windows portable folder must be built on Windows", file=sys.stderr)
+        return 2
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--commit", default="HEAD")
+    parser.add_argument("--asset-source", type=Path)
+    parser.add_argument("--cache", type=Path)
+    args = parser.parse_args()
+    try:
+        build(args)
+    except subprocess.CalledProcessError as error:
+        print(error.stdout or "", file=sys.stderr)
+        print(error.stderr or "", file=sys.stderr)
+        print(f"build failed: {error}", file=sys.stderr)
+        return 1
+    except (OSError, RuntimeError, ValueError) as error:
+        print(f"build failed: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

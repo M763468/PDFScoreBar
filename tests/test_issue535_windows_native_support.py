@@ -105,7 +105,9 @@ def _alive(pid: int) -> bool:
         import ctypes
 
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-        handle = kernel32.OpenProcess(0x1000 | 0x00100000, False, pid)  # QUERY_LIMITED | SYNCHRONIZE
+        handle = kernel32.OpenProcess(
+            0x1000 | 0x00100000, False, pid
+        )  # QUERY_LIMITED | SYNCHRONIZE
         if not handle:
             return False
         try:

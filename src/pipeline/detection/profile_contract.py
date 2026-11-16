@@ -8,7 +8,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-
 RUNTIME_OVERLAY_ENV = "PDFSCORE_HOMR_PROFILE_RUNTIME"
 RUNTIME_OVERLAY_SCHEMA = "pipeline.homr_profile_runtime.v1"
 

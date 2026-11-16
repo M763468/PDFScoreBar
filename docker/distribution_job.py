@@ -149,11 +149,12 @@ def main() -> int:
         parser.error("pdf and --output are required for a PDF job")
     pdf = args.pdf.resolve()
     overrides = {"pages": args.pages} if args.pages else {}
+    windows_options = {"job_id_factory": _windows_job_id} if os.name == "nt" else {}
     executor = PipelineJobExecutor(
         input_root=pdf.parent,
         artifact_root=args.output,
         source_commit=os.environ.get("PDFSCORE_HOST_SOURCE_COMMIT"),
-        job_id_factory=_windows_job_id if os.name == "nt" else None,
+        **windows_options,
     )
     result = executor(
         JobRequest(

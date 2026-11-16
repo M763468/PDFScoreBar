@@ -157,9 +157,7 @@ def detect_staffs_with_barlines(
     if len(noteheads_with_stems) == 0:
         raise HomrEmptyDetectionError(
             "No noteheads found",
-            segmentation_evidence(
-                predictions.staff, symbols.staff_fragments, notehead_count=0
-            ),
+            segmentation_evidence(predictions.staff, symbols.staff_fragments, notehead_count=0),
         )
 
     average_note_head_height = float(

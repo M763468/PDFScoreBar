@@ -281,7 +281,12 @@ def _non_score_payload(tmp_path: Path) -> dict:
 def test_score_page_with_both_connectors_keeps_x4_support(tmp_path: Path) -> None:
     paths = _require_current_homr_bundle(_homr_payload(tmp_path, symbols=True, brace_dot=True))
 
-    assert set(paths) == {"current_sr_detection", "staff_mask", "connector_symbols", "connector_brace_dot"}
+    assert set(paths) == {
+        "current_sr_detection",
+        "staff_mask",
+        "connector_symbols",
+        "connector_brace_dot",
+    }
 
 
 @pytest.mark.parametrize("symbols,brace_dot", [(True, False), (False, True), (False, False)])

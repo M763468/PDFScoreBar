@@ -11,11 +11,15 @@ import contextlib
 import contextvars
 import json
 import os
-import resource
 import time
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any
+
+try:  # POSIX only; Windows uses os.times() below.
+    import resource
+except ImportError:  # pragma: no cover - exercised on Windows
+    resource = None  # type: ignore[assignment]
 
 _context: contextvars.ContextVar[dict[str, Any]] = contextvars.ContextVar(
     "pdfscore_perf_trace_context", default={}
@@ -27,6 +31,9 @@ def enabled() -> bool:
 
 
 def _cpu_seconds() -> float:
+    if resource is None:
+        times = os.times()
+        return float(times.user + times.system)
     usage = resource.getrusage(resource.RUSAGE_SELF)
     return float(usage.ru_utime + usage.ru_stime)
 

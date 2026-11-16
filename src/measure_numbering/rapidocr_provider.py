@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from rapidocr_onnxruntime import RapidOCR
@@ -107,13 +108,24 @@ def providers_include_cuda(providers: Dict[str, List[str]]) -> bool:
     return any("CUDAExecutionProvider" in provider_list for provider_list in providers.values())
 
 
+REQUIRE_CUDA_ORT_ENV = "PDFSCORE_REQUIRE_CUDA_ORT"
+
+
+def require_cuda_ort() -> bool:
+    """Fail closed instead of warning on a CPU fallback (set by the Windows launcher)."""
+    return os.environ.get(REQUIRE_CUDA_ORT_ENV) == "1"
+
+
 def create_mmr_rapidocr(provider: str = RAPIDOCR_PROVIDER_AUTO) -> RapidOCR:
     provider_mode = normalize_rapidocr_provider(provider)
     if provider_mode == RAPIDOCR_PROVIDER_CPU:
         logger.info("Initializing MMR RapidOCR with CPU/default provider mode.")
         return RapidOCR()
 
-    should_use_cuda = provider_mode == RAPIDOCR_PROVIDER_CUDA or onnxruntime_has_cuda_provider()
+    strict = require_cuda_ort()
+    should_use_cuda = (
+        provider_mode == RAPIDOCR_PROVIDER_CUDA or strict or onnxruntime_has_cuda_provider()
+    )
     if not should_use_cuda:
         logger.info(
             "Initializing MMR RapidOCR with CPU/default provider mode; CUDA provider is unavailable."
@@ -125,6 +137,11 @@ def create_mmr_rapidocr(provider: str = RAPIDOCR_PROVIDER_AUTO) -> RapidOCR:
     providers = collect_rapidocr_providers(ocr_engine)
     if providers_include_cuda(providers):
         logger.info("MMR RapidOCR providers: %s", providers)
+    elif strict:
+        raise RuntimeError(
+            "MMR RapidOCR requested CUDA but its sessions are not on CUDAExecutionProvider "
+            f"({REQUIRE_CUDA_ORT_ENV}=1); providers={providers or '<unavailable>'}"
+        )
     else:
         logger.warning(
             "MMR RapidOCR CUDA provider was requested but CUDAExecutionProvider was not confirmed; "

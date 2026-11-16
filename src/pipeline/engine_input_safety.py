@@ -19,6 +19,11 @@ from src.pipeline.engine_contract import (
 
 _MIB = 1024 * 1024
 _URI_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+# Windows drive-qualified absolute path (C:\... or C:/...), accepted only on Windows.
+# Drive-relative (C:foo), UNC (\\server\share) and device (\\?\, \\.\) references
+# stay rejected.
+_WINDOWS_DRIVE_ABSOLUTE = re.compile(r"^[A-Za-z]:[\\/]")
+_WINDOWS_UNC_OR_DEVICE = re.compile(r"^[\\/]{2}")
 
 
 @dataclass(frozen=True)
@@ -190,6 +195,12 @@ def validate_output_name(value: str, *, max_utf8_bytes: int = 200) -> str:
     return value
 
 
+def _is_windows_drive_path(reference: str, *, os_name: str | None = None) -> bool:
+    """Accept ``C:\\...`` only on Windows; POSIX keeps treating it as a scheme."""
+
+    return (os_name or os.name) == "nt" and bool(_WINDOWS_DRIVE_ABSOLUTE.match(reference))
+
+
 def validate_local_input_reference(reference: str) -> str:
     """Reject URL-like and traversal-style local references before filesystem access."""
 
@@ -199,12 +210,21 @@ def validate_local_input_reference(reference: str) -> str:
             "input_reference_invalid",
             "The input PDF reference is invalid.",
         )
-    if _has_control_character(reference) or _URI_SCHEME.match(reference):
+    if _has_control_character(reference) or (
+        _URI_SCHEME.match(reference) and not _is_windows_drive_path(reference)
+    ):
         raise _error(
             ErrorCategory.INPUT,
             "input_reference_not_allowed",
             "The input PDF reference is not allowed.",
             debug={"reason": "URL-like or control-character reference"},
+        )
+    if os.name == "nt" and _WINDOWS_UNC_OR_DEVICE.match(reference):
+        raise _error(
+            ErrorCategory.INPUT,
+            "input_reference_not_allowed",
+            "The input PDF reference is not allowed.",
+            debug={"reason": "UNC or device path"},
         )
     if ".." in Path(reference).parts:
         raise _error(
@@ -296,7 +316,13 @@ def _filesystem_unavailable(exc: OSError) -> InputSafetyError:
 def _read_bounded_file(
     path: Path, *, max_bytes: int, allow_symlinks: bool
 ) -> tuple[bytearray, int, str]:
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0)
+    # O_BINARY: Windows os.open defaults to text mode (CRLF translation, stop at 0x1A).
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_BINARY", 0)
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
     if not allow_symlinks:
         flags |= getattr(os, "O_NOFOLLOW", 0)
     try:

@@ -76,6 +76,17 @@ def run(request_path: Path, result_path: Path) -> Path:
     from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
 
     use_gpu_inference = torch.cuda.is_available()
+    # Record the ONNX sessions current HOMR really creates; a CUDA request that
+    # silently runs on CPU fails below (#535). The worker process is single-use,
+    # so the recorder stays installed for its lifetime.
+    import onnxruntime as ort
+
+    from src.pipeline.detection.ort_session_audit import (
+        install_session_recorder,
+        validate_cuda_sessions,
+    )
+
+    onnx_sessions, _restore_ort = install_session_recorder(ort)
     homr_api_compat = install_current_homr_consumer_compat(
         homr_main,
         homr_predictor,
@@ -158,6 +169,8 @@ def run(request_path: Path, result_path: Path) -> Path:
         "homr_api_compat": homr_api_compat,
         "historical_detector_artifact_runtime_input": False,
     }
+    validate_cuda_sessions(onnx_sessions, use_gpu_inference=use_gpu_inference, ort=ort)
+    payload["onnx_sessions"] = onnx_sessions
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n",

@@ -6,11 +6,24 @@ import argparse
 import hashlib
 import json
 import os
+import re
+import uuid
 from dataclasses import replace
 from pathlib import Path
 
 from src.pipeline.engine_contract import JobRequest, JobStatus, OutputProfile
 from src.pipeline.engine_executor import PipelineJobExecutor
+
+
+def _references_to(value, root: str) -> list[str]:
+    """Strings that still mention ``root`` after relocation (embedded or unrelocated)."""
+    if isinstance(value, dict):
+        return [item for child in value.values() for item in _references_to(child, root)]
+    if isinstance(value, list):
+        return [item for child in value for item in _references_to(child, root)]
+    if isinstance(value, str) and root in value:
+        return [value]
+    return []
 
 
 def prepare_local_review(package: Path) -> str:
@@ -39,17 +52,42 @@ def prepare_local_review(package: Path) -> str:
 
     # Rewrite only absolute paths rooted at the former work directory. Every
     # numerical/config value and the original retained manifest remain intact.
+    # Both separators are accepted because a Windows-native engine writes "\".
+    separators = ("/", "\\")
+    relocated: list[str] = []
+
     def relocate(value):
         if isinstance(value, dict):
             return {key: relocate(item) for key, item in value.items()}
         if isinstance(value, list):
             return [relocate(item) for item in value]
-        if isinstance(value, str) and (value == old_root or value.startswith(old_root + "/")):
-            return str(retained) + value[len(old_root) :]
+        if isinstance(value, str) and (
+            value == old_root or any(value.startswith(old_root + sep) for sep in separators)
+        ):
+            rest = value[len(old_root) :].lstrip("/\\")
+            target = retained.joinpath(*[part for part in re.split(r"[\\/]", rest) if part])
+            relocated.append(str(target))
+            return str(target)
         return value
 
     local = original.with_name("local_manifest.json")
     normalized = relocate(source)
+    leftover = _references_to(normalized, old_root)
+    relocated_run = retained / "runs" / job_id
+    if not relocated or str(relocated_run) not in relocated or not relocated_run.is_dir():
+        raise ValueError(
+            f"Local review relocation is incomplete: relocated {len(relocated)} paths; "
+            f"retained run present={relocated_run.is_dir()}"
+        )
+    if leftover:
+        raise ValueError(
+            f"Local review relocation left {len(leftover)} references to the former work root"
+        )
+    missing = [path for path in relocated if not Path(path).exists()]
+    normalized["local_distribution_relocation"] = {
+        "relocated_path_count": len(relocated),
+        "missing_relocated_path_count": len(missing),
+    }
     normalized["local_distribution_source"] = {
         "original_manifest_sha256": hashlib.sha256(raw).hexdigest(),
         "original_manifest": "manifest.json",
@@ -90,6 +128,13 @@ def prepare_local_review(package: Path) -> str:
     return sha
 
 
+def _windows_job_id() -> str:
+    """Shorter job id for Windows: the id appears several times in internal paths, and
+    MAX_PATH (260) applies to OpenCV/ONNX Runtime even when Python itself is long-path
+    aware. 48 random bits keep collisions negligible for local per-user output roots."""
+    return f"job-{uuid.uuid4().hex[:12]}"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf", type=Path, nargs="?")
@@ -108,6 +153,7 @@ def main() -> int:
         input_root=pdf.parent,
         artifact_root=args.output,
         source_commit=os.environ.get("PDFSCORE_HOST_SOURCE_COMMIT"),
+        job_id_factory=_windows_job_id if os.name == "nt" else None,
     )
     result = executor(
         JobRequest(

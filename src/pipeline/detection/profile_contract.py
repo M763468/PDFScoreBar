@@ -3,9 +3,37 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
+
+
+RUNTIME_OVERLAY_ENV = "PDFSCORE_HOMR_PROFILE_RUNTIME"
+RUNTIME_OVERLAY_SCHEMA = "pipeline.homr_profile_runtime.v1"
+
+
+def _runtime_overlay(name: str) -> tuple[dict[str, Any], str] | None:
+    """Optional runtime location for a non-container install (Windows portable, #535).
+
+    Only the ``runtime`` paths may be replaced; the pinned HOMR/evaluator commits and
+    every other profile field stay those of the tracked manifest, and the markers named
+    by the overlay are still checked against them by ``validate_profile_runtime``.
+    """
+
+    value = os.environ.get(RUNTIME_OVERLAY_ENV)
+    if not value:
+        return None
+    overlay_path = Path(value)
+    overlay = json.loads(overlay_path.read_text(encoding="utf-8"))
+    if (
+        not isinstance(overlay, Mapping)
+        or overlay.get("schema_version") != RUNTIME_OVERLAY_SCHEMA
+        or overlay.get("profile") != name
+        or not isinstance(overlay.get("runtime"), Mapping)
+    ):
+        raise ValueError(f"Invalid HOMR profile runtime overlay for {name}: {overlay_path}")
+    return dict(overlay["runtime"]), str(overlay_path.resolve())
 
 
 def load_profile_manifest(name: str, path: Path) -> dict[str, Any]:
@@ -20,6 +48,10 @@ def load_profile_manifest(name: str, path: Path) -> dict[str, Any]:
         )
     if payload.get("historical_detector_artifact_runtime_input") is not False:
         raise ValueError("HOMR profile must not permit historical detector artifacts")
+    payload = dict(payload)
+    overlay = _runtime_overlay(name)
+    if overlay is not None:
+        payload["runtime"], payload["runtime_overlay"] = overlay
     runtime = payload.get("runtime")
     if not isinstance(runtime, Mapping):
         raise ValueError("HOMR profile lacks runtime settings")

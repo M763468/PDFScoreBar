@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -10,6 +9,9 @@ import re
 import stat
 from contextlib import contextmanager
 from pathlib import Path
+
+if os.name != "nt":
+    import fcntl
 
 
 def digest(path):
@@ -46,6 +48,9 @@ def lease(root: Path, identity: dict):
     The root is trusted executable storage, provisioned by the operator. flock
     requires a local filesystem and must be shared by every participating writer.
     """
+    if os.name == "nt":
+        # The trust model relies on POSIX ownership/modes and flock (#535).
+        raise RuntimeError("The trusted SR compiler cache is not supported on Windows")
     if not root.is_absolute():
         raise ValueError("Cache root must be absolute")
     root = root.absolute()

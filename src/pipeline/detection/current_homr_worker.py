@@ -34,6 +34,86 @@ def _resize_mask_to_image_size(mask: np.ndarray, image_size: tuple[int, int]) ->
     )
 
 
+class CurrentHomrEmptyResultError(RuntimeError):
+    """HOMR returned an empty result for a page that is not a verified non-score page."""
+
+
+def _classify_page_content(
+    *,
+    image: Path,
+    stem: str,
+    image_run_dir: Path,
+    empty_records: list[dict[str, Any]],
+    prediction_count: int,
+    connector_present: Mapping[str, bool],
+) -> tuple[str, dict[str, Any] | None, Path | None]:
+    """Decide whether an empty HOMR result is a cover/blank page (#532).
+
+    A normal HOMR result is a score page and keeps the connector-pair contract. An
+    empty result is accepted as a non-score page only when HOMR's own staff
+    segmentation shows no staff evidence; otherwise the page fails explicitly so a
+    score page is never published as an empty page.
+    """
+
+    from src.common.connector_artifacts import write_non_score_page_marker
+    from src.homr_runtime.empty_detection import (
+        NON_SCORE_PAGE,
+        classification_thresholds,
+        classify_empty_detection,
+    )
+
+    if not empty_records:
+        return "score", None, None
+    if len(empty_records) != 1:
+        raise CurrentHomrEmptyResultError(
+            f"Current HOMR reported {len(empty_records)} empty results for one page: {image}"
+        )
+    record = empty_records[0]
+    evidence = record.get("evidence")
+    classification = classify_empty_detection(evidence)
+    empty_detection = {
+        "homr_reason": record.get("reason"),
+        "classification": classification,
+        "evidence": evidence,
+        "thresholds": classification_thresholds(),
+    }
+    if classification != NON_SCORE_PAGE:
+        if evidence:
+            details = (
+                f"inner staff fraction={float(evidence['inner_staff_mask_fraction']):.5f}, "
+                f"inner staff fragments={int(evidence['inner_staff_fragment_count'])}, "
+                f"noteheads={int(evidence['notehead_count'])}"
+            )
+        else:
+            details = "no segmentation evidence was recorded"
+        raise CurrentHomrEmptyResultError(
+            f"Current HOMR returned an empty result ({record.get('reason')}) for {image}, "
+            f"but the page is not a verified non-score page ({classification}: {details}). "
+            "It is not published as an empty cover/blank page; check the input page "
+            "and HOMR staff/notehead detection."
+        )
+    if prediction_count:
+        raise CurrentHomrEmptyResultError(
+            f"Current HOMR classified {image} as a non-score page but returned "
+            f"{prediction_count} barline predictions"
+        )
+    present = sorted(name for name, exists in connector_present.items() if exists)
+    if present:
+        raise CurrentHomrEmptyResultError(
+            f"Current HOMR classified {image} as a non-score page but published "
+            f"connector artifacts: {present}"
+        )
+    marker = write_non_score_page_marker(
+        image_run_dir,
+        stem,
+        image=image,
+        reason=str(record.get("reason")),
+        evidence=evidence or {},
+        thresholds=empty_detection["thresholds"],
+    )
+    return NON_SCORE_PAGE, empty_detection, marker
+
+
 def run(request_path: Path, result_path: Path) -> Path:
     request = _load_request(request_path)
     det_cfg = request.get("detection")
@@ -64,13 +144,17 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     import homr.main as homr_main
     from homr.music_xml_generator import XmlGeneratorArguments
-    from src.common.connector_artifacts import connector_mask_paths
+    from src.common.connector_artifacts import (
+        connector_mask_paths,
+        invalidate_non_score_page_marker,
+    )
     from src.homr_runtime import heuristics as homr_heuristics
     from src.homr_runtime import predictor as homr_predictor
     from src.homr_runtime.api_compat import (
         build_processing_config_compat,
         install_current_homr_consumer_compat,
     )
+    from src.homr_runtime.empty_detection import capture_empty_detections
     from src.homr_runtime.reporting import save_homr_results
     from src.homr_runtime.types import DEFAULT_TUNING, BarlinePrediction
     from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
@@ -106,13 +190,15 @@ def run(request_path: Path, result_path: Path) -> Path:
     stem = image.stem
     image_run_dir = output_root / "batch" / stem
     image_run_dir.mkdir(parents=True, exist_ok=True)
+    invalidate_non_score_page_marker(image_run_dir, stem)
     try:
-        predictions, _, _, _, notehead_mask, staff_mask, _, _ = predictor.predict(
-            sr_image,
-            xml_args,
-            sr_scale=sr_scale,
-            image_run_dir=image_run_dir,
-        )
+        with capture_empty_detections() as empty_records:
+            predictions, _, _, _, notehead_mask, staff_mask, _, _ = predictor.predict(
+                sr_image,
+                xml_args,
+                sr_scale=sr_scale,
+                image_run_dir=image_run_dir,
+            )
         metrics_predictions = [
             BarlinePrediction(
                 pred_bbox=prediction.pred_bbox,
@@ -139,7 +225,16 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise FileNotFoundError("Current HOMR artifacts missing: " + ", ".join(missing))
 
     connector_paths = connector_mask_paths(image_run_dir, stem)
-    connector_complete = all(path.is_file() for path in connector_paths.values())
+    connector_present = {name: path.is_file() for name, path in connector_paths.items()}
+    connector_complete = all(connector_present.values())
+    page_content, empty_detection, non_score_marker = _classify_page_content(
+        image=image,
+        stem=stem,
+        image_run_dir=image_run_dir,
+        empty_records=empty_records,
+        prediction_count=len(metrics_predictions),
+        connector_present=connector_present,
+    )
     payload = {
         "schema_version": "pipeline.current_homr_on_x4.v1",
         "status": "completed",
@@ -148,7 +243,11 @@ def run(request_path: Path, result_path: Path) -> Path:
         "sr_scale": 4,
         "current_sr_detection": str(detection),
         "staff_mask": str(staff),
+        "page_content": page_content,
+        "empty_detection": empty_detection,
+        "non_score_page_marker": str(non_score_marker) if non_score_marker else None,
         "connector_complete": connector_complete,
+        "connector_present": connector_present,
         "connector_symbols": (
             str(connector_paths["symbols"]) if connector_paths["symbols"].is_file() else None
         ),

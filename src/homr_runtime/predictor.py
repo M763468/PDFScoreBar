@@ -23,6 +23,7 @@ from src.common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertic
 
 logger = logging.getLogger("homr_evaluator")
 
+from src.homr_runtime.empty_detection import record_empty_detection
 from src.homr_runtime.heuristics import (
     compute_transform_info,
     detect_staffs_with_barlines,
@@ -395,6 +396,8 @@ def run_homr_on_image(
             logger.warning(
                 f"Detection failed for {image_path.name}: {msg}. Returning empty results."
             )
+            # Keep the #62/#63 empty result, but let the caller see why it is empty.
+            record_empty_detection(image_path, e)
             img = cv2.imread(str(image_path))
             if img is None:
                 # Fallback if image cannot be read

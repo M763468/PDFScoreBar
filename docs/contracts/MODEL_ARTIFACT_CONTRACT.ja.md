@@ -45,7 +45,7 @@
 
 - 論理モデルID: `realesrgan-x4plus`
 - 選択バージョン: 上流release `v0.1.0`、資産 `RealESRGAN_x4plus.pth`
-- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。runtimeパッケージのソースはDockerfileで別途固定
+- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。推論コードは `realesrgan`／`basicsr` パッケージではなく、vendoring した `src/third_party/realesrgan_sr`（#533）
 - 完全性の識別情報: 選択release／資産とSHA-256 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`
 - 所有: Dockerイメージ
 - ホスト上の配置: Dockerビルドキャッシュのみ。チェックアウト内の正規コピーは不要
@@ -58,7 +58,7 @@
 
 - 論理モデルID: `realesrgan-x2plus`
 - 選択バージョン: 上流release `v0.2.1`、資産 `RealESRGAN_x2plus.pth`
-- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。runtimeパッケージのソースはDockerfileで別途固定
+- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。推論コードは `realesrgan`／`basicsr` パッケージではなく、vendoring した `src/third_party/realesrgan_sr`（#533）
 - 完全性の識別情報: 選択release／資産とSHA-256 `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`
 - 所有: Dockerイメージ
 - ホスト上の配置: Dockerビルドキャッシュのみ。チェックアウト内の正規コピーは不要
@@ -71,21 +71,19 @@
 
 ### 保守対象HOMR runtime資産
 
-- 論理モデルID: 保守対象HOMRのsegmentation、transformer encoder/decoder（およびHOMRのinitが管理するOCR資産）
+- 論理モデルID: 保守対象HOMRのsegmentation（およびHOMRのOCR資産）。#533 以降、transformer encoder/decoder は runtime に含まない。PDFScoreBar は SegNet の小節線とマスクだけを使い、`HomrPredictor` は HOMR の譜表転写をスキップする。イメージに transformer checkpoint（Run 426）は入らない
 - 選択runtimeバージョン: HOMRソースcommit `457e7c6518a10ba755db2e60883419e56c4d7369`
 - そのcommitで選択されるGPUモデルの識別情報:
   - segmentation: `segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16`
-  - transformer encoder: `encoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
-  - transformer decoder: `decoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
-- 来歴: 上流HOMRの `onnx_checkpoints` GitHub release。固定されたHOMRソースが選択し、`python -m homr.main --init --gpu force` で配置する
-- 上流releaseパッケージのSHA-256:
-  - segmentationパッケージ: `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82`
-  - transformer encoderパッケージ: `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c`
-  - transformer decoderパッケージ: `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8`
+- 来歴: 上流HOMRの `onnx_checkpoints` GitHub release。固定されたHOMRソースが選択し、`docker/init_homr_segnet.py` で配置する（SegNet と OCR の初期化だけ。`homr.main --init` は transformer も取得するため使わない）
+- 完全性の識別情報:
+  - segmentationパッケージ（上流release）: `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82`
+  - 展開後のsegmentation ONNX（Dockerビルドで照合）: `60f495496cb41473c0521d0811d8f44b9d5cff892d287974a8aebb3eaee2fa83`
+  - 履歴（同梱しない）: transformer encoderパッケージ `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c`、decoderパッケージ `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8`
 - 所有: Dockerイメージ／固定された上流HOMR runtime
 - ホスト上の配置: Dockerビルドキャッシュのみ
 - コンテナruntime: `/opt/venv_pipeline` 内のHOMRパッケージディレクトリ。正規検証では `/workspace` に依存してはならない
-- 解決・配置: Dockerビルド時の固定HOMRの `--init --gpu force` 経路
+- 解決・配置: Dockerビルド時の `docker/init_homr_segnet.py`。SegNet のハッシュ不一致、または transformer の ONNX checkpoint があればビルドを失敗させる
 - 明示的上書き: 正規runtimeにはなし
 - 更新手順: HOMRソースの固定値を意図的に更新し、そのcommitで選択される資産名とreleaseダイジェストを一覧化し、再ビルド、ONNX CUDA providerの確認、正規smokeを実行する。新しい上流releaseによって固定runtimeの識別情報が暗黙に変わってはならない。
 

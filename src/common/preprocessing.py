@@ -200,8 +200,8 @@ def apply_advanced_sr(
     try:
         with _perf_span("sr_worker.realesrgan_heavy_imports"):
             import torch
-            from basicsr.archs.rrdbnet_arch import RRDBNet
-            from realesrgan import RealESRGANer
+
+            from src.third_party.realesrgan_sr import RealESRGANer, RRDBNet
     except ImportError as e:
         if strict:
             raise

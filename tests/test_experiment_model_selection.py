@@ -228,6 +228,7 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
     monkeypatch.setattr(runtime_contract, "runtime_fingerprint", lambda root: "matching")
     monkeypatch.setattr(runtime_contract, "_validate_production_provenance", lambda *args: None)
     monkeypatch.setattr(runtime_contract, "RUNTIME_MODULES", ())
+    monkeypatch.setattr(runtime_contract, "EXCLUDED_RUNTIME_MODULES", ())
     monkeypatch.setattr(
         model_artifacts,
         "resolve_realesrgan_weight",

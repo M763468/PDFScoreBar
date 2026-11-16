@@ -61,6 +61,34 @@
       "role": "Verified model identities, download/cache and image/external asset resolution"
     },
     {
+      "pattern": "src/third_party/__init__.py",
+      "role": "Package marker for third-party source vendored with its upstream license"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/__init__.py",
+      "role": "Vendored Real-ESRGAN inference subset exports; replaces basicsr/realesrgan/gfpgan/facexlib (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/rrdbnet.py",
+      "role": "RRDBNet derived from BasicSR 1.4.2 (Apache-2.0) without the BasicSR import graph (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/upsampler.py",
+      "role": "RealESRGANer derived from Real-ESRGAN a4abfb29 (BSD-3-Clause) (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-BasicSR.txt",
+      "role": "Apache-2.0 license text for the vendored BasicSR code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-Real-ESRGAN.txt",
+      "role": "BSD-3-Clause license text for the vendored Real-ESRGAN code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/README.md",
+      "role": "Provenance, modifications and equivalence contract of the vendored SR code"
+    },
+    {
       "pattern": "src/common/thin_barline_finder.py",
       "role": "Thin vertical barline detection used by production rescue"
     },

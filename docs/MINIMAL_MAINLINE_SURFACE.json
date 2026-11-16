@@ -29,6 +29,10 @@
       "role": "HOMR runtime compatibility patch"
     },
     {
+      "pattern": "docker/init_homr_segnet.py",
+      "role": "Build-time SegNet-only HOMR model materialization with hash check (#533)"
+    },
+    {
       "pattern": "docker/runtime_contract.py",
       "role": "runtime dependency/provenance preflight"
     },
@@ -766,6 +770,7 @@
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
+      "tests/test_issue533_license_reduction.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",
       "tests/test_apply_corrections_final_output.py",

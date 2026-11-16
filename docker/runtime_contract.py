@@ -57,6 +57,7 @@ RUNTIME_CONTRACT_FILES = (
     Path("Dockerfile"),
     Path("pyproject.toml"),
     Path("docker/patch_homr_onnx_provider.py"),
+    Path("docker/init_homr_segnet.py"),
     Path("models/barline_cnn/manifest.json"),
     Path("src/common/model_artifacts.py"),
     Path("src/common/__init__.py"),

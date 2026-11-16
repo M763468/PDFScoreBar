@@ -184,7 +184,6 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
     import homr.main as homr_main
     from homr.music_xml_generator import XmlGeneratorArguments
     from homr.segmentation import config as segnet_config
-    from homr.transformer.configs import Config
     from src.common.connector_artifacts import connector_mask_paths
     from src.homr_runtime import heuristics as homr_heuristics
     from src.homr_runtime import predictor as homr_predictor
@@ -251,6 +250,7 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
         config,
         DEFAULT_TUNING.copy(),
         use_gpu_inference=use_gpu_inference,
+        transcribe_staffs=False,
     )
     predictor_init_sec = time.perf_counter() - predictor_started
     stem = image.stem
@@ -311,11 +311,10 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
             "Installed HOMR direct_url commit does not match the immutable profile: "
             f"expected={EXPECTED_HOMR_COMMIT} actual={installed_commit}"
         )
-    transformer_paths = Config().filepaths
+    # Issue #533: only SegNet runs; the transformer checkpoint is neither
+    # executed nor required, so it is not part of the model provenance.
     model_paths = {
         "segnet_fp16": Path(segnet_config.segnet_path_onnx_fp16),
-        "transformer_encoder_fp16": Path(transformer_paths.encoder_path_fp16),
-        "transformer_decoder_fp16": Path(transformer_paths.decoder_path_fp16),
     }
     model_provenance = {
         name: {
@@ -358,6 +357,7 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
             "onnxruntime_available_providers": list(ort.get_available_providers()),
             "compatibility": compat_modes,
             "connector_capture_installed": connector_capture_installed,
+            "transformer_transcription": "skipped",
         },
         "models": model_provenance,
         "onnx_sessions": session_records,

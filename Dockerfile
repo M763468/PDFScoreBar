@@ -21,6 +21,7 @@ WORKDIR /workspace
 # Copy only dependency-defining files first for better caching
 COPY pyproject.toml ./
 COPY docker/patch_homr_onnx_provider.py ./docker/patch_homr_onnx_provider.py
+COPY docker/init_homr_segnet.py ./docker/init_homr_segnet.py
 
 # Create unified virtual environment and install dependencies
 RUN uv venv --python 3.12 /opt/venv_pipeline
@@ -78,9 +79,11 @@ RUN uv pip install --no-cache-dir --force-reinstall --no-deps opencv-python==4.1
 RUN uv pip uninstall -y onnxruntime && \
     uv pip install --no-cache-dir --force-reinstall --no-deps onnxruntime-gpu==1.24.4
 
-# HOMR's supported init command materializes its CUDA/FP16 and OCR model assets.
-# Do this during build so canonical GPU validation never depends on a late download.
-RUN /opt/venv_pipeline/bin/python -m homr.main --init --gpu force
+# Materialize HOMR's CUDA/FP16 SegNet and OCR assets during build so canonical GPU
+# validation never depends on a late download. PDFScoreBar does not run HOMR's
+# transformer transcription, so its checkpoint is deliberately not downloaded
+# (Issue #533); `homr.main --init` would fetch it.
+RUN /opt/venv_pipeline/bin/python docker/init_homr_segnet.py
 
 # Fail the build if a dependency reintroduces the excluded SR distributions.
 RUN /opt/venv_pipeline/bin/python -c "import importlib.util, sys; bad = [m for m in ('basicsr', 'realesrgan', 'gfpgan', 'facexlib') if importlib.util.find_spec(m)]; sys.exit('excluded SR distributions installed: ' + ', '.join(bad) if bad else 0)"

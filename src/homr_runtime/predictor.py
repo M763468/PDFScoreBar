@@ -23,6 +23,9 @@ from src.common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertic
 
 logger = logging.getLogger("homr_evaluator")
 
+# Same release used by the pinned homr.main.download_weights.
+HOMR_ONNX_RELEASE_URL = "https://github.com/liebharc/homr/releases/download/onnx_checkpoints/"
+
 from src.homr_runtime.heuristics import (
     compute_transform_info,
     detect_staffs_with_barlines,
@@ -36,6 +39,35 @@ from src.homr_runtime.types import (
 )
 
 
+def ensure_segnet_weights(use_gpu_inference: bool) -> Path:
+    """Ensure only the HOMR SegNet ONNX model selected by the GPU flag is present.
+
+    Mirrors ``homr.main.download_weights`` for the SegNet entry without requesting
+    the transformer checkpoint (Issue #533). The production image materializes and
+    hash-verifies the fp16 SegNet at build time (``docker/init_homr_segnet.py``).
+    """
+    from homr import download_utils
+    from homr.segmentation import config as segnet_config
+
+    model = Path(
+        segnet_config.segnet_path_onnx_fp16 if use_gpu_inference else segnet_config.segnet_path_onnx
+    )
+    if model.is_file():
+        return model
+    base_name = model.name.split(".")[0]
+    zip_path = model.parent / f"{base_name}.zip"
+    logger.info("HomrPredictor: downloading missing SegNet model %s", base_name)
+    try:
+        download_utils.download_file(f"{HOMR_ONNX_RELEASE_URL}{base_name}.zip", str(zip_path))
+        download_utils.unzip_file(str(zip_path), str(model.parent))
+    finally:
+        if zip_path.exists():
+            zip_path.unlink()
+    if not model.is_file():
+        raise FileNotFoundError(f"HOMR SegNet model is unavailable after download: {model}")
+    return model
+
+
 class HomrPredictor:
     """Persistent Homr Predictor for batch processing."""
 
@@ -45,11 +77,16 @@ class HomrPredictor:
         tuning: Dict[str, float],
         enable_cache: bool = True,
         use_gpu_inference: bool = False,
+        transcribe_staffs: bool = False,
     ) -> None:
         self.config = config
         self.tuning = tuning
         self.enable_cache = enable_cache
         self.use_gpu_inference = use_gpu_inference
+        # Issue #533: PDFScoreBar consumes HOMR's SegNet barlines and masks only.
+        # The transformer transcription (MusicXML) is not used by the pipeline, so
+        # it is skipped by default and its checkpoint is not required.
+        self.transcribe_staffs = transcribe_staffs
 
         # Ensure Segnet cache is enabled for persistence
         if self.enable_cache:
@@ -71,15 +108,18 @@ class HomrPredictor:
                 logger.warning(f"HomrPredictor: Failed to enable Segnet cache: {exc}")
 
         # Ensure weights are available
-        download_weights(self.use_gpu_inference)
+        if self.transcribe_staffs:
+            download_weights(self.use_gpu_inference)
+
+            # Initialize transformer config for parse_staffs
+            from homr.transformer.configs import default_config
+
+            _ = default_config  # Ensure it is importable
+        else:
+            ensure_segnet_weights(self.use_gpu_inference)
 
         # Note: use_gpu_inference is handled internally by SegNet/Transformer
         # when running in-process via ONNX runtime settings.
-
-        # Initialize transformer config for parse_staffs
-        from homr.transformer.configs import default_config
-
-        _ = default_config  # Ensure it is importable
 
     def predict(
         self,
@@ -151,6 +191,7 @@ class HomrPredictor:
             timeout_s,
             self.tuning,
             self.use_gpu_inference,
+            transcribe_staffs=self.transcribe_staffs,
         )
 
         # 3. Map predictions back to the input image coordinates
@@ -377,7 +418,15 @@ def run_homr_on_image(
     timeout_s: float,
     tuning: Dict[str, float],
     use_gpu_inference: bool,
+    *,
+    transcribe_staffs: bool = True,
 ) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray]:
+    """Run HOMR SegNet barline detection and, optionally, transformer transcription.
+
+    Barline predictions and masks are complete before transcription starts. With
+    ``transcribe_staffs=False`` the transformer, MusicXML and teaser are skipped and
+    the returned ``xml_path`` is ``None``.
+    """
     start = time.perf_counter()
     try:
         (
@@ -421,6 +470,11 @@ def run_homr_on_image(
 
     xml_path: Optional[Path] = None
     seg_shape = (debug.original_image.shape[0], debug.original_image.shape[1])
+
+    if not transcribe_staffs:
+        debug.clean_debug_files_from_previous_runs()
+        runtime_s = time.perf_counter() - start
+        return predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask
 
     try:
         from homr.main import parse_staffs

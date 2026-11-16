@@ -153,7 +153,7 @@ revert や Close によってそれらの効力が消えたとは断定しない
 
 | 方式 | first-party（#505）の前提 | 主な第三者・重みの条件（#504） |
 | --- | --- | --- |
-| (a) 利用者 PC への portable 実行物の配布 | 正式ライセンス済みの版から作る。または、その版の適用前に試用者へ個別に書面で許諾する。MMR / CNN 重みの許諾 | 同梱する全部品の LICENSE / NOTICE、HOMR・PyMuPDF の対応ソースと改変表示、Python の Metadata only 94 件・Unresolved 1 件の照合、NVIDIA 部品の再配布条件、HOMR 重みの学習データ |
+| (a) 利用者 PC への portable 実行物の配布 | 正式ライセンス済みの版から作る。または、その版の適用前に試用者へ個別に書面で許諾する。MMR / CNN 重みの許諾 | 同梱する全部品の LICENSE / NOTICE、HOMR・PyMuPDF の対応ソースと改変表示、Python 台帳の Confirmed + conditions 24 件（本文の補充・LGPL 部品）と Legal review required 2 件（#504 §0.8）、NVIDIA 部品の再配布条件、HOMR 重みの学習データ |
 | (b) Docker イメージ等の配布 | (a) と同じ。イメージはリリース候補ツリーから build し、`/workspace` に `LICENSE` 一式が入ることを確認 | (a) に加え、Ubuntu の各パッケージの通知・対応ソースと商標、CUDA ベースイメージの再配布条件 |
 | (c) 時間限定のクラウド GPU・リモート提供 | 実行物を渡さないため first-party の許諾は配布ほど必須ではないが、提供する版と対応ソースの案内を固定する | 改変版 HOMR を利用者に操作させるため §13 の対応ソース提供、HOMR 重みの学習データ（Camera-PrIMuS の HF 複製は CC BY-NC 4.0）、NVIDIA・クラウドの利用条件 |
 

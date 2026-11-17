@@ -42,11 +42,32 @@ def _load_completed_result(path: Path, *, name: str) -> dict[str, Any]:
     return dict(payload)
 
 
+SCORE_PAGE = "score"
+NON_SCORE_PAGE = "non_score_page"
+
+
 def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
-    """Validate the current-HOMR artifacts owned by canonical x4 support."""
+    """Validate the current-HOMR artifacts owned by canonical x4 support.
+
+    A score page requires the complete connector semantic pair. A page that the
+    current HOMR worker declared a non-score page (cover/blank, #532) requires the
+    validated declaration instead and must not carry any connector artifact; x4
+    support still runs for it and publishes its empty detection and staff mask.
+    """
+
+    page_content = payload.get("page_content", SCORE_PAGE)
+    if page_content == NON_SCORE_PAGE:
+        return _require_non_score_page_bundle(payload)
+    if page_content != SCORE_PAGE:
+        raise ValueError(f"Unknown current-HOMR page_content: {page_content!r}")
 
     if payload.get("connector_complete") is not True:
-        raise RuntimeError("Current x4 support requires a complete connector semantic pair")
+        present = payload.get("connector_present")
+        raise RuntimeError(
+            "Current x4 support requires a complete connector semantic pair: current HOMR "
+            "returned a score-page result but its connector artifacts are incomplete "
+            f"(present={present!r}, image={payload.get('image')})"
+        )
 
     required_fields = (
         "current_sr_detection",
@@ -54,6 +75,44 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
         "connector_symbols",
         "connector_brace_dot",
     )
+    return _require_artifact_files(payload, required_fields)
+
+
+def _require_non_score_page_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
+    from src.common.connector_artifacts import read_non_score_page_marker
+
+    if payload.get("connector_complete") is not False or any(
+        payload.get(name) for name in ("connector_symbols", "connector_brace_dot")
+    ):
+        raise RuntimeError(
+            "Current HOMR declared a non-score page but also reported connector artifacts: "
+            f"{payload.get('image')}"
+        )
+    empty_detection = payload.get("empty_detection")
+    if (
+        not isinstance(empty_detection, Mapping)
+        or empty_detection.get("classification") != NON_SCORE_PAGE
+    ):
+        raise RuntimeError(
+            "Current HOMR declared a non-score page without non-score evidence: "
+            f"{payload.get('image')}"
+        )
+    paths = _require_artifact_files(
+        payload, ("current_sr_detection", "staff_mask", "non_score_page_marker")
+    )
+    stem = Path(str(payload.get("image", ""))).stem
+    read_non_score_page_marker(paths["non_score_page_marker"], stem=stem)
+    detections = json.loads(paths["current_sr_detection"].read_text(encoding="utf-8"))
+    if not isinstance(detections, Mapping) or detections.get("predictions") != []:
+        raise RuntimeError(
+            f"Current HOMR declared a non-score page with barline predictions: {stem}"
+        )
+    return paths
+
+
+def _require_artifact_files(
+    payload: Mapping[str, Any], required_fields: tuple[str, ...]
+) -> dict[str, Path]:
     missing_fields = [name for name in required_fields if not payload.get(name)]
     if missing_fields:
         raise ValueError(
@@ -67,6 +126,10 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
             "Current x4 support HOMR artifacts missing: " + ", ".join(missing_files)
         )
     return paths
+
+
+def _optional_path(paths: Mapping[str, Path], name: str) -> str | None:
+    return str(paths[name]) if name in paths else None
 
 
 def _require_precomputed_sr(request: Mapping[str, Any], *, image: Path) -> dict[str, Any] | None:
@@ -261,9 +324,12 @@ def run(request_path: Path, result_path: Path) -> Path:
         "sr_execution_scope": sr_execution_scope,
         "current_sr_detection": str(homr_paths["current_sr_detection"]),
         "current_homr_staff_mask": str(homr_paths["staff_mask"]),
-        "connector_complete": True,
-        "connector_symbols": str(homr_paths["connector_symbols"]),
-        "connector_brace_dot": str(homr_paths["connector_brace_dot"]),
+        "page_content": homr_payload.get("page_content", SCORE_PAGE),
+        "connector_complete": "connector_symbols" in homr_paths,
+        "connector_symbols": _optional_path(homr_paths, "connector_symbols"),
+        "connector_brace_dot": _optional_path(homr_paths, "connector_brace_dot"),
+        "non_score_page_marker": _optional_path(homr_paths, "non_score_page_marker"),
+        "empty_detection": homr_payload.get("empty_detection"),
         "homr_api_compat": homr_payload.get("homr_api_compat"),
         "support_root": str(output_root),
         "current_homr_executed": True,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import uuid
 from pathlib import Path
@@ -13,6 +14,8 @@ import numpy as np
 
 CONNECTOR_SYMBOLS_SUFFIX = "_connector_symbols.png"
 CONNECTOR_BRACE_DOT_SUFFIX = "_connector_brace_dot.png"
+NON_SCORE_PAGE_MARKER_SUFFIX = "_non_score_page.json"
+NON_SCORE_PAGE_MARKER_SCHEMA = "pipeline.non_score_page.v1"
 _STAFF_MASK_SUFFIXES = (
     "_proxy_debug_3_staff.png",
     "_debug_3_staff.png",
@@ -97,6 +100,11 @@ def connector_mask_paths_for_numbering(
             )
         if unique:
             return next(iter(unique.values()))
+        if _declared_non_score_page(support_root, stem):
+            # Current x4 support classified this page as a cover/blank page from
+            # HOMR's segmentation evidence (#532). It has no staves, so there is no
+            # connector semantics to read; this is not a missing-artifact fallback.
+            return None
         raise RuntimeError(
             f"Current support exists but connector semantic pair is missing for {stem} "
             f"under {support_root}"
@@ -190,6 +198,92 @@ def describe_connector_artifacts(staff_mask_path: Path | str) -> dict[str, Any]:
         "include_absent_pairs": True,
         "masks": mask_descriptions,
     }
+
+
+def non_score_page_marker_path(image_run_dir: Path | str, stem: str) -> Path:
+    """Path of the marker that declares one HOMR page a non-score page (#532)."""
+
+    return Path(image_run_dir) / f"{stem}{NON_SCORE_PAGE_MARKER_SUFFIX}"
+
+
+def invalidate_non_score_page_marker(image_run_dir: Path | str, stem: str) -> None:
+    non_score_page_marker_path(image_run_dir, stem).unlink(missing_ok=True)
+
+
+def write_non_score_page_marker(
+    image_run_dir: Path | str,
+    stem: str,
+    *,
+    image: Path | str,
+    reason: str,
+    evidence: Mapping[str, Any],
+    thresholds: Mapping[str, Any],
+) -> Path:
+    """Atomically publish the non-score-page declaration beside the HOMR outputs.
+
+    The marker replaces the connector pair for this page only. Its presence must
+    never be inferred from a missing pair; only the current HOMR worker writes it,
+    after classifying the recorded segmentation evidence.
+    """
+
+    path = non_score_page_marker_path(image_run_dir, stem)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": NON_SCORE_PAGE_MARKER_SCHEMA,
+        "page_content": "non_score_page",
+        "stem": stem,
+        "image": str(image),
+        "homr_reason": reason,
+        "evidence": dict(evidence),
+        "thresholds": dict(thresholds),
+    }
+    temporary_path = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        temporary_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+    return path
+
+
+def read_non_score_page_marker(path: Path | str, *, stem: str) -> dict[str, Any]:
+    """Load and validate a non-score-page marker; raise when it is not usable."""
+
+    marker_path = Path(path)
+    payload = json.loads(marker_path.read_text(encoding="utf-8"))
+    if (
+        not isinstance(payload, Mapping)
+        or payload.get("schema_version") != NON_SCORE_PAGE_MARKER_SCHEMA
+        or payload.get("page_content") != "non_score_page"
+        or payload.get("stem") != stem
+        or not isinstance(payload.get("evidence"), Mapping)
+    ):
+        raise ValueError(f"Invalid non-score-page marker for {stem}: {marker_path}")
+    return dict(payload)
+
+
+def _declared_non_score_page(support_root: Path, stem: str) -> bool:
+    markers = {
+        str(path.resolve()): path
+        for path in support_root.rglob(f"{stem}{NON_SCORE_PAGE_MARKER_SUFFIX}")
+        if path.is_file()
+    }
+    if len(markers) > 1:
+        raise RuntimeError(f"Ambiguous non-score-page markers for {stem} under {support_root}")
+    if not markers:
+        return False
+    marker = next(iter(markers.values()))
+    read_non_score_page_marker(marker, stem=stem)
+    partial = [
+        str(path) for path in connector_mask_paths(marker.parent, stem).values() if path.is_file()
+    ]
+    if partial:
+        raise RuntimeError(
+            f"Non-score-page marker for {stem} conflicts with connector artifacts: {partial}"
+        )
+    return True
 
 
 def _staff_mask_stem(filename: str) -> str | None:

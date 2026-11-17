@@ -36,7 +36,6 @@ from src.homr_runtime.types import (
     BarlinePrediction,
 )
 
-
 # Same release used by the pinned homr.main.download_weights.
 HOMR_ONNX_RELEASE_URL = "https://github.com/liebharc/homr/releases/download/onnx_checkpoints/"
 

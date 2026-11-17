@@ -186,6 +186,29 @@ def patch_and_init(python: Path, app: Path, *, env: dict[str, str]) -> None:
     run([str(python), "-m", "homr.main", "--init", "--gpu", "force"], env=env)
 
 
+def strip_console_scripts(python_root: Path) -> list[str]:
+    """Remove pip console-script launchers and their RECORD lines.
+
+    The ``Scripts\\*.exe`` launchers embed the absolute interpreter path of the build
+    location, so they break after relocation and make otherwise identical builds
+    differ. The runtime only uses ``python -m``; nothing needs them.
+    """
+
+    scripts = python_root / "Scripts"
+    removed = sorted(path.name for path in scripts.iterdir()) if scripts.is_dir() else []
+    if scripts.is_dir():
+        shutil.rmtree(scripts)
+    site_packages = python_root / "Lib" / "site-packages"
+    for record in site_packages.glob("*.dist-info/RECORD"):
+        lines = record.read_text(encoding="utf-8").splitlines(keepends=True)
+        kept = [
+            line for line in lines if not line.startswith(("../../Scripts/", "..\\..\\Scripts\\"))
+        ]
+        if kept != lines:
+            record.write_text("".join(kept), encoding="utf-8")
+    return removed
+
+
 def check_distributions(site_packages: Path) -> dict[str, str]:
     expected = read_lock()
     installed = installed_distributions(site_packages)
@@ -288,6 +311,7 @@ def build(args: argparse.Namespace) -> Path:
     python = install_cpython(root / "python", env=env, cache=cache)
     install_packages(python, env=env)
     patch_and_init(python, root / "app", env=env)
+    removed_scripts = strip_console_scripts(root / "python")
     site_packages = root / "python" / "Lib" / "site-packages"
     distributions = check_distributions(site_packages)
     assets = stage_assets(root, args.asset_source, cache)
@@ -322,6 +346,7 @@ def build(args: argparse.Namespace) -> Path:
         "runtime": runtime_identity(python, env=env),
         "distributions": dict(sorted(distributions.items())),
         "assets": assets,
+        "removed_console_scripts": removed_scripts,
         "file_count": len(files),
         "total_bytes": sum(size for size, _ in files.values()),
         "tree_digest": tree_digest(files),

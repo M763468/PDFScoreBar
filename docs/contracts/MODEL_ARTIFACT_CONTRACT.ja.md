@@ -1,6 +1,6 @@
 # 正規モデル資産の契約
 
-<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"e221051caa19d6605675abc2035872fd5b887f900f790df4eb95c667c5a8c552"},"state":"reviewed"} -->
+<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"8a69ea7b90ffdae38cd13d2b03a877bf7afd993eec40ee547c9c63e5c29156ee"},"state":"reviewed"} -->
 
 [English / 原文](MODEL_ARTIFACT_CONTRACT.md)
 

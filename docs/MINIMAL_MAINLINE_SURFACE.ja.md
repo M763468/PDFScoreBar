@@ -1,6 +1,6 @@
 # 最小配布面
 
-<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"85f6f5b6ecb2a4578b956d4be6d7bf29c4fa2ce42cbc31a58c432a810e7d1e16"},"state":"reviewed"} -->
+<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"3ed27f84f58c603ee4bbe60bdbe6a665ba81755250b50b6e02feda9cb2913c89"},"state":"reviewed"} -->
 
 [English / 原文](MINIMAL_MAINLINE_SURFACE.md)（英語正本）
 

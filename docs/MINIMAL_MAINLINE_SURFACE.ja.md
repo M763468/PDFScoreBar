@@ -1,10 +1,10 @@
 # 最小配布面
 
-<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"85f6f5b6ecb2a4578b956d4be6d7bf29c4fa2ce42cbc31a58c432a810e7d1e16"},"state":"reviewed"} -->
+<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"13fe70804297be2e855787abce65a1b26e1dd7fc63e9584da41b2240b80c6730"},"state":"reviewed"} -->
 
 [English / 原文](MINIMAL_MAINLINE_SURFACE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `85f6f5b6ecb2a4578b956d4be6d7bf29c4fa2ce42cbc31a58c432a810e7d1e16`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `13fe70804297be2e855787abce65a1b26e1dd7fc63e9584da41b2240b80c6730`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 配布候補は、[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json) にある **120個の追跡ファイル**です。内訳は `src/` 配下の91ファイルと、本番の config・モデル・Docker・パッケージのファイル、パッケージに含める利用者向け補正アプリケーション、最小限の利用者向け文書、チェックアウト用の ignore 規則です。正確な配布物は、`runtime_bundle_patterns`、`distribution_support_patterns`、`distribution_metadata_patterns` の和集合です。生成される `DISTRIBUTION_PROVENANCE.json` は、ソースの識別情報、dirty の状態、配布する各ファイルのハッシュを記録します。
 

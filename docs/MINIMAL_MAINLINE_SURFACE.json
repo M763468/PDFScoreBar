@@ -57,8 +57,16 @@
       "role": "Connector evidence artifact loading for system grouping"
     },
     {
+      "pattern": "src/common/file_lock.py",
+      "role": "Cross-platform non-blocking lock files for the correction application (#535)"
+    },
+    {
       "pattern": "src/common/model_artifacts.py",
       "role": "Verified model identities, download/cache and image/external asset resolution"
+    },
+    {
+      "pattern": "src/common/process_tree.py",
+      "role": "Owned child-process trees killed as a unit (POSIX session group, Windows Job Object) (#535)"
     },
     {
       "pattern": "src/common/thin_barline_finder.py",
@@ -187,6 +195,10 @@
     {
       "pattern": "src/pipeline/detection/current_sr_runtime.py",
       "role": "x4 SR runtime"
+    },
+    {
+      "pattern": "src/pipeline/detection/ort_session_audit.py",
+      "role": "Records real ONNX Runtime sessions and fails closed on CUDA-to-CPU fallback (#535)"
     },
     {
       "pattern": "src/pipeline/detection/sr_compiler_cache.py",
@@ -789,6 +801,7 @@
       "tests/test_issue441_annotated_layer.py",
       "tests/test_issue441_mobilesheets_roundtrip.py",
       "tests/test_issue458_source_concurrency.py",
+      "tests/test_issue535_windows_native_support.py",
       "tests/test_job_lifecycle.py",
       "tests/test_manual_correction_handoff.py",
       "tests/test_manual_correction_materializer.py",

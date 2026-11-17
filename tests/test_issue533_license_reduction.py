@@ -191,3 +191,9 @@ def test_production_homr_workers_disable_transcription() -> None:
         encoding="utf-8"
     )
     assert "transformer_encoder_fp16" not in maintained
+
+
+def test_rebuild_pins_transitive_versions_of_the_audited_image() -> None:
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    for pin in ("filelock==4.2.9", "cuda-pathfinder==1.8.6", "pypdfium2==5.15.1"):
+        assert f'"{pin}"' in pyproject

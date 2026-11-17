@@ -35,8 +35,8 @@ basicsr は最上位の Apache-2.0 を確認済み（2026-11-13 Verified）だ�
 | Proprietary terms confirmed | 14 → 13 | nvidia-cuda-cccl（CUDA EULA Attachment A に列挙のなかった部品の1件） |
 | Confirmed | 56 → 41 | absl-py、addict、facexlib、filterpy、future、ImageIO、lazy-loader、lmdb、Markdown、platformdirs、scikit-image、tb-nightly、tifffile、Werkzeug、yapf |
 
-再ビルドに伴う版の変化（固定していない間接依存）: `cuda-pathfinder` 1.8.6 → 1.9.0、`filelock` 4.2.9 → 4.2.10、`pypdfium2` 5.15.1 → 5.15.2。
-いずれもライセンス本文の分類は変わらない。下表は2026-11-15の99件の記録として残す。
+初回候補（`e82bdc56`）では固定していない間接依存が `cuda-pathfinder` 1.9.0、`filelock` 4.2.10、`pypdfium2` 5.15.2 に動いたため、
+`pyproject.toml` で監査イメージの版に固定して再ビルドした（`sha256:7900ac2c9ebd…`、build source `2c5cb66e`）。この最終候補では残る76件の版は監査イメージと同一。下表は2026-11-15の99件の記録として残す。
 
 | package | version | 宣言（長い本文は省略） | LICENSE等 / NOTICE検出数（2026-11-13） | 2026-11-13 | 2026-11-15 | 備考 |
 | --- | --- | --- | --- | --- | --- | --- |

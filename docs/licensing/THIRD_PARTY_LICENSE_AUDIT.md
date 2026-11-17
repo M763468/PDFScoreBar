@@ -485,11 +485,15 @@ NVIDIA部品がこれに当たるか、**AGPL結合物と同じimageでNVIDIA部
 | G2 本番設定 `compile_mode=reduce-overhead` で byte 一致 | 各曲の先頭ページ 5 | **Passed** 5/5 |
 | G3 汎用 `RealESRGANer.enhance`（x4/x2、tile 0/400、pre_pad 0/10、BGR/gray/乱数） | 9 ケース × 8 設定 | **Passed** 72/72、state dict も一致 |
 | H1 本番 x1 HOMR worker の全成果物（検出 JSON、staff/notehead/clef/connector マスク、proxy）が転写あり/なしで byte 一致 | 全73ページ | **全73ページで成果物一致。** 事前の判定式は「on 側で transformer が 1 回以上動くこと」も要求し、表紙・空ページ 5 件（HOMR が `No staffs found` で早期終了し、どちらの設定でも transformer が動かない）がこの条件で不一致と判定された。出力差ではない |
+| H1b（H1 の結果を見た後に定義。H1 の記録はそのまま保持） | H1 の73ページ。表紙・空ページ5件は早期終了を記録する計測を加えて両設定を再実行 | **Passed** 73/73: 全成果物が byte 一致。68ページは on 側で transformer が実行され、5ページ（Shostakovich Sym5 p1/p17/p23、Prokofiev Sym5 p6/p12）は両設定とも HOMR の `No noteheads found` による早期終了で、transformer はどちらでも呼ばれない |
 | G4 候補イメージ: 除外パッケージと transformer ONNX がないこと、他の版が不変であること | 候補イメージ | 除外は **Passed**。版の不変は**厳密には不合格**: 固定していない間接依存の再取得で `cuda-pathfinder`・`filelock`・`pypdfium2` が小版更新、`nvidia-cuda-cccl` が消えた。torch・onnxruntime・numpy・opencv・PyMuPDF 等の固定版は不変。OS 422 件は版まで一致 |
+| G4' 間接依存を固定して再ビルド（2026-11-17、build source `2c5cb66e`） | 候補イメージ `sha256:7900ac2c9ebd…` | **Passed**: 監査イメージとの差は意図した23件の除去だけ（追加・版の変化なし）。`filelock` 4.2.9、`cuda-pathfinder` 1.8.6、`pypdfium2` 5.15.1 を `pyproject.toml` で固定。`nvidia-cuda-cccl` は監査イメージ内に要求元がなく（除去した Real-ESRGAN 導入工程の残り）、消えるのが正しい。OS 422件は版まで一致 |
 | 本番精度 smoke（`make run-smoke`、`configs/smoke_test.yaml`） | 候補イメージ、Va_Prokofiev_Symphony1 p1 | **Passed**（preflight fingerprint 一致、85/85、hard FP 0、FN 0、soft 0） |
+| 本番精度 smoke（固定後イメージ） | `sha256:7900ac2c9ebd…`、同じ入力 | **Passed**（fingerprint 一致、85/85、hard FP 0、FN 0、soft 0） |
+| Full68 replay（#522 と同じ手順。x4 HOMR を候補イメージで再実行し下流を再生成） | 68ページ、`e82bdc56` と `2c5cb66e` の両イメージ | **Passed**: どちらも TP 3560 / FP 0 / FN 7 / 小節 3287（#522 の受入値を再現）。2つのイメージ間で全68ページの予測・番号付けが byte 一致 |
 | fast tests / focused tests | 使い捨て検証コンテナ | **Passed**（fast 149、focused 166） |
 
-SR と HOMR の各段の出力が byte 一致したため、下流（候補生成・CNN・番号付け）の入力は変わらない。このため Full68 の再実行は省略した（G4 の版の変化は上記 smoke で確認したが、Full68 全体での確認はしていない）。
+SR と HOMR の各段の出力が byte 一致したため、下流（候補生成・CNN・番号付け）の入力は変わらない。最終イメージでは x4 HOMR の再実行を含む Full68 replay を追加で確認した。x1 HOMR を含む Full68 の新規実行（fresh run）はしていない（x1 は H1/H1b で全ページ byte 一致）。
 
 #### 0.10.3 #533 の各候補の判断
 
@@ -508,7 +512,7 @@ SR と HOMR の各段の出力が byte 一致したため、下流（候補生�
 | 項目 | 値 |
 | --- | --- |
 | source | `feature/issue533-sr-drop-basicsr`（PR の最終 HEAD は PR 本文に記録） |
-| image | `sha256:718454a8189cb98fc20a936250e608a977ab8c5026b11925221205f2acb61945`（build source `e82bdc56`） |
+| image | `sha256:7900ac2c9ebd1cbdd4a1835341cd5fa1da34cc2402faa1a43f7f55b764b09461`（build source `2c5cb66e`、source fingerprint `7310f616…`）。初回候補 `sha256:718454a8…`（`e82bdc56`）は間接依存の版が動いたため置き換えた |
 | base image | `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04`（OS 422 packages、監査イメージと同一） |
 | Python | 76 distributions（`PYTHON_IMAGE_LICENSE_LEDGER.md` の #533 節） |
 | HOMR | `457e7c6518a10ba755db2e60883419e56c4d7369`（改変: `docker/patch_homr_onnx_provider.py`。SegNet 308 のみ、ONNX SHA-256 `60f49549…eee2fa83`） |

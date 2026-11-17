@@ -113,6 +113,10 @@
       "role": "Production barline candidates implementation used by maintained dense processing"
     },
     {
+      "pattern": "src/homr_runtime/empty_detection.py",
+      "role": "Production evidence and classification of empty HOMR results (cover/blank pages, #532)"
+    },
+    {
       "pattern": "src/homr_runtime/end_barlines.py",
       "role": "Production end barlines implementation used by maintained dense processing"
     },
@@ -831,6 +835,7 @@
       "tests/test_issue441_annotated_layer.py",
       "tests/test_issue441_mobilesheets_roundtrip.py",
       "tests/test_issue458_source_concurrency.py",
+      "tests/test_issue532_empty_page_contract.py",
       "tests/test_job_lifecycle.py",
       "tests/test_manual_correction_handoff.py",
       "tests/test_manual_correction_materializer.py",

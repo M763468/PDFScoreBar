@@ -2,8 +2,8 @@
 
 [日本語](MINIMAL_MAINLINE_SURFACE.ja.md)
 
-The candidate has **127 tracked files** in
-[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 95 files under `src/`,
+The candidate has **128 tracked files** in
+[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 96 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
 application, minimum user documentation, and checkout-local ignore rules. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and

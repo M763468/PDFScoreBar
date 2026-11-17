@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from pathlib import Path
@@ -82,6 +83,11 @@ def test_failure_cancels_running_and_queued(tmp_path):
     assert set(calls) == set(keys[:2])
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="POSIX SIGTERM handler/exit status; Windows tree ownership is covered by "
+    "test_issue535_windows_native_support.test_owner_exit_kills_its_tree",
+)
 def test_sigterm_cleans_worker(tmp_path):
     marker = tmp_path / "leader"
     script = """

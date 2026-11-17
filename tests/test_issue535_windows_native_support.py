@@ -310,6 +310,7 @@ def test_relocation_handles_windows_engine_paths(tmp_path: Path) -> None:
     }
 
 
+@posix_only
 def test_relocation_counts_posix_engine_paths(tmp_path: Path) -> None:
     from docker.distribution_job import prepare_local_review
 
@@ -321,6 +322,7 @@ def test_relocation_counts_posix_engine_paths(tmp_path: Path) -> None:
     assert local["local_distribution_relocation"]["relocated_path_count"] == 2
 
 
+@posix_only
 def test_relocation_rejects_leftover_references(tmp_path: Path) -> None:
     from docker.distribution_job import prepare_local_review
 

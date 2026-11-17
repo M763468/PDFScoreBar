@@ -482,3 +482,69 @@ def test_windows_never_delegates_to_a_docker_container() -> None:
 
     assert get_docker_exec_prefix() == []
     assert get_pipeline_python("homr")[0] in {sys.executable, os.environ.get("PIPELINE_PYTHON")}
+
+
+# --- MMR on measures too narrow to hold a multi-measure rest -------------------
+
+
+def _mmr_system(measure_bbox, staff_height=160):
+    return {
+        "staves": [{"bbox": [200, 1000, 2900, 1000 + staff_height]}],
+        "measures": [{"bbox": measure_bbox}],
+    }
+
+
+@pytest.mark.parametrize(
+    ("width", "narrow"),
+    [(31, True), (47, True), (48, False), (73, False), (400, False)],
+)
+def test_mmr_width_guard_uses_the_staff_height(width: int, narrow: bool) -> None:
+    from src.measure_numbering.mmr import MMRProcessor
+
+    bbox = [566, 1000, 566 + width, 1160]
+    assert MMRProcessor._too_narrow_for_mmr(_mmr_system(bbox), bbox) is narrow
+
+
+def test_mmr_width_guard_needs_staff_geometry() -> None:
+    from src.measure_numbering.mmr import MMRProcessor
+
+    bbox = [566, 1000, 570, 1160]
+    assert MMRProcessor._too_narrow_for_mmr({"staves": [], "measures": []}, bbox) is False
+
+
+def test_narrow_measure_gets_no_mmr_decision() -> None:
+    import numpy as np
+
+    from src.measure_numbering.mmr import MMRProcessor
+
+    class CountingClassifier:
+        calls = 0
+
+        def predict(self, _crop):
+            CountingClassifier.calls += 1
+            return 0.99
+
+    processor = MMRProcessor.__new__(MMRProcessor)
+    processor.classifier = CountingClassifier()
+    processor.rescue_threshold = 0.1
+    processor.threshold = 0.5
+    processor.support_stats = {"phase_a_ocr_fallback": 0, "alternate_veto_suppression": 0}
+    processor._detect_number_with_evidence = lambda *a, **k: (None, 0.0, "", 0)
+    system = _mmr_system([566, 1000, 597, 1160])
+    page = {"pages": [{"page_number": 14, "systems": [system]}]}
+    support = {
+        "views": {name: page for name in ("primary", "implicit_start_alternate", "fallback")}
+    }
+
+    overrides = processor._process_page_with_support(
+        page_data=page,
+        support=support,
+        image=np.zeros((1300, 3000, 3), dtype=np.uint8),
+        page_num=14,
+        image_width=3000,
+        image_height=1300,
+        debug_img=None,
+    )
+
+    assert overrides == []
+    assert CountingClassifier.calls == 0

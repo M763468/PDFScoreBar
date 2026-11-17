@@ -620,13 +620,15 @@ first-party 重み（MMR、barline CNN）の許諾、Real-ESRGAN 重みの学習
 | 補正・再開・PDF 出力 | これらのコードは変更していない。入力となる予測の変化は上記の幾何の範囲 |
 | SR 段の処理時間・GPU メモリ（RTX 4060、5ページ） | eager: 1ページ 8.5秒（Real-ESRGAN 54.7秒）、ピーク 543 MiB（939 MiB）。本番設定の compile（reduce-overhead）: 2ページ目以降 6.9秒（43.4秒）、初回ページ（compile を含む）28.0秒（207.6秒）、ピーク 506 MiB（838 MiB） |
 | 本番経路との一致 | 本番の読み込み経路（manifest → ハッシュ照合 → 推論）と評価ハーネスの SR 出力が5ページで byte 一致 |
+| #532 の空ページ判定（develop の #537 で追加。閾値は Real-ESRGAN の x4 画像で校正） | E1（評価前に固定）: 表紙・空白5ページを本番の x4 HOMR worker に通し、対照と s1r で同じ結果になること。**合格**: 5ページとも両方で `non_score_page` として正常通過。s1r の譜表証拠（inner staff fraction 最大 6.6e-6、最大行 0.0052）は対照（最大 1.3e-4、0.018）より閾値（5e-4、0.05）から遠い |
+| develop（#537）merge 後の再検証 | merge 後のコードで対照と s1r の Full68 replay を再実行。対照は merge 前と全68ページで同一、s1r も merge 前と全ページで同一で、ゲート**合格** |
 
 #### 0.11.5 本番への反映
 
 - Real-ESRGAN の release 重み（x4plus・x2plus）の取得・同梱をやめた。`PDFSCORE_REALESRGAN_WEIGHTS_DIR` と `/opt/pdfscore-assets/realesrgan` は廃止。
 - x4: `resolve_first_party_sr` が manifest を読み、読み込みのたびに SHA-256 を照合する（`CurrentX4SRRuntime`、`apply_advanced_sr`、compile cache の識別）。
 - x2: 本番は `sr_scale=4` 必須で、x2 は評価スクリプトだけが使っていた。first-party の x2 は作らず、x2 の要求は失敗させる（非 strict の評価経路は入力を返す）。
-- Docker build は first-party の重みを照合し、`RealESRGAN_*.pth` があれば失敗する。runtime preflight も同じ。配布 manifest に重みと manifest を追加（127ファイル）。
+- Docker build は first-party の重みを照合し、`RealESRGAN_*.pth` があれば失敗する。runtime preflight も同じ。配布 manifest に重みと manifest を追加（develop の #537 と合わせて128ファイル）。
 
 #### 0.11.6 #504 への反映
 

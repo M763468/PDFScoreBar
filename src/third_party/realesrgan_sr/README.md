@@ -27,9 +27,10 @@ the released state dicts load with `strict=True`. Issue #533 validated byte-iden
 SR outputs against the upstream packages on the same GPU/image before removing
 them; see `docs/licensing/THIRD_PARTY_LICENSE_AUDIT.md` §0.10.
 
-## Not covered by this change
+## Weights
 
-The Real-ESRGAN **weights** are unchanged. Their training data (DF2K: DIV2K,
-documented by its provider as for academic research, and Flickr2K; OST) remain
-an open rights question tracked by the audit; replacing code does not change
-the rights in the weights.
+The Real-ESRGAN release weights are not used. The network runs the first-party
+`models/sr_x4` checkpoint, trained from random initialization on procedural synthetic
+notation (Issue #533; see `models/sr_x4/manifest.json` and
+`docs/licensing/THIRD_PARTY_LICENSE_AUDIT.md` §0.11). The vendored code above remains under
+its upstream Apache-2.0 / BSD-3-Clause licenses.

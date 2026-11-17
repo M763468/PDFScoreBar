@@ -53,8 +53,8 @@ else:
     weight = Path(WEIGHT)
     def resolve(*args, **kwargs):
         if stage == 'model': raise FileNotFoundError('injected SR model resolution failure')
-        return weight
-    pre.resolve_realesrgan_weight = resolve
+        return types.SimpleNamespace(path=weight, scale=4, rrdbnet_kwargs=lambda: {})
+    pre.resolve_first_party_sr = resolve
 sys.argv = [sys.argv[0], *sys.argv[3:]]
 raise SystemExit(worker.main())
 """

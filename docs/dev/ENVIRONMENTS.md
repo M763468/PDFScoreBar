@@ -56,7 +56,7 @@ The ownership rules are:
 | main Python/runtime dependencies | Docker image | `/opt/venv_pipeline` |
 | maintained current HOMR package/runtime | Docker image | installed in `/opt/venv_pipeline` from the Dockerfile pin |
 | verified historical Stage-E HOMR stack | reproduction image only | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
-| Real-ESRGAN x2/x4 weights | Docker image | `/opt/pdfscore-assets/realesrgan` |
+| first-party x4 SR weights (#533) | repository (tracked, hash-verified) | `/workspace/models/sr_x4` |
 | canonical smoke CNN bytes | Docker image, derived from the tracked #315 manifest | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
 | repository source/config/input data | active checkout | bind-mounted at `/workspace` |
 | generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
@@ -70,9 +70,10 @@ be reused across worktrees. An existing checkout-local cache can still be select
 with `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` during migration; it is no longer an
 implicit fallback.
 
-The Real-ESRGAN resolver uses `PDFSCORE_REALESRGAN_WEIGHTS_DIR` in the image and retains the
-legacy checkout path only as a host-development fallback. A canonical Docker smoke must not
-require weights to be manually copied into `external/realesrgan/weights`.
+The x4 SR weights are the first-party `models/sr_x4` checkpoint resolved by
+`resolve_first_party_sr` (SHA-256 checked on load). Since Issue #533 no Real-ESRGAN release
+weight is downloaded or accepted; `PDFSCORE_REALESRGAN_WEIGHTS_DIR` and
+`/opt/pdfscore-assets/realesrgan` are gone, and the preflight fails if such weights appear.
 
 The image-owned smoke CNN path remains available for legacy/workflow-only fixtures, but it is
 not the standard accuracy smoke and must not be used as production-accuracy evidence. The

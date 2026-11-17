@@ -1,6 +1,6 @@
 # PDFScoreBar ユーザーガイド
 
-<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"6ce452a54a0d57bbbac0de7bb614e158a211a34fb5fc413861940fc8ad7e66a6"},"state":"reviewed"} -->
+<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"2402f7634e049859e2895ff75790c9735db9c1fcba05772c7288bf38aacc648f"},"state":"reviewed"} -->
 
 [English / 原文](USER_GUIDE.md)（英語正本）
 
@@ -42,7 +42,7 @@ docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
 
 ## 要件とインストール
 
-主なインストール方法は、NVIDIA GPU、動作する NVIDIA Container Toolkit、ホストの Python 3.12 以降、および CUDA／モデルイメージとレンダリングされた PDF ページに十分なディスク容量を備えた Linux 上で Docker を使用する方法です。ビルドにはネットワーク接続が必要ですが、通常の実行はオフラインです。ランタイムイメージには Python 依存関係、保守対象の [HOMR](https://github.com/liebharc/homr) モデル、[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) モデル、ハッシュ検証済みの小節線 CNN が含まれます。配布物には MMR チェックポイントが含まれます。
+主なインストール方法は、NVIDIA GPU、動作する NVIDIA Container Toolkit、ホストの Python 3.12 以降、および CUDA／モデルイメージとレンダリングされた PDF ページに十分なディスク容量を備えた Linux 上で Docker を使用する方法です。ビルドにはネットワーク接続が必要ですが、通常の実行はオフラインです。ランタイムイメージには Python 依存関係、保守対象の [HOMR](https://github.com/liebharc/homr) モデルとハッシュ検証済みの小節線 CNN が含まれます。配布物には MMR チェックポイントと first-party の x4 超解像モデル（`models/sr_x4`）が含まれます。
 
 配布物のルートで実行します。
 

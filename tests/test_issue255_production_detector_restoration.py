@@ -132,7 +132,7 @@ def test_current_sr_worker_uses_verified_x4_settings(tmp_path: Path, monkeypatch
     payload = json.loads(result.read_text(encoding="utf-8"))
 
     assert captured == {
-        "model_name": "RealESRGAN_x4plus",
+        "model_name": "pdfscorebar_sr_x4",
         "scale": 4,
         "tile": -1,
         "tile_pad": 10,

@@ -2748,7 +2748,8 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
                     cv2.imwrite(str(working_image), sr_img)
             elif args.enable_sr:
                 requested_sr_scale = args.sr_scale
-                model_name = "RealESRGAN_x4plus" if requested_sr_scale == 4 else "RealESRGAN_x2plus"
+                # Issue #533: only the first-party x4 model exists; x2 is unsupported.
+                model_name = "pdfscorebar_sr_x4" if requested_sr_scale == 4 else "unsupported_x2"
                 img_bgr = cv2.imread(str(working_image))
                 if img_bgr is not None:
                     original_h, original_w = img_bgr.shape[:2]

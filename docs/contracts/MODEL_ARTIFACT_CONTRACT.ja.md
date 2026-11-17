@@ -1,6 +1,6 @@
 # 正規モデル資産の契約
 
-<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"8a69ea7b90ffdae38cd13d2b03a877bf7afd993eec40ee547c9c63e5c29156ee"},"state":"reviewed"} -->
+<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"47fb00be61560b573543252932c0e7e23528b72dafe164ccfdd985fd46508167"},"state":"reviewed"} -->
 
 [English / 原文](MODEL_ARTIFACT_CONTRACT.md)
 
@@ -41,33 +41,21 @@
 - 論理モデルID: `omr-dln-measures` — **選択対象から外した**。バージョン `phase1-validated-v1`（SHA-256 `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`）は、#416／#519 までの受入結果の来歴としてのみ残す。
 - `models/omr_dln/manifest.json`、OMR-DLN worker と job 経路、`OMR_DLN_MODEL_PATH`、Docker のマウントを削除した。hybrid の支持には x4 HOMR の五線片支持（`src/pipeline/steps/hybrid_consensus.py`）を使う。OMR-DLN を指定したままの設定は明示的にエラーになり、旧重みへの fallback はない。
 
-### Real-ESRGAN x4
+### first-party x4 SR（`pdfscorebar-sr-x4`）
 
-- 論理モデルID: `realesrgan-x4plus`
-- 選択バージョン: 上流release `v0.1.0`、資産 `RealESRGAN_x4plus.pth`
-- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。推論コードは `realesrgan`／`basicsr` パッケージではなく、vendoring した `src/third_party/realesrgan_sr`（#533）
-- 完全性の識別情報: 選択release／資産とSHA-256 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`
-- 所有: Dockerイメージ
-- ホスト上の配置: Dockerビルドキャッシュのみ。チェックアウト内の正規コピーは不要
-- コンテナruntime: `/opt/pdfscore-assets/realesrgan/RealESRGAN_x4plus.pth`
-- 解決: `src.common.realesrgan_assets`
-- 明示的上書き: `PDFSCORE_REALESRGAN_WEIGHTS_DIR`（ホスト開発用に旧チェックアウトへのフォールバックも維持）
-- 更新手順: 上流release／資産を意図的に変更し、新しいダイジェストを記録・検証し、イメージを再ビルドしてDocker/GPU契約ゲートを実行する。
+- 論理モデルID: `pdfscorebar-sr-x4`
+- 選択バージョン・識別情報: `models/sr_x4/manifest.json`（`version`、`sha256`、`size_bytes`、RRDBNet の `num_feat`／`num_block`／`num_grow_ch`）
+- 来歴: PDFScoreBar がランダム初期化から学習（#533）。`tools/issue533/train_sr.py` と、`tools/issue533/synth_score.py` が生成する手続き的な合成楽譜だけを使う。事前学習重み、教師モデル、楽譜PDF、評価画像、GT は使わない。manifest に学習コマンド、seed、スクリプトのハッシュ、実行環境を記録する
+- ネットワーク: vendoring した Apache-2.0 の RRDBNet（`src/third_party/realesrgan_sr`）
+- 所有: リポジトリで追跡（MMR checkpoint と同様）。配布物に含まれる
+- コンテナruntime: バインドマウントされた `/workspace/models/sr_x4/...`
+- 解決: `src.common.model_artifacts.resolve_first_party_sr`。読み込みのたびに SHA-256 を照合する。runtime preflight と Docker ビルドでも照合する
+- 明示的上書き: なし
+- 更新手順: 追跡しているスクリプトで新しい版を学習し、新しい manifest の `version`／`sha256` で追加し、現行モデルに対する #533 の Full68 ゲートに合格してから切り替える。manifest と一致しないバイト列は fail closed
 
-### Real-ESRGAN x2
+x2 SR はサポートしない。本番の dense ルートは `sr_scale=4` を必須とする。
 
-- 論理モデルID: `realesrgan-x2plus`
-- 選択バージョン: 上流release `v0.2.1`、資産 `RealESRGAN_x2plus.pth`
-- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。推論コードは `realesrgan`／`basicsr` パッケージではなく、vendoring した `src/third_party/realesrgan_sr`（#533）
-- 完全性の識別情報: 選択release／資産とSHA-256 `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`
-- 所有: Dockerイメージ
-- ホスト上の配置: Dockerビルドキャッシュのみ。チェックアウト内の正規コピーは不要
-- コンテナruntime: `/opt/pdfscore-assets/realesrgan/RealESRGAN_x2plus.pth`
-- 解決: `src.common.realesrgan_assets`
-- 明示的上書き: `PDFSCORE_REALESRGAN_WEIGHTS_DIR`（ホスト開発用に旧チェックアウトへのフォールバックも維持）
-- 更新手順: x4と同じバージョン・来歴・ダイジェストのルールに従い、意図的な更新後にイメージを再ビルドしてDocker/GPU検証を再実行する。
-
-上記Real-ESRGANのハッシュは現在選択された上流releaseのバイト列を識別する。ダウンロードしたバイト列が一致しなくなった場合、Dockerは黙って置換を受け入れずビルドを失敗させなければならない。
+Real-ESRGAN の release 重み（`RealESRGAN_x4plus` SHA-256 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`、`RealESRGAN_x2plus` `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`）は #533 まで使っていた。現在は取得・同梱・受け入れのいずれもしない。`RealESRGAN_*.pth` があれば Docker ビルドと runtime preflight が失敗する。
 
 ### 保守対象HOMR runtime資産
 

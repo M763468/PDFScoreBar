@@ -34,6 +34,16 @@ def _resize_mask_to_image_size(mask: np.ndarray, image_size: tuple[int, int]) ->
     )
 
 
+def _publish_empty_detections(detection: Path) -> None:
+    """Replace a non-score page's detections with none; keep the originals for audit."""
+
+    payload = json.loads(detection.read_text(encoding="utf-8"))
+    discarded = detection.with_name(detection.stem + "_discarded.json")
+    discarded.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    payload["predictions"] = []
+    detection.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 class CurrentHomrEmptyResultError(RuntimeError):
     """HOMR returned an empty result for a page that is not a verified non-score page."""
 
@@ -81,6 +91,7 @@ def _classify_page_content(
         if evidence:
             details = (
                 f"inner staff fraction={float(evidence['inner_staff_mask_fraction']):.5f}, "
+                f"widest staff row={float(evidence['inner_max_row_staff_fraction']):.4f}, "
                 f"inner staff fragments={int(evidence['inner_staff_fragment_count'])}, "
                 f"noteheads={int(evidence['notehead_count'])}"
             )
@@ -92,11 +103,10 @@ def _classify_page_content(
             "It is not published as an empty cover/blank page; check the input page "
             "and HOMR staff/notehead detection."
         )
-    if prediction_count:
-        raise CurrentHomrEmptyResultError(
-            f"Current HOMR classified {image} as a non-score page but returned "
-            f"{prediction_count} barline predictions"
-        )
+    # HOMR's post-processing still proposes a few vertical-line candidates on a page
+    # without staves (scan edges, text). A non-score page publishes no barlines, so
+    # they are discarded by the caller and only counted here.
+    empty_detection["discarded_barline_predictions"] = int(prediction_count)
     present = sorted(name for name, exists in connector_present.items() if exists)
     if present:
         raise CurrentHomrEmptyResultError(
@@ -235,6 +245,8 @@ def run(request_path: Path, result_path: Path) -> Path:
         prediction_count=len(metrics_predictions),
         connector_present=connector_present,
     )
+    if page_content == "non_score_page":
+        _publish_empty_detections(detection)
     payload = {
         "schema_version": "pipeline.current_homr_on_x4.v1",
         "status": "completed",

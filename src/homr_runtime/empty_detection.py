@@ -24,17 +24,19 @@ from typing import Any
 import numpy as np
 
 EMPTY_DETECTION_REASONS = ("No noteheads found", "No staffs found")
-EVIDENCE_SCHEMA_VERSION = "homr.empty_detection_evidence.v1"
+EVIDENCE_SCHEMA_VERSION = "homr.empty_detection_evidence.v2"
 
 # Fraction of the page height/width removed at each edge before measuring staff
 # evidence. Scanned blank pages carry border lines there (Prokofiev Sym. 5 p6/p12).
 EDGE_MARGIN_FRACTION = 0.05
-# A page counts as a non-score page only when both bounds hold. Measured on the
-# evaluation2 cover/blank pages (inner fraction 0.0, at most one inner fragment)
-# and on synthetic staves without notes (smallest case: a 20 %-width staff gives
-# inner fraction 0.0023 and six fragments). See Issue #532 for the retained table.
+# A page counts as a non-score page only when both bounds hold. They are calibrated
+# on the production input of the current x4 route (x4 SR image, HOMR proxy), not on
+# the original page: there, title text on a cover yields a dozen short "staff"
+# fragments, so the fragment count is recorded but does not classify. Calibration
+# table (evaluation2 cover/blank pages and synthetic staves without notes) is
+# retained with Issue #532.
 NON_SCORE_MAX_INNER_STAFF_FRACTION = 0.0005
-NON_SCORE_MAX_INNER_STAFF_FRAGMENTS = 2
+NON_SCORE_MAX_INNER_ROW_STAFF_FRACTION = 0.05
 
 NON_SCORE_PAGE = "non_score_page"
 MUSIC_EVIDENCE_WITHOUT_DETECTIONS = "music_evidence_without_detections"
@@ -103,6 +105,9 @@ def segmentation_evidence(
         "edge_margin_fraction": EDGE_MARGIN_FRACTION,
         "staff_mask_fraction": float(staff.mean()),
         "inner_staff_mask_fraction": float(inner.mean()) if inner.size else 0.0,
+        # A staff line is a long horizontal run; text glyphs that HOMR marks as staff
+        # fragments are short, so the widest single row separates the two.
+        "inner_max_row_staff_fraction": float(inner.mean(axis=1).max()) if inner.size else 0.0,
         "staff_fragment_count": len(staff_fragments),
         "inner_staff_fragment_count": inner_fragments,
         "unlocated_staff_fragment_count": unlocated_fragments,
@@ -117,7 +122,7 @@ def classify_empty_detection(evidence: Mapping[str, Any] | None) -> str:
         return UNVERIFIED_EMPTY_RESULT
     try:
         inner_fraction = float(evidence["inner_staff_mask_fraction"])
-        inner_fragments = int(evidence["inner_staff_fragment_count"])
+        max_row = float(evidence["inner_max_row_staff_fraction"])
         unlocated = int(evidence["unlocated_staff_fragment_count"])
         noteheads = int(evidence["notehead_count"])
     except (KeyError, TypeError, ValueError):
@@ -126,7 +131,7 @@ def classify_empty_detection(evidence: Mapping[str, Any] | None) -> str:
         unlocated == 0
         and noteheads == 0
         and inner_fraction <= NON_SCORE_MAX_INNER_STAFF_FRACTION
-        and inner_fragments <= NON_SCORE_MAX_INNER_STAFF_FRAGMENTS
+        and max_row <= NON_SCORE_MAX_INNER_ROW_STAFF_FRACTION
     ):
         return NON_SCORE_PAGE
     return MUSIC_EVIDENCE_WITHOUT_DETECTIONS
@@ -136,7 +141,7 @@ def classification_thresholds() -> dict[str, Any]:
     return {
         "edge_margin_fraction": EDGE_MARGIN_FRACTION,
         "max_inner_staff_mask_fraction": NON_SCORE_MAX_INNER_STAFF_FRACTION,
-        "max_inner_staff_fragment_count": NON_SCORE_MAX_INNER_STAFF_FRAGMENTS,
+        "max_inner_row_staff_fraction": NON_SCORE_MAX_INNER_ROW_STAFF_FRACTION,
         "max_notehead_count": 0,
     }
 

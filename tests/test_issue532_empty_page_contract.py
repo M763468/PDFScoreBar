@@ -37,6 +37,7 @@ from src.homr_runtime.empty_detection import (
 from src.pipeline.detection.current_homr_worker import (
     CurrentHomrEmptyResultError,
     _classify_page_content,
+    _publish_empty_detections,
 )
 from src.pipeline.detection.current_support_worker import _require_current_homr_bundle
 
@@ -75,6 +76,18 @@ def _empty_staff_evidence(width_fraction: float) -> dict:
     return segmentation_evidence(staff, fragments, notehead_count=0)
 
 
+def _cover_page_evidence() -> dict:
+    """Title text: on the x4 route HOMR marks a dozen short glyph strokes as staff."""
+
+    staff = np.zeros(SEG_SHAPE, dtype=np.uint8)
+    fragments = []
+    for index in range(13):
+        x, y = 300 + 40 * index, 600 + index * 30
+        staff[y : y + 3, x : x + 25] = 1
+        fragments.append(_fragment(x + 12, y + 1))
+    return segmentation_evidence(staff, fragments, notehead_count=0)
+
+
 # --- evidence and classification -------------------------------------------------
 
 
@@ -84,6 +97,14 @@ def test_blank_page_with_scan_border_is_a_non_score_page() -> None:
     assert evidence["staff_mask_fraction"] > 0
     assert evidence["inner_staff_mask_fraction"] == 0.0
     assert evidence["inner_staff_fragment_count"] == 0
+    assert classify_empty_detection(evidence) == NON_SCORE_PAGE
+
+
+def test_cover_text_fragments_do_not_make_a_score_page() -> None:
+    evidence = _cover_page_evidence()
+
+    assert evidence["inner_staff_fragment_count"] == 13
+    assert evidence["inner_max_row_staff_fraction"] < 0.05
     assert classify_empty_detection(evidence) == NON_SCORE_PAGE
 
 
@@ -104,7 +125,7 @@ def test_noteheads_without_staffs_is_not_an_empty_page() -> None:
 
 @pytest.mark.parametrize(
     "evidence",
-    [None, {}, {"schema_version": "other"}, {"schema_version": "homr.empty_detection_evidence.v1"}],
+    [None, {}, {"schema_version": "other"}, {"schema_version": "homr.empty_detection_evidence.v2"}],
 )
 def test_missing_or_unknown_evidence_is_unverified(evidence) -> None:
     assert classify_empty_detection(evidence) == UNVERIFIED_EMPTY_RESULT
@@ -136,7 +157,7 @@ def test_empty_detection_records_only_inside_capture(tmp_path: Path) -> None:
         record_empty_detection(tmp_path / "plain.png", RuntimeError("No staffs found"))
 
     assert [record["reason"] for record in records] == ["No noteheads found", "No staffs found"]
-    assert records[0]["evidence"]["schema_version"] == "homr.empty_detection_evidence.v1"
+    assert records[0]["evidence"]["schema_version"] == "homr.empty_detection_evidence.v2"
     assert records[1]["evidence"] is None
 
 
@@ -210,12 +231,28 @@ def test_empty_result_without_evidence_fails_explicitly(tmp_path: Path) -> None:
         _classify(tmp_path, _record(None))
 
 
-def test_non_score_page_rejects_predictions_or_connector_artifacts(tmp_path: Path) -> None:
-    records = _record(_blank_page_evidence())
-    with pytest.raises(CurrentHomrEmptyResultError, match="barline predictions"):
-        _classify(tmp_path, records, predictions=1)
+def test_non_score_page_discards_counted_predictions(tmp_path: Path) -> None:
+    content, empty, _ = _classify(tmp_path, _record(_blank_page_evidence()), predictions=4)
+
+    assert content == NON_SCORE_PAGE
+    assert empty["discarded_barline_predictions"] == 4
+
+    detection = tmp_path / "page_001_detections.json"
+    original = {"image": "page_001.png", "predictions": [{"pred_bbox": [1, 2, 3, 4]}] * 4}
+    detection.write_text(json.dumps(original))
+    _publish_empty_detections(detection)
+
+    assert json.loads(detection.read_text())["predictions"] == []
+    assert json.loads((tmp_path / "page_001_detections_discarded.json").read_text()) == original
+
+
+def test_non_score_page_rejects_connector_artifacts(tmp_path: Path) -> None:
     with pytest.raises(CurrentHomrEmptyResultError, match="connector artifacts"):
-        _classify(tmp_path, records, present={"symbols": True, "brace_dot": False})
+        _classify(
+            tmp_path,
+            _record(_blank_page_evidence()),
+            present={"symbols": True, "brace_dot": False},
+        )
 
 
 def test_multiple_empty_records_for_one_page_fail(tmp_path: Path) -> None:

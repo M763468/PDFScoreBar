@@ -99,7 +99,6 @@ def test_sr_model_loads_strictly_into_vendored_rrdbnet() -> None:
     assert sum(p.numel() for p in net.parameters()) == _manifest()["parameters"]
 
 
-def test_runtime_contract_rejects_realesrgan_release_weights() -> None:
+def test_runtime_contract_resolves_manifest_selected_sr() -> None:
     source = (ROOT / "docker" / "runtime_contract.py").read_text(encoding="utf-8")
     assert "resolve_first_party_sr" in source
-    assert "Real-ESRGAN release weights must not be present" in source

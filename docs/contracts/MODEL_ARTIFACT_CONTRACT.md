@@ -87,8 +87,7 @@ x2 SR is not supported. The production dense route requires `sr_scale=4`.
 The Real-ESRGAN release weights (`RealESRGAN_x4plus` SHA-256
 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`, `RealESRGAN_x2plus`
 `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`) were used until Issue #533.
-They are no longer downloaded, shipped or accepted: the Docker build and runtime preflight fail
-if a `RealESRGAN_*.pth` file is present.
+They are no longer downloaded or selected. The manifest selects the current weights.
 
 ### Maintained HOMR runtime assets
 

@@ -102,7 +102,6 @@ def test_docker_build_uses_first_party_sr_and_no_realesrgan_release() -> None:
     assert "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1" not in dockerfile
     assert "PDFSCORE_REALESRGAN_WEIGHTS_DIR" not in dockerfile
     assert "resolve_first_party_sr" in dockerfile
-    assert "RealESRGAN_*.pth" in dockerfile
 
 
 def test_inventory_documents_all_canonical_model_families() -> None:

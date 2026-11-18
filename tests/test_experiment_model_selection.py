@@ -229,7 +229,6 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
     monkeypatch.setattr(runtime_contract, "_validate_production_provenance", lambda *args: None)
     monkeypatch.setattr(runtime_contract, "RUNTIME_MODULES", ())
     monkeypatch.setattr(runtime_contract, "EXCLUDED_RUNTIME_MODULES", ())
-    monkeypatch.setattr(runtime_contract, "REALESRGAN_RELEASE_DIR", str(tmp_path / "no-sr"))
     monkeypatch.setattr(
         model_artifacts,
         "resolve_first_party_sr",

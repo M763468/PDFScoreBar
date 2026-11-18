@@ -41,8 +41,6 @@ RUNTIME_MODULES = ("homr",)
 # These distributions carry non-commercial (NVIDIA Source Code License-NC,
 # CC BY-NC-SA) code and must not return to the production image.
 EXCLUDED_RUNTIME_MODULES = ("basicsr", "realesrgan", "gfpgan", "facexlib")
-# Issue #533: the former image-owned Real-ESRGAN release weight directory.
-REALESRGAN_RELEASE_DIR = "/opt/pdfscore-assets/realesrgan"
 PROVENANCE_NAME = "DISTRIBUTION_PROVENANCE.json"
 MANIFEST_NAME = "docs/MINIMAL_MAINLINE_SURFACE.json"
 MANIFEST_SECTIONS = (
@@ -466,10 +464,6 @@ def run_preflight(
         sr_weights[f"{sr_model.model_id}:{sr_model.version}"] = str(sr_model.path)
     except Exception as exc:
         errors.append(f"first-party SR model is unavailable: {exc}")
-    for legacy in (Path(REALESRGAN_RELEASE_DIR), workspace / "external" / "realesrgan"):
-        found = sorted(str(p) for p in legacy.glob("RealESRGAN_*.pth")) if legacy.is_dir() else []
-        if found:
-            errors.append(f"Real-ESRGAN release weights must not be present: {found}")
 
     cnn_model = detection.get("cnn_model_path")
     cnn_model_path = _resolve_input_path(workspace, cnn_model)

@@ -55,7 +55,7 @@
 
 x2 SR はサポートしない。本番の dense ルートは `sr_scale=4` を必須とする。
 
-Real-ESRGAN の release 重み（`RealESRGAN_x4plus` SHA-256 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`、`RealESRGAN_x2plus` `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`）は #533 まで使っていた。現在は取得・同梱・受け入れのいずれもしない。`RealESRGAN_*.pth` があれば Docker ビルドと runtime preflight が失敗する。
+Real-ESRGAN の release 重み（`RealESRGAN_x4plus` SHA-256 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`、`RealESRGAN_x2plus` `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`）は #533 まで使っていた。現在は取得・選択しない。現行 manifest が使用する重みを指定する。
 
 ### 保守対象HOMR runtime資産
 

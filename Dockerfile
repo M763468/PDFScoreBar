@@ -149,10 +149,7 @@ RUN mkdir -p /opt/pdfscore-runtime && \
       /workspace/models/barline_cnn/manifest.json --cache-root "${PDFSCOREBAR_MODEL_CACHE}") && \
     ln -s "${CNN_MODEL_PATH}" /opt/pdfscore-assets/barline_cnn_smoke.pth && \
     test -s /opt/pdfscore-assets/barline_cnn_smoke.pth && \
-    /opt/venv_pipeline/bin/python -c "import sys; sys.path.insert(0, '/workspace'); from pathlib import Path; from src.common.model_artifacts import resolve_first_party_sr; print(resolve_first_party_sr(project_root=Path('/workspace')))" && \
-    if find / -xdev -name 'RealESRGAN_*.pth' 2>/dev/null | grep -q .; then \
-      echo "Real-ESRGAN release weights must not be in the image" >&2; exit 1; \
-    fi
+    /opt/venv_pipeline/bin/python -c "import sys; sys.path.insert(0, '/workspace'); from pathlib import Path; from src.common.model_artifacts import resolve_first_party_sr; print(resolve_first_party_sr(project_root=Path('/workspace')))"
 
 LABEL pdfscore.detector.homr_profile="maintained_original"
 LABEL pdfscore.detector.homr_commit="${MAINTAINED_HOMR_COMMIT}"

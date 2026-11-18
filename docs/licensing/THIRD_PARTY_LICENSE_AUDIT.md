@@ -473,7 +473,7 @@ NVIDIA部品がこれに当たるか、**AGPL結合物と同じimageでNVIDIA部
 | 変更 | 内容 | 解消したライセンス上のリスク |
 | --- | --- | --- |
 | **SR コードの vendoring** | `realesrgan`（git）の導入をやめ、推論に使う `RRDBNet`（BasicSR 1.4.2、Apache-2.0）と `RealESRGANer`（Real-ESRGAN `a4abfb29`、BSD-3-Clause）だけを `src/third_party/realesrgan_sr/` に置く。ライセンス本文・出典・改変表示を同梱。build と runtime preflight は `basicsr`/`realesrgan`/`gfpgan`/`facexlib` が入っていれば失敗する | BasicSR の StyleGAN2 由来 ops（NVIDIA Source Code License-NC）と GFPGAN（NVIDIA-NC、CC BY-NC-SA 4.0）がイメージから消え、本番で読み込まれなくなった（§0.8.5 の「Legal review required」2件が 0件）。依存が23件減った |
-| **HOMR transformer の不使用** | 本番の HOMR worker は SegNet の小節線・マスクだけを使い、transformer の転写結果（MusicXML）は捨てていた。`HomrPredictor` は転写を既定でスキップし、SegNet だけを要求する。イメージは `docker/init_homr_segnet.py` で SegNet 308 だけを取得し SHA-256 を照合する（transformer の ONNX があれば build 失敗） | checkpoint 426（上流 Training.md で PrIMuS・MuseTrainer を含めて学習）がイメージに入らず実行もされない。残る HOMR 重みは SegNet 308 だけで、上流 FAQ の学習データは DeepScoresV2（CC BY 4.0、帰属表示） |
+| **HOMR transformer の不使用** | 本番の HOMR worker は SegNet の小節線・マスクだけを使い、transformer の転写結果（MusicXML）は捨てていた。`HomrPredictor` は転写を既定でスキップし、SegNet だけを要求する。イメージは `docker/init_homr_segnet.py` で SegNet 308 だけを取得し SHA-256 を照合する（transformer の ONNX があれば build 失敗） | checkpoint 426（上流 Training.md で PrIMuS・MuseTrainer を含めて学習）がイメージに入らず実行もされない。HOMR の segmentation 重みは SegNet 308 で、上流 FAQ の学習データは DeepScoresV2（CC BY 4.0、帰属表示） |
 
 副次効果: x1 HOMR の処理時間が 1 ページ約 34.6 秒 → 9.5 秒（試行 1 ページ。性能主張の正式な測定ではない）。
 
@@ -628,11 +628,11 @@ first-party 重み（MMR、barline CNN）の許諾、Real-ESRGAN 重みの学習
 - Real-ESRGAN の release 重み（x4plus・x2plus）の取得・同梱をやめた。`PDFSCORE_REALESRGAN_WEIGHTS_DIR` と `/opt/pdfscore-assets/realesrgan` は廃止。
 - x4: `resolve_first_party_sr` が manifest を読み、読み込みのたびに SHA-256 を照合する（`CurrentX4SRRuntime`、`apply_advanced_sr`、compile cache の識別）。
 - x2: 本番は `sr_scale=4` 必須で、x2 は評価スクリプトだけが使っていた。first-party の x2 は作らず、x2 の要求は失敗させる（非 strict の評価経路は入力を返す）。
-- Docker build は first-party の重みを照合し、`RealESRGAN_*.pth` があれば失敗する。runtime preflight も同じ。配布 manifest に重みと manifest を追加（develop の #537 と合わせて128ファイル）。
+- Docker build と runtime preflight は manifest が選択する first-party の重みを照合する。配布 manifest に重みと manifest を追加（develop の #537 と合わせて128ファイル）。
 
 #### 0.11.6 #504 への反映
 
-§0.10.6 の「Real-ESRGAN 重み（DIV2K 等）」は、本変更のマージ後に**解消**する（製品から重みがなくなる）。残る第三者の重みは HOMR SegNet 308（DeepScoresV2、CC BY 4.0、帰属表示）だけになる。
+§0.10.6 の Real-ESRGAN release 重みは本変更で実行経路から除かれる。第三者モデルとして HOMR SegNet 308（DeepScoresV2 の CC BY 4.0 帰属表示）、HOMR の OCR 資産、および RapidOCR 同梱モデル（§0.8.5）が残る。各モデルの表示・条件の確認は引き続き必要である。first-party 重みの扱いは #505 に従う。
 `THIRD_PARTY_NOTICES.md` の改訂案（ローカル `logs/issue533/handoff/`）から Real-ESRGAN 重みの行を削除し、first-party の SR 重みは `NOTICE`／#505 の扱いに移す。
 
 ---

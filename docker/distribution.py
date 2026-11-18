@@ -227,7 +227,7 @@ def main() -> int:
     if status or args.command == "preflight":
         return status
     assert output is not None
-    output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=True, mode=0o700 if args.command == "serve" else 0o777)
     common += ["-v", f"{output}:/results"]
     if args.command == "run":
         pdf = args.pdf.resolve(strict=True)

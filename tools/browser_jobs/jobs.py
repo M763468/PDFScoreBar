@@ -29,7 +29,7 @@ MAX_PAGES = DEFAULT_JOB_SAFETY_POLICY.max_selected_pages
 @contextmanager
 def exclusive_root(root: Path):
     """Keep one browser service per output root, including during shutdown."""
-    root.mkdir(parents=True, exist_ok=True)
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
     lock_path = root / ".browser-jobs.lock"
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "rb") as lock:
@@ -41,7 +41,7 @@ class Jobs:
     def __init__(self, root: Path, *, run_job=run_local_job):
         self.root = root.resolve()
         self.uploads = package_path(self.root, ".browser-jobs")
-        self.uploads.mkdir(exist_ok=True)
+        self.uploads.mkdir(exist_ok=True, mode=0o700)
         self.run_job = run_job
         self.worker = ThreadPoolExecutor(max_workers=1)
         self.active = {}

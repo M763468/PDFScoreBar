@@ -41,6 +41,14 @@
       "role": "production barline CNN artifact manifest"
     },
     {
+      "pattern": "models/sr_x4/manifest.json",
+      "role": "First-party x4 SR model identity, architecture, hash and training provenance (#533)"
+    },
+    {
+      "pattern": "models/sr_x4/pdfscorebar_sr_x4_issue533_s1r.pth",
+      "role": "First-party x4 SR weights trained from random initialization on synthetic notation (#533)"
+    },
+    {
       "pattern": "models/mmr/mmr_classifier_best.pth",
       "role": "production MMR classifier checkpoint"
     },
@@ -740,6 +748,7 @@
       "tests/test_doc_links.py",
       "tests/test_configuration_reference.py",
       "tests/test_experiment_model_selection.py",
+      "tests/test_homr_evaluator_sr.py",
       "tests/test_release_candidate.py",
       "tests/test_git_env_isolation.py",
       "tests/test_cnn_scoring_model_path.py",
@@ -774,6 +783,7 @@
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
+      "tests/test_issue533_first_party_sr.py",
       "tests/test_issue533_license_reduction.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",

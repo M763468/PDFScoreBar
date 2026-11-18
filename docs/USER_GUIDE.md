@@ -64,8 +64,8 @@ The primary installation route is Docker on Linux with an NVIDIA GPU, a working 
 Container Toolkit, host Python 3.12 or later, and sufficient disk space for CUDA/model
 images and rendered PDF pages. Build needs network access; normal runs are offline.
 The runtime image owns Python dependencies, maintained [HOMR](https://github.com/liebharc/homr)
-models, [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) models,
-and the hash-verified barline CNN. The distribution contains the MMR checkpoint.
+models and the hash-verified barline CNN. The distribution contains the MMR checkpoint and the
+first-party x4 super-resolution model (`models/sr_x4`).
 
 From the distribution root:
 

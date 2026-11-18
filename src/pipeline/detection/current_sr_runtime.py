@@ -1,8 +1,10 @@
-"""Optimized Real-ESRGAN runtime for verified current-x4 detector support.
+"""Optimized x4 SR runtime for verified current-x4 detector support.
 
 This path is deliberately narrower than ``src.common.preprocessing.apply_advanced_sr``:
-it serves the accepted dense-route RealESRGAN_x4plus contract only.  The model
-and weights remain unchanged, while two execution details are optimized:
+it serves the accepted dense-route x4 contract only.  Since Issue #533 the weights are
+the first-party ``models/sr_x4`` RRDBNet (trained from random initialization on
+synthetic notation); the Real-ESRGAN release weights are no longer used.  Two
+execution details are optimized:
 
 * RRDBNet convolution runs in channels-last memory format on CUDA;
 * accepted tile cores are rounded to uint8 on CUDA and copied directly into a
@@ -21,7 +23,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from src.common.model_artifacts import resolve_realesrgan_weight
+from src.common.model_artifacts import resolve_first_party_sr
 
 DEFAULT_TILE_SIZE = 400
 IMAGE_SIZE_THRESHOLD_FOR_TILING = 1000
@@ -52,7 +54,7 @@ def normalize_compile_mode(value: object) -> str | None:
 
 
 class CurrentX4SRRuntime:
-    """Reusable RealESRGAN_x4plus CUDA runtime for the verified dense route."""
+    """Reusable first-party x4 SR CUDA runtime for the verified dense route."""
 
     def __init__(
         self,
@@ -71,12 +73,10 @@ class CurrentX4SRRuntime:
 
         if not torch.cuda.is_available():
             raise RuntimeError("Verified current x4 SR runtime requires CUDA")
-        weights = resolve_realesrgan_weight(
-            "RealESRGAN_x4plus",
-            project_root=PROJECT_ROOT,
-        )
-        if not weights.is_file():
-            raise FileNotFoundError(weights)
+        sr_model = resolve_first_party_sr(project_root=PROJECT_ROOT)
+        if sr_model.scale != 4:
+            raise ValueError(f"First-party SR model must be x4, got x{sr_model.scale}")
+        self.sr_model = sr_model
 
         self.torch = torch
         self.tile = tile
@@ -87,17 +87,10 @@ class CurrentX4SRRuntime:
         self.scale = 4
         self.device = torch.device("cuda")
 
-        model = RRDBNet(
-            num_in_ch=3,
-            num_out_ch=3,
-            num_feat=64,
-            num_block=23,
-            num_grow_ch=32,
-            scale=4,
-        )
+        model = RRDBNet(**sr_model.rrdbnet_kwargs())
         upsampler = RealESRGANer(
             scale=4,
-            model_path=str(weights),
+            model_path=str(sr_model.path),
             model=model,
             tile=DEFAULT_TILE_SIZE,
             tile_pad=self.tile_pad,
@@ -205,7 +198,8 @@ class CurrentX4SRRuntime:
         torch = self.torch
         return {
             "runtime": "current_x4_channels_last_gpu_uint8_cpu_stitch",
-            "model": "RealESRGAN_x4plus",
+            "model": f"{self.sr_model.model_id}:{self.sr_model.version}",
+            "model_sha256": self.sr_model.sha256,
             "scale": 4,
             "tile": self.tile,
             "tile_pad": self.tile_pad,

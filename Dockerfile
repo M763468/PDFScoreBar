@@ -88,14 +88,9 @@ RUN /opt/venv_pipeline/bin/python docker/init_homr_segnet.py
 # Fail the build if a dependency reintroduces the excluded SR distributions.
 RUN /opt/venv_pipeline/bin/python -c "import importlib.util, sys; bad = [m for m in ('basicsr', 'realesrgan', 'gfpgan', 'facexlib') if importlib.util.find_spec(m)]; sys.exit('excluded SR distributions installed: ' + ', '.join(bad) if bad else 0)"
 
-# Real-ESRGAN weights are image-owned runtime assets. Keep them outside /workspace
-# so the canonical source bind mount cannot hide them. The selected release bytes are
-# verified before they become part of the image; a silent replacement fails the build.
-RUN mkdir -p /opt/weights && \
-    wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -O /opt/weights/RealESRGAN_x4plus.pth && \
-    wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth -O /opt/weights/RealESRGAN_x2plus.pth && \
-    echo "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1  /opt/weights/RealESRGAN_x4plus.pth" | sha256sum -c - && \
-    echo "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb  /opt/weights/RealESRGAN_x2plus.pth" | sha256sum -c -
+# Issue #533: the Real-ESRGAN release weights are not downloaded. The x4 SR model is
+# the first-party models/sr_x4 checkpoint in the source tree (hash-checked by the
+# runtime preflight and at model load).
 
 # --- Final Stage ---
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
@@ -105,7 +100,6 @@ ARG MAINTAINED_HOMR_COMMIT=457e7c6518a10ba755db2e60883419e56c4d7369
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/opt/venv_pipeline/bin:$PATH"
-ENV PDFSCORE_REALESRGAN_WEIGHTS_DIR=/opt/pdfscore-assets/realesrgan
 ENV PDFSCOREBAR_MODEL_CACHE=/opt/pdfscore-assets/model-cache
 
 # Install runtime system dependencies. torch.compile/Inductor needs a native
@@ -126,7 +120,6 @@ COPY --from=builder /opt/venv_pipeline /opt/venv_pipeline
 RUN echo "${MAINTAINED_HOMR_COMMIT}" > /opt/homr_maintained_profile_commit.txt && \
     echo "workspace-runtime" > /opt/pdfscore_maintained_profile_commit.txt && \
     test "$(cat /opt/homr_maintained_profile_commit.txt)" = "${MAINTAINED_HOMR_COMMIT}"
-COPY --from=builder /opt/weights /opt/pdfscore-assets/realesrgan
 
 # Copy source code. Canonical runtime mounts the active checkout over /workspace,
 # so persistent runtime assets and the source fingerprint live under /opt instead.
@@ -155,9 +148,8 @@ RUN mkdir -p /opt/pdfscore-runtime && \
     CNN_MODEL_PATH=$(/opt/venv_pipeline/bin/python -m src.common.model_artifacts materialize \
       /workspace/models/barline_cnn/manifest.json --cache-root "${PDFSCOREBAR_MODEL_CACHE}") && \
     ln -s "${CNN_MODEL_PATH}" /opt/pdfscore-assets/barline_cnn_smoke.pth && \
-    test -s /opt/pdfscore-assets/realesrgan/RealESRGAN_x2plus.pth && \
-    test -s /opt/pdfscore-assets/realesrgan/RealESRGAN_x4plus.pth && \
-    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth
+    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth && \
+    /opt/venv_pipeline/bin/python -c "import sys; sys.path.insert(0, '/workspace'); from pathlib import Path; from src.common.model_artifacts import resolve_first_party_sr; print(resolve_first_party_sr(project_root=Path('/workspace')))"
 
 LABEL pdfscore.detector.homr_profile="maintained_original"
 LABEL pdfscore.detector.homr_commit="${MAINTAINED_HOMR_COMMIT}"

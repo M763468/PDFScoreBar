@@ -1,6 +1,6 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"14cc69331ca019fd4fb5532b9521d2ced07e1a7696383aa1ad8c67851e5af5d2"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"9b9026df7f0ced31415f8db674c736b5e13c7bf4f0ef186f8a8328c5d33cb635"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
@@ -43,7 +43,7 @@ SRの終了後、ページごとのsource生成を、明示的なリソースadm
 ```mermaid
 flowchart TD
   I["PDF / 保存済み楽譜画像"] --> P["ページ画像をファイルとして用意"]
-  P --> SR["Real-ESRGAN: 対象ページをまとめて4倍拡大"]
+  P --> SR["x4 SR（first-party RRDBNet）: 対象ページをまとめて4倍拡大"]
   P --> H1["HOMR（元画像）: 基準の小節線・譜表位置"]
   SR -. "バッチ終了後にページ処理" .-> H1
   SR --> H2["HOMR（4倍画像）: 補助検出・譜表の接続情報"]
@@ -75,7 +75,7 @@ flowchart TD
 
 ### 3.1 画像を準備する
 
-必要ならPDFをページ画像ファイルに変換する。Real-ESRGANは対象ページを**1つの処理でまとめて4倍拡大**し、モデルをページ間で再利用する。この処理を終了してGPUメモリを解放した後、ページごとのHOMRを実行する。拡大モデルの使い回しと、後続の認識処理とのメモリ競合防止を両立するための順序である。
+必要ならPDFをページ画像ファイルに変換する。x4 SRモデル（Real-ESRGAN方式のRRDBNet。#533以降はfirst-partyの重み）は対象ページを**1つの処理でまとめて4倍拡大**し、モデルをページ間で再利用する。この処理を終了してGPUメモリを解放した後、ページごとのHOMRを実行する。拡大モデルの使い回しと、後続の認識処理とのメモリ競合防止を両立するための順序である。
 
 maintained Docker launcherでは、`PDFSCORE_SR_COMPILER_CACHE`で私有のSR compiler cacheを
 明示指定できる。SRモデルを常駐させず、compile方式も変えずに短命job間でcompiled artifactを保持する。

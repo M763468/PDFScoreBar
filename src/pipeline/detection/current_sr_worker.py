@@ -54,7 +54,7 @@ def run(request_path: Path, result_path: Path) -> Path:
     with span("sr_worker.realesrgan_total"):
         upscaled, _upsampler = apply_advanced_sr(
             image_bgr,
-            model_name="RealESRGAN_x4plus",
+            model_name="pdfscorebar_sr_x4",
             scale=4,
             tile=det_cfg.get("sr_tile", -1),
             tile_pad=int(det_cfg.get("sr_tile_pad", 10)),

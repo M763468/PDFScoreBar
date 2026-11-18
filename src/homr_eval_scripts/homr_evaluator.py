@@ -270,13 +270,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--enable-sr",
         action="store_true",
-        help="Enable Super-Resolution (Real-ESRGAN) preprocessing",
+        help="Run the first-party x4 SR model unless --pre-computed-sr is supplied",
     )
     parser.add_argument(
         "--sr-scale",
         type=int,
         default=4,
-        help="SR scale factor (2 or 4)",
+        help="Scale for SR inference (only 4 supported; unused without inference)",
     )
     parser.add_argument(
         "--sr-tile",
@@ -380,7 +380,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Enable cached Segnet ONNXRuntime session reuse",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.enable_sr and args.pre_computed_sr is None and args.sr_scale != 4:
+        parser.error(f"--sr-scale {args.sr_scale} is unsupported for SR inference; use 4")
+    return args
 
 
 def load_ground_truth_mapping(args: argparse.Namespace) -> Dict[str, Path]:
@@ -2747,25 +2750,27 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
                         sr_scale = inferred_scale
                     cv2.imwrite(str(working_image), sr_img)
             elif args.enable_sr:
-                requested_sr_scale = args.sr_scale
-                model_name = "RealESRGAN_x4plus" if requested_sr_scale == 4 else "RealESRGAN_x2plus"
                 img_bgr = cv2.imread(str(working_image))
-                if img_bgr is not None:
-                    original_h, original_w = img_bgr.shape[:2]
-                    upscaled, persistent_upsampler = apply_advanced_sr(
-                        img_bgr,
-                        model_name=model_name,
-                        scale=requested_sr_scale,
-                        tile=args.sr_tile,
-                        tile_pad=args.sr_tile_pad,
-                        fp32=args.sr_fp32,
-                        upsampler=persistent_upsampler,
+                if img_bgr is None:
+                    raise RuntimeError(f"Failed to read SR input image: {working_image}")
+                upscaled, persistent_upsampler = apply_advanced_sr(
+                    img_bgr,
+                    scale=args.sr_scale,
+                    tile=args.sr_tile,
+                    tile_pad=args.sr_tile_pad,
+                    fp32=args.sr_fp32,
+                    upsampler=persistent_upsampler,
+                    strict=True,
+                )
+                expected_shape = tuple(size * args.sr_scale for size in img_bgr.shape[:2])
+                if upscaled.shape[:2] != expected_shape:
+                    raise RuntimeError(
+                        f"SR output for {image_path} has shape {upscaled.shape[:2]}, "
+                        f"expected {expected_shape}"
                     )
-                    up_h, up_w = upscaled.shape[:2]
-                    inferred_scale = round(up_w / original_w) if original_w else 1
-                    if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
-                        sr_scale = inferred_scale
-                    cv2.imwrite(str(working_image), upscaled)
+                if not cv2.imwrite(str(working_image), upscaled):
+                    raise RuntimeError(f"Failed to write SR output image: {working_image}")
+                sr_scale = args.sr_scale
 
             working_images.append((image_path, working_image, sr_scale))
 

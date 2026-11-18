@@ -414,8 +414,8 @@ def run_preflight(
     import yaml
 
     from src.common.model_artifacts import (
+        resolve_first_party_sr,
         resolve_model_artifact,
-        resolve_realesrgan_weight,
     )
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
@@ -457,11 +457,13 @@ def run_preflight(
     if input_path is not None:
         _require_file(input_path, role="configured smoke input", errors=errors)
 
-    sr_weights = {}
-    for model_name in ("RealESRGAN_x2plus", "RealESRGAN_x4plus"):
-        path = resolve_realesrgan_weight(model_name, project_root=workspace)
-        _require_file(path, role=f"image-owned {model_name} weight", errors=errors)
-        sr_weights[model_name] = str(path)
+    # Issue #533: first-party x4 SR weights tracked in the source tree, hash-verified.
+    sr_weights: dict[str, str] = {}
+    try:
+        sr_model = resolve_first_party_sr(project_root=workspace)
+        sr_weights[f"{sr_model.model_id}:{sr_model.version}"] = str(sr_model.path)
+    except Exception as exc:
+        errors.append(f"first-party SR model is unavailable: {exc}")
 
     cnn_model = detection.get("cnn_model_path")
     cnn_model_path = _resolve_input_path(workspace, cnn_model)
@@ -536,7 +538,7 @@ def run_preflight(
         "model_validation": mode,
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
-        "realesrgan_weights": sr_weights,
+        "sr_weights": sr_weights,
         "cnn_model": (
             str(cnn_model_path) if cnn_model_path is not None else resolved_manifest_model
         ),

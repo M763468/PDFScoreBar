@@ -58,8 +58,8 @@ def test_dockerfile_drops_realesrgan_install_and_transformer_init() -> None:
     assert "RUN /opt/venv_pipeline/bin/python docker/init_homr_segnet.py" in dockerfile
     for module in EXCLUDED:
         assert f"'{module}'" in dockerfile
-    # Real-ESRGAN release weights remain image-owned and hash-verified.
-    assert "RealESRGAN_x4plus.pth" in dockerfile
+    # Issue #533: no Real-ESRGAN release weight is downloaded; first-party SR is used.
+    assert "RealESRGAN_x4plus.pth" not in dockerfile
 
 
 def test_runtime_contract_rejects_excluded_sr_distributions() -> None:

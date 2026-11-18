@@ -1,10 +1,10 @@
 # PDFScoreBar ユーザーガイド
 
-<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"2402f7634e049859e2895ff75790c9735db9c1fcba05772c7288bf38aacc648f"},"state":"reviewed"} -->
+<!-- translation: {"original":"USER_GUIDE.md","source":{"sha256":"d3c7d4c317eb58e731dcbfbed850a75a2ebd528e6ce40cc5bf8dbc5b9c9900f4"},"state":"reviewed"} -->
 
 [English / 原文](USER_GUIDE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `6ce452a54a0d57bbbac0de7bb614e158a211a34fb5fc413861940fc8ad7e66a6`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `d3c7d4c317eb58e731dcbfbed850a75a2ebd528e6ce40cc5bf8dbc5b9c9900f4`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 ## 配布物を入手する
 

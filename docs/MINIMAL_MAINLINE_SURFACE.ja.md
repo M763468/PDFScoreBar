@@ -1,12 +1,12 @@
 # 最小配布面
 
-<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"d66aea2c8844bdb6ea19c4b7bd0feff46263972da614270480b1bc194ef78979"},"state":"reviewed"} -->
+<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"3d751bcea0a8fa112ded186cd2388a8f8bdbed7b4b5e84da3df51f2ecd2488b9"},"state":"reviewed"} -->
 
 [English / 原文](MINIMAL_MAINLINE_SURFACE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `d66aea2c8844bdb6ea19c4b7bd0feff46263972da614270480b1bc194ef78979`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `3d751bcea0a8fa112ded186cd2388a8f8bdbed7b4b5e84da3df51f2ecd2488b9`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
-配布候補は、[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json) にある **128個の追跡ファイル**です。内訳は `src/` 配下の96ファイルと、本番の config・モデル・Docker・パッケージのファイル、パッケージに含める利用者向け補正アプリケーション、最小限の利用者向け文書、チェックアウト用の ignore 規則です。正確な配布物は、`runtime_bundle_patterns`、`distribution_support_patterns`、`distribution_metadata_patterns` の和集合です。生成される `DISTRIBUTION_PROVENANCE.json` は、ソースの識別情報、dirty の状態、配布する各ファイルのハッシュを記録します。
+配布候補は、[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json) にある **132個の追跡ファイル**です。内訳は `src/` 配下の96ファイルと、本番の config・モデル・Docker・パッケージのファイル、パッケージに含める利用者向け補正アプリケーション、最小限の利用者向け文書、チェックアウト用の ignore 規則です。正確な配布物は、`runtime_bundle_patterns`、`distribution_support_patterns`、`distribution_metadata_patterns` の和集合です。生成される `DISTRIBUTION_PROVENANCE.json` は、ソースの識別情報、dirty の状態、配布する各ファイルのハッシュを記録します。
 
 この選定は Issue #100 と #409 で定め、#410（リリース候補 RC4、PR #442）で初めて `main` へ昇格しました。`develop` の変更が `main` に届くのは、[ブランチ方針](dev/BRANCH_POLICY.ja.md)に従った後のリリース昇格を通じてだけです。過去の各候補サイズでの受入の証拠は、[#409 の受入履歴](releases/issue409/ACCEPTANCE_HISTORY.md)（英語）に残しています。
 
@@ -86,4 +86,4 @@ python3 tools/materialize_distribution.py check /tmp/pdfscorebar-candidate
 
 開発用のチェックアウトの外にある新しいディレクトリを使います。materializer は、シンボリックリンク、パスの遡り、重複、存在しない入力、既存の出力ディレクトリを拒否します。正確に選定したファイルだけをコピーし、ファイルのハッシュとソースの識別情報を保存してから、隔離したツリーを確認します。チェッカーは、候補の中に Git や宣言していない開発用ファイルを必要としません。開発側のチェッカーは外から候補を調べます。確認の対象は、ローカルのimport、既知のサブプロセスのモジュール参照、文書・UIのリンク、内容のハッシュ、予期しないファイルです。これらは実際の Docker・PDF・アプリケーションの受入を補うもので、数値の精度を証明するものではありません。
 
-USER_GUIDE に従い、`python3 docker/distribution.py build`、`preflight`、`run`、`review` を**候補から**実行します。必要な受入は、クリーンな本番のビルド、正規のプリフライト、PDFから最終出力まで、レビュー・保存・補正済みの最終出力への適用、両方のUI言語、GT・開発・再現用の資産に依存しないこと、確認可能な来歴です。証拠は develop の作業中の Issue のログのルート（`logs/issue<N>/`）に置きます。幾何・アルゴリズム・モデルのバイト列が変わらなければ、検出器の全体評価は不要ですが、範囲を絞った幾何の互換性と本番のスモークは引き続き必要です。必要な配布のゲートがすべて合格するまで、候補を受け入れたと報告しないでください。
+USER_GUIDE に従い、`python3 docker/distribution.py build`、`preflight`、`serve`、`run`、`review` を**候補から**実行します。必要な受入は、クリーンな本番のビルド、正規のプリフライト、PDFから最終出力まで、レビュー・保存・補正済みの最終出力への適用、両方のUI言語、GT・開発・再現用の資産に依存しないこと、確認可能な来歴です。証拠は develop の作業中の Issue のログのルート（`logs/issue<N>/`）に置きます。幾何・アルゴリズム・モデルのバイト列が変わらなければ、検出器の全体評価は不要ですが、範囲を絞った幾何の互換性と本番のスモークは引き続き必要です。必要な配布のゲートがすべて合格するまで、候補を受け入れたと報告しないでください。

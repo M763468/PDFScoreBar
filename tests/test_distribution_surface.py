@@ -425,6 +425,28 @@ def test_docker_desktop_review_publishes_only_on_host_loopback(tmp_path, monkeyp
     assert serve[serve.index("--relay-port") + 1] == "8012"
 
 
+@pytest.mark.parametrize("desktop", [False, True])
+def test_browser_jobs_launcher_reuses_preflight_and_loopback(tmp_path, monkeypatch, desktop):
+    distribution, calls = _review_on_docker_desktop(tmp_path, monkeypatch, [])
+    monkeypatch.setattr(distribution, "uses_docker_desktop", lambda: desktop)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["distribution.py", "serve", "--output", str(tmp_path / "output"), "--port", "8011"],
+    )
+    assert distribution.main() == 0
+    preflight, serve = calls
+    assert preflight[preflight.index("--network") + 1] == "none"
+    assert serve[serve.index("--network") + 1] == ("bridge" if desktop else "host")
+    assert serve[serve.index("-m") + 1] == "tools.browser_jobs.server"
+    assert serve[serve.index("--output") + 1] == "/results"
+    assert "--handoff" not in serve and "--prepare-review" not in serve
+    if desktop:
+        assert serve[serve.index("-p") + 1] == "127.0.0.1:8011:8012"
+        assert serve[serve.index("--relay-port") + 1] == "8012"
+    else:
+        assert "-p" not in serve and "--relay-port" not in serve
+
+
 def test_docker_desktop_review_keeps_relay_port_distinct_at_range_end(tmp_path, monkeypatch):
     distribution, calls = _review_on_docker_desktop(tmp_path, monkeypatch, ["--port", "65535"])
     assert distribution.main() == 0

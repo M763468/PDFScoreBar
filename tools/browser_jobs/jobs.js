@@ -14,6 +14,12 @@ const copy = {
     requestError: "Could not submit the job", fileError: "Choose a non-empty PDF within 256 MiB",
     pagesError: "Enter positive page numbers separated by commas", busy: "Wait for a job to finish",
     page: "Page",
+    stages: {
+      job: "Starting job", input_validation: "Checking input", pdf_render: "Rendering PDF",
+      score_detection: "Detecting score features", measure_construction: "Building measures",
+      measure_number_recognition: "Reading measure counts", correction_application: "Applying corrections",
+      numbering: "Assigning measure numbers", artifact_materialization: "Saving results",
+    },
     errors: {
       input_pdf_invalid: "The PDF could not be read.",
       input_pdf_encrypted: "Password-protected PDFs are unsupported.",
@@ -35,6 +41,12 @@ const copy = {
     requestError: "ジョブを送信できませんでした", fileError: "256 MiB以下の空でないPDFを選択してください",
     pagesError: "正のページ番号をカンマで区切って入力してください", busy: "実行中のジョブが終わるまでお待ちください",
     page: "ページ",
+    stages: {
+      job: "開始処理", input_validation: "入力を検証", pdf_render: "PDFを画像化",
+      score_detection: "楽譜を認識", measure_construction: "小節を構成",
+      measure_number_recognition: "小節数を読み取り", correction_application: "補正を適用",
+      numbering: "小節番号を付与", artifact_materialization: "結果を保存",
+    },
     errors: {
       input_pdf_invalid: "PDFを読み込めませんでした。",
       input_pdf_encrypted: "パスワード付きPDFには対応していません。",
@@ -74,7 +86,7 @@ function render() {
     status.textContent = text[job.status] || job.status;
     if (job.progress) {
       const {stage_id, page_number, completed_units, total_units} = job.progress;
-      status.textContent += " · " + stage_id;
+      status.textContent += " · " + (text.stages[stage_id] || stage_id);
       if (page_number) status.textContent += " · " + text.page + " " + page_number;
       if (total_units) status.textContent += " · " + completed_units + " / " + total_units;
     }

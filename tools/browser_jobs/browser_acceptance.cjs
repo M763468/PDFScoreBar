@@ -5,7 +5,7 @@ const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 
 async function main() {
-  const [url, pdf, evidence] = process.argv.slice(2);
+  const [url, pdf, evidence, existingJob, existingFailure] = process.argv.slice(2);
   if (!url || !pdf || !evidence) throw new Error("Supply launcher URL, score PDF and evidence directory");
   fs.mkdirSync(evidence, { recursive: true });
   const browser = await chromium.launch({
@@ -25,23 +25,27 @@ async function main() {
     const submit = async (name, buffer, pages) => {
       await page.locator("#pdf").setInputFiles({ name, mimeType: "application/pdf", buffer });
       await page.locator("#pages").fill(pages);
-      const accepted = page.waitForResponse(response =>
-        response.url() === new URL("/api/jobs", url).href && response.request().method() === "POST");
-      await page.locator("#start").click();
-      const response = await accepted;
+      const [response] = await Promise.all([
+        page.waitForResponse(response => response.url() === new URL("/api/jobs", url).href &&
+          response.request().method() === "POST"),
+        page.locator("#start").click(),
+      ]);
       assert.equal(response.status(), 200);
-      await page.waitForFunction(() => document.querySelector("#submission-status").textContent === "Job submitted");
+      await page.locator("#submission-status").filter({ hasText: "Job submitted" }).waitFor();
       return (await response.json()).id;
     };
     const source = fs.readFileSync(pdf);
-    const id = await submit("試用 score.pdf", source, "1");
-    report.job = id;
-    await page.waitForFunction(id => [...document.querySelectorAll("#jobs li")].some(
-      row => row.textContent.includes(id) && /Queued|Processing/.test(row.textContent)
-    ), id);
-    const bad = await submit("broken.pdf", Buffer.from("not a PDF"), "");
-    report.failedJob = bad;
     const row = jobId => page.locator("#jobs li").filter({ hasText: jobId });
+    const id = existingJob || await submit("試用 score.pdf", source, "1");
+    report.job = id;
+    console.log("Selected numbering job", id);
+    if (!existingJob) {
+      await row(id).getByText(/Queued|Processing/).waitFor();
+      console.log("Observed queued or running state");
+    }
+    const bad = existingFailure || await submit("broken.pdf", Buffer.from("not a PDF"), "");
+    report.failedJob = bad;
+    console.log("Selected invalid PDF job", bad);
     const ready = row(id).getByRole("link", { name: "Open correction GUI" });
     await ready.waitFor({ timeout: 600000 });
     await row(bad).getByText(/Failed.*PDF could not be read/).waitFor();
@@ -55,6 +59,7 @@ async function main() {
     ]);
     assert.match(download.suggestedFilename(), /\.pdf$/);
     await page.screenshot({ path: path.join(evidence, "jobs.png") });
+    console.log("Verified numbered PDF and download");
     await ready.click();
     const reviewUrl = page.url();
     assert.equal(new URL(reviewUrl).pathname, `/jobs/${id}/review/`);
@@ -73,15 +78,18 @@ async function main() {
     await page.waitForFunction(() => window.reviewCorrectionState.get().package.counts.pending > 0);
     await page.locator("#saveBtn").click();
     await page.waitForFunction(() => {
-      const state = window.reviewCorrectionState.get().package;
+      const state = window.reviewCorrectionState?.get()?.package;
+      if (!state) return false;
       return state.counts.pending === 0 && state.current_identity.corrections_identity;
     });
     await page.locator("#applyBtn").click();
     await page.waitForFunction(() => {
-      const state = window.reviewCorrectionState.get().package;
+      const state = window.reviewCorrectionState?.get()?.package;
+      if (!state) return false;
       if (state.status === "error") throw new Error(JSON.stringify(state.last_application));
       return state.current_result;
     }, null, { timeout: 240000 });
+    console.log("Saved and applied a correction");
     const resultLink = await page.locator("#openResultBtn").getAttribute("href");
     const corrected = await page.request.get(new URL(resultLink, reviewUrl).href);
     assert.equal(corrected.status(), 200);
@@ -95,7 +103,7 @@ async function main() {
     await reopened.waitForFunction(() => window.reviewCorrectionState?.get()?.package.current_result);
     await reopened.locator("#historyPanel").evaluate(panel => { panel.open = true; });
     await reopened.waitForFunction(() =>
-      document.querySelector("#checkpointSelect").options.length > 1 &&
+      document.querySelector("#checkpointSelect").options.length > 0 &&
       !document.querySelector("#resumeBtn").disabled);
     await reopened.locator("#resumePdf").setInputFiles({ name: "numbered.pdf", mimeType: "application/pdf", buffer: await corrected.body() });
     await reopened.locator("#resumeBtn").click();

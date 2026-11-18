@@ -748,6 +748,7 @@
       "tests/test_doc_links.py",
       "tests/test_configuration_reference.py",
       "tests/test_experiment_model_selection.py",
+      "tests/test_homr_evaluator_sr.py",
       "tests/test_release_candidate.py",
       "tests/test_git_env_isolation.py",
       "tests/test_cnn_scoring_model_path.py",

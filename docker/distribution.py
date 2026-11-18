@@ -243,7 +243,6 @@ def main() -> int:
         if args.pages:
             command += ["--pages", *map(str, args.pages)]
     elif args.command == "serve":
-        common += ["--user", f"{os.getuid()}:{os.getgid()}", "-e", "HOME=/tmp"]
         command = [
             "/opt/venv_pipeline/bin/python",
             "-m",

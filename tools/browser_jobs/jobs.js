@@ -62,6 +62,7 @@ let language = localStorage.getItem("pdfscore-job-language") || (navigator.langu
 let jobs = [];
 let rendered = "";
 let submissionStatus = "";
+let submissionJobId = "";
 let submissionError = "";
 const words = () => copy[language] || copy.en;
 
@@ -70,7 +71,8 @@ function render() {
   document.documentElement.lang = language;
   document.querySelectorAll("[data-copy]").forEach(node => { node.textContent = text[node.dataset.copy]; });
   byId("language").textContent = language === "ja" ? "English" : "日本語";
-  byId("submission-status").textContent = text[submissionStatus] || "";
+  byId("submission-status").textContent = submissionJobId
+    ? text.submitted + " · " + submissionJobId : text[submissionStatus] || "";
   byId("submission-error").textContent = text[submissionError] || "";
   const snapshot = JSON.stringify([language, jobs]);
   if (snapshot === rendered) return;
@@ -141,6 +143,7 @@ byId("submit-job").addEventListener("submit", async event => {
   const file = byId("pdf").files[0];
   const pages = byId("pages").value.trim();
   submissionStatus = "";
+  submissionJobId = "";
   submissionError = !file?.size || file.size > 256 * 1024 * 1024 || !/\.pdf$/i.test(file.name) ? "fileError" : "";
   if (pages && !pages.split(",").every(page => /^[1-9][0-9]{0,8}$/.test(page.trim()))) {
     submissionError = "pagesError";
@@ -159,6 +162,9 @@ byId("submit-job").addEventListener("submit", async event => {
       submissionStatus = "";
       submissionError = ({400: "pagesError", 409: "busy", 413: "fileError"})[response.status] || "requestError";
     } else {
+      const {id} = await response.json();
+      if (!/^job-[0-9a-f]{12,32}$/.test(id)) throw new Error("Unexpected job ID");
+      submissionJobId = id;
       submissionStatus = "submitted";
       event.target.reset();
     }

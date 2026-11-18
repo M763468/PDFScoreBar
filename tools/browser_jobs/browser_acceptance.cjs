@@ -31,8 +31,11 @@ async function main() {
         page.locator("#start").click(),
       ]);
       assert.equal(response.status(), 200);
-      await page.locator("#submission-status").filter({ hasText: "Job submitted" }).waitFor();
-      return (await response.json()).id;
+      const confirmation = page.locator("#submission-status").filter({ hasText: "Job submitted" });
+      await confirmation.waitFor();
+      const id = (await confirmation.textContent()).match(/job-[0-9a-f]{12,32}/)?.[0];
+      assert.ok(id, "Job ID missing from browser confirmation");
+      return id;
     };
     const source = fs.readFileSync(pdf);
     const row = jobId => page.locator("#jobs li").filter({ hasText: jobId });

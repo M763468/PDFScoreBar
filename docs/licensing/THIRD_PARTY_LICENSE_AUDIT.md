@@ -627,7 +627,7 @@ first-party 重み（MMR、barline CNN）の許諾、Real-ESRGAN 重みの学習
 
 - Real-ESRGAN の release 重み（x4plus・x2plus）の取得・同梱をやめた。`PDFSCORE_REALESRGAN_WEIGHTS_DIR` と `/opt/pdfscore-assets/realesrgan` は廃止。
 - x4: `resolve_first_party_sr` が manifest を読み、読み込みのたびに SHA-256 を照合する（`CurrentX4SRRuntime`、`apply_advanced_sr`、compile cache の識別）。
-- x2: 本番は `sr_scale=4` 必須で、x2 は評価スクリプトだけが使っていた。first-party の x2 は作らず、x2 の要求は失敗させる（非 strict の評価経路は入力を返す）。
+- x2: 本番は `sr_scale=4` 必須で、x2 は評価スクリプトだけが使っていた。評価 CLI が SR 推論を行う場合も x4 のみ対応し、未対応倍率は処理前に拒否する。SR 推論失敗や出力寸法不一致で評価を中止する。SR 無効時や前計算画像を使う場合はこの倍率制限を適用しない。
 - Docker build と runtime preflight は manifest が選択する first-party の重みを照合する。配布 manifest に重みと manifest を追加（develop の #537 と合わせて128ファイル）。
 
 依存版の不変性は #533 の比較実験固有の条件であり、恒久的な更新禁止ではない。今後も版を追跡・固定し、セキュリティ、既知不具合、互換性、サポート終了等の合理的な理由による更新は、必要性、互換性・精度、ライセンス条件を評価し適切に検証した上で許容する。今回の固定版は変更しない。

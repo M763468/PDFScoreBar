@@ -108,8 +108,12 @@ async function main() {
     await reopened.waitForFunction(() =>
       document.querySelector("#checkpointSelect").options.length > 0 &&
       !document.querySelector("#resumeBtn").disabled);
-    await reopened.locator("#resumePdf").setInputFiles({ name: "numbered.pdf", mimeType: "application/pdf", buffer: await corrected.body() });
-    await reopened.locator("#resumeBtn").click();
+    await reopened.locator("#resumePdf").setInputFiles({ name: "original.pdf", mimeType: "application/pdf", buffer: source });
+    const [resumedResponse] = await Promise.all([
+      reopened.waitForResponse(response => response.url() === reviewUrl + "api/resume", { timeout: 180000 }),
+      reopened.locator("#resumeBtn").click(),
+    ]);
+    assert.equal(resumedResponse.status(), 200);
     await reopened.waitForURL("**/review/?session=s_*", { timeout: 180000 });
     const resumed = new URL(reopened.url());
     assert.equal(resumed.pathname, new URL(reviewUrl).pathname);

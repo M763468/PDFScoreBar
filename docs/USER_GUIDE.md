@@ -116,7 +116,7 @@ launcher for that directory.
    same job to save edits, generate a corrected PDF, and open that result.
 4. Return to the workspace and select the same job to continue editing.
    Use the review GUI's **Saved history / resume** panel to restore a checkpoint
-   in a separate session. That workflow asks you to select the matching PDF.
+   in a separate session. Select the original PDF used for the job.
    Use the same results directory after restarting the launcher. An interrupted
    numbering job can be submitted again as a new job.
 

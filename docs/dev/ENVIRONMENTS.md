@@ -72,8 +72,8 @@ implicit fallback.
 
 The x4 SR weights are the first-party `models/sr_x4` checkpoint resolved by
 `resolve_first_party_sr` (SHA-256 checked on load). Since Issue #533 no Real-ESRGAN release
-weight is downloaded or accepted; `PDFSCORE_REALESRGAN_WEIGHTS_DIR` and
-`/opt/pdfscore-assets/realesrgan` are gone, and the preflight fails if such weights appear.
+weight is downloaded or selected; `PDFSCORE_REALESRGAN_WEIGHTS_DIR` and
+`/opt/pdfscore-assets/realesrgan` are gone. Preflight verifies the manifest-selected weights.
 
 The image-owned smoke CNN path remains available for legacy/workflow-only fixtures, but it is
 not the standard accuracy smoke and must not be used as production-accuracy evidence. The

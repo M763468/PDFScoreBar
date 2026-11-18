@@ -48,7 +48,7 @@
 
 モデル横断でのバージョン、プロビナンス（来歴）、整合性、および更新ルールは `docs/contracts/MODEL_ARTIFACT_CONTRACT.md` に整理されています。ホスト側のモデルアーティファクトは、デフォルトでユーザー単位の共有キャッシュである `$XDG_CACHE_HOME/pdfscorebar/models`（`XDG_CACHE_HOME` が未設定の場合は `~/.cache/pdfscorebar/models`）に配置されます。`PDFSCOREBAR_MODEL_CACHE` は引き続き明示的なオーバーライドとして使用できます。検証済みの登録を複数の worktree 間で再利用できるよう、デフォルトの場所は意図的にアクティブなチェックアウトから独立しています。移行期間中は、既存のチェックアウトローカルなキャッシュを `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` で明示的に選択することも可能ですが、暗黙的なフォールバックとしては扱われなくなりました。
 
-x4 SR の重みは first-party の `models/sr_x4` checkpoint で、`resolve_first_party_sr` が解決します（読み込み時に SHA-256 を照合）。#533 以降、Real-ESRGAN の release 重みは取得も受け入れもしません。`PDFSCORE_REALESRGAN_WEIGHTS_DIR` と `/opt/pdfscore-assets/realesrgan` は廃止し、該当する重みがあれば preflight が失敗します。
+x4 SR の重みは first-party の `models/sr_x4` checkpoint で、`resolve_first_party_sr` が解決します（読み込み時に SHA-256 を照合）。#533 以降、Real-ESRGAN の release 重みは取得も選択もしません。`PDFSCORE_REALESRGAN_WEIGHTS_DIR` と `/opt/pdfscore-assets/realesrgan` は廃止し、preflight は manifest が選択した重みを照合します。
 
 イメージが所有するスモーク CNN パスはレガシー／ワークフロー専用のフィクスチャ向けに引き続き利用可能ですが、標準の精度スモークテストではなく、本番精度のエビデンスとして使用してはなりません。標準のスモークテストでは、`configs/dense_full_pipeline.yaml` と同じ `models/barline_cnn/manifest.json`、しきい値、dense 検出器ルート、および x4 サポートコントラクトを使用します。Docker は引き続き `src.common.model_artifacts` を通じて追跡対象マニフェストを実体化（SHA-256 チェックを含む）し、検証済みのバイトデータを上記の安定したスモーク専用互換パスで公開します。
 

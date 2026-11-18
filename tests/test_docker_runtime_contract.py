@@ -149,6 +149,7 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_
     (tmp_path / "docker" / "patch_homr_onnx_provider.py").write_text(
         "PATCH = 1\n", encoding="utf-8"
     )
+    (tmp_path / "docker" / "init_homr_segnet.py").write_text("INIT = 1\n", encoding="utf-8")
     manifest = tmp_path / "models" / "barline_cnn" / "manifest.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text('{"sha256": "abc"}\n', encoding="utf-8")

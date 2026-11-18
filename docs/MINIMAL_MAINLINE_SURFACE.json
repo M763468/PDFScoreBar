@@ -29,6 +29,10 @@
       "role": "HOMR runtime compatibility patch"
     },
     {
+      "pattern": "docker/init_homr_segnet.py",
+      "role": "Build-time SegNet-only HOMR model materialization with hash check (#533)"
+    },
+    {
       "pattern": "docker/runtime_contract.py",
       "role": "runtime dependency/provenance preflight"
     },
@@ -59,6 +63,34 @@
     {
       "pattern": "src/common/model_artifacts.py",
       "role": "Verified model identities, download/cache and image/external asset resolution"
+    },
+    {
+      "pattern": "src/third_party/__init__.py",
+      "role": "Package marker for third-party source vendored with its upstream license"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/__init__.py",
+      "role": "Vendored Real-ESRGAN inference subset exports; replaces basicsr/realesrgan/gfpgan/facexlib (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/rrdbnet.py",
+      "role": "RRDBNet derived from BasicSR 1.4.2 (Apache-2.0) without the BasicSR import graph (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/upsampler.py",
+      "role": "RealESRGANer derived from Real-ESRGAN a4abfb29 (BSD-3-Clause) (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-BasicSR.txt",
+      "role": "Apache-2.0 license text for the vendored BasicSR code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-Real-ESRGAN.txt",
+      "role": "BSD-3-Clause license text for the vendored Real-ESRGAN code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/README.md",
+      "role": "Provenance, modifications and equivalence contract of the vendored SR code"
     },
     {
       "pattern": "src/common/thin_barline_finder.py",
@@ -742,6 +774,7 @@
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
+      "tests/test_issue533_license_reduction.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",
       "tests/test_apply_corrections_final_output.py",

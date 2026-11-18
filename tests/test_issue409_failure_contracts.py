@@ -31,7 +31,7 @@ pre._perf_span = lambda *a, **k: contextlib.nullcontext()
 if stage == "import":
     original_import = builtins.__import__
     def fail_import(name, *a, **k):
-        if name == "realesrgan": raise ImportError("injected SR import failure")
+        if name == "src.third_party.realesrgan_sr": raise ImportError("injected SR import failure")
         return original_import(name, *a, **k)
     builtins.__import__ = fail_import
 else:
@@ -39,10 +39,8 @@ else:
     torch.device = lambda value: value
     torch.cuda = types.SimpleNamespace(is_available=lambda: False)
     sys.modules['torch'] = torch
-    rrdb = types.ModuleType('basicsr.archs.rrdbnet_arch')
-    rrdb.RRDBNet = lambda **kwargs: object()
-    sys.modules['basicsr.archs.rrdbnet_arch'] = rrdb
-    sr = types.ModuleType('realesrgan')
+    sr = types.ModuleType('src.third_party.realesrgan_sr')
+    sr.RRDBNet = lambda **kwargs: object()
     class FakeSR:
         def __init__(self, **kwargs):
             if stage == 'initialization': raise RuntimeError('injected SR initialization failure')
@@ -51,7 +49,7 @@ else:
             if stage == 'shape': return image, None
             return np.repeat(np.repeat(image,4,axis=0),4,axis=1), None
     sr.RealESRGANer = FakeSR
-    sys.modules['realesrgan'] = sr
+    sys.modules['src.third_party.realesrgan_sr'] = sr
     weight = Path(WEIGHT)
     def resolve(*args, **kwargs):
         if stage == 'model': raise FileNotFoundError('injected SR model resolution failure')
@@ -345,7 +343,7 @@ def test_generic_sr_tolerant_import_contract_stays_explicit(tmp_path, monkeypatc
     original = builtins.__import__
 
     def fail(name, *args, **kwargs):
-        if name == "realesrgan":
+        if name == "src.third_party.realesrgan_sr":
             raise ImportError("injected")
         return original(name, *args, **kwargs)
 

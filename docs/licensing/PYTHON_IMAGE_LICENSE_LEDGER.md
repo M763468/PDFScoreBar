@@ -20,6 +20,24 @@ index URLは参照先であり実際の取得元を証明しない。本台帳�
 basicsr は最上位の Apache-2.0 を確認済み（2026-11-13 Verified）だが、非商用条件の同梱コードが見つかったため Legal review required に変更した。
 「Confirmed」は配布用NOTICEの完成や配布の許可を意味しない。(b)では同梱ファイル一式の保持と補充が必要で、(c)の利用条件は別途判定する。
 
+## #533 の候補イメージ（2026-11-17）
+
+[#533](https://github.com/M763468/PDFScoreBar/issues/533) の候補イメージ `sha256:718454a8189cb98fc20a936250e608a977ab8c5026b11925221205f2acb61945`
+（build source `e82bdc56`、[監査 §0.10](THIRD_PARTY_LICENSE_AUDIT.md#issue533-20261117)）では **76件**。下表の99件から次の23件がなくなり、追加はない。
+同梱ライセンス本文の分類は同じスクリプトで再採取し、残る76件のタグは2026-11-15と同じだった
+（ローカル `logs/issue533/image-check/py-license-text-review-e82bdc56.json`、`python-license-ledger-issue533-e82bdc56.json`）。
+
+| 2026-11-15 状態 | 件数の変化 | なくなった distribution |
+| --- | --- | --- |
+| Legal review required | 2 → **0** | basicsr、gfpgan |
+| Verified | 2 → 1 | realesrgan（推論部分は `src/third_party/realesrgan_sr` に BSD-3-Clause / Apache-2.0 のまま vendoring） |
+| Confirmed + conditions | 24 → 20 | grpcio、llvmlite、numba、tensorboard-data-server（本文欠落4件のうちの1件） |
+| Proprietary terms confirmed | 14 → 13 | nvidia-cuda-cccl（CUDA EULA Attachment A に列挙のなかった部品の1件） |
+| Confirmed | 56 → 41 | absl-py、addict、facexlib、filterpy、future、ImageIO、lazy-loader、lmdb、Markdown、platformdirs、scikit-image、tb-nightly、tifffile、Werkzeug、yapf |
+
+初回候補（`e82bdc56`）では固定していない間接依存が `cuda-pathfinder` 1.9.0、`filelock` 4.2.10、`pypdfium2` 5.15.2 に動いたため、
+`pyproject.toml` で監査イメージの版に固定して再ビルドした（`sha256:7900ac2c9ebd…`、build source `2c5cb66e`）。この最終候補では残る76件の版は監査イメージと同一。下表は2026-11-15の99件の記録として残す。
+
 | package | version | 宣言（長い本文は省略） | LICENSE等 / NOTICE検出数（2026-11-13） | 2026-11-13 | 2026-11-15 | 備考 |
 | --- | --- | --- | --- | --- | --- | --- |
 | absl-py | 2.5.1 | Apache-2.0 | 2 / 0 | Metadata only | Confirmed |  |

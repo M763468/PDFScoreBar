@@ -35,7 +35,12 @@ SOURCE_CONTRACT_FILES = (
     Path("tools/review_correction/correction_state.js"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml", ".yaml", ".yml", ".json", ".pth"})
-RUNTIME_MODULES = ("homr", "realesrgan", "basicsr")
+RUNTIME_MODULES = ("homr",)
+# Issue #533: the SR runtime is vendored in the bind-mounted source tree at
+# src/third_party/realesrgan_sr (Apache-2.0 RRDBNet + BSD-3 RealESRGANer).
+# These distributions carry non-commercial (NVIDIA Source Code License-NC,
+# CC BY-NC-SA) code and must not return to the production image.
+EXCLUDED_RUNTIME_MODULES = ("basicsr", "realesrgan", "gfpgan", "facexlib")
 PROVENANCE_NAME = "DISTRIBUTION_PROVENANCE.json"
 MANIFEST_NAME = "docs/MINIMAL_MAINLINE_SURFACE.json"
 MANIFEST_SECTIONS = (
@@ -52,6 +57,7 @@ RUNTIME_CONTRACT_FILES = (
     Path("Dockerfile"),
     Path("pyproject.toml"),
     Path("docker/patch_homr_onnx_provider.py"),
+    Path("docker/init_homr_segnet.py"),
     Path("models/barline_cnn/manifest.json"),
     Path("src/common/model_artifacts.py"),
     Path("src/common/__init__.py"),
@@ -497,6 +503,13 @@ def run_preflight(
             module_origins[module_name] = None
         else:
             module_origins[module_name] = spec.origin
+    for module_name in EXCLUDED_RUNTIME_MODULES:
+        spec = importlib.util.find_spec(module_name)
+        if spec is not None:
+            errors.append(
+                f"excluded non-commercial-licensed module is installed: {module_name} "
+                f"({spec.origin})"
+            )
 
     # Canonical preflight shares the maintained profile's pinned marker contract.
     # Historical profile validation belongs to its explicit reproduction runner.

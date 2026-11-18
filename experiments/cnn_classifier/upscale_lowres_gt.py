@@ -3,8 +3,8 @@ from pathlib import Path
 
 import cv2
 import torch
-from basicsr.archs.rrdbnet_arch import RRDBNet
-from realesrgan import RealESRGANer
+
+from src.third_party.realesrgan_sr import RealESRGANer, RRDBNet
 
 
 def upscale_page(image_path, gt_path, output_image_path, output_gt_path, scale=4.0):

@@ -66,8 +66,8 @@ class CurrentX4SRRuntime:
         # Keep heavy imports inside the runtime constructor.  Importing the worker
         # or its request helpers must stay lightweight for orchestration/tests.
         import torch
-        from basicsr.archs.rrdbnet_arch import RRDBNet
-        from realesrgan import RealESRGANer
+
+        from src.third_party.realesrgan_sr import RealESRGANer, RRDBNet
 
         if not torch.cuda.is_available():
             raise RuntimeError("Verified current x4 SR runtime requires CUDA")

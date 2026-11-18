@@ -14,6 +14,7 @@
 本節は法律上の最終判断ではない。上流表示・依存定義・実際のイメージ同梱・提供方法を区別する。
 
 **2026-11-15 の最終調査は [§0.8](#final-20261115) と、受入条件の照合は [§0.9](#acceptance-final)。**
+**#533 の依存改善（非商用条件コード・HOMR transformer 重みの除去）と試用方式別の最終統合は [§0.10](#issue533-20261117)。** 依存・重み・方式別の現在値は §0.10 を優先する。
 §0.0–§0.7 の 2026-11-13 時点の記述（Python 台帳の「Metadata only 94 / Unresolved 1」、OS の未検出 3 件、
 GPL/LGPL/AGPL の候補数、HOMR 重みの説明）は当時の結果として残す。分類と管理先が異なる場合は §0.8 を優先する。
 
@@ -456,6 +457,111 @@ NVIDIA部品がこれに当たるか、**AGPL結合物と同じimageでNVIDIA部
 **Close 判断（推奨）:** 監査として求められた台帳・義務表・境界・代替評価計画・ブロッカーの整理は完了し、残る事項は
 (1) 配布物の作成と配布時のGo/No-go（#508 / #505）、(2) 法的判断、(3) 置換の実施（#533）であり、いずれも #504 の受入条件ではなく管理先がある。
 このため本PRの受入後に #504 を Close 可能と判断する。**Close は配布・商用利用の許可を意味しない。** 最終判断はオーナーが行う。
+
+
+<a id="issue533-20261117"></a>
+
+### 0.10 #533 の依存改善の統合（2026-11-17）
+
+**対象:** branch `feature/issue533-sr-drop-basicsr`（base `develop@9b04b0a4`、PR #534 マージ後）。候補イメージ
+`sha256:718454a8189cb98fc20a936250e608a977ab8c5026b11925221205f2acb61945`（build source `e82bdc56`、source fingerprint
+`8abb32502b86…`、`pdfscore_issue533_candidate:e82bdc56`）。比較対象は §0.8 の監査イメージ `sha256:71cbccf6…`。
+証拠はローカル `logs/issue533/`（`sr-equivalence/`、`homr-transcription-skip/`、`sr-replacement/`、`image-check/`、`validation/`、`handoff/`）。
+
+#### 0.10.1 採用した変更
+
+| 変更 | 内容 | 解消したライセンス上のリスク |
+| --- | --- | --- |
+| **SR コードの vendoring** | `realesrgan`（git）の導入をやめ、推論に使う `RRDBNet`（BasicSR 1.4.2、Apache-2.0）と `RealESRGANer`（Real-ESRGAN `a4abfb29`、BSD-3-Clause）だけを `src/third_party/realesrgan_sr/` に置く。ライセンス本文・出典・改変表示を同梱。build と runtime preflight は `basicsr`/`realesrgan`/`gfpgan`/`facexlib` が入っていれば失敗する | BasicSR の StyleGAN2 由来 ops（NVIDIA Source Code License-NC）と GFPGAN（NVIDIA-NC、CC BY-NC-SA 4.0）がイメージから消え、本番で読み込まれなくなった（§0.8.5 の「Legal review required」2件が 0件）。依存が23件減った |
+| **HOMR transformer の不使用** | 本番の HOMR worker は SegNet の小節線・マスクだけを使い、transformer の転写結果（MusicXML）は捨てていた。`HomrPredictor` は転写を既定でスキップし、SegNet だけを要求する。イメージは `docker/init_homr_segnet.py` で SegNet 308 だけを取得し SHA-256 を照合する（transformer の ONNX があれば build 失敗） | checkpoint 426（上流 Training.md で PrIMuS・MuseTrainer を含めて学習）がイメージに入らず実行もされない。残る HOMR 重みは SegNet 308 だけで、上流 FAQ の学習データは DeepScoresV2（CC BY 4.0、帰属表示） |
+
+副次効果: x1 HOMR の処理時間が 1 ページ約 34.6 秒 → 9.5 秒（試行 1 ページ。性能主張の正式な測定ではない）。
+
+#### 0.10.2 回帰ゲート（評価前に固定。結果）
+
+| ゲート | 入力 | 結果 |
+| --- | --- | --- |
+| G1 本番 `CurrentX4SRRuntime`（eager、fp16、channels_last、tile=-1）の出力が upstream と byte 一致 | `data/evaluation2/images` 全73ページ（Full68 を含む） | **Passed** 73/73（監査イメージ上で vendored と upstream を同一 GPU で比較） |
+| G2 本番設定 `compile_mode=reduce-overhead` で byte 一致 | 各曲の先頭ページ 5 | **Passed** 5/5 |
+| G3 汎用 `RealESRGANer.enhance`（x4/x2、tile 0/400、pre_pad 0/10、BGR/gray/乱数） | 9 ケース × 8 設定 | **Passed** 72/72、state dict も一致 |
+| H1 本番 x1 HOMR worker の全成果物（検出 JSON、staff/notehead/clef/connector マスク、proxy）が転写あり/なしで byte 一致 | 全73ページ | **全73ページで成果物一致。** 事前の判定式は「on 側で transformer が 1 回以上動くこと」も要求し、表紙・空ページ 5 件（HOMR が `No staffs found` で早期終了し、どちらの設定でも transformer が動かない）がこの条件で不一致と判定された。出力差ではない |
+| H1b（H1 の結果を見た後に定義。H1 の記録はそのまま保持） | H1 の73ページ。表紙・空ページ5件は早期終了を記録する計測を加えて両設定を再実行 | **Passed** 73/73: 全成果物が byte 一致。68ページは on 側で transformer が実行され、5ページ（Shostakovich Sym5 p1/p17/p23、Prokofiev Sym5 p6/p12）は両設定とも HOMR の `No noteheads found` による早期終了で、transformer はどちらでも呼ばれない |
+| G4 候補イメージ: 除外パッケージと transformer ONNX がないこと、他の版が不変であること | 候補イメージ | 除外は **Passed**。版の不変は**厳密には不合格**: 固定していない間接依存の再取得で `cuda-pathfinder`・`filelock`・`pypdfium2` が小版更新、`nvidia-cuda-cccl` が消えた。torch・onnxruntime・numpy・opencv・PyMuPDF 等の固定版は不変。OS 422 件は版まで一致 |
+| G4' 間接依存を固定して再ビルド（2026-11-17、build source `2c5cb66e`） | 候補イメージ `sha256:7900ac2c9ebd…` | **Passed**: 監査イメージとの差は意図した23件の除去だけ（追加・版の変化なし）。`filelock` 4.2.9、`cuda-pathfinder` 1.8.6、`pypdfium2` 5.15.1 を `pyproject.toml` で固定。`nvidia-cuda-cccl` は監査イメージ内に要求元がなく（除去した Real-ESRGAN 導入工程の残り）、消えるのが正しい。OS 422件は版まで一致 |
+| 本番精度 smoke（`make run-smoke`、`configs/smoke_test.yaml`） | 候補イメージ、Va_Prokofiev_Symphony1 p1 | **Passed**（preflight fingerprint 一致、85/85、hard FP 0、FN 0、soft 0） |
+| 本番精度 smoke（固定後イメージ） | `sha256:7900ac2c9ebd…`、同じ入力 | **Passed**（fingerprint 一致、85/85、hard FP 0、FN 0、soft 0） |
+| Full68 replay（#522 と同じ手順。x4 HOMR を候補イメージで再実行し下流を再生成） | 68ページ、`e82bdc56` と `2c5cb66e` の両イメージ | **Passed**: どちらも TP 3560 / FP 0 / FN 7 / 小節 3287（#522 の受入値を再現）。2つのイメージ間で全68ページの予測・番号付けが byte 一致 |
+| fast tests / focused tests | 使い捨て検証コンテナ | **Passed**（fast 149、focused 166） |
+
+SR と HOMR の各段の出力が byte 一致したため、下流（候補生成・CNN・番号付け）の入力は変わらない。最終イメージでは x4 HOMR の再実行を含む Full68 replay を追加で確認した。x1 HOMR を含む Full68 の新規実行（fresh run）はしていない（x1 は H1/H1b で全ページ byte 一致）。
+
+#### 0.10.3 #533 の各候補の判断
+
+| 候補 | 判断 | 根拠 |
+| --- | --- | --- |
+| BasicSR の NC ops・GFPGAN の除去 | **採用** | §0.10.1・§0.10.2 |
+| HOMR 426 → 566 以降への更新 | **不採用（不要化で代替）** | 566 は語彙（vocabulary）が変わり、固定コードに重みだけ差し替えることはできない。HOMR 本体の更新と認識精度の再評価が必要になる。PDFScoreBar は transformer の出力を使っておらず、transformer を実行しない方が学習データの不確実性を完全に除ける（AGPL は残る） |
+| Real-ESRGAN 重みの不要化（x4 を非学習の補間で作る） | **不採用（ゲート不合格）** | 評価前に固定した契約: Full68、#522 と同じ replay（保持済み x1 baseline、本番の consensus・CNN・番号付け、閾値の変更なし）で x4 HOMR の入力だけを差し替え、同じハーネスの Real-ESRGAN 対照と比べ、FP 増・新規 FN・小節数/番号の変化ページがないこと。対照は TP 3560 / FP 0 / FN 7 / soft 117 / 小節 3287（#522 の受入値を再現）。`INTER_LANCZOS4` は FP **101**、`INTER_CUBIC` は FP **107** に増え、どちらも13ページで小節数が変わった（新規 FN 0）。ローカル `logs/issue533/sr-replacement/` |
+| Real-ESRGAN 重みの別モデルへの置換 | **未実施（判断待ち）** | 学術用途に限定されない学習データの SR 重みで、同じ契約を満たす公開候補を確認していない。独自学習は精度・費用の別課題。現行重みの扱いはオーナー・法的判断（§0.10.6） |
+| PyMuPDF の出力・番号レイヤ・補正の置換（`pikepdf`/`pypdf`） | **今回は不採用（AGPL遵守で維持）** | first-party は AGPL-3.0-or-later の方針（#505）で、HOMR も AGPL のため、PyMuPDF を外しても製品全体の AGPL は消えない。受領者 build 方式（§0.10.5）では当方は PyMuPDF を配布しない。イメージ・portable 配布では AGPL 全文・MuPDF を含む対応ソース・第三者通知で遵守できる。first-party を permissive にする判断が出たときに再評価する |
+| PyMuPDF の入力描画の置換（`pypdfium2`） | **今回は不採用** | 同上。描画差は認識入力を変え Full68 の再評価が必要で、ライセンス上の効果が上記理由で小さい |
+| NVIDIA / CUDA | **方式で回避**（§0.10.5） | 受領者 build 方式とリモート提供では、当方は NVIDIA 部品を再配布しない。イメージ・portable を配布する場合だけ §0.8.3 の条件と法的確認事項が残る。`nvidia-cuda-cccl` は消えた |
+
+#### 0.10.4 採用後の版と fingerprint
+
+| 項目 | 値 |
+| --- | --- |
+| source | `feature/issue533-sr-drop-basicsr`（PR の最終 HEAD は PR 本文に記録） |
+| image | `sha256:7900ac2c9ebd1cbdd4a1835341cd5fa1da34cc2402faa1a43f7f55b764b09461`（build source `2c5cb66e`、source fingerprint `7310f616…`）。初回候補 `sha256:718454a8…`（`e82bdc56`）は間接依存の版が動いたため置き換えた |
+| base image | `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04`（OS 422 packages、監査イメージと同一） |
+| Python | 76 distributions（`PYTHON_IMAGE_LICENSE_LEDGER.md` の #533 節） |
+| HOMR | `457e7c6518a10ba755db2e60883419e56c4d7369`（改変: `docker/patch_homr_onnx_provider.py`。SegNet 308 のみ、ONNX SHA-256 `60f49549…eee2fa83`） |
+| Real-ESRGAN 重み | x4 `4fa0d389…d682f1`、x2 `49fafd45…266abb`（変更なし） |
+| vendored コード | `src/third_party/realesrgan_sr/`（Apache-2.0 / BSD-3-Clause） |
+
+#### 0.10.5 試用方式の比較と、準備を完成させた方式
+
+試用者の環境（OS・GPU）は未確定（#508 Phase 0）。#506 は同一マシンの Windows ネイティブ PoC を確認したが、第三者向け portable build は未承認・未検証。
+
+| 方式 | 当方が渡すもの | 第三者ライセンス上の残作業 | 技術前提 |
+| --- | --- | --- | --- |
+| **(A) 受領者 build**（最小配布ソース + 受領者が `docker build`） | `tools/materialize_distribution.py` が作る 125 ファイル（first-party、vendored SR コード、HOMR patch スクリプト） | **第三者分は完了**（下記）。first-party の許諾（#505）と重みの判断が残る | Linux または Windows+WSL2+Docker Desktop（#503）、NVIDIA GPU、build 時のネットワーク |
+| (B) イメージ配布 | Docker image | Ubuntu GPL/LGPL の対応ソース、NVIDIA 再配布条件（未列挙部品・`cuda-compat` の法的確認）、PyMuPDF の AGPL 全文と MuPDF 通知、本文欠落3件、LGPL 部品 | Docker |
+| (C) Windows portable | フォルダ | (B) から Ubuntu を除き、Windows 用 NVIDIA DLL 等の再配布条件を加えたもの | #506 で未承認 |
+| (D) 時間限定リモート GPU | アクセスのみ | AGPL §13（改変 HOMR = 固定 commit + patch、PDFScoreBar 自身）の対応ソース案内、NGC §1(b)/§2、データ保護 | #449 は保留、運用構築が必要 |
+
+**(A) を第三者ライセンス上の準備を完成させた方式とする。** 理由: 当方が配布するのは first-party のソースと
+ライセンス本文付きの vendored コードだけで、HOMR・PyMuPDF・NVIDIA・Ubuntu・PyPI の部品と第三者重みは受領者の build が上流から直接取得する。
+当方はそれらを再配布せず、改変版 HOMR も受領者の手元で作られ、ネットワーク越しに第三者へ提供されない。
+(A) で当方が満たすべき第三者条件と状態:
+
+| 条件 | 状態 |
+| --- | --- |
+| vendored コードのライセンス本文・著作権表示・改変表示（Apache-2.0 §4、BSD-3 §1） | **完了**（`src/third_party/realesrgan_sr/`。配布 manifest に登録済み） |
+| HOMR 引用断片（`docker/patch_homr_onnx_provider.py`）の表示 | #505 パッケージの `NOTICE`/`THIRD_PARTY_NOTICES.md` に記載済み |
+| build で取得する部品と条件の案内（NGC コンテナライセンス・CUDA EULA は取得者が受諾） | 改訂版 `THIRD_PARTY_NOTICES.md` を作成（ローカル `logs/issue533/handoff/`。#505 の適用時に差し替え） |
+| 非商用条件コード・PrIMuS 由来重みの不在 | **完了**（build と preflight で強制） |
+| 受領者側の検証手順 | 下記 |
+
+受領者側の構築・検証手順（(A)）:
+
+1. 提供者: 凍結した source commit から `python3 tools/materialize_distribution.py materialize <dir>` と `... check <dir>` を実行し、`DISTRIBUTION_PROVENANCE.json` の hash を記録して渡す。
+2. 受領者: `docker/distribution.py` の手順（`docs/USER_GUIDE.md`）で build する。Dockerfile が Real-ESRGAN 重み・SegNet の SHA-256、HOMR の固定 commit を照合し、除外パッケージや transformer ONNX があれば build を止める。
+3. 受領者: preflight（`docker/runtime_contract.py`）が source fingerprint・除外モジュール・CUDA を確認する。提供者は fingerprint を受領者の結果と照合する。
+
+**(A) で残る、技術では解消できない事項:** first-party の許諾（#505。正式リリース前なら試用者への書面の個別許諾をオーナーが判断）、
+first-party 重み（MMR、barline CNN）の許諾、Real-ESRGAN 重みの学習データ（DIV2K の学術研究限定の表示）、SegNet の DeepScoresV2 帰属表示の方法。
+
+#### 0.10.6 #504 の最終統合: 残る条件と判断先
+
+| 事項 | 種類 | 回避策・判断先 |
+| --- | --- | --- |
+| Real-ESRGAN 重み（DF2K: DIV2K は学術研究限定と表示、Flickr2K、OST） | 権利（法的判断） | 技術的な不要化は精度ゲート不合格（§0.10.3）。選択肢: (1) 現行重みのまま上流（Real-ESRGAN 作者）へ利用条件を照会、(2) 専門家に学習データの条件が重みの利用に及ぶか確認、(3) 学習データの条件が明確な SR 重みを別途学習・評価（新しい実験として同じ契約で評価）。試用の Go/No-go は #508 でオーナーが判断 |
+| SegNet 308（DeepScoresV2、CC BY 4.0）。上流は重みを AGPL と表示 | 帰属表示 | THIRD_PARTY_NOTICES に記載（改訂版で対応）。重みへの波及は法的判断だが CC BY は商用可 |
+| first-party の LICENSE と重み | オーナー判断 | #505（develop には先行付与しない） |
+| (B)/(C) を選ぶ場合の Ubuntu・NVIDIA・PyMuPDF の再配布義務 | 方式依存 | §0.8.7。(A)/(D) では発生しない |
+| AGPL 結合の範囲、NVIDIA 部品と AGPL 結合物の同時配布 | 法的判断 | (A)/(D) では当方が NVIDIA 部品を配布しないため問題にならない |
+| (D) の AGPL §13 の案内 | 方式依存 | 改変 HOMR（固定 commit + patch）と PDFScoreBar の source commit の案内を UI 等に置く |
 
 ---
 

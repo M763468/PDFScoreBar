@@ -194,7 +194,9 @@ def run(request_path: Path, result_path: Path) -> Path:
             "barline_max_width_factor": det_cfg.get("barline_max_width_factor", 1.0),
         }
     )
-    predictor = HomrPredictor(config, tuning, use_gpu_inference=use_gpu_inference)
+    predictor = HomrPredictor(
+        config, tuning, use_gpu_inference=use_gpu_inference, transcribe_staffs=False
+    )
     xml_args = XmlGeneratorArguments(False, None, None)
 
     stem = image.stem

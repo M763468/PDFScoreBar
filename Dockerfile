@@ -21,6 +21,7 @@ WORKDIR /workspace
 # Copy only dependency-defining files first for better caching
 COPY pyproject.toml ./
 COPY docker/patch_homr_onnx_provider.py ./docker/patch_homr_onnx_provider.py
+COPY docker/init_homr_segnet.py ./docker/init_homr_segnet.py
 
 # Create unified virtual environment and install dependencies
 RUN uv venv --python 3.12 /opt/venv_pipeline
@@ -33,9 +34,11 @@ ENV POETRY_DYNAMIC_VERSIONING_BYPASS=0.1.0
 RUN uv pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Install external packages from git to avoid missing-path errors on clean checkouts
-# Pinned to specific commits for reproducible builds
+# Pinned to specific commits for reproducible builds.
+# Real-ESRGAN inference is vendored in src/third_party/realesrgan_sr (Issue #533);
+# the realesrgan/basicsr/gfpgan/facexlib distributions are intentionally absent
+# because they carry non-commercial (NVIDIA Source Code License-NC) code.
 ARG MAINTAINED_HOMR_COMMIT=457e7c6518a10ba755db2e60883419e56c4d7369
-RUN uv pip install git+https://github.com/xinntao/Real-ESRGAN.git@a4abfb2979a7bbff3f69f58f58ae324608821e27
 RUN uv pip install git+https://github.com/liebharc/homr.git@${MAINTAINED_HOMR_COMMIT}
 # Fail the image build if pip's installed distribution does not retain the same
 # immutable VCS revision as the Docker build argument.
@@ -76,12 +79,14 @@ RUN uv pip install --no-cache-dir --force-reinstall --no-deps opencv-python==4.1
 RUN uv pip uninstall -y onnxruntime && \
     uv pip install --no-cache-dir --force-reinstall --no-deps onnxruntime-gpu==1.24.4
 
-# HOMR's supported init command materializes its CUDA/FP16 and OCR model assets.
-# Do this during build so canonical GPU validation never depends on a late download.
-RUN /opt/venv_pipeline/bin/python -m homr.main --init --gpu force
+# Materialize HOMR's CUDA/FP16 SegNet and OCR assets during build so canonical GPU
+# validation never depends on a late download. PDFScoreBar does not run HOMR's
+# transformer transcription, so its checkpoint is deliberately not downloaded
+# (Issue #533); `homr.main --init` would fetch it.
+RUN /opt/venv_pipeline/bin/python docker/init_homr_segnet.py
 
-# Apply the basicsr torchvision compatibility patch.
-RUN /opt/venv_pipeline/bin/python -c "from pathlib import Path; import sysconfig; p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
+# Fail the build if a dependency reintroduces the excluded SR distributions.
+RUN /opt/venv_pipeline/bin/python -c "import importlib.util, sys; bad = [m for m in ('basicsr', 'realesrgan', 'gfpgan', 'facexlib') if importlib.util.find_spec(m)]; sys.exit('excluded SR distributions installed: ' + ', '.join(bad) if bad else 0)"
 
 # Real-ESRGAN weights are image-owned runtime assets. Keep them outside /workspace
 # so the canonical source bind mount cannot hide them. The selected release bytes are

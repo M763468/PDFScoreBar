@@ -1,4 +1,4 @@
-/* Run against a fresh distribution serve root with a score whose first page has measures. */
+/* Run against a distribution serve root with a one-page score PDF containing measures. */
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");

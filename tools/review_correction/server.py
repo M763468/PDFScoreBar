@@ -334,21 +334,25 @@ class ReviewHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _review_context(self):
+        return self.server
+
     def _context(self):
+        context = self._review_context()
         ids = parse_qs(urlparse(self.path).query).get("session", [])
         if not ids:
-            return self.server.package, self.server.application
+            return context.package, context.application
         if len(ids) != 1 or not re.fullmatch(r"s_[0-9a-f]{32}", ids[0]):
             raise ValueError("Invalid review session")
         session = ids[0]
-        if session not in self.server.sessions:
+        if session not in context.sessions:
             path = package_path(
-                self.server.package.root,
+                context.package.root,
                 f"resumed_sessions/{session}/review/manual_correction_input.json",
             )
             package = ReviewPackage(path)
-            self.server.sessions[session] = (package, CorrectionApplication(package, path))
-        return self.server.sessions[session]
+            context.sessions[session] = (package, CorrectionApplication(package, path))
+        return context.sessions[session]
 
     def do_GET(self) -> None:
         if not self._trusted_host():
@@ -486,8 +490,8 @@ class ReviewHandler(BaseHTTPRequestHandler):
                         package,
                         payload["checkpoint_id"],
                         data,
-                        session_root=self.server.package.root,
-                        ownership_package=self.server.package,
+                        session_root=self._review_context().package.root,
+                        ownership_package=self._review_context().package,
                     )
                 self._json({"session": session, "url": "/?session=" + session})
                 return

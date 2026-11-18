@@ -93,6 +93,39 @@ All required models are image-owned or tracked manifests verified by SHA-256; ch
 bytes requires a new manifest/version. Build success alone does not check the GPU;
 preflight checks it but does not certify score accuracy.
 
+## Start the browser workspace
+
+After building the Docker image, start PDFScoreBar on the computer with the NVIDIA GPU.
+
+```bash
+python3 docker/distribution.py serve --output /absolute/path/results
+```
+
+Open `http://127.0.0.1:8010/` on that computer. If the port is occupied, pass
+`--port 8011` and open the URL printed by the launcher. The workspace uses the
+same runtime preflight as the CLI. It listens on loopback and is intended for
+one local operator. Keep the results directory private and use a single
+launcher for that directory.
+
+1. Choose a score PDF and, optionally, enter page numbers such as `1, 2, 5`.
+   Click **Start numbering**. The upload limit is 256 MiB and the engine
+   checks the PDF, page selection, and render limits before processing.
+2. The job list shows queued and running jobs, the current engine stage when
+   available, and failures. Numbering completion makes a PDF available for review.
+3. Open or download the numbered PDF. Click **Open correction GUI** for the
+   same job to save edits, generate a corrected PDF, and open that result.
+4. Return to the workspace and select the same job to continue editing.
+   Use the review GUI's **Saved history / resume** panel to restore a checkpoint
+   in a separate session. That workflow asks you to select the matching PDF.
+   Use the same results directory after restarting the launcher. An interrupted
+   numbering job can be submitted again as a new job.
+
+Closing the browser leaves the launcher processing in the background. Stop it
+with Ctrl+C in the terminal. The results directory contains the source uploads,
+numbered PDFs, review packages, and correction history. Keep it to revisit
+past jobs. Prepared CLI jobs with a verified result in the same directory can
+also be opened from the list. The CLI commands below remain available.
+
 ## Process a PDF
 
 ```bash

@@ -203,6 +203,51 @@ def test_owner_exit_kills_its_tree(tmp_path: Path) -> None:
             process.kill()
 
 
+class _FailingWinApi:
+    """Delegate to the real kernel32/ntdll but fail one Job Object setup call."""
+
+    def __init__(self, real, name: str, result) -> None:
+        self._real, self._name, self._result = real, name, result
+
+    def __getattr__(self, attr: str):
+        if attr == self._name:
+            return lambda *_args: self._result
+        return getattr(self._real, attr)
+
+
+@windows_only
+@pytest.mark.parametrize(
+    "library, call, result",
+    [
+        ("_kernel32", "AssignProcessToJobObject", 0),  # the child is not in the job
+        ("_ntdll", "NtResumeProcess", -0x3FFFFFFF),  # assigned but never resumed
+    ],
+)
+def test_job_setup_failure_reaps_the_suspended_child(monkeypatch, library, call, result) -> None:
+    from src.common import process_tree
+
+    started: list[subprocess.Popen] = []
+
+    class RecordingPopen(subprocess.Popen):
+        def __init__(self, *args, **kwargs) -> None:
+            super().__init__(*args, **kwargs)
+            started.append(self)
+
+    monkeypatch.setattr(
+        process_tree, library, _FailingWinApi(getattr(process_tree, library), call, result)
+    )
+    monkeypatch.setattr(process_tree.subprocess, "Popen", RecordingPopen)
+    begin = time.monotonic()
+    with pytest.raises(OSError):
+        process_tree.OwnedProcessTree([sys.executable, "-c", "import time; time.sleep(120)"])
+    # The failure must surface promptly (no unbounded wait on a suspended child) and the
+    # child must be gone, so the caller's timeout control is never bypassed.
+    assert time.monotonic() - begin < process_tree._SETUP_REAP_TIMEOUT_S
+    assert len(started) == 1
+    assert started[0].returncode is not None
+    assert not _alive(started[0].pid)
+
+
 @windows_only
 def test_windows_available_ram_is_reported() -> None:
     from src.pipeline.detection.source_concurrency import _windows_available_ram_bytes

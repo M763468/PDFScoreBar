@@ -20,6 +20,9 @@ from collections.abc import Sequence
 from typing import Any
 
 _IS_WINDOWS = os.name == "nt"
+# Upper bound for reaping a child that was explicitly terminated during setup; it never
+# ran user code (still suspended), so it exits at once unless the OS is wedged.
+_SETUP_REAP_TIMEOUT_S = 10.0
 
 if _IS_WINDOWS:  # pragma: no cover - exercised by the Windows-only tests
     import ctypes
@@ -81,6 +84,8 @@ if _IS_WINDOWS:  # pragma: no cover - exercised by the Windows-only tests
     _kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
     _kernel32.TerminateJobObject.restype = wintypes.BOOL
     _kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    _kernel32.WaitForSingleObject.restype = wintypes.DWORD
+    _kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
     _kernel32.CloseHandle.restype = wintypes.BOOL
     _kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
     _ntdll.NtResumeProcess.restype = ctypes.c_long
@@ -135,11 +140,35 @@ class OwnedProcessTree:
             if status < 0:
                 raise OSError(f"NtResumeProcess failed: NTSTATUS 0x{status & 0xFFFFFFFF:08X}")
         except BaseException:
-            # Closing a kill-on-close job terminates the still-suspended child.
-            _kernel32.CloseHandle(job)
-            self.process.wait()
+            self._abort_setup(job)
             raise
         self._job = job
+
+    def _abort_setup(self, job: int) -> None:
+        """Terminate and reap a child whose job setup or resume failed (Windows).
+
+        If ``AssignProcessToJobObject`` failed the child is not in the job, so closing
+        the kill-on-close job would leave it suspended forever. Terminate the job (the
+        child if it was assigned) and the process itself, and wait only for a bounded
+        time so a setup failure can never bypass the caller's timeout control.
+        """
+
+        try:
+            _kernel32.TerminateJobObject(job, 1)
+            try:
+                self.process.kill()  # TerminateProcess also works on a suspended process
+            except OSError:
+                pass
+            # Termination is asynchronous and Popen.kill() may already have recorded the
+            # exit code, which makes Popen.wait() return early; wait on the handle itself.
+            handle = int(self.process._handle)  # type: ignore[attr-defined]
+            _kernel32.WaitForSingleObject(handle, int(_SETUP_REAP_TIMEOUT_S * 1000))
+            try:
+                self.process.wait(0)
+            except subprocess.TimeoutExpired:
+                pass
+        finally:
+            _kernel32.CloseHandle(job)
 
     @property
     def pid(self) -> int:

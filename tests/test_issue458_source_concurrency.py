@@ -54,7 +54,9 @@ def test_duplicate(tmp_path):
 
 def test_timeout_kills_descendants(tmp_path):
     pid = tmp_path / "pid"
-    script = f"import subprocess,time; p=subprocess.Popen(['sleep','60']); open({str(pid)!r},'w').write(str(p.pid)); time.sleep(60)"
+    # The grandchild is Python, not the POSIX sleep binary, so the test also runs on
+    # Windows (#535); test_issue535_windows_native_support checks the Windows reaping.
+    script = f"import subprocess,sys,time; p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']); open({str(pid)!r},'w').write(str(p.pid)); time.sleep(60)"
     jobs = SourceJobs(0.3)
     with pytest.raises(TimeoutError):
         jobs.run([sys.executable, "-c", script])

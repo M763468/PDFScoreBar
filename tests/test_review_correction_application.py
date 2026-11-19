@@ -90,9 +90,8 @@ def test_failed_apply_and_pdf_generation_preserve_last_success(tmp_path, monkeyp
     monkeypatch.setattr(application, "apply_corrections_and_rerun", _fake_engine)
     app.start()
     app.thread.join(5)
-    assert app.package.state.snapshot()["package"]["current_result"]["corrected_run"].endswith(
-        "attempt_0003/corrected"
-    )
+    corrected_run = app.package.state.snapshot()["package"]["current_result"]["corrected_run"]
+    assert Path(corrected_run).parts[-2:] == ("attempt_0003", "corrected")
 
 
 def test_startup_failure_after_begin_apply_is_recorded_and_retryable(tmp_path, monkeypatch):

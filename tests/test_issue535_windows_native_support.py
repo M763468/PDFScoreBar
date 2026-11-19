@@ -593,3 +593,40 @@ def test_narrow_measure_gets_no_mmr_decision() -> None:
 
     assert overrides == []
     assert CountingClassifier.calls == 0
+
+
+# --- HOMR title OCR stays off when the config disables it -------------------------
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_title_detection_follows_processing_config(monkeypatch, enabled: bool) -> None:
+    from types import SimpleNamespace
+
+    from src.homr_runtime import heuristics
+
+    calls: list[object] = []
+    monkeypatch.setattr(
+        heuristics, "detect_title", lambda debug, staff: calls.append(staff) or "started"
+    )
+    result = heuristics.start_title_detection(
+        SimpleNamespace(title_detection=enabled), object(), "top-staff"
+    )
+    if enabled:
+        assert result == "started" and calls == ["top-staff"]
+    else:
+        # No OCR thread (it would hold HOMR's temporary input open on Windows).
+        assert calls == [] and result.done() and result.result() == ""
+
+
+def test_pdfscorebar_processing_config_disables_title_detection() -> None:
+    from homr.main import ProcessingConfig
+    from src.homr_runtime.api_compat import build_processing_config_compat
+
+    config = build_processing_config_compat(
+        ProcessingConfig,
+        enable_debug=False,
+        enable_cache=True,
+        write_staff_positions=False,
+        use_gpu_inference=False,
+    )
+    assert getattr(config, "title_detection", False) is False

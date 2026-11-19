@@ -3,9 +3,13 @@
 Commands (through ``PDFScoreBar.cmd`` in the folder root):
 
   preflight                 check folder, location, disk, GPU, CUDA sessions
+  serve                     browser app: submit PDFs, follow jobs, download, review (#507)
   run <pdf> --output <dir>  process one PDF; deliverables are copied to <dir>
   review <job>              open the correction GUI for a job (save, regenerate, resume)
   verify [--full]           compare the folder with runtime/build_manifest.json
+
+``serve`` and ``run`` share the persistent job root ``<root>\\jobs`` and its lock, so a
+browser session and a command-line job never process at the same time.
 
 Jobs are processed under ``<root>\\jobs`` (short ASCII paths for OpenCV/ONNX Runtime
 and MAX_PATH); only the finished deliverables are written to the user's output folder,
@@ -18,9 +22,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
+import socket
 import subprocess
 import sys
+import time
+import webbrowser
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -28,6 +37,11 @@ APP = ROOT / "app"
 PYTHON = ROOT / "python" / "python.exe"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from manifest import load_manifest, verify  # noqa: E402
+
+JOBS = ROOT / "jobs"
+# Same pattern as tools/browser_jobs (browser and command-line jobs share the root).
+JOB_ID = re.compile(r"job-[0-9a-f]{12,32}")
+JOBS_LOCK = ".browser-jobs.lock"
 
 # Internal paths below the root reach about 200 characters (job id, page stems,
 # detector subtrees). Keep the root short so every path stays below MAX_PATH (260).
@@ -180,12 +194,13 @@ def command_run(args: argparse.Namespace) -> int:
     output = args.output.resolve()
     preflight(gpu=True)
     env = child_environment()
-    jobs = ROOT / "jobs"
-    before = {path.name for path in jobs.iterdir()}
+    jobs = JOBS
     command = [str(PYTHON), "-m", "docker.distribution_job", str(pdf), "--output", str(jobs)]
     if args.pages:
         command += ["--pages", *map(str, args.pages)]
-    status = subprocess.call(command, env=env, cwd=APP)
+    with jobs_root_lock():
+        before = {path.name for path in jobs.iterdir()}
+        status = subprocess.call(command, env=env, cwd=APP)
     created = sorted({path.name for path in jobs.iterdir()} - before)
     if len(created) != 1:
         print(f"Expected one new job folder, found {created}", file=sys.stderr)
@@ -198,9 +213,16 @@ def command_run(args: argparse.Namespace) -> int:
         shutil.copyfile(deliverable, target)
         copied.append(str(target))
     pointer = output / f"{job.name}.json"
+    # The pointer names the job, not the folder location: the portable folder may be
+    # moved, and the job is always resolved below the current root (#535).
     pointer.write_text(
         json.dumps(
-            {"job": job.name, "job_folder": str(job), "status": status, "deliverables": copied},
+            {
+                "job": job.name,
+                "job_folder_relative": f"jobs/{job.name}",
+                "status": status,
+                "deliverables": copied,
+            },
             indent=2,
             ensure_ascii=False,
         )
@@ -213,16 +235,88 @@ def command_run(args: argparse.Namespace) -> int:
     return status
 
 
+@contextmanager
+def jobs_root_lock():
+    """Hold the job-root lock that ``tools.browser_jobs`` takes while serving."""
+
+    sys.path.insert(0, str(APP))
+    try:
+        from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
+    finally:
+        sys.path.remove(str(APP))
+    JOBS.mkdir(parents=True, exist_ok=True)
+    with os.fdopen(open_lock_file(JOBS / JOBS_LOCK), "rb") as lock:
+        try:
+            lock_exclusive_nonblocking(lock)
+        except BlockingIOError as error:
+            raise LauncherError(
+                "The jobs of this folder are in use by another PDFScoreBar window (serve or "
+                "run); stop it first or submit the PDF from the browser"
+            ) from error
+        yield
+
+
 def resolve_job(value: str) -> Path:
+    """Resolve a job id, job folder or ``<job>.json`` pointer to a job below this root.
+
+    A pointer is resolved by its job id only, so pointers written before the folder was
+    moved keep working; absolute paths stored in older pointers are ignored.
+    """
+
     candidate = Path(value)
     if candidate.suffix == ".json" and candidate.is_file():
-        candidate = Path(json.loads(candidate.read_text(encoding="utf-8"))["job_folder"])
+        try:
+            pointer = json.loads(candidate.read_text(encoding="utf-8"))
+            job_id = pointer["job"]
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            raise LauncherError(f"Not a PDFScoreBar job pointer: {value}") from error
+        if not isinstance(job_id, str) or not JOB_ID.fullmatch(job_id):
+            raise LauncherError(f"Invalid job id in pointer: {value}")
+        candidate = JOBS / job_id
     elif not candidate.is_absolute():
-        candidate = ROOT / "jobs" / value
+        candidate = JOBS / value
+    if candidate.is_symlink() or not JOB_ID.fullmatch(candidate.name):
+        raise LauncherError(f"Not a job of this folder: {value}")
     job = candidate.resolve()
-    if job.parent != (ROOT / "jobs").resolve() or not job.is_dir():
+    if job.parent != JOBS.resolve() or not job.is_dir():
         raise LauncherError(f"Not a job of this folder: {value}")
     return job
+
+
+def moved_jobs() -> list[Path]:
+    """Prepared jobs whose local review manifest still names a former folder location."""
+
+    stale = []
+    for job in sorted(JOBS.iterdir()) if JOBS.is_dir() else []:
+        if not JOB_ID.fullmatch(job.name) or job.is_symlink() or not job.is_dir():
+            continue
+        retained_run = job / ".engine-retained" / "runs" / job.name
+        local = retained_run / "local_manifest.json"
+        if not local.is_file():
+            continue
+        try:
+            run_dir = json.loads(local.read_text(encoding="utf-8")).get("run_dir")
+        except (OSError, ValueError, AttributeError):
+            run_dir = None
+        if run_dir != str(retained_run):
+            stale.append(job)
+    return stale
+
+
+def rebind_moved_jobs(env: dict[str, str]) -> list[str]:
+    """Re-run the local review binding for jobs that were moved with the folder."""
+
+    rebound = []
+    for job in moved_jobs():
+        status = subprocess.call(
+            [str(PYTHON), "-m", "docker.distribution_job", "--prepare-review", str(job)],
+            env=env,
+            cwd=APP,
+        )
+        if status:
+            raise LauncherError(f"Could not rebind moved job {job.name} (exit {status})")
+        rebound.append(job.name)
+    return rebound
 
 
 def command_review(args: argparse.Namespace) -> int:
@@ -256,6 +350,48 @@ def command_review(args: argparse.Namespace) -> int:
     )
 
 
+def _wait_for_port(port: int, process: subprocess.Popen, timeout: float = 60.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline and process.poll() is None:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=1):
+                return True
+        except OSError:
+            time.sleep(0.2)
+    return False
+
+
+def command_serve(args: argparse.Namespace) -> int:
+    preflight(gpu=True)
+    env = child_environment()
+    with jobs_root_lock():  # refuse early if serve or run already uses the jobs
+        rebound = rebind_moved_jobs(env)
+    if rebound:
+        print(f"Rebound {len(rebound)} moved job(s) to this folder: {', '.join(rebound)}")
+    # The browser application is tools/browser_jobs (#507) unchanged; it holds the
+    # job-root lock for its whole lifetime.
+    process = subprocess.Popen(
+        [
+            str(PYTHON),
+            "-m",
+            "tools.browser_jobs.server",
+            "--output",
+            str(JOBS),
+            "--port",
+            str(args.port),
+        ],
+        env=env,
+        cwd=APP,
+    )
+    try:
+        if _wait_for_port(args.port, process) and not args.no_browser:
+            webbrowser.open(f"http://127.0.0.1:{args.port}/")
+        return process.wait()
+    except KeyboardInterrupt:
+        process.terminate()
+        return process.wait()
+
+
 def command_verify(args: argparse.Namespace) -> int:
     problems = verify(ROOT, full=args.full)
     print(json.dumps({"root": str(ROOT), "full": args.full, "problems": problems}, indent=2))
@@ -267,6 +403,9 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     pre = commands.add_parser("preflight")
     pre.add_argument("--full", action="store_true", help="hash every file (slow)")
+    serve = commands.add_parser("serve")
+    serve.add_argument("--port", type=int, default=8010)
+    serve.add_argument("--no-browser", action="store_true", help="do not open a browser")
     run = commands.add_parser("run")
     run.add_argument("pdf", type=Path)
     run.add_argument("--output", type=Path, required=True)
@@ -281,6 +420,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "preflight":
             preflight(full_verify=args.full)
             return 0
+        if args.command == "serve":
+            return command_serve(args)
         if args.command == "run":
             return command_run(args)
         if args.command == "review":

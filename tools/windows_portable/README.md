@@ -52,6 +52,7 @@ open non-ASCII paths and internal paths must stay below Windows MAX_PATH.
 
 ```bat
 C:\PDFScoreBar\PDFScoreBar.cmd preflight
+C:\PDFScoreBar\PDFScoreBar.cmd serve
 C:\PDFScoreBar\PDFScoreBar.cmd run "D:\楽譜\score.pdf" --output "D:\結果"
 C:\PDFScoreBar\PDFScoreBar.cmd review "D:\結果\job-xxxxxxxxxxxx.json"
 C:\PDFScoreBar\PDFScoreBar.cmd verify --full
@@ -60,15 +61,25 @@ C:\PDFScoreBar\PDFScoreBar.cmd verify --full
 * `preflight` checks the location, free space, the folder against its manifest (sizes),
   the GPU, a real ONNX Runtime CUDA session and Triton. Jobs run with
   `PDFSCORE_REQUIRE_CUDA_ORT=1`: a CUDA session that silently runs on CPU fails the job.
+* `serve` starts the browser application of #507 (`tools/browser_jobs`, unchanged) on
+  `http://127.0.0.1:8010/` and opens it (`--no-browser` to skip, `--port` to change):
+  choose a PDF, follow the job, open the numbered PDF, review and regenerate, and revisit
+  earlier jobs. It uses the same persistent job root `jobs\` as `run`, and only one of
+  `serve`/`run` can use it at a time. Stop it with Ctrl+C.
 * `run` processes the PDF under `jobs\` inside the folder and copies the numbered PDF to
-  `--output`, which may be any path (Japanese included), with a `<job>.json` pointer.
+  `--output`, which may be any path (Japanese included), with a `<job>.json` pointer. The
+  pointer names the job id, which is always resolved below the folder's current `jobs\`;
+  a pointer naming anything else is refused.
 * `review` opens the correction GUI (`http://127.0.0.1:8010/`). Saved corrections, the
   regenerated PDF and resume checkpoints are kept in the job; stopping the server and
   running `review` again resumes the same state.
 * `verify --full` re-hashes every file. Byte-code caches are not part of the inventory.
 
 All mutable state (jobs, caches, temporary files, the generated HOMR runtime overlay) stays
-inside the folder. Moving the folder needs no rebuild: paths are derived at each start.
+inside the folder. Moving the folder needs no rebuild: paths are derived at each start,
+`review` re-binds the job's review package to the current location, and `serve` re-binds
+every job that was moved with the folder before it starts. Saved corrections, regenerated
+PDFs and checkpoints move with the jobs.
 
 ## Not covered / known limits
 

@@ -850,6 +850,7 @@
       "tests/test_issue441_mobilesheets_roundtrip.py",
       "tests/test_issue458_source_concurrency.py",
       "tests/test_issue532_empty_page_contract.py",
+      "tests/test_issue535_portable_launcher.py",
       "tests/test_issue535_windows_native_support.py",
       "tests/test_job_lifecycle.py",
       "tests/test_manual_correction_handoff.py",

@@ -84,7 +84,6 @@ def child_environment() -> dict[str, str]:
             "PYTHONNOUSERSITE": "1",
             "PATH": os.pathsep.join([str(ROOT / "python"), env.get("PATH", "")]),
             "PDFSCOREBAR_MODEL_CACHE": str(ROOT / "assets" / "model-cache"),
-            "PDFSCORE_REALESRGAN_WEIGHTS_DIR": str(ROOT / "assets" / "realesrgan"),
             "PDFSCORE_LABEL_FONT": str(ROOT / "assets" / "fonts" / "DejaVuSans-Bold.ttf"),
             "PDFSCORE_HOMR_PROFILE_RUNTIME": str(overlay),
             "PDFSCORE_REQUIRE_CUDA_ORT": "1",

@@ -9,8 +9,7 @@ rights. **Building or running it is not permission to distribute it**: see
 
 Requirements on the build machine: Windows 10/11 x64, Git, Python ≥ 3.11 and
 [uv](https://docs.astral.sh/uv/) on `PATH`, network access to PyPI, the PyTorch cu126
-index and GitHub, an NVIDIA GPU (HOMR's `--init --gpu force` materializes its CUDA model
-assets), and ~25 GB free (folder 5.5 GB + uv cache).
+index and GitHub, an NVIDIA GPU, and ~25 GB free (folder 5.5 GB + uv cache).
 
 ```bat
 python tools\windows_portable\build_portable.py --output C:\pb\PDFScoreBar ^
@@ -21,10 +20,14 @@ python tools\windows_portable\build_portable.py --output C:\pb\PDFScoreBar ^
   (`assets.json`) and the launcher are taken from that archived commit.
 * CPython 3.12.12 is a uv-managed, relocatable build copied into `python\`; packages are
   installed into it directly (no venv, so nothing records the build location).
-* The order and pins follow the Dockerfile: torch/torchvision `2.14.0+cu126`, Real-ESRGAN
-  and HOMR at the Dockerfile commits, the HOMR ONNX provider patch, `onnxruntime-gpu`
-  1.24.4 as the only ONNX Runtime, `opencv-python` 4.11.0.86, the basicsr patch,
-  `homr --init`. The build fails unless the installed distributions equal the lock.
+* The order and pins follow the Dockerfile: torch/torchvision `2.14.0+cu126`, HOMR at the
+  Dockerfile commit, the HOMR ONNX provider patch, `onnxruntime-gpu` 1.24.4 as the only
+  ONNX Runtime, `opencv-python` 4.11.0.86, and the SegNet-only HOMR initialization
+  (`docker/init_homr_segnet.py`: hash-checked SegNet fp16 + OCR, no transformer
+  checkpoint). The build fails unless the installed distributions equal the lock, and if
+  `basicsr`/`realesrgan`/`gfpgan`/`facexlib` or a HOMR transformer checkpoint is present
+  (#533/#536). The x4 SR weights are the first-party `models/sr_x4` checkpoint inside the
+  archived source; no Real-ESRGAN release weights are downloaded.
 * `--asset-source` must provide the assets without a public URL in `assets.json` (barline
   CNN weights, and the Debian `fonts-dejavu-core` DejaVuSans-Bold.ttf whose bytes the Linux
   image uses — the upstream 2.37 TTF differs and changes label glyphs). Every asset is
@@ -82,5 +85,5 @@ inside the folder. Moving the folder needs no rebuild: paths are derived at each
 Do not hand the folder to anyone outside the owner's control until Issue #508 decides
 Go/No-go: device conditions (#508 Phase 0), rights and notices for every bundled component
 (CPython, PyTorch/CUDA/cuDNN DLLs, onnxruntime-gpu, triton-windows, OpenCV, HOMR and its
-models, Real-ESRGAN weights, the barline CNN, DejaVu fonts; #504/#505), the PDF intake GUI
+models, the first-party SR weights and the vendored Real-ESRGAN/BasicSR inference code, the barline CNN, DejaVu fonts; #504/#505), the PDF intake GUI
 (#507) and a formal release/promote decision.

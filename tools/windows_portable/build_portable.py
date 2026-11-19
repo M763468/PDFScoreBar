@@ -6,8 +6,11 @@ Run on Windows from a PDFScoreBar checkout with Python >= 3.11, Git and uv on PA
         --asset-source C:\\staged-assets [--commit <sha>] [--cache C:\\pb-cache]
 
 The folder is assembled only from pinned inputs: ``git archive`` of the commit, a
-uv-managed CPython, ``requirements-cu126.txt``, the HOMR/Real-ESRGAN commits of the
-Dockerfile, and the hash-pinned assets of ``assets.json``. Every input is checked, the
+uv-managed CPython, ``requirements-cu126.txt``, the HOMR commit of the Dockerfile, the
+first-party SR weights tracked in the source (``models/sr_x4``, #533) and the hash-pinned
+assets of ``assets.json``. As in the Dockerfile, HOMR is initialized SegNet-only and the
+build fails if basicsr/realesrgan/gfpgan/facexlib or a HOMR transformer checkpoint is
+present (#533/#536). Every input is checked, the
 installed distribution set must equal the lock, and ``runtime/build_manifest.json``
 records the provenance plus size/SHA-256 of every runtime file (including native
 DLLs) so ``PDFScoreBar.cmd verify --full`` can re-check the folder anywhere.
@@ -44,14 +47,15 @@ from manifest import (  # noqa: E402
 CPYTHON_VERSION = "3.12.12"
 TORCH_INDEX = "https://download.pytorch.org/whl/cu126"
 HOMR_COMMIT = "457e7c6518a10ba755db2e60883419e56c4d7369"
-REALESRGAN_COMMIT = "a4abfb2979a7bbff3f69f58f58ae324608821e27"
 ORT_GPU = "onnxruntime-gpu==1.24.4"
 OPENCV = "opencv-python==4.11.0.86"
 LOCK = HERE / "requirements-cu126.txt"
 ASSETS = HERE / "assets.json"
 LAUNCHER_CMD = HERE / "PDFScoreBar.cmd"
 # Build tooling that is not part of the runtime lock.
-UNLOCKED = {"pip", "setuptools", "wheel", "homr", "realesrgan"}
+UNLOCKED = {"pip", "setuptools", "wheel", "homr"}
+# Same exclusion as the Dockerfile and docker/runtime_contract.py (#533/#536).
+EXCLUDED_DISTRIBUTIONS = ("basicsr", "realesrgan", "gfpgan", "facexlib")
 
 
 def log(message: str) -> None:
@@ -137,15 +141,6 @@ def install_packages(python: Path, *, env: dict[str, str]) -> None:
     # Same order and pins as the Dockerfile; only the CUDA wheel flavour differs.
     run([*pip, *torch_index, *lock, torch, torchvision], env=env)
     run(
-        [
-            *pip,
-            *torch_index,
-            *lock,
-            f"git+https://github.com/xinntao/Real-ESRGAN.git@{REALESRGAN_COMMIT}",
-        ],
-        env=env,
-    )
-    run(
         [*pip, *torch_index, *lock, f"git+https://github.com/liebharc/homr.git@{HOMR_COMMIT}"],
         env=env,
     )
@@ -170,20 +165,8 @@ def install_packages(python: Path, *, env: dict[str, str]) -> None:
 
 def patch_and_init(python: Path, app: Path, *, env: dict[str, str]) -> None:
     run([str(python), str(app / "docker" / "patch_homr_onnx_provider.py")], env=env)
-    run(
-        [
-            str(python),
-            "-c",
-            "from pathlib import Path; import sysconfig;"
-            "p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py';"
-            "s = p.read_text();"
-            "p.write_text(s.replace('from torchvision.transforms.functional_tensor import "
-            "rgb_to_grayscale', 'from torchvision.transforms.functional import "
-            "rgb_to_grayscale'))",
-        ],
-        env=env,
-    )
-    run([str(python), "-m", "homr.main", "--init", "--gpu", "force"], env=env)
+    # SegNet fp16 + OCR only, hash-checked; fails if a transformer checkpoint exists.
+    run([str(python), str(app / "docker" / "init_homr_segnet.py")], env=env)
 
 
 def strip_console_scripts(python_root: Path) -> list[str]:
@@ -212,6 +195,14 @@ def strip_console_scripts(python_root: Path) -> list[str]:
 def check_distributions(site_packages: Path) -> dict[str, str]:
     expected = read_lock()
     installed = installed_distributions(site_packages)
+    excluded = sorted(set(installed) & set(EXCLUDED_DISTRIBUTIONS))
+    if excluded or set(expected) & set(EXCLUDED_DISTRIBUTIONS):
+        raise RuntimeError(f"Excluded SR distributions must not be installed: {excluded}")
+    leftovers = sorted(
+        path.name for path in (site_packages / "homr" / "transformer").glob("*.onnx")
+    )
+    if leftovers:
+        raise RuntimeError(f"HOMR transformer checkpoints must not be shipped: {leftovers}")
     runtime = {name: version for name, version in installed.items() if name not in UNLOCKED}
     if runtime != expected:
         missing = sorted(set(expected) - set(runtime))
@@ -339,7 +330,6 @@ def build(args: argparse.Namespace) -> Path:
             "cpython": CPYTHON_VERSION,
             "torch_index": TORCH_INDEX,
             "homr_commit": HOMR_COMMIT,
-            "realesrgan_commit": REALESRGAN_COMMIT,
             "lock_sha256": sha256_file(LOCK),
             "assets_sha256": sha256_file(ASSETS),
         },

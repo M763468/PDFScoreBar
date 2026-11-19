@@ -7,6 +7,8 @@ lock is the shared ``src.common.file_lock`` used by ``tools.browser_jobs``.
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -90,3 +92,21 @@ def test_browser_job_ids_fit_the_shared_pattern() -> None:
     ids = {new_job_id() for _ in range(100)}
     assert len(ids) == 100
     assert all(launcher.JOB_ID.fullmatch(value) for value in ids)
+
+
+def test_owned_call_reaps_descendants_left_by_the_child(tmp_path: Path, monkeypatch) -> None:
+    from test_issue535_windows_native_support import (
+        _SPAWN_GRANDCHILD,
+        _alive,
+        _grandchild_pid,
+        _wait_for,
+    )
+
+    # A pipeline worker started with a plain subprocess call outlives its parent unless
+    # the launcher owns the whole tree (#535).
+    monkeypatch.setattr(launcher, "APP", Path(__file__).resolve().parents[1])
+    pid_file = tmp_path / "grandchild.pid"
+    command = [sys.executable, "-c", _SPAWN_GRANDCHILD, str(pid_file), "exit"]
+    assert launcher.owned_call(command, dict(os.environ)) == 0
+    grandchild = _grandchild_pid(pid_file)
+    assert _wait_for(lambda: not _alive(grandchild))

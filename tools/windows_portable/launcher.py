@@ -20,6 +20,7 @@ generated runtime overlay) stays inside the folder; nothing is installed system-
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import re
@@ -200,7 +201,7 @@ def command_run(args: argparse.Namespace) -> int:
         command += ["--pages", *map(str, args.pages)]
     with jobs_root_lock():
         before = {path.name for path in jobs.iterdir()}
-        status = subprocess.call(command, env=env, cwd=APP)
+        status = owned_call(command, env)
     created = sorted({path.name for path in jobs.iterdir()} - before)
     if len(created) != 1:
         print(f"Expected one new job folder, found {created}", file=sys.stderr)
@@ -235,19 +236,46 @@ def command_run(args: argparse.Namespace) -> int:
     return status
 
 
+def _app_module(name: str):
+    """Import a stdlib-only helper module of the bundled application."""
+
+    sys.path.insert(0, str(APP))
+    try:
+        return importlib.import_module(name)
+    finally:
+        sys.path.remove(str(APP))
+
+
+def owned_tree(command: list[str], env: dict[str, str]):
+    """Start ``command`` in a kill-on-close Job Object that owns all its descendants.
+
+    Pipeline workers are started with plain subprocess calls; on Linux the container
+    reaps them, but on Windows they would outlive a crashed server or job process.
+    Job Objects nest, so everything below the child stays in this job: the launcher
+    kills what is left when the child exits, and the OS does so if the launcher dies.
+    """
+
+    tree_class = _app_module("src.common.process_tree").OwnedProcessTree
+    return tree_class(command, env=env, cwd=APP)
+
+
+def owned_call(command: list[str], env: dict[str, str]) -> int:
+    with owned_tree(command, env) as tree:
+        try:
+            return tree.wait()
+        except KeyboardInterrupt:
+            return 130
+
+
 @contextmanager
 def jobs_root_lock():
     """Hold the job-root lock that ``tools.browser_jobs`` takes while serving."""
 
-    sys.path.insert(0, str(APP))
-    try:
-        from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
-    finally:
-        sys.path.remove(str(APP))
+    file_lock = _app_module("src.common.file_lock")
     JOBS.mkdir(parents=True, exist_ok=True)
-    with os.fdopen(open_lock_file(JOBS / JOBS_LOCK), "rb") as lock:
+    with os.fdopen(file_lock.open_lock_file(JOBS / JOBS_LOCK), "rb") as lock:
         try:
-            lock_exclusive_nonblocking(lock)
+            file_lock.lock_exclusive_nonblocking(lock)
         except BlockingIOError as error:
             raise LauncherError(
                 "The jobs of this folder are in use by another PDFScoreBar window (serve or "
@@ -308,10 +336,8 @@ def rebind_moved_jobs(env: dict[str, str]) -> list[str]:
 
     rebound = []
     for job in moved_jobs():
-        status = subprocess.call(
-            [str(PYTHON), "-m", "docker.distribution_job", "--prepare-review", str(job)],
-            env=env,
-            cwd=APP,
+        status = owned_call(
+            [str(PYTHON), "-m", "docker.distribution_job", "--prepare-review", str(job)], env
         )
         if status:
             raise LauncherError(f"Could not rebind moved job {job.name} (exit {status})")
@@ -326,16 +352,14 @@ def command_review(args: argparse.Namespace) -> int:
         print("\n".join(check), file=sys.stderr)
         return 2
     env = child_environment()
-    status = subprocess.call(
-        [str(PYTHON), "-m", "docker.distribution_job", "--prepare-review", str(job)],
-        env=env,
-        cwd=APP,
+    status = owned_call(
+        [str(PYTHON), "-m", "docker.distribution_job", "--prepare-review", str(job)], env
     )
     if status:
         return status
     handoff = job / "review" / "manual_correction_input.json"
     print(f"Review: http://127.0.0.1:{args.port}/  (Ctrl+C to stop; work is saved in {job})")
-    return subprocess.call(
+    return owned_call(
         [
             str(PYTHON),
             "-m",
@@ -345,12 +369,11 @@ def command_review(args: argparse.Namespace) -> int:
             "--port",
             str(args.port),
         ],
-        env=env,
-        cwd=APP,
+        env,
     )
 
 
-def _wait_for_port(port: int, process: subprocess.Popen, timeout: float = 60.0) -> bool:
+def _wait_for_port(port: int, process, timeout: float = 60.0) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline and process.poll() is None:
         try:
@@ -370,26 +393,23 @@ def command_serve(args: argparse.Namespace) -> int:
         print(f"Rebound {len(rebound)} moved job(s) to this folder: {', '.join(rebound)}")
     # The browser application is tools/browser_jobs (#507) unchanged; it holds the
     # job-root lock for its whole lifetime.
-    process = subprocess.Popen(
-        [
-            str(PYTHON),
-            "-m",
-            "tools.browser_jobs.server",
-            "--output",
-            str(JOBS),
-            "--port",
-            str(args.port),
-        ],
-        env=env,
-        cwd=APP,
-    )
-    try:
-        if _wait_for_port(args.port, process) and not args.no_browser:
-            webbrowser.open(f"http://127.0.0.1:{args.port}/")
-        return process.wait()
-    except KeyboardInterrupt:
-        process.terminate()
-        return process.wait()
+    command = [
+        str(PYTHON),
+        "-m",
+        "tools.browser_jobs.server",
+        "--output",
+        str(JOBS),
+        "--port",
+        str(args.port),
+    ]
+    # Closing the tree also ends running jobs' workers if the server stops or crashes.
+    with owned_tree(command, env) as tree:
+        try:
+            if _wait_for_port(args.port, tree) and not args.no_browser:
+                webbrowser.open(f"http://127.0.0.1:{args.port}/")
+            return tree.wait()
+        except KeyboardInterrupt:
+            return 130
 
 
 def command_verify(args: argparse.Namespace) -> int:

@@ -55,6 +55,7 @@ data/*
 output/*
 *.pt
 *.pth
+!models/sr_x4/*.pth
 
 # Third-party clones (kept locally under external/)
 external/homr/

@@ -1,11 +1,11 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"14cc69331ca019fd4fb5532b9521d2ced07e1a7696383aa1ad8c67851e5af5d2"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"0e1c63395d6dcafda40cd087a7ca723f85b04483dcc0a5b8224a953cd5a65057"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）
-- 翻訳元: same PR。原文SHA-256: `14cc69331ca019fd4fb5532b9521d2ced07e1a7696383aa1ad8c67851e5af5d2`
+- 翻訳元: same PR。原文SHA-256: `0e1c63395d6dcafda40cd087a7ca723f85b04483dcc0a5b8224a953cd5a65057`
 - 状態: `reviewed`。2026-10-29、利用者による読みやすさの確認と、実装照合・Argon独立レビューの結果を踏まえた概要版。
 
 2026-10-31、SR cacheと最小配布に関する追記をCodexが英語正本と対照し、意味・制約・日本語の読みやすさを確認した。
@@ -26,6 +26,10 @@ PDFScoreBarは、楽譜のPDF（または保存済みのページ画像）を読
 
 **譜表**は五線などの音楽を記す横線のまとまり、**段（system）**はページの同じ高さに並び同時に演奏される譜表のまとまり、**小節**は隣り合う小節線の間の音楽上の区間である。段の左右端も小節の境界になる。
 
+ローカルの Docker 配布では、`docker/distribution.py serve` でブラウザから操作できます。
+投入したPDFとジョブ履歴は指定した結果フォルダーに保存します。
+入口は1件ずつ v1 エンジンアダプターに渡し、ジョブ固有の URL で既存の補正GUIを開きます。
+
 ## 2. コンポーネントとデータの流れ
 
 HOMRは楽譜上の特徴を検出する認識システムである。畳み込みニューラルネットワーク（CNN）は
@@ -43,7 +47,7 @@ SRの終了後、ページごとのsource生成を、明示的なリソースadm
 ```mermaid
 flowchart TD
   I["PDF / 保存済み楽譜画像"] --> P["ページ画像をファイルとして用意"]
-  P --> SR["Real-ESRGAN: 対象ページをまとめて4倍拡大"]
+  P --> SR["x4 SR（first-party RRDBNet）: 対象ページをまとめて4倍拡大"]
   P --> H1["HOMR（元画像）: 基準の小節線・譜表位置"]
   SR -. "バッチ終了後にページ処理" .-> H1
   SR --> H2["HOMR（4倍画像）: 補助検出・譜表の接続情報"]
@@ -75,7 +79,7 @@ flowchart TD
 
 ### 3.1 画像を準備する
 
-必要ならPDFをページ画像ファイルに変換する。Real-ESRGANは対象ページを**1つの処理でまとめて4倍拡大**し、モデルをページ間で再利用する。この処理を終了してGPUメモリを解放した後、ページごとのHOMRを実行する。拡大モデルの使い回しと、後続の認識処理とのメモリ競合防止を両立するための順序である。
+必要ならPDFをページ画像ファイルに変換する。x4 SRモデル（Real-ESRGAN方式のRRDBNet。#533以降はfirst-partyの重み）は対象ページを**1つの処理でまとめて4倍拡大**し、モデルをページ間で再利用する。この処理を終了してGPUメモリを解放した後、ページごとのHOMRを実行する。拡大モデルの使い回しと、後続の認識処理とのメモリ競合防止を両立するための順序である。
 
 maintained Docker launcherでは、`PDFSCORE_SR_COMPILER_CACHE`で私有のSR compiler cacheを
 明示指定できる。SRモデルを常駐させず、compile方式も変えずに短命job間でcompiled artifactを保持する。

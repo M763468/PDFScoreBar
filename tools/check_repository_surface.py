@@ -32,7 +32,7 @@ def matches(files: list[str], pattern: str) -> list[str]:
 
 def local_import_targets(path: str, tree: ast.AST, tracked: set[str]) -> set[str]:
     """Resolve source imports without importing modules or loading models."""
-    package = str(Path(path).parent).replace("/", ".")
+    package = Path(path).parent.as_posix().replace("/", ".")
     modules: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):

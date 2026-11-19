@@ -10,7 +10,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.common.model_artifacts import resolve_realesrgan_weight
+from src.common.model_artifacts import (
+    ModelArtifactIntegrityError,
+    resolve_first_party_sr,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -34,17 +37,19 @@ def _load_image_resolver_module():
     return module
 
 
-def test_realesrgan_weight_override_is_independent_of_workspace(tmp_path: Path) -> None:
-    asset_root = tmp_path / "image-assets"
-    expected = asset_root / "RealESRGAN_x2plus.pth"
+def test_first_party_sr_weights_are_tracked_and_hash_verified(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[1]
+    model = resolve_first_party_sr(project_root=root)
+    assert model.scale == 4 and model.path.is_file()
 
-    resolved = resolve_realesrgan_weight(
-        "RealESRGAN_x2plus",
-        project_root=tmp_path / "workspace",
-        environment={"PDFSCORE_REALESRGAN_WEIGHTS_DIR": str(asset_root)},
+    workspace = tmp_path / "workspace"
+    (workspace / "models" / "sr_x4").mkdir(parents=True)
+    (workspace / "models/sr_x4/manifest.json").write_text(
+        (root / "models/sr_x4/manifest.json").read_text(encoding="utf-8"), encoding="utf-8"
     )
-
-    assert resolved == expected
+    (workspace / model.path.relative_to(root)).write_bytes(b"tampered")
+    with pytest.raises(ModelArtifactIntegrityError):
+        resolve_first_party_sr(project_root=workspace)
 
 
 def test_runtime_contract_no_longer_requires_ultralytics_or_omr_dln() -> None:
@@ -149,6 +154,7 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_
     (tmp_path / "docker" / "patch_homr_onnx_provider.py").write_text(
         "PATCH = 1\n", encoding="utf-8"
     )
+    (tmp_path / "docker" / "init_homr_segnet.py").write_text("INIT = 1\n", encoding="utf-8")
     manifest = tmp_path / "models" / "barline_cnn" / "manifest.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text('{"sha256": "abc"}\n', encoding="utf-8")

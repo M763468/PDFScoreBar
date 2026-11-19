@@ -1,6 +1,6 @@
 # 正規モデル資産の契約
 
-<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"e221051caa19d6605675abc2035872fd5b887f900f790df4eb95c667c5a8c552"},"state":"reviewed"} -->
+<!-- translation: {"original":"MODEL_ARTIFACT_CONTRACT.md","source":{"sha256":"5d92e8e07886d9d2e2420580504c8cacefd5d4a538e806846968813b586d3c78"},"state":"reviewed"} -->
 
 [English / 原文](MODEL_ARTIFACT_CONTRACT.md)
 
@@ -41,51 +41,37 @@
 - 論理モデルID: `omr-dln-measures` — **選択対象から外した**。バージョン `phase1-validated-v1`（SHA-256 `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`）は、#416／#519 までの受入結果の来歴としてのみ残す。
 - `models/omr_dln/manifest.json`、OMR-DLN worker と job 経路、`OMR_DLN_MODEL_PATH`、Docker のマウントを削除した。hybrid の支持には x4 HOMR の五線片支持（`src/pipeline/steps/hybrid_consensus.py`）を使う。OMR-DLN を指定したままの設定は明示的にエラーになり、旧重みへの fallback はない。
 
-### Real-ESRGAN x4
+### first-party x4 SR（`pdfscorebar-sr-x4`）
 
-- 論理モデルID: `realesrgan-x4plus`
-- 選択バージョン: 上流release `v0.1.0`、資産 `RealESRGAN_x4plus.pth`
-- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。runtimeパッケージのソースはDockerfileで別途固定
-- 完全性の識別情報: 選択release／資産とSHA-256 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`
-- 所有: Dockerイメージ
-- ホスト上の配置: Dockerビルドキャッシュのみ。チェックアウト内の正規コピーは不要
-- コンテナruntime: `/opt/pdfscore-assets/realesrgan/RealESRGAN_x4plus.pth`
-- 解決: `src.common.realesrgan_assets`
-- 明示的上書き: `PDFSCORE_REALESRGAN_WEIGHTS_DIR`（ホスト開発用に旧チェックアウトへのフォールバックも維持）
-- 更新手順: 上流release／資産を意図的に変更し、新しいダイジェストを記録・検証し、イメージを再ビルドしてDocker/GPU契約ゲートを実行する。
+- 論理モデルID: `pdfscorebar-sr-x4`
+- 選択バージョン・識別情報: `models/sr_x4/manifest.json`（`version`、`sha256`、`size_bytes`、RRDBNet の `num_feat`／`num_block`／`num_grow_ch`）
+- 来歴: PDFScoreBar がランダム初期化から学習（#533）。`tools/issue533/train_sr.py` と、`tools/issue533/synth_score.py` が生成する手続き的な合成楽譜だけを使う。事前学習重み、教師モデル、楽譜PDF、評価画像、GT は使わない。manifest に学習コマンド、seed、スクリプトのハッシュ、実行環境を記録する
+- ネットワーク: vendoring した Apache-2.0 の RRDBNet（`src/third_party/realesrgan_sr`）
+- 所有: リポジトリで追跡（MMR checkpoint と同様）。配布物に含まれる
+- コンテナruntime: バインドマウントされた `/workspace/models/sr_x4/...`
+- 解決: `src.common.model_artifacts.resolve_first_party_sr`。読み込みのたびに SHA-256 を照合する。runtime preflight と Docker ビルドでも照合する
+- 明示的上書き: なし
+- 更新手順: 追跡しているスクリプトで新しい版を学習し、新しい manifest の `version`／`sha256` で追加し、現行モデルに対する #533 の Full68 ゲートに合格してから切り替える。manifest と一致しないバイト列は fail closed
 
-### Real-ESRGAN x2
+x2 SR はサポートしない。本番の dense ルートは `sr_scale=4` を必須とする。
 
-- 論理モデルID: `realesrgan-x2plus`
-- 選択バージョン: 上流release `v0.2.1`、資産 `RealESRGAN_x2plus.pth`
-- 来歴: 公式 `xinntao/Real-ESRGAN` GitHub release。runtimeパッケージのソースはDockerfileで別途固定
-- 完全性の識別情報: 選択release／資産とSHA-256 `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`
-- 所有: Dockerイメージ
-- ホスト上の配置: Dockerビルドキャッシュのみ。チェックアウト内の正規コピーは不要
-- コンテナruntime: `/opt/pdfscore-assets/realesrgan/RealESRGAN_x2plus.pth`
-- 解決: `src.common.realesrgan_assets`
-- 明示的上書き: `PDFSCORE_REALESRGAN_WEIGHTS_DIR`（ホスト開発用に旧チェックアウトへのフォールバックも維持）
-- 更新手順: x4と同じバージョン・来歴・ダイジェストのルールに従い、意図的な更新後にイメージを再ビルドしてDocker/GPU検証を再実行する。
-
-上記Real-ESRGANのハッシュは現在選択された上流releaseのバイト列を識別する。ダウンロードしたバイト列が一致しなくなった場合、Dockerは黙って置換を受け入れずビルドを失敗させなければならない。
+Real-ESRGAN の release 重み（`RealESRGAN_x4plus` SHA-256 `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`、`RealESRGAN_x2plus` `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`）は #533 まで使っていた。現在は取得・選択しない。現行 manifest が使用する重みを指定する。
 
 ### 保守対象HOMR runtime資産
 
-- 論理モデルID: 保守対象HOMRのsegmentation、transformer encoder/decoder（およびHOMRのinitが管理するOCR資産）
+- 論理モデルID: 保守対象HOMRのsegmentation（およびHOMRのOCR資産）。#533 以降、transformer encoder/decoder は runtime に含まない。PDFScoreBar は SegNet の小節線とマスクだけを使い、`HomrPredictor` は HOMR の譜表転写をスキップする。イメージに transformer checkpoint（Run 426）は入らない
 - 選択runtimeバージョン: HOMRソースcommit `457e7c6518a10ba755db2e60883419e56c4d7369`
 - そのcommitで選択されるGPUモデルの識別情報:
   - segmentation: `segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16`
-  - transformer encoder: `encoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
-  - transformer decoder: `decoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
-- 来歴: 上流HOMRの `onnx_checkpoints` GitHub release。固定されたHOMRソースが選択し、`python -m homr.main --init --gpu force` で配置する
-- 上流releaseパッケージのSHA-256:
-  - segmentationパッケージ: `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82`
-  - transformer encoderパッケージ: `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c`
-  - transformer decoderパッケージ: `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8`
+- 来歴: 上流HOMRの `onnx_checkpoints` GitHub release。固定されたHOMRソースが選択し、`docker/init_homr_segnet.py` で配置する（SegNet と OCR の初期化だけ。`homr.main --init` は transformer も取得するため使わない）
+- 完全性の識別情報:
+  - segmentationパッケージ（上流release）: `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82`
+  - 展開後のsegmentation ONNX（Dockerビルドで照合）: `60f495496cb41473c0521d0811d8f44b9d5cff892d287974a8aebb3eaee2fa83`
+  - 履歴（同梱しない）: transformer encoderパッケージ `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c`、decoderパッケージ `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8`
 - 所有: Dockerイメージ／固定された上流HOMR runtime
 - ホスト上の配置: Dockerビルドキャッシュのみ
 - コンテナruntime: `/opt/venv_pipeline` 内のHOMRパッケージディレクトリ。正規検証では `/workspace` に依存してはならない
-- 解決・配置: Dockerビルド時の固定HOMRの `--init --gpu force` 経路
+- 解決・配置: Dockerビルド時の `docker/init_homr_segnet.py`。SegNet のハッシュ不一致、または transformer の ONNX checkpoint があればビルドを失敗させる
 - 明示的上書き: 正規runtimeにはなし
 - 更新手順: HOMRソースの固定値を意図的に更新し、そのcommitで選択される資産名とreleaseダイジェストを一覧化し、再ビルド、ONNX CUDA providerの確認、正規smokeを実行する。新しい上流releaseによって固定runtimeの識別情報が暗黙に変わってはならない。
 

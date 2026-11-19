@@ -8,7 +8,9 @@ from typing import Any, Optional
 import cv2
 import numpy as np
 
-from src.common.model_artifacts import resolve_realesrgan_weight
+from src.common.model_artifacts import resolve_first_party_sr
+
+FIRST_PARTY_SR_MODEL_NAME = "pdfscorebar_sr_x4"
 
 logger = logging.getLogger(__name__)
 
@@ -169,8 +171,8 @@ def apply_super_resolution(
 
 def apply_advanced_sr(
     image: np.ndarray,
-    model_name: str = "RealESRGAN_x2plus",
-    scale: int = 2,
+    model_name: str = "pdfscorebar_sr_x4",
+    scale: int = 4,
     tile: Optional[int] = None,
     tile_pad: int = 10,
     pre_pad: int = 0,
@@ -184,7 +186,7 @@ def apply_advanced_sr(
 
     Args:
         image: Input image (BGR numpy array).
-        model_name: "RealESRGAN_x4plus" or other supported models.
+        model_name: only "pdfscorebar_sr_x4" (first-party x4 model, Issue #533).
         scale: Upscale factor (default 4).
         tile: Tile size for processing (0 for auto/none).
         tile_pad: Padding for tiles.
@@ -200,13 +202,13 @@ def apply_advanced_sr(
     try:
         with _perf_span("sr_worker.realesrgan_heavy_imports"):
             import torch
-            from basicsr.archs.rrdbnet_arch import RRDBNet
-            from realesrgan import RealESRGANer
+
+            from src.third_party.realesrgan_sr import RealESRGANer, RRDBNet
     except ImportError as e:
         if strict:
             raise
         logger.error("Error importing Real-ESRGAN dependencies: %s", e)
-        logger.error("Please ensure you have installed the realesrgan package.")
+        logger.error("The vendored src.third_party.realesrgan_sr runtime is unavailable.")
         return image, upsampler
 
     # Check device
@@ -215,51 +217,28 @@ def apply_advanced_sr(
     if upsampler is None:
         with _perf_span("sr_worker.realesrgan_model_initialization", cuda=True):
             logger.info("Initializing Real-ESRGAN (%s) using device: %s", model_name, device)
-            weight_model_name = model_name
-            if model_name == "RealESRGAN_x4plus":
-                model = RRDBNet(
-                    num_in_ch=3,
-                    num_out_ch=3,
-                    num_feat=64,
-                    num_block=23,
-                    num_grow_ch=32,
-                    scale=4,
-                )
-                netscale = 4
-            elif model_name == "RealESRGAN_x2plus":
-                model = RRDBNet(
-                    num_in_ch=3,
-                    num_out_ch=3,
-                    num_feat=64,
-                    num_block=23,
-                    num_grow_ch=32,
-                    scale=2,
-                )
-                netscale = 2
-            else:
+            if model_name != FIRST_PARTY_SR_MODEL_NAME or scale != 4:
+                # Issue #533: the Real-ESRGAN x4plus/x2plus release weights were removed.
+                # Only the first-party x4 model exists; there is no x2 model.
                 if strict:
-                    raise ValueError(f"Unsupported SR model: {model_name}")
-                logger.warning(
-                    "Model %s not explicitly supported. A default (x2plus) will be used.",
-                    model_name,
+                    raise ValueError(
+                        f"Unsupported SR model/scale: {model_name} x{scale}; "
+                        f"only {FIRST_PARTY_SR_MODEL_NAME} x4 is available"
+                    )
+                logger.error(
+                    "Unsupported SR model/scale %s x%s; returning input.", model_name, scale
                 )
-                model = RRDBNet(
-                    num_in_ch=3,
-                    num_out_ch=3,
-                    num_feat=64,
-                    num_block=23,
-                    num_grow_ch=32,
-                    scale=2,
-                )
-                netscale = 2
-                weight_model_name = "RealESRGAN_x2plus"
-
-            model_path = str(
-                resolve_realesrgan_weight(
-                    weight_model_name,
-                    project_root=Path(__file__).resolve().parents[2],
-                )
-            )
+                return image, upsampler
+            try:
+                sr_model = resolve_first_party_sr(project_root=Path(__file__).resolve().parents[2])
+            except Exception as e:
+                if strict:
+                    raise
+                logger.error("First-party SR model unavailable: %s", e)
+                return image, upsampler
+            model = RRDBNet(**sr_model.rrdbnet_kwargs())
+            netscale = sr_model.scale
+            model_path = str(sr_model.path)
 
             if strict and not Path(model_path).is_file():
                 raise FileNotFoundError(f"SR model weight not found: {model_path}")

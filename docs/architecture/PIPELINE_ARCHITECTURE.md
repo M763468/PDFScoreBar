@@ -18,6 +18,11 @@ Three cooperating parts perform this work:
 
 Here a **staff** is a set of horizontal music lines, a **system** is the group of staves aligned on one row of the page, and a **measure** is a musical interval between consecutive barlines (including the boundaries at a system's edges).
 
+The local Docker distribution also offers a loopback browser workspace through
+`docker/distribution.py serve`. Uploads and job history live under the selected
+results root. The workspace passes one job at a time to the v1 engine adapter
+and opens the existing correction application under the job's URL.
+
 ## 2. Component and data flow
 
 HOMR is the music-recognition system used here to detect score features.
@@ -37,7 +42,7 @@ admission and input-order consumption. The default is one worker. See
 ```mermaid
 flowchart TD
   I["PDF / stored page images"] --> P["Page images stored as files"]
-  P --> SR["Real-ESRGAN: make x4 images for the selected page batch"]
+  P --> SR["x4 SR (first-party RRDBNet): make x4 images for the selected page batch"]
   P --> H1["HOMR on original image: baseline barlines and staves"]
   SR -. "batch completes before page work" .-> H1
   SR --> H2["HOMR on x4 image: supporting detections and connector evidence"]
@@ -69,7 +74,7 @@ flowchart TD
 
 ### 3.1 Prepare images
 
-The pipeline renders the PDF into page-image files if needed. Real-ESRGAN then produces enlarged images for all selected pages in **one batch process**, reusing its model. The process ends before the page-by-page HOMR work begins. This ordering both reuses the expensive enlargement model and releases its GPU memory before subsequent recognition.
+The pipeline renders the PDF into page-image files if needed. The x4 SR model (a Real-ESRGAN-style RRDBNet with first-party weights since Issue #533) then produces enlarged images for all selected pages in **one batch process**, reusing its model. The process ends before the page-by-page HOMR work begins. This ordering both reuses the expensive enlargement model and releases its GPU memory before subsequent recognition.
 
 The maintained Docker launcher supports an explicit private SR compiler cache through
 `PDFSCORE_SR_COMPILER_CACHE`. It retains compiled artifacts across disposable jobs without

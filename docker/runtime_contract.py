@@ -35,7 +35,12 @@ SOURCE_CONTRACT_FILES = (
     Path("tools/review_correction/correction_state.js"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml", ".yaml", ".yml", ".json", ".pth"})
-RUNTIME_MODULES = ("homr", "realesrgan", "basicsr")
+RUNTIME_MODULES = ("homr",)
+# Issue #533: the SR runtime is vendored in the bind-mounted source tree at
+# src/third_party/realesrgan_sr (Apache-2.0 RRDBNet + BSD-3 RealESRGANer).
+# These distributions carry non-commercial (NVIDIA Source Code License-NC,
+# CC BY-NC-SA) code and must not return to the production image.
+EXCLUDED_RUNTIME_MODULES = ("basicsr", "realesrgan", "gfpgan", "facexlib")
 PROVENANCE_NAME = "DISTRIBUTION_PROVENANCE.json"
 MANIFEST_NAME = "docs/MINIMAL_MAINLINE_SURFACE.json"
 MANIFEST_SECTIONS = (
@@ -52,6 +57,7 @@ RUNTIME_CONTRACT_FILES = (
     Path("Dockerfile"),
     Path("pyproject.toml"),
     Path("docker/patch_homr_onnx_provider.py"),
+    Path("docker/init_homr_segnet.py"),
     Path("models/barline_cnn/manifest.json"),
     Path("src/common/model_artifacts.py"),
     Path("src/common/__init__.py"),
@@ -408,8 +414,8 @@ def run_preflight(
     import yaml
 
     from src.common.model_artifacts import (
+        resolve_first_party_sr,
         resolve_model_artifact,
-        resolve_realesrgan_weight,
     )
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
@@ -451,11 +457,13 @@ def run_preflight(
     if input_path is not None:
         _require_file(input_path, role="configured smoke input", errors=errors)
 
-    sr_weights = {}
-    for model_name in ("RealESRGAN_x2plus", "RealESRGAN_x4plus"):
-        path = resolve_realesrgan_weight(model_name, project_root=workspace)
-        _require_file(path, role=f"image-owned {model_name} weight", errors=errors)
-        sr_weights[model_name] = str(path)
+    # Issue #533: first-party x4 SR weights tracked in the source tree, hash-verified.
+    sr_weights: dict[str, str] = {}
+    try:
+        sr_model = resolve_first_party_sr(project_root=workspace)
+        sr_weights[f"{sr_model.model_id}:{sr_model.version}"] = str(sr_model.path)
+    except Exception as exc:
+        errors.append(f"first-party SR model is unavailable: {exc}")
 
     cnn_model = detection.get("cnn_model_path")
     cnn_model_path = _resolve_input_path(workspace, cnn_model)
@@ -497,6 +505,13 @@ def run_preflight(
             module_origins[module_name] = None
         else:
             module_origins[module_name] = spec.origin
+    for module_name in EXCLUDED_RUNTIME_MODULES:
+        spec = importlib.util.find_spec(module_name)
+        if spec is not None:
+            errors.append(
+                f"excluded non-commercial-licensed module is installed: {module_name} "
+                f"({spec.origin})"
+            )
 
     # Canonical preflight shares the maintained profile's pinned marker contract.
     # Historical profile validation belongs to its explicit reproduction runner.
@@ -523,7 +538,7 @@ def run_preflight(
         "model_validation": mode,
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
-        "realesrgan_weights": sr_weights,
+        "sr_weights": sr_weights,
         "cnn_model": (
             str(cnn_model_path) if cnn_model_path is not None else resolved_manifest_model
         ),

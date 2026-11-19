@@ -29,12 +29,24 @@
       "role": "HOMR runtime compatibility patch"
     },
     {
+      "pattern": "docker/init_homr_segnet.py",
+      "role": "Build-time SegNet-only HOMR model materialization with hash check (#533)"
+    },
+    {
       "pattern": "docker/runtime_contract.py",
       "role": "runtime dependency/provenance preflight"
     },
     {
       "pattern": "models/barline_cnn/manifest.json",
       "role": "production barline CNN artifact manifest"
+    },
+    {
+      "pattern": "models/sr_x4/manifest.json",
+      "role": "First-party x4 SR model identity, architecture, hash and training provenance (#533)"
+    },
+    {
+      "pattern": "models/sr_x4/pdfscorebar_sr_x4_issue533_s1r.pth",
+      "role": "First-party x4 SR weights trained from random initialization on synthetic notation (#533)"
     },
     {
       "pattern": "models/mmr/mmr_classifier_best.pth",
@@ -69,6 +81,34 @@
       "role": "Owned child-process trees killed as a unit (POSIX session group, Windows Job Object) (#535)"
     },
     {
+      "pattern": "src/third_party/__init__.py",
+      "role": "Package marker for third-party source vendored with its upstream license"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/__init__.py",
+      "role": "Vendored Real-ESRGAN inference subset exports; replaces basicsr/realesrgan/gfpgan/facexlib (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/rrdbnet.py",
+      "role": "RRDBNet derived from BasicSR 1.4.2 (Apache-2.0) without the BasicSR import graph (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/upsampler.py",
+      "role": "RealESRGANer derived from Real-ESRGAN a4abfb29 (BSD-3-Clause) (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-BasicSR.txt",
+      "role": "Apache-2.0 license text for the vendored BasicSR code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-Real-ESRGAN.txt",
+      "role": "BSD-3-Clause license text for the vendored Real-ESRGAN code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/README.md",
+      "role": "Provenance, modifications and equivalence contract of the vendored SR code"
+    },
+    {
       "pattern": "src/common/thin_barline_finder.py",
       "role": "Thin vertical barline detection used by production rescue"
     },
@@ -79,6 +119,10 @@
     {
       "pattern": "src/homr_runtime/barline_candidates.py",
       "role": "Production barline candidates implementation used by maintained dense processing"
+    },
+    {
+      "pattern": "src/homr_runtime/empty_detection.py",
+      "role": "Production evidence and classification of empty HOMR results (cover/blank pages, #532)"
     },
     {
       "pattern": "src/homr_runtime/end_barlines.py",
@@ -716,6 +760,7 @@
       "tests/test_doc_links.py",
       "tests/test_configuration_reference.py",
       "tests/test_experiment_model_selection.py",
+      "tests/test_homr_evaluator_sr.py",
       "tests/test_release_candidate.py",
       "tests/test_git_env_isolation.py",
       "tests/test_cnn_scoring_model_path.py",
@@ -750,6 +795,8 @@
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
+      "tests/test_issue533_first_party_sr.py",
+      "tests/test_issue533_license_reduction.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",
       "tests/test_apply_corrections_final_output.py",
@@ -761,6 +808,7 @@
       "tests/test_detection_config.py",
       "tests/test_detector_input_contract.py",
       "tests/test_detector_orchestrator_input_contract.py",
+      "tests/test_browser_jobs.py",
       "tests/test_distribution_surface.py",
       "tests/test_engine_contract.py",
       "tests/test_engine_input_safety.py",
@@ -801,6 +849,7 @@
       "tests/test_issue441_annotated_layer.py",
       "tests/test_issue441_mobilesheets_roundtrip.py",
       "tests/test_issue458_source_concurrency.py",
+      "tests/test_issue532_empty_page_contract.py",
       "tests/test_issue535_windows_native_support.py",
       "tests/test_job_lifecycle.py",
       "tests/test_manual_correction_handoff.py",
@@ -881,6 +930,22 @@
     {
       "pattern": "tools/review_correction/correction_state.js",
       "role": "Supported package-bound correction English/Japanese browser UI asset"
+    },
+    {
+      "pattern": "tools/browser_jobs/jobs.py",
+      "role": "Local v1 job and result adapter"
+    },
+    {
+      "pattern": "tools/browser_jobs/server.py",
+      "role": "Loopback job server and package-bound correction routing"
+    },
+    {
+      "pattern": "tools/browser_jobs/index.html",
+      "role": "Browser job launcher"
+    },
+    {
+      "pattern": "tools/browser_jobs/jobs.js",
+      "role": "English and Japanese job launcher client"
     },
     {
       "pattern": "docker/distribution.py",

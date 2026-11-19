@@ -1,10 +1,10 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"888c2c510aced17388e79740dc9c29fac3911578fd5795869227a6809929dba3"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"f588ae0a4fcb170fc254f8d84736c09ccdf58c63439a96a412335be83b443ef7"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `709c465dfcd1a66f450a29faee8d0595e7fb1142e23721d84766b149d101321a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `f588ae0a4fcb170fc254f8d84736c09ccdf58c63439a96a412335be83b443ef7`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 本ドキュメントには、保守対象となっている開発環境および評価環境を記録しています。過去の単発コンテナやブランチ固有の worktree は、進行中の Issue で明示的に復活させない限り、現在の運用手順ではありません。
 
@@ -41,14 +41,14 @@
 | メインの Python／ランタイム依存関係 | Docker イメージ | `/opt/venv_pipeline` |
 | 保守対象の現行 HOMR パッケージ／ランタイム | Docker イメージ | Dockerfile のピン留めに基づき `/opt/venv_pipeline` にインストール |
 | 検証済みの過去 Stage-E HOMR スタック | 再現用イメージのみ | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
-| Real-ESRGAN x2/x4 重み | Docker イメージ | `/opt/pdfscore-assets/realesrgan` |
+| first-party x4 SR 重み（#533） | リポジトリ（追跡・ハッシュ検証） | `/workspace/models/sr_x4` |
 | 標準スモーク CNN バイトデータ | Docker イメージ（追跡対象の #315 マニフェストから派生） | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
 | リポジトリのソース／設定／入力データ | アクティブなチェックアウト | `/workspace` にバインドマウント |
 | 生成された実行アーティファクト | アクティブなチェックアウト／オペレータ | Git 管理外の `logs/`、`artifacts/`、および設定された出力パス |
 
 モデル横断でのバージョン、プロビナンス（来歴）、整合性、および更新ルールは `docs/contracts/MODEL_ARTIFACT_CONTRACT.md` に整理されています。ホスト側のモデルアーティファクトは、デフォルトでユーザー単位の共有キャッシュである `$XDG_CACHE_HOME/pdfscorebar/models`（`XDG_CACHE_HOME` が未設定の場合は `~/.cache/pdfscorebar/models`）に配置されます。`PDFSCOREBAR_MODEL_CACHE` は引き続き明示的なオーバーライドとして使用できます。検証済みの登録を複数の worktree 間で再利用できるよう、デフォルトの場所は意図的にアクティブなチェックアウトから独立しています。移行期間中は、既存のチェックアウトローカルなキャッシュを `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` で明示的に選択することも可能ですが、暗黙的なフォールバックとしては扱われなくなりました。
 
-Real-ESRGAN リゾルバはイメージ内の `PDFSCORE_REALESRGAN_WEIGHTS_DIR` を使用し、従来のチェックアウトパスはホスト開発時のフォールバックとしてのみ保持します。標準の Docker スモークテストでは、`external/realesrgan/weights` への重みの手動コピーを必要としてはなりません。
+x4 SR の重みは first-party の `models/sr_x4` checkpoint で、`resolve_first_party_sr` が解決します（読み込み時に SHA-256 を照合）。#533 以降、Real-ESRGAN の release 重みは取得も選択もしません。`PDFSCORE_REALESRGAN_WEIGHTS_DIR` と `/opt/pdfscore-assets/realesrgan` は廃止し、preflight は manifest が選択した重みを照合します。
 
 イメージが所有するスモーク CNN パスはレガシー／ワークフロー専用のフィクスチャ向けに引き続き利用可能ですが、標準の精度スモークテストではなく、本番精度のエビデンスとして使用してはなりません。標準のスモークテストでは、`configs/dense_full_pipeline.yaml` と同じ `models/barline_cnn/manifest.json`、しきい値、dense 検出器ルート、および x4 サポートコントラクトを使用します。Docker は引き続き `src.common.model_artifacts` を通じて追跡対象マニフェストを実体化（SHA-256 チェックを含む）し、検証済みのバイトデータを上記の安定したスモーク専用互換パスで公開します。
 

@@ -124,9 +124,12 @@ def main() -> int:
     review.add_argument("--output", type=Path, required=True, help="Same output root as run")
     review.add_argument("--handoff", type=Path, required=True)
     review.add_argument("--port", type=int, default=8010)
+    serve = commands.add_parser("serve")
+    serve.add_argument("--output", type=Path, required=True, help="Persistent local job root")
+    serve.add_argument("--port", type=int, default=8010)
     args = parser.parse_args()
     output = None
-    if args.command in {"run", "review"}:
+    if args.command in {"run", "review", "serve"}:
         output = args.output.resolve()
         if output.is_relative_to(ROOT.resolve()) and not is_ignored_development_output(output):
             raise ValueError(
@@ -224,7 +227,7 @@ def main() -> int:
     if status or args.command == "preflight":
         return status
     assert output is not None
-    output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=True, mode=0o700 if args.command == "serve" else 0o777)
     common += ["-v", f"{output}:/results"]
     if args.command == "run":
         pdf = args.pdf.resolve(strict=True)
@@ -239,6 +242,23 @@ def main() -> int:
         ]
         if args.pages:
             command += ["--pages", *map(str, args.pages)]
+    elif args.command == "serve":
+        command = [
+            "/opt/venv_pipeline/bin/python",
+            "-m",
+            "tools.browser_jobs.server",
+            "--output",
+            "/results",
+            "--port",
+            str(args.port),
+        ]
+        if uses_docker_desktop():
+            publish, relay_port = published_review_arguments(args.port)
+            common[common.index("none")] = "bridge"
+            common += publish
+            command += ["--relay-port", str(relay_port)]
+        else:
+            common[common.index("none")] = "host"
     else:
         handoff = args.handoff.resolve(strict=True).relative_to(output)
         docker_desktop = uses_docker_desktop()

@@ -19,6 +19,11 @@ dependencies = [
     # Otherwise unpinned transitive deps (HOMR/Real-ESRGAN); keep the #416-accepted runtime.
     "torch==2.14.0",
     "torchvision==0.29.0",
+    # Issue #533: transitive deps (torch / cuda-bindings / HOMR) pinned to the #504
+    # audited image so rebuilding after the SR dependency removal does not drift.
+    "filelock==4.2.9",
+    "cuda-pathfinder==1.8.6",
+    "pypdfium2==5.15.1",
 ]
 
 [tool.ruff]

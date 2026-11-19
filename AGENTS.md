@@ -48,6 +48,11 @@ container state, run tags, and issue handoff notes do not belong here.
 - Read `docs/dev/ENVIRONMENTS.md` when the task will run Docker, GPU, models, datasets, the full
   pipeline, or another environment-sensitive command. Do not require it for unrelated docs or
   static repository edits.
+- Run repository pytest in the Docker validation environment from
+  `docs/dev/LOCAL_VALIDATION.md#python-and-pytest`: the persistent pytest container, or a
+  disposable container from the pytest validation image for Git-dependent suites. Do not assume
+  host Python or local `.venv*` interpreters match CI or have the project dependencies, and do not
+  build an ad-hoc environment while that route is available.
 - Prefer maintained Makefile targets and existing scripts when they fit the task, but inspect current
   source/help before assuming a target, container name, interpreter path, or local mount is current.
 - If GPU, Docker, dataset, model, sandbox, or network constraints block a check, report the attempted

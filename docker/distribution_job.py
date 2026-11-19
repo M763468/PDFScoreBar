@@ -11,8 +11,9 @@ import uuid
 from dataclasses import replace
 from pathlib import Path
 
-from src.pipeline.engine_contract import JobRequest, JobStatus, OutputProfile
+from src.pipeline.engine_contract import JobRequest, JobResult, JobStatus, OutputProfile
 from src.pipeline.engine_executor import PipelineJobExecutor
+from tools.review_correction.history import atomic_bytes
 
 
 def _references_to(value, root: str) -> list[str]:
@@ -135,35 +136,35 @@ def _windows_job_id() -> str:
     return f"job-{uuid.uuid4().hex[:12]}"
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("pdf", type=Path, nargs="?")
-    parser.add_argument("--prepare-review", type=Path)
-    parser.add_argument("--output", type=Path)
-    parser.add_argument("--pages", type=int, nargs="+")
-    args = parser.parse_args()
-    if args.prepare_review:
-        prepare_local_review(args.prepare_review)
-        return 0
-    if args.pdf is None or args.output is None:
-        parser.error("pdf and --output are required for a PDF job")
-    pdf = args.pdf.resolve()
-    overrides = {"pages": args.pages} if args.pages else {}
-    windows_options = {"job_id_factory": _windows_job_id} if os.name == "nt" else {}
-    executor = PipelineJobExecutor(
+def run_local_job(
+    pdf: Path,
+    output_root: Path,
+    pages: list[int] | None = None,
+    *,
+    job_id_factory=None,
+    on_progress=None,
+    executor_factory=None,
+) -> JobResult:
+    """Run one v1 job and publish its prepared local review once."""
+    if job_id_factory is None and os.name == "nt":
+        job_id_factory = _windows_job_id
+    pdf = pdf.absolute()
+    output_root = output_root.resolve()
+    factory = executor_factory or PipelineJobExecutor
+    executor = factory(
         input_root=pdf.parent,
-        artifact_root=args.output,
+        artifact_root=output_root,
         source_commit=os.environ.get("PDFSCORE_HOST_SOURCE_COMMIT"),
-        **windows_options,
+        **({"job_id_factory": job_id_factory} if job_id_factory is not None else {}),
     )
     result = executor(
         JobRequest(
             input={"kind": "local_path", "reference": pdf.name},
             output_profile=OutputProfile.REVIEW,
-            config_overrides=overrides,
-        )
+            config_overrides={"pages": pages} if pages else {},
+        ),
+        on_progress=on_progress,
     )
-    output_root = args.output.resolve()
     output = output_root / result.job_id
     if output.is_symlink() or output.resolve().parent != output_root:
         raise ValueError("Job result directory must stay inside the output root")
@@ -179,7 +180,23 @@ def main() -> int:
             ),
         )
     output.mkdir(parents=True, exist_ok=True)
-    (output / "result.json").write_text(result.to_json() + "\n", encoding="utf-8")
+    atomic_bytes(output / "result.json", (result.to_json() + "\n").encode("utf-8"))
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("pdf", type=Path, nargs="?")
+    parser.add_argument("--prepare-review", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--pages", type=int, nargs="+")
+    args = parser.parse_args()
+    if args.prepare_review:
+        prepare_local_review(args.prepare_review)
+        return 0
+    if args.pdf is None or args.output is None:
+        parser.error("pdf and --output are required for a PDF job")
+    result = run_local_job(args.pdf.resolve(), args.output, args.pages)
     print(result.to_json(include_debug_context=True))
     return 0 if result.status in {JobStatus.SUCCEEDED, JobStatus.REVIEW_REQUIRED} else 1
 

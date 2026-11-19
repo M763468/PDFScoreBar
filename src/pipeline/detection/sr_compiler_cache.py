@@ -132,7 +132,7 @@ def runtime_identity(detection):
 
     import torch
 
-    from src.common.model_artifacts import resolve_realesrgan_weight
+    from src.common.model_artifacts import resolve_first_party_sr
 
     if torch._dynamo.config.suppress_errors:
         raise ValueError("Managed cache forbids compiler error suppression")
@@ -144,7 +144,7 @@ def runtime_identity(detection):
     if normalize_compile_mode(detection.get("sr_compile_mode")) is None:
         raise ValueError("Managed SR cache requires an enabled compile mode")
     root = Path(__file__).resolve().parents[3]
-    weights = resolve_realesrgan_weight("RealESRGAN_x4plus", project_root=root)
+    weights = resolve_first_party_sr(project_root=root).path
     device = torch.cuda.current_device()
     driver = subprocess.check_output(
         ["nvidia-smi", "--query-gpu=uuid,driver_version", "--format=csv,noheader"], text=True

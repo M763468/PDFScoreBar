@@ -55,6 +55,11 @@ A future service must choose its executing UID, trusted local mount, retention l
 retry/scheduling policy. Long-lived containers may already reuse their writable-layer cache;
 measure that separately from cross-container persistence. No deployment discovery is automatic.
 
+The local browser workspace reuses the v1 job and progress types, stores jobs
+on local disk, and routes correction operations to the selected package on
+the same loopback origin. A remote control plane still needs authenticated
+ownership checks, worker isolation, and its own retention and resource policy.
+
 ### 2.2 Current output and correction workflow
 
 The repository already has a real correction path; service-readiness must build on it instead of

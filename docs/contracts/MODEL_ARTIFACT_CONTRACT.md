@@ -62,65 +62,59 @@ version in cache.
   (`src/pipeline/steps/hybrid_consensus.py`). Settings that still name OMR-DLN fail explicitly;
   there is no fallback to the old weight.
 
-### Real-ESRGAN x4
+### First-party x4 SR (`pdfscorebar-sr-x4`)
 
-- logical model ID: `realesrgan-x4plus`
-- selected version: upstream release `v0.1.0`, asset `RealESRGAN_x4plus.pth`
-- provenance: official `xinntao/Real-ESRGAN` GitHub release; runtime package source is pinned
-  separately in the Dockerfile
-- integrity identity: selected release/asset plus SHA-256
-  `4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`
-- ownership: Docker image
-- host materialization: Docker build cache only; no canonical checkout-local copy required
-- container runtime: `/opt/pdfscore-assets/realesrgan/RealESRGAN_x4plus.pth`
-- resolver: `src.common.realesrgan_assets`
-- explicit override: `PDFSCORE_REALESRGAN_WEIGHTS_DIR` (legacy checkout fallback remains for
-  host development)
-- update procedure: change the selected upstream release/asset deliberately, record/verify the
-  new digest, rebuild the image, then run the Docker/GPU contract gates.
+- logical model ID: `pdfscorebar-sr-x4`
+- selected version/identity: `models/sr_x4/manifest.json` (`version`, `sha256`, `size_bytes`,
+  RRDBNet `num_feat`/`num_block`/`num_grow_ch`)
+- provenance: trained by PDFScoreBar from random initialization (Issue #533) with
+  `tools/issue533/train_sr.py` on procedural synthetic notation from
+  `tools/issue533/synth_score.py`; no pretrained weight, teacher model, score PDF, evaluation
+  image or ground truth. The manifest records the training command, seed, script hashes and
+  runtime.
+- network: the vendored Apache-2.0 RRDBNet (`src/third_party/realesrgan_sr`)
+- ownership: repository-tracked (like the MMR checkpoint); shipped in the distribution
+- container runtime: bind-mounted `/workspace/models/sr_x4/...`
+- resolver: `src.common.model_artifacts.resolve_first_party_sr`, which verifies SHA-256 before
+  every load; the runtime preflight and Docker build also verify it
+- explicit override: none
+- update procedure: train a new version with the tracked scripts, add it with a new manifest
+  `version`/`sha256`, and pass the Issue #533 Full68 gate against the current model before
+  switching. Bytes that do not match the manifest fail closed.
 
-### Real-ESRGAN x2
+x2 SR is not supported. The production dense route requires `sr_scale=4`.
 
-- logical model ID: `realesrgan-x2plus`
-- selected version: upstream release `v0.2.1`, asset `RealESRGAN_x2plus.pth`
-- provenance: official `xinntao/Real-ESRGAN` GitHub release; runtime package source is pinned
-  separately in the Dockerfile
-- integrity identity: selected release/asset plus SHA-256
-  `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`
-- ownership: Docker image
-- host materialization: Docker build cache only; no canonical checkout-local copy required
-- container runtime: `/opt/pdfscore-assets/realesrgan/RealESRGAN_x2plus.pth`
-- resolver: `src.common.realesrgan_assets`
-- explicit override: `PDFSCORE_REALESRGAN_WEIGHTS_DIR` (legacy checkout fallback remains for
-  host development)
-- update procedure: same version/provenance/digest rule as x4; rebuild and rerun Docker/GPU
-  validation after an intentional update.
-
-The Real-ESRGAN hashes above identify the currently selected upstream release bytes. Docker
-must fail the build if downloaded bytes no longer match these identities rather than accepting
-silent replacement.
+The Real-ESRGAN release weights (`RealESRGAN_x4plus` SHA-256
+`4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1`, `RealESRGAN_x2plus`
+`49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`) were used until Issue #533.
+They are no longer downloaded or selected. The manifest selects the current weights.
 
 ### Maintained HOMR runtime assets
 
-- logical model IDs: maintained HOMR segmentation plus transformer encoder/decoder (and HOMR
-  init-managed OCR assets)
+- logical model IDs: maintained HOMR segmentation (and HOMR's OCR assets). Since Issue #533 the
+  transformer encoder/decoder are not part of the runtime: PDFScoreBar uses only SegNet barlines and
+  masks, `HomrPredictor` skips HOMR's staff transcription, and the image does not contain the
+  transformer checkpoint (Run 426).
 - selected runtime version: HOMR source commit
   `457e7c6518a10ba755db2e60883419e56c4d7369`
-- selected GPU model identities at that commit:
+- selected GPU model identity at that commit:
   - segmentation: `segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16`
-  - transformer encoder: `encoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
-  - transformer decoder: `decoder_pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16`
 - provenance: upstream HOMR `onnx_checkpoints` GitHub release, selected by the pinned HOMR
-  source code and materialized with `python -m homr.main --init --gpu force`
-- upstream release-package SHA-256 identities:
-  - segmentation package: `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82`
-  - transformer encoder package: `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c`
-  - transformer decoder package: `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8`
+  source code and materialized by `docker/init_homr_segnet.py` (SegNet and OCR initialization
+  only; `homr.main --init` is not used because it also downloads the transformer)
+- integrity identities:
+  - segmentation package (upstream release): `8d05a37fe76829673bc9def0a7caf168e5860aa4d1a8f7ac1b6123aa69fe3d82`
+  - extracted segmentation ONNX (checked by the Docker build):
+    `60f495496cb41473c0521d0811d8f44b9d5cff892d287974a8aebb3eaee2fa83`
+  - historical, no longer shipped: transformer encoder package
+    `1390295d921a5e646a6405d23ca6a922a7dcefa97cb425317be84de5195fd49c`, decoder package
+    `0d21e347661c147b073a35c880cfc52c1ae71d40a990e5964e3736a595657ce8`
 - ownership: Docker image / pinned upstream HOMR runtime
 - host materialization: Docker build cache only
 - container runtime: HOMR package directories inside `/opt/venv_pipeline`; no `/workspace`
   dependency is allowed for canonical validation
-- resolver/materializer: HOMR's pinned `--init --gpu force` path during Docker build
+- resolver/materializer: `docker/init_homr_segnet.py` during Docker build; the build fails on a
+  SegNet hash mismatch or when a transformer ONNX checkpoint is present
 - explicit override: none for canonical runtime
 - update procedure: update the HOMR source pin deliberately, inventory the asset names and
   release digests selected by that commit, rebuild, probe ONNX CUDA provider, and run canonical

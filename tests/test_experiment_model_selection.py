@@ -228,10 +228,13 @@ def test_cpu_candidate_probe_does_not_hide_runtime_cuda(tmp_path, monkeypatch, c
     monkeypatch.setattr(runtime_contract, "runtime_fingerprint", lambda root: "matching")
     monkeypatch.setattr(runtime_contract, "_validate_production_provenance", lambda *args: None)
     monkeypatch.setattr(runtime_contract, "RUNTIME_MODULES", ())
+    monkeypatch.setattr(runtime_contract, "EXCLUDED_RUNTIME_MODULES", ())
     monkeypatch.setattr(
         model_artifacts,
-        "resolve_realesrgan_weight",
-        lambda *args, **kwargs: Path(cfg["cnn_model_path"]),
+        "resolve_first_party_sr",
+        lambda *args, **kwargs: SimpleNamespace(
+            model_id="pdfscorebar-sr-x4", version="test", path=Path(cfg["cnn_model_path"])
+        ),
     )
 
     monkeypatch.setattr(cnn_scoring, "validate_cnn_candidate", lambda *args: None)

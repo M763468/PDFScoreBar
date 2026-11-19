@@ -163,3 +163,64 @@ def test_interrupted_submission_and_exclusive_root(tmp_path: Path):
         ]
     finally:
         jobs.close()
+
+
+def test_corrupt_saved_jobs_do_not_break_listing_or_revisits(local_app):
+    jobs, origin, request, _, release = local_app
+    release.set()
+    headers = {
+        "Origin": origin,
+        "Content-Type": "application/pdf",
+        "X-PDF-Name": "score.pdf",
+        "X-PDF-Pages": "1",
+    }
+    status, body = request("POST", "/api/jobs", b"%PDF-good", headers)
+    assert status == 200
+    good = json.loads(body)["id"]
+    wait_until_finished(jobs)
+    good_result = (jobs.root / good / "result.json").read_bytes()
+    deep = b"[" * 100_000 + b"]" * 100_000
+    valid_metadata = b'{"filename":"saved.pdf","created_at":"2026-01-01T00:00:00Z"}'
+    bad_types = json.loads(good_result)
+    bad_types["pages"]["requested"] = "1"
+    corrupt = {
+        "job-" + "1" * 32: (b'{"filename":{},"created_at":{}}', None),
+        "job-" + "2" * 32: (b'{"filename":["x"],"created_at":5}', None),
+        "job-" + "3" * 32: (valid_metadata, json.dumps(bad_types).encode()),
+        "job-" + "4" * 32: (valid_metadata, deep),
+        "job-" + "5" * 32: (deep, deep),
+        "job-" + "6" * 32: (deep, None),
+    }
+    for job_id, (metadata, result) in corrupt.items():
+        atomic_bytes(jobs.uploads / job_id / "submission.json", metadata)
+        if result is not None:
+            atomic_bytes(jobs.root / job_id / "result.json", result)
+    saved = {path: path.read_bytes() for path in jobs.root.rglob("*.json")}
+
+    status, body = request("GET", "/api/jobs")
+    assert status == 200
+    listed = {job["id"]: job for job in json.loads(body)["jobs"]}
+    restarted = Jobs(jobs.root)
+    try:
+        assert {job["id"]: job for job in restarted.list()} == listed
+    finally:
+        restarted.close()
+    assert listed[good]["status"] == "succeeded"
+    assert listed[good]["pdf"] == f"/jobs/{good}/pdf"
+    for job_id in ("job-" + "1" * 32, "job-" + "2" * 32):
+        assert listed[job_id] == {
+            "id": job_id,
+            "filename": job_id,
+            "created_at": None,
+            "status": "interrupted",
+        }
+    for job_id in ("job-" + "3" * 32, "job-" + "4" * 32, "job-" + "5" * 32):
+        assert listed[job_id]["status"] == "failed"
+        assert listed[job_id]["error"] == {"code": "invalid_saved_result"}
+        assert "pdf" not in listed[job_id] and "review" not in listed[job_id]
+        assert request("GET", f"/jobs/{job_id}/pdf")[0] == 404
+    assert listed["job-" + "3" * 32]["filename"] == "saved.pdf"
+    assert listed["job-" + "5" * 32]["filename"] == "job-" + "5" * 32
+    assert "job-" + "6" * 32 not in listed
+    assert request("GET", f"/jobs/{good}/pdf") == (200, b"%PDF-good")
+    assert {path: path.read_bytes() for path in jobs.root.rglob("*.json")} == saved

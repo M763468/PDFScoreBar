@@ -114,10 +114,14 @@ class Jobs:
                 self.active.pop(job_id, None)
 
     def result(self, job_id: str) -> JobResult:
+        """Load a saved result; OSError or ValueError means it is missing or invalid."""
         if not JOB_ID.fullmatch(job_id):
             raise ValueError("Invalid job ID")
         path = package_path(self.root, f"{job_id}/result.json")
-        result = JobResult.from_json(path.read_text(encoding="utf-8"))
+        try:
+            result = JobResult.from_json(path.read_text(encoding="utf-8"))
+        except RecursionError as exc:
+            raise ValueError("Saved job result is nested too deeply") from exc
         if result.job_id != job_id:
             raise ValueError("Result belongs to a different job")
         return result
@@ -165,12 +169,15 @@ class Jobs:
                 metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
                 if not isinstance(metadata, dict):
                     raise ValueError("Invalid submission metadata")
-            except (OSError, ValueError):
+            except (OSError, ValueError, RecursionError):
                 metadata = {}
+            # Saved metadata is display-only; never let a bad field break the whole list.
+            filename = metadata.get("filename")
+            created_at = metadata.get("created_at")
             job = {
                 "id": job_id,
-                "filename": metadata.get("filename", job_id),
-                "created_at": metadata.get("created_at"),
+                "filename": filename if isinstance(filename, str) else job_id,
+                "created_at": created_at if isinstance(created_at, str) else None,
                 "status": "interrupted",
             }
             if job_id in active:

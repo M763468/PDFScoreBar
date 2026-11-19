@@ -215,7 +215,9 @@ class CorrectionApplication:
         try:
             review = attempt / "input_review"
             self.package.history.materialize(checkpoint, review)
-            payload = json.loads((review / "manual_correction_input.json").read_text())
+            payload = json.loads(
+                (review / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
             if not self.package.history.get(checkpoint).get("source_context"):
                 manifest = _resolve_source_manifest_path(payload, self.package.root)
                 payload["source_manifest"] = str(manifest)
@@ -304,9 +306,9 @@ class CorrectionApplication:
                     ),
                 }
                 summary_path = run / "review/correction_summary.json"
-                report = json.loads(summary_path.read_text())
+                report = json.loads(summary_path.read_text(encoding="utf-8"))
                 report["final_pdf"] = str(numbered.resolve())
-                summary_path.write_text(json.dumps(report, indent=2) + "\n")
+                summary_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
             summary = json.loads(
                 (run / "review" / "correction_summary.json").read_text(encoding="utf-8")
             )

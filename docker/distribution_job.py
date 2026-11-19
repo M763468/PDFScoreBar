@@ -94,7 +94,9 @@ def prepare_local_review(package: Path) -> str:
         "original_manifest": "manifest.json",
         "source_job_id": job_id,
     }
-    local.write_text(json.dumps(normalized, indent=2) + "\n", encoding="utf-8")
+    # These files are written with LF on every platform, so a review prepared on Windows
+    # has the same bytes (and digests) as on Linux (#535).
+    local.write_text(json.dumps(normalized, indent=2) + "\n", encoding="utf-8", newline="\n")
     payload["source_manifest"] = "../" + local.relative_to(package).as_posix()
     if not (isinstance(payload.get("output_name"), str) and payload["output_name"].strip()):
         final_dir = package / "final"
@@ -117,7 +119,9 @@ def prepare_local_review(package: Path) -> str:
                     and recovered_name.lower() != "score"
                 ):
                     payload["output_name"] = recovered_name
-    handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    handoff.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
     sha = hashlib.sha256(handoff.read_bytes()).hexdigest()
     result_path = package / "result.json"
     if result_path.is_file():
@@ -125,7 +129,7 @@ def prepare_local_review(package: Path) -> str:
         for artifact in result["artifacts"]:
             if artifact["reference"] == "review/manual_correction_input.json":
                 artifact["sha256"] = sha
-        result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8", newline="\n")
     return sha
 
 

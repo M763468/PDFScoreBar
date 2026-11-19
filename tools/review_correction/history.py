@@ -209,7 +209,7 @@ class CheckpointStore:
 
     def _source_context(self, package=None):
         package = package or self.package
-        payload = json.loads(package.handoff_path.read_text())
+        payload = json.loads(package.handoff_path.read_text(encoding="utf-8"))
         path = _resolve_source_manifest_path(payload, package.root)
         if not path.is_file():
             return None
@@ -332,7 +332,7 @@ class CheckpointStore:
         path = directory / "checkpoint.json"
         if directory.is_symlink() or path.is_symlink():
             raise ValueError("Checkpoint must not use symlinks")
-        value = json.loads(path.read_text())
+        value = json.loads(path.read_text(encoding="utf-8"))
         schema = value.get("schema_version")
         if type(schema) is not int or schema not in (1, CHECKPOINT_SCHEMA_VERSION):
             raise ValueError("Unsupported checkpoint schema")
@@ -408,7 +408,9 @@ class CheckpointStore:
             if context.get("source_pdf"):
                 (retained / "source.pdf").write_bytes(self.blob(context["source_pdf"]))
             (retained / "manifest.json").write_bytes(encoded(manifest))
-            handoff = json.loads((review / "manual_correction_input.json").read_text())
+            handoff = json.loads(
+                (review / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
             handoff.pop("source_artifact_root", None)
             handoff["source_manifest"] = "../retained/manifest.json"
             (review / "manual_correction_input.json").write_bytes(encoded(handoff))
@@ -423,7 +425,7 @@ class CheckpointStore:
             raise ValueError("Application record must not be a symlink")
         if value is not None:
             atomic_bytes(path, encoded({"schema_version": 1, **value}))
-        result = json.loads(path.read_text())
+        result = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(result, dict) or result.get("schema_version") != 1:
             raise ValueError("Invalid application history record")
         return result

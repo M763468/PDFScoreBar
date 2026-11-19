@@ -110,3 +110,63 @@ def test_owned_call_reaps_descendants_left_by_the_child(tmp_path: Path, monkeypa
     assert launcher.owned_call(command, dict(os.environ)) == 0
     grandchild = _grandchild_pid(pid_file)
     assert _wait_for(lambda: not _alive(grandchild))
+
+
+# --- review checkpoints after the job folder moved ---------------------------------
+
+
+def _moved_job(tmp_path: Path):
+    """A job moved from old/<job> to new/<job>, with a checkpoint dependency recorded
+    at the old absolute path."""
+
+    job = tmp_path / "new" / JOB
+    retained = job / ".engine-retained" / "runs" / JOB / "intermediate" / "page_001"
+    retained.mkdir(parents=True)
+    (job / "review").mkdir()
+    dependency = retained / "numbering_base.json"
+    dependency.write_bytes(b'{"pages": []}')
+    old = str(tmp_path / "old" / JOB / ".engine-retained" / "runs" / JOB)
+    recorded = os.path.join(old, "intermediate", "page_001", "numbering_base.json")
+    return job, dependency, recorded
+
+
+def _store(job: Path, recorded: str, expected: str):
+    from types import SimpleNamespace
+
+    from tools.review_correction.history import CheckpointStore
+
+    store = CheckpointStore(SimpleNamespace(root=job / "review"))
+    store.get = lambda _id: {"source_context": {"dependencies": {recorded: expected}}}
+    return store
+
+
+def test_checkpoint_dependencies_follow_a_moved_job(tmp_path: Path) -> None:
+    from tools.review_correction.history import digest
+
+    job, dependency, recorded = _moved_job(tmp_path)
+    store = _store(job, recorded, digest(dependency.read_bytes()))
+    assert store.validate_dependencies("cp")["source_context"]
+    manifest = store._relocated_context_manifest({"pages": [{"numbering": recorded}]})
+    assert manifest == {"pages": [{"numbering": str(dependency)}]}
+
+
+def test_moved_checkpoint_dependencies_still_need_identical_bytes(tmp_path: Path) -> None:
+    job, _dependency, recorded = _moved_job(tmp_path)
+    store = _store(job, recorded, "0" * 64)
+    with pytest.raises(ValueError, match="Retained source dependency"):
+        store.validate_dependencies("cp")
+
+
+@pytest.mark.parametrize(
+    "recorded",
+    [
+        "/elsewhere/other-job/.engine-retained/runs/job-ffffffffffff/x.json",  # another job
+        "/elsewhere/{job}/.engine-retained/runs/{job}/../../../../secret.json",  # escape
+        "/elsewhere/{job}/not-retained/x.json",  # outside the retained layout
+    ],
+)
+def test_rebase_only_maps_this_jobs_retained_layout(tmp_path: Path, recorded: str) -> None:
+    from tools.review_correction.history import rebase_retained_path
+
+    job, _dependency, _recorded = _moved_job(tmp_path)
+    assert rebase_retained_path(recorded.format(job=JOB), job) is None

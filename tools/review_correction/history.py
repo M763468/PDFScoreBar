@@ -19,6 +19,10 @@ from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
 CHECKPOINT_ID = re.compile(r"cp_[0-9a-f]{64}\Z")
 CHECKPOINT_SCHEMA_VERSION = 2
 IDENTITY_VERSION = 2
+# Separators of recorded retained references: a Windows-native engine writes a
+# backslash (#535); on POSIX a backslash is an ordinary file-name character.
+_PATH_SEPARATORS = ("/", "\\") if os.name == "nt" else ("/",)
+_SPLIT_PATH = re.compile(r"[\\/]+" if os.name == "nt" else r"/+")
 
 
 def digest(data):
@@ -64,6 +68,39 @@ def atomic_bytes(path, data):
             os.unlink(temporary)
 
 
+def retained_job_root(package_root):
+    """The engine job folder that holds this review package's retained run, if any."""
+    job = Path(package_root).parent
+    if (job / ".engine-retained" / "runs" / job.name).is_dir():
+        return job
+    return None
+
+
+def rebase_retained_path(value, job_root):
+    """Resolve a path recorded inside a retained job below ``job_root`` (#535).
+
+    A portable job folder can be moved (or a whole Windows portable folder), which
+    changes the absolute prefix of every recorded retained reference. Only references to
+    this job's own ``.engine-retained/runs/<job>`` layout are rebased, either separator
+    is accepted, and the target must stay inside the job. Callers still compare content
+    digests, so a rebased reference is only accepted with identical bytes.
+    """
+    if job_root is None or not isinstance(value, str):
+        return None
+    parts = [part for part in _SPLIT_PATH.split(value) if part]
+    job_root = Path(job_root)
+    for index in range(len(parts) - 2):
+        if parts[index : index + 3] == [".engine-retained", "runs", job_root.name]:
+            rest = parts[index:]
+            if any(part in {".", ".."} for part in rest):
+                return None
+            target = job_root.joinpath(*rest)
+            if not target.resolve().is_relative_to(job_root.resolve()):
+                return None
+            return target
+    return None
+
+
 def relocate_manifest(data, manifest_path):
     """Only the retained engine-job layout permits a fixed-prefix relocation."""
     actual = manifest_path.parent.resolve()
@@ -73,12 +110,13 @@ def relocate_manifest(data, manifest_path):
     if not declared.is_absolute() or declared.parts[-3:] != actual.parts[-3:]:
         raise ValueError("Retained source layout does not match its manifest")
     old_root, new_root = declared.parents[2], actual.parents[2]
-
     def convert(value):
         if isinstance(value, str) and (
-            value == str(old_root) or value.startswith(str(old_root) + "/")
+            value == str(old_root)
+            or any(value.startswith(str(old_root) + s) for s in _PATH_SEPARATORS)
         ):
-            target = new_root / value[len(str(old_root)) :].lstrip("/")
+            rest = [part for part in _SPLIT_PATH.split(value[len(str(old_root)) :]) if part]
+            target = new_root.joinpath(*rest)
             if not target.resolve().is_relative_to(new_root):
                 raise ValueError("Retained reference escaped job root")
             return str(target)
@@ -374,14 +412,39 @@ class CheckpointStore:
             )
         return sorted(result, key=lambda item: item["created_at"])
 
+    def _dependency_path(self, recorded):
+        source = Path(recorded)
+        if source.is_file():
+            return source
+        # The job (or portable folder) may have moved since the checkpoint (#535).
+        return rebase_retained_path(recorded, retained_job_root(self.package.root)) or source
+
     def validate_dependencies(self, checkpoint):
         value = self.get(checkpoint)
         context = value.get("source_context") or {}
         for path, expected in context.get("dependencies", {}).items():
-            source = Path(path)
+            source = self._dependency_path(path)
             if not source.is_file() or digest(source.read_bytes()) != expected:
                 raise ValueError("Retained source dependency changed or is unavailable")
         return value
+
+    def _relocated_context_manifest(self, manifest):
+        """Rebase retained references that no longer exist after the job moved (#535)."""
+        job_root = retained_job_root(self.package.root)
+        if job_root is None:
+            return manifest
+
+        def convert(value):
+            if isinstance(value, dict):
+                return {key: convert(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [convert(item) for item in value]
+            if isinstance(value, str) and Path(value).is_absolute() and not Path(value).exists():
+                target = rebase_retained_path(value, job_root)
+                return str(target) if target is not None else value
+            return value
+
+        return convert(manifest)
 
     def materialize(self, checkpoint, review):
         value = self.validate_dependencies(checkpoint)
@@ -395,7 +458,7 @@ class CheckpointStore:
         if context:
             retained = review.parent / "retained"
             retained.mkdir()
-            manifest = deepcopy(context["manifest"])
+            manifest = self._relocated_context_manifest(deepcopy(context["manifest"]))
             for page_id, ref in context["bases"].items():
                 path = package_path(retained, f"intermediate/{page_id}/numbering_base.json")
                 path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PDFScoreBar</title>
+  <style>
+    :root { color-scheme: light; font: 16px system-ui, sans-serif; color: #18243c; background: #f3f5f8; }
+    body { max-width: 48rem; margin: auto; padding: 2rem 1rem; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    h1 { margin: .25rem 0 1rem; font-size: 2rem; }
+    h2 { margin: 0 0 1rem; font-size: 1.25rem; }
+    section { background: white; padding: 1.4rem; margin: .6rem 0 1.3rem; border: 1px solid #d6dce6; border-radius: .7rem; }
+    form { display: grid; gap: .8rem; justify-items: start; }
+    label { display: grid; gap: .35rem; }
+    input, button { font: inherit; }
+    input[type=text] { padding: .45rem; border: 1px solid #8995ac; border-radius: .25rem; }
+    input[type=file] { max-width: 100%; }
+    button { padding: .5rem .85rem; cursor: pointer; color: #fff; background: #214f91; border: 1px solid transparent; border-radius: .3rem; }
+    button:disabled { opacity: .55; }
+    #language { color: #214f91; background: white; border-color: #a4b5cc; }
+    #jobs { padding: 0; margin: 0; list-style: none; }
+    #jobs li + li { border-top: 1px solid #d6dce6; margin-top: 1rem; padding-top: 1rem; }
+    #jobs strong, #jobs small { overflow-wrap: anywhere; display: block; }
+    #jobs a { color: #174784; margin-right: 1rem; display: inline-block; }
+    p { margin: .4rem 0; }
+    [role=alert] { color: #902c24; }
+  </style>
+</head>
+<body>
+  <header><h1>PDFScoreBar</h1><button id="language" type="button">日本語</button></header>
+  <main>
+    <section>
+      <h2 data-copy="submitTitle">Number a PDF</h2>
+      <form id="submit-job">
+        <label><span data-copy="file">Score PDF</span><input id="pdf" type="file" accept=".pdf,application/pdf" required></label>
+        <label><span data-copy="pages">Pages (optional)</span><input id="pages" type="text" placeholder="1, 2, 5" aria-describedby="pages-help"></label>
+        <small id="pages-help" data-copy="pagesHelp">Separate page numbers with commas. Leave blank for all pages.</small>
+        <button id="start" data-copy="start">Start numbering</button>
+      </form>
+      <p id="submission-status" role="status"></p>
+      <p id="submission-error" role="alert"></p>
+    </section>
+    <section>
+      <h2 data-copy="jobsTitle">Jobs</h2>
+      <p id="list-error" role="alert"></p>
+      <p id="no-jobs" data-copy="empty" hidden>No submitted jobs.</p>
+      <ul id="jobs"></ul>
+    </section>
+  </main>
+  <script src="./jobs.js" defer></script>
+</body>
+</html>

@@ -796,6 +796,7 @@
       "tests/test_detection_config.py",
       "tests/test_detector_input_contract.py",
       "tests/test_detector_orchestrator_input_contract.py",
+      "tests/test_browser_jobs.py",
       "tests/test_distribution_surface.py",
       "tests/test_engine_contract.py",
       "tests/test_engine_input_safety.py",
@@ -916,6 +917,22 @@
     {
       "pattern": "tools/review_correction/correction_state.js",
       "role": "Supported package-bound correction English/Japanese browser UI asset"
+    },
+    {
+      "pattern": "tools/browser_jobs/jobs.py",
+      "role": "Local v1 job and result adapter"
+    },
+    {
+      "pattern": "tools/browser_jobs/server.py",
+      "role": "Loopback job server and package-bound correction routing"
+    },
+    {
+      "pattern": "tools/browser_jobs/index.html",
+      "role": "Browser job launcher"
+    },
+    {
+      "pattern": "tools/browser_jobs/jobs.js",
+      "role": "English and Japanese job launcher client"
     },
     {
       "pattern": "docker/distribution.py",

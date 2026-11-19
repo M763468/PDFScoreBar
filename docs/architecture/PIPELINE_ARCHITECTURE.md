@@ -18,6 +18,11 @@ Three cooperating parts perform this work:
 
 Here a **staff** is a set of horizontal music lines, a **system** is the group of staves aligned on one row of the page, and a **measure** is a musical interval between consecutive barlines (including the boundaries at a system's edges).
 
+The local Docker distribution also offers a loopback browser workspace through
+`docker/distribution.py serve`. Uploads and job history live under the selected
+results root. The workspace passes one job at a time to the v1 engine adapter
+and opens the existing correction application under the job's URL.
+
 ## 2. Component and data flow
 
 HOMR is the music-recognition system used here to detect score features.

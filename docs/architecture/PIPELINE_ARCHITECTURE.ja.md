@@ -1,11 +1,11 @@
 # 現行パイプラインのアーキテクチャ
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"9b9026df7f0ced31415f8db674c736b5e13c7bf4f0ef186f8a8328c5d33cb635"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE.md","source":{"sha256":"0e1c63395d6dcafda40cd087a7ca723f85b04483dcc0a5b8224a953cd5a65057"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE.md)
 
 - 原文: [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md)（英語正本）
-- 翻訳元: same PR。原文SHA-256: `14cc69331ca019fd4fb5532b9521d2ced07e1a7696383aa1ad8c67851e5af5d2`
+- 翻訳元: same PR。原文SHA-256: `0e1c63395d6dcafda40cd087a7ca723f85b04483dcc0a5b8224a953cd5a65057`
 - 状態: `reviewed`。2026-10-29、利用者による読みやすさの確認と、実装照合・Argon独立レビューの結果を踏まえた概要版。
 
 2026-10-31、SR cacheと最小配布に関する追記をCodexが英語正本と対照し、意味・制約・日本語の読みやすさを確認した。
@@ -25,6 +25,10 @@ PDFScoreBarは、楽譜のPDF（または保存済みのページ画像）を読
 | 最終番号付けとレビュー | 認識結果と利用者の訂正を反映すると、小節番号はどうなるか | 最終小節番号と、設定に応じた確認・出力用の成果物 |
 
 **譜表**は五線などの音楽を記す横線のまとまり、**段（system）**はページの同じ高さに並び同時に演奏される譜表のまとまり、**小節**は隣り合う小節線の間の音楽上の区間である。段の左右端も小節の境界になる。
+
+ローカルの Docker 配布では、`docker/distribution.py serve` でブラウザから操作できます。
+投入したPDFとジョブ履歴は指定した結果フォルダーに保存します。
+入口は1件ずつ v1 エンジンアダプターに渡し、ジョブ固有の URL で既存の補正GUIを開きます。
 
 ## 2. コンポーネントとデータの流れ
 

@@ -1,10 +1,11 @@
 /* History and uploaded-PDF resume are bound to the active local review package. */
 (() => {
   const session = new URLSearchParams(location.search).get("session");
+  const mounted = /^\/jobs\/job-[0-9a-f]{12,32}\/review\/$/.test(location.pathname);
   window.reviewURL = (url) => {
-    if (!session) return url;
-    const result = new URL(url, location.href);
-    result.searchParams.set("session", session);
+    if (!session && !mounted) return url;
+    const result = new URL(mounted ? "." + url : url, location.href);
+    if (session) result.searchParams.set("session", session);
     return result.pathname + result.search;
   };
   const originalFetch = window.fetch.bind(window);
@@ -91,7 +92,7 @@
         binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
       }
       const result = await request("/api/resume", {checkpoint_id: item.id, pdf_base64: btoa(binary)});
-      location.assign(result.url);
+      location.assign(mounted ? "." + result.url : result.url);
     });
     panel.addEventListener("toggle", () => {
       if (panel.open) refresh().catch(error => { status.textContent = error.message; });

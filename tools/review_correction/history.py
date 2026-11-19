@@ -110,6 +110,7 @@ def relocate_manifest(data, manifest_path):
     if not declared.is_absolute() or declared.parts[-3:] != actual.parts[-3:]:
         raise ValueError("Retained source layout does not match its manifest")
     old_root, new_root = declared.parents[2], actual.parents[2]
+
     def convert(value):
         if isinstance(value, str) and (
             value == str(old_root)

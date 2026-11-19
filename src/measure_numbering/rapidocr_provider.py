@@ -59,7 +59,9 @@ def _get_providers_from_obj(obj: Any, visited: Optional[set[int]] = None) -> Opt
         except Exception as exc:
             logger.debug("Unable to inspect RapidOCR providers: %s", exc)
             return None
-    for attr_name in ("session", "sess", "net", "model"):
+    # rapidocr_onnxruntime keeps the det/cls ONNX sessions under ``infer``
+    # (OrtInferSession.session); without it only recognition was ever inspected.
+    for attr_name in ("session", "sess", "net", "model", "infer"):
         nested = getattr(obj, attr_name, None)
         if nested is obj:
             continue
@@ -108,6 +110,25 @@ def providers_include_cuda(providers: Dict[str, List[str]]) -> bool:
     return any("CUDAExecutionProvider" in provider_list for provider_list in providers.values())
 
 
+# The text detection, direction classification and recognition sessions MMR uses.
+RAPIDOCR_COMPONENTS = ("text_det", "text_cls", "text_rec")
+
+
+def providers_all_cuda(ocr_engine: Any, providers: Dict[str, List[str]]) -> bool:
+    """True only if every OCR component present on the engine has a CUDA session.
+
+    ``providers_include_cuda`` accepts a single CUDA session, so CUDA detection with
+    CPU-only recognition would pass; the strict (fail-closed) check needs all of them.
+    """
+
+    expected = [name for name in RAPIDOCR_COMPONENTS if getattr(ocr_engine, name, None)]
+    if not expected or not providers:
+        return False
+    if any(name not in providers for name in expected):
+        return False
+    return all("CUDAExecutionProvider" in provider_list for provider_list in providers.values())
+
+
 REQUIRE_CUDA_ORT_ENV = "PDFSCORE_REQUIRE_CUDA_ORT"
 
 
@@ -135,13 +156,15 @@ def create_mmr_rapidocr(provider: str = RAPIDOCR_PROVIDER_AUTO) -> RapidOCR:
     logger.info("Initializing MMR RapidOCR with CUDA provider preference (mode=%s).", provider_mode)
     ocr_engine = RapidOCR(det_use_cuda=True, cls_use_cuda=True, rec_use_cuda=True)
     providers = collect_rapidocr_providers(ocr_engine)
+    if strict and not providers_all_cuda(ocr_engine, providers):
+        expected = [name for name in RAPIDOCR_COMPONENTS if getattr(ocr_engine, name, None)]
+        raise RuntimeError(
+            "MMR RapidOCR requested CUDA but not every OCR session is on "
+            f"CUDAExecutionProvider ({REQUIRE_CUDA_ORT_ENV}=1); expected={expected}, "
+            f"providers={providers or '<unavailable>'}"
+        )
     if providers_include_cuda(providers):
         logger.info("MMR RapidOCR providers: %s", providers)
-    elif strict:
-        raise RuntimeError(
-            "MMR RapidOCR requested CUDA but its sessions are not on CUDAExecutionProvider "
-            f"({REQUIRE_CUDA_ORT_ENV}=1); providers={providers or '<unavailable>'}"
-        )
     else:
         logger.warning(
             "MMR RapidOCR CUDA provider was requested but CUDAExecutionProvider was not confirmed; "

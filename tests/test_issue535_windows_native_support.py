@@ -486,30 +486,81 @@ def test_cuda_session_records_fail_closed_on_cpu_fallback() -> None:
     validate_cuda_sessions(records, use_gpu_inference=False, ort=FakeOrt)
 
 
-def test_rapidocr_cpu_fallback_is_fatal_only_in_strict_mode(monkeypatch, caplog) -> None:
+def _fake_rapidocr(monkeypatch, providers):
     from src.measure_numbering import rapidocr_provider
 
     class FakeRapidOCR:
         def __init__(self, **_kwargs):
-            pass
+            self.text_det = self.text_cls = self.text_rec = object()
 
     monkeypatch.setattr(rapidocr_provider, "RapidOCR", FakeRapidOCR)
-    monkeypatch.setattr(
-        rapidocr_provider,
-        "collect_rapidocr_providers",
-        lambda _engine: {"det": ["CPUExecutionProvider"]},
-    )
+    monkeypatch.setattr(rapidocr_provider, "collect_rapidocr_providers", lambda _e: providers)
     monkeypatch.setattr(rapidocr_provider, "onnxruntime_has_cuda_provider", lambda: True)
+    return rapidocr_provider, FakeRapidOCR
+
+
+def test_rapidocr_cpu_fallback_is_fatal_only_in_strict_mode(monkeypatch, caplog) -> None:
+    rapidocr_provider, fake = _fake_rapidocr(monkeypatch, {"text_det": ["CPUExecutionProvider"]})
 
     monkeypatch.delenv("PDFSCORE_REQUIRE_CUDA_ORT", raising=False)
-    assert isinstance(rapidocr_provider.create_mmr_rapidocr("auto"), FakeRapidOCR)
+    assert isinstance(rapidocr_provider.create_mmr_rapidocr("auto"), fake)
 
     monkeypatch.setenv("PDFSCORE_REQUIRE_CUDA_ORT", "1")
-    with pytest.raises(RuntimeError, match="not on CUDAExecutionProvider"):
+    with pytest.raises(RuntimeError, match="not every OCR session"):
         rapidocr_provider.create_mmr_rapidocr("auto")
     monkeypatch.setattr(rapidocr_provider, "onnxruntime_has_cuda_provider", lambda: False)
-    with pytest.raises(RuntimeError, match="not on CUDAExecutionProvider"):
+    with pytest.raises(RuntimeError, match="not every OCR session"):
         rapidocr_provider.create_mmr_rapidocr("auto")
+
+
+CUDA = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+
+
+@pytest.mark.parametrize(
+    "providers",
+    [
+        # One CUDA session must not vouch for the others (any() bypass).
+        {"text_det": CUDA, "text_cls": CUDA, "text_rec": ["CPUExecutionProvider"]},
+        # A component whose session could not be inspected is not confirmed.
+        {"text_det": CUDA, "text_rec": CUDA},
+    ],
+)
+def test_strict_rapidocr_needs_cuda_for_every_component(monkeypatch, providers) -> None:
+    rapidocr_provider, _fake = _fake_rapidocr(monkeypatch, providers)
+    monkeypatch.setenv("PDFSCORE_REQUIRE_CUDA_ORT", "1")
+    with pytest.raises(RuntimeError, match="not every OCR session"):
+        rapidocr_provider.create_mmr_rapidocr("auto")
+
+
+def test_strict_rapidocr_accepts_all_cuda_components(monkeypatch) -> None:
+    providers = {"text_det": CUDA, "text_cls": CUDA, "text_rec": CUDA}
+    rapidocr_provider, fake = _fake_rapidocr(monkeypatch, providers)
+    monkeypatch.setenv("PDFSCORE_REQUIRE_CUDA_ORT", "1")
+    assert isinstance(rapidocr_provider.create_mmr_rapidocr("auto"), fake)
+
+
+def test_provider_collection_reaches_sessions_under_infer() -> None:
+    from types import SimpleNamespace
+
+    from src.measure_numbering.rapidocr_provider import collect_rapidocr_providers
+
+    class Session:
+        def __init__(self, providers):
+            self._providers = providers
+
+        def get_providers(self):
+            return self._providers
+
+    engine = SimpleNamespace(
+        text_det=SimpleNamespace(infer=SimpleNamespace(session=Session(CUDA))),
+        text_cls=SimpleNamespace(infer=SimpleNamespace(session=Session(["CPUExecutionProvider"]))),
+        text_rec=SimpleNamespace(session=Session(CUDA)),
+    )
+    assert collect_rapidocr_providers(engine) == {
+        "text_det": CUDA,
+        "text_cls": ["CPUExecutionProvider"],
+        "text_rec": CUDA,
+    }
 
 
 @windows_only

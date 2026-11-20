@@ -183,3 +183,12 @@ def test_review_and_browser_servers_refuse_a_port_in_use(server_name: str) -> No
         # On Windows SO_REUSEADDR used to let a second server share the port (#535).
         with pytest.raises(OSError):
             server_class(("127.0.0.1", first.server_port), BaseHTTPRequestHandler)
+
+
+def test_rebase_covers_the_retained_detector_output(tmp_path: Path) -> None:
+    from tools.review_correction.history import rebase_retained_path
+
+    # Windows retains detector output under .engine-retained/h/<job> (short work root).
+    job = tmp_path / "new" / JOB
+    old = os.path.join(str(tmp_path / "old"), JOB, ".engine-retained", "h", JOB, "mask.png")
+    assert rebase_retained_path(old, job) == job / ".engine-retained" / "h" / JOB / "mask.png"

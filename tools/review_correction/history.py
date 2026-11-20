@@ -80,18 +80,19 @@ def rebase_retained_path(value, job_root):
     """Resolve a path recorded inside a retained job below ``job_root`` (#535).
 
     A portable job folder can be moved (or a whole Windows portable folder), which
-    changes the absolute prefix of every recorded retained reference. Only references to
-    this job's own ``.engine-retained/runs/<job>`` layout are rebased, either separator
-    is accepted, and the target must stay inside the job. Callers still compare content
-    digests, so a rebased reference is only accepted with identical bytes.
+    changes the absolute prefix of every recorded retained reference. Only references
+    below this job's own ``<job>/.engine-retained/`` (the retained run and the retained
+    detector output, e.g. ``.engine-retained/h/<job>`` on Windows) are rebased, the
+    platform's separators are accepted, and the target must stay inside the job. Callers
+    still compare content digests, so a rebased reference needs identical bytes.
     """
     if job_root is None or not isinstance(value, str):
         return None
     parts = [part for part in _SPLIT_PATH.split(value) if part]
     job_root = Path(job_root)
     for index in range(len(parts) - 2):
-        if parts[index : index + 3] == [".engine-retained", "runs", job_root.name]:
-            rest = parts[index:]
+        if parts[index : index + 2] == [job_root.name, ".engine-retained"]:
+            rest = parts[index + 1 :]
             if any(part in {".", ".."} for part in rest):
                 return None
             target = job_root.joinpath(*rest)

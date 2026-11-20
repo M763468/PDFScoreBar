@@ -83,9 +83,10 @@ PDFs and checkpoints move with the jobs.
 
 ## Not covered / known limits
 
-* Validated on one machine (Windows 11 Pro, RTX 4060 8 GB, driver 621.14). A clean
-  machine, other GPUs/drivers, antivirus/SmartScreen behaviour and code signing are not
-  validated (see the PR for the exact record).
+* Validated on the maintainer's machine (Windows 11 Pro, RTX 4060 8 GB, driver 621.14),
+  including moving the folder between drives. A separate clean test machine is not part
+  of the plan: other machines, GPUs/drivers, antivirus/SmartScreen behaviour and code
+  signing are covered by the trial users under Issue #508.
 * The opt-in trusted SR compiler cache (`PDFSCORE_SR_COMPILER_CACHE`) is Linux-only and
   refuses to run on Windows.
 * Bounding boxes can differ by 1–2 px from the Linux image (different CUDA/cuDNN build);

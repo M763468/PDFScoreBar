@@ -170,3 +170,16 @@ def test_rebase_only_maps_this_jobs_retained_layout(tmp_path: Path, recorded: st
 
     job, _dependency, _recorded = _moved_job(tmp_path)
     assert rebase_retained_path(recorded.format(job=JOB), job) is None
+
+
+@pytest.mark.parametrize("server_name", ["LocalHTTPServer", "LocalThreadingHTTPServer"])
+def test_review_and_browser_servers_refuse_a_port_in_use(server_name: str) -> None:
+    from http.server import BaseHTTPRequestHandler
+
+    from tools.review_correction import server as review_server
+
+    server_class = getattr(review_server, server_name)
+    with server_class(("127.0.0.1", 0), BaseHTTPRequestHandler) as first:
+        # On Windows SO_REUSEADDR used to let a second server share the port (#535).
+        with pytest.raises(OSError):
+            server_class(("127.0.0.1", first.server_port), BaseHTTPRequestHandler)

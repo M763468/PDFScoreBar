@@ -17,7 +17,12 @@ from test_review_correction_state import _recorded, _state
 
 from src.pipeline.review.final_output import _derive_output_name
 from tools.review_correction import application
-from tools.review_correction.history import digest, encoded
+from tools.review_correction.history import (
+    CHECKPOINT_SCHEMA_VERSION,
+    IDENTITY_VERSION,
+    digest,
+    encoded,
+)
 from tools.review_correction.legacy import import_attempt, list_attempts
 from tools.review_correction.resume import create_session
 from tools.review_correction.server import ReviewPackage
@@ -118,7 +123,7 @@ def test_output_name_alone_does_not_change_identity_v2(tmp_path, name):
     handoff = root / HANDOFF
     before = state.capture_identity()
     before_v1 = state.capture_identity(version=1)
-    assert before["identity_version"] == 2
+    assert before["identity_version"] == IDENTITY_VERSION
     _rewrite(handoff, output_name=name)
     assert state.capture_identity() == before
     assert state.capture_identity(version=1) != before_v1
@@ -175,7 +180,7 @@ def test_v2_result_stays_current_across_names_but_not_real_changes(tmp_path, mon
     _apply(app, monkeypatch)
     state = app.package.state
     applied = state.snapshot()["package"]["last_successful_result"]
-    assert applied["identity_version"] == 2
+    assert applied["identity_version"] == IDENTITY_VERSION
     _rewrite(app.handoff, output_name="Renamed")
     package = state.snapshot()["package"]
     assert package["current_result"] == applied
@@ -215,7 +220,7 @@ def test_v1_result_matches_only_byte_identical_handoff(tmp_path):
 @pytest.mark.parametrize(
     "recorded",
     [
-        {"identity_version": 3, "identity": "x"},
+        {"identity_version": 4, "identity": "x"},
         {"identity_version": "2", "identity": "x"},
         {"identity_version": None, "identity": "x"},
         {
@@ -277,8 +282,8 @@ def test_v1_and_v2_checkpoints_coexist_with_explicit_reuse_rule(tmp_path):
     upgraded = _checkpoint(package)
     assert upgraded != existing
     value = package.history.get(upgraded)
-    assert value["schema_version"] == 2
-    assert value["identity"]["identity_version"] == 2
+    assert value["schema_version"] == CHECKPOINT_SCHEMA_VERSION
+    assert value["identity"]["identity_version"] == IDENTITY_VERSION
     assert (
         value["identity"]["corrections_identity"]
         == (package.history.get(existing)["identity"]["corrections_identity"])
@@ -323,9 +328,9 @@ def test_checkpoint_keeps_complete_handoff_and_reuse_keeps_its_name(tmp_path):
 @pytest.mark.parametrize(
     ("tamper", "message"),
     [
-        (lambda v: v.update(schema_version=3), "Unsupported checkpoint schema"),
+        (lambda v: v.update(schema_version=4), "Unsupported checkpoint schema"),
         (lambda v: v.update(schema_version="2"), "Unsupported checkpoint schema"),
-        (lambda v: v["identity"].update(identity_version=3), "Unsupported identity version"),
+        (lambda v: v["identity"].update(identity_version=4), "Unsupported identity version"),
         (lambda v: v["identity"].update(identity="0" * 64), "inconsistent"),
         (lambda v: v["identity"].pop("identity_version"), "does not match its schema"),
         (lambda v: v.update(schema_version=1), "does not match its schema"),
@@ -389,7 +394,7 @@ def test_apply_on_an_existing_schema1_checkpoint_succeeds(tmp_path, monkeypatch)
     _apply(app, monkeypatch)
     record = app.package.history.list_applications()[0]
     assert record["checkpoint_id"] == existing
-    assert record["identity"]["identity_version"] == 2
+    assert record["identity"]["identity_version"] == IDENTITY_VERSION
     assert app.package.state.snapshot()["package"]["current_result"] is not None
     # A saved post-checkpoint attempt is still not treated as a legacy attempt.
     assert list_attempts(app.package) == []
@@ -415,8 +420,8 @@ def test_legacy_import_keeps_v1_origin_and_writes_a_v2_checkpoint(tmp_path):
     with package.history.transaction():
         checkpoint = import_attempt(package, attempt.name)
     value = package.history.get(checkpoint)
-    assert value["schema_version"] == 2
-    assert value["identity"]["identity_version"] == 2
+    assert value["schema_version"] == CHECKPOINT_SCHEMA_VERSION
+    assert value["identity"]["identity_version"] == IDENTITY_VERSION
     assert value["origin"]["original_identity"] == identity
     assert value["identity"]["corrections_identity"] == identity["corrections_identity"]
     assert package.state.snapshot()["package"]["last_successful_result"] is None
@@ -445,7 +450,7 @@ def test_resume_pdf_checks_are_not_relaxed_for_either_schema(tmp_path):
     schema1 = _schema1_checkpoint(package)
     _set_job_output_name(package.handoff_path, "Renamed")
     schema2 = _checkpoint(package)
-    assert package.history.get(schema2)["schema_version"] == 2
+    assert package.history.get(schema2)["schema_version"] == CHECKPOINT_SCHEMA_VERSION
     with fitz.open() as doc:
         doc.new_page(width=200, height=260).draw_circle((100, 100), 40)
         unknown = doc.tobytes()

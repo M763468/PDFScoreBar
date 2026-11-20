@@ -6,13 +6,17 @@ import json
 import re
 import shutil
 import uuid
-from pathlib import Path
 
 import fitz
 from PIL import Image
 
 from src.pipeline.review.number_layer import strip_returned_layer
-from tools.review_correction.history import digest, encoded, package_path
+from tools.review_correction.history import (
+    digest,
+    encoded,
+    package_path,
+    recorded_package_file,
+)
 
 MAX_PDF_BYTES = 32_000_000
 
@@ -101,15 +105,13 @@ def trusted_numbered_results(package):
             if not result.get("number_layer_sidecar"):
                 continue
             try:
-                pdf_rel = Path(result["final_pdf"]).relative_to(root)
-                layer_rel = Path(result["number_layer_sidecar"]).relative_to(root)
+                # Resolved inside this root, wherever the job was when recorded (#543).
+                pdf = recorded_package_file(root, result, "final_pdf")
+                layer = recorded_package_file(root, result, "number_layer_sidecar")
             except ValueError:
                 continue
-            pdf = package_path(root, str(pdf_rel))
-            layer = package_path(root, str(layer_rel))
             if (
-                pdf_rel.parts[0] != "application_runs"
-                or layer.parent != pdf.parent
+                layer.parent != pdf.parent
                 or not pdf.is_file()
                 or not layer.is_file()
                 or digest(pdf.read_bytes()) != result.get("final_pdf_sha256")

@@ -1,6 +1,6 @@
 # 現行パイプライン — 実装・技術契約リファレンス
 
-<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"b6c4b41883723d1decc93640d8c40e7f0a48c0618404d9c4a44b8a52fef66996"},"state":"reviewed"} -->
+<!-- translation: {"original":"PIPELINE_ARCHITECTURE_REFERENCE.md","source":{"sha256":"36e76d4488e859e341e5110c097c0ec124ff94555b4976ea020a0d0ea26e2741"},"state":"reviewed"} -->
 
 [English / 原文](PIPELINE_ARCHITECTURE_REFERENCE.md) · [アーキテクチャ概要に戻る](PIPELINE_ARCHITECTURE.ja.md)
 
@@ -99,9 +99,9 @@ PDFまたは永続化済みページ画像
   -> Phase A: 任意のユーザー小節線補正、物理グルーピング + numbering_base
        -> 保守対象の元画像の譜表ジオメトリ
        -> current-x4コネクターの意味的根拠
-  -> current-x4 MMRサポートsidecar
-       -> Phase-Aのトポロジー/xジオメトリを再利用
-       -> current-x4 HOMRの譜表yジオメトリを対応付け
+  -> MMRサポートsidecar
+       -> Phase-Aのトポロジーとx/yジオメトリを再利用
+       -> current-x4 HOMRの譜表対応付けは診断記録のみ（#545）
   -> MMR CNN + RapidOCR
   -> MMRとユーザーの小節上書きを統合
   -> Phase Cの最終番号付け / 任意のオーバーレイ
@@ -374,9 +374,11 @@ dense MMRは、元ページでHOMRを**再実行せず**、MMR専用サブツリ
 この契約は意図的に非対称としている。
 
 - Phase-Aの`numbering_base`は、トポロジー、小節番号、段への所属、通常の水平方向/xジオメトリの正本であり続ける。
-- current-x4 HOMRの譜表ジオメトリは、MMRの垂直方向/yの切り出しサポートを提供する。
-- 譜表スロットの対応付けはスケールに依存しない。あるスロットにcurrent-x4の譜表を
-  対応付けられない場合、サポートビューは新しいトポロジーを作らず、そのスロットのPhase-Aジオメトリへフォールバックする。
+- MMRの垂直方向/yの切り出し範囲もPhase-Aの譜表ジオメトリから取る。Issue #545以降、current-x4 HOMRの
+  譜表ジオメトリでは動かさない。x4の譜表yはSRモデルに依存し、#533のSR置換後の数pxのずれでMMRのOCR結果と
+  後続の小節番号が変わったためである。このため暗黙開始のalternateビューはprimaryビューと同じになる。
+- current-x4の譜表は引き続きスケールに依存しない方法でPhase-Aの譜表スロットへ対応付け、
+  `provenance.mappings`（スキーマ`pipeline.mmr_support_reuse.v2`）に診断情報としてのみ記録する。
 - MMRサポートのprovenanceでは、`original_image_homr`はfalse、`second_numbering_rebuild`はfalseである。
 
 `run_mmr_batch()`は、Phase-Aのページpayload、元のページ画像、任意のMMRサポートビューを利用する。

@@ -776,7 +776,8 @@
       "tests/test_issue415_numbering_audit.py",
       "tests/test_model_artifacts.py",
       "tests/test_verify_detector_full68.py",
-      "tests/test_issue454_analysis.py"
+      "tests/test_issue454_analysis.py",
+      "tests/test_issue545_replay_support_compat.py"
     ],
     "developer_tool": [
       "tests/test_issue447_profiling_tools.py",

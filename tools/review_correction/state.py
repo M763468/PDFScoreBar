@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -10,6 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
 from tools.review_correction.history import (
     IDENTITY_VERSION,
     canonical_manifest_identity,
@@ -144,10 +144,10 @@ class CorrectionState:
             # finish or start an application between the first read and lock.
             path = package_path(self.root, "application_runs/.apply.lock")
             path.parent.mkdir(exist_ok=True)
-            descriptor = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+            descriptor = open_lock_file(path)
             with os.fdopen(descriptor, "r+") as stream:
                 try:
-                    fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    lock_exclusive_nonblocking(stream)
                 except BlockingIOError:
                     self.applying = True
                 else:

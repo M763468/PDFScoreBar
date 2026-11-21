@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -14,6 +13,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
 from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
 
 CHECKPOINT_ID = re.compile(r"cp_[0-9a-f]{64}\Z")
@@ -343,19 +343,19 @@ class CheckpointStore:
     @contextmanager
     def transaction(self, *, allow_apply=False):
         self._prepare()
-        fd = os.open(self.root / ".transaction.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+        fd = open_lock_file(self.root / ".transaction.lock")
         with os.fdopen(fd, "r+") as lock:
             try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                lock_exclusive_nonblocking(lock)
             except BlockingIOError as exc:
                 raise ReviewBusyError("Another review operation is in progress") from exc
             if not allow_apply:
                 apply_lock = package_path(self.package.root, "application_runs/.apply.lock")
                 if apply_lock.exists() or apply_lock.is_symlink():
-                    afd = os.open(apply_lock, os.O_RDWR | os.O_NOFOLLOW)
+                    afd = open_lock_file(apply_lock, create=False)
                     with os.fdopen(afd, "r+") as active:
                         try:
-                            fcntl.flock(active, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            lock_exclusive_nonblocking(active)
                         except BlockingIOError as exc:
                             raise ReviewBusyError(
                                 "Wait for corrected PDF generation before saving"
@@ -398,7 +398,7 @@ class CheckpointStore:
 
     def _source_context(self, package=None):
         package = package or self.package
-        payload = json.loads(package.handoff_path.read_text())
+        payload = json.loads(package.handoff_path.read_text(encoding="utf-8"))
         path = _resolve_source_manifest_path(payload, package.root)
         if not path.is_file():
             return None
@@ -522,7 +522,7 @@ class CheckpointStore:
         path = directory / "checkpoint.json"
         if directory.is_symlink() or path.is_symlink():
             raise ValueError("Checkpoint must not use symlinks")
-        value = json.loads(path.read_text())
+        value = json.loads(path.read_text(encoding="utf-8"))
         schema = value.get("schema_version")
         if type(schema) is not int or schema not in SUPPORTED_IDENTITY_VERSIONS:
             raise ValueError("Unsupported checkpoint schema")
@@ -617,7 +617,9 @@ class CheckpointStore:
             if context.get("source_pdf"):
                 (retained / "source.pdf").write_bytes(self.blob(context["source_pdf"]))
             (retained / "manifest.json").write_bytes(encoded(manifest))
-            handoff = json.loads((review / "manual_correction_input.json").read_text())
+            handoff = json.loads(
+                (review / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
             handoff.pop("source_artifact_root", None)
             handoff["source_manifest"] = "../retained/manifest.json"
             (review / "manual_correction_input.json").write_bytes(encoded(handoff))
@@ -632,7 +634,7 @@ class CheckpointStore:
             raise ValueError("Application record must not be a symlink")
         if value is not None:
             atomic_bytes(path, encoded({"schema_version": 1, **value}))
-        result = json.loads(path.read_text())
+        result = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(result, dict) or result.get("schema_version") != 1:
             raise ValueError("Invalid application history record")
         return result

@@ -97,8 +97,8 @@ def trusted_numbered_results(package):
         for item in sorted(records.glob("attempt_*.json")):
             if not re.fullmatch(r"attempt_[0-9]{4,}\.json", item.name):
                 continue
-            item = package_path(root, str(item.relative_to(root)))
-            record = json.loads(item.read_text())
+            item = package_path(root, item.relative_to(root).as_posix())
+            record = json.loads(item.read_text(encoding="utf-8"))
             if record.get("status") != "succeeded":
                 continue
             result = record.get("result") or {}
@@ -170,7 +170,7 @@ def create_session(package, checkpoint, pdf_bytes, *, session_root=None, ownersh
         background, proof = prepare_pdf(
             ownership_package or package, uploaded, original, normalized
         )
-        payload = json.loads((review / "manual_correction_input.json").read_text())
+        payload = json.loads((review / "manual_correction_input.json").read_text(encoding="utf-8"))
         # A partial selection or reordered source pages requires an explicit mapping.
         if context.get("source_pages") != list(range(len(payload["pages"]))):
             raise ValueError("Resume currently requires all original pages in source order")

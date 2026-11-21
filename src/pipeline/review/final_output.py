@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import math
+import os
 import re
 import unicodedata
 from pathlib import Path
@@ -341,12 +343,30 @@ def _top_staff_line_y(dark: np.ndarray, staff: list[float]) -> float | None:
     return None
 
 
+LABEL_FONT_ENV = "PDFSCORE_LABEL_FONT"
+
+
 def _load_label_font(size: int) -> ImageFont.ImageFont:
+    # A distribution-owned font (Windows portable, #535) is authoritative: an
+    # unreadable configured font fails instead of silently changing label metrics.
+    configured = os.environ.get(LABEL_FONT_ENV)
+    if configured:
+        try:
+            return ImageFont.truetype(configured, size=size)
+        except OSError as exc:
+            raise RuntimeError(f"Configured label font cannot be loaded: {configured}") from exc
     for candidate in _LABEL_FONT_CANDIDATES:
         try:
             return ImageFont.truetype(candidate, size=size)
         except OSError:
             continue
+    if os.name == "nt":
+        raise RuntimeError(
+            f"No label font is available on Windows; set {LABEL_FONT_ENV} to the bundled font"
+        )
+    logging.getLogger(__name__).warning(
+        "No DejaVu Sans Bold label font found; row labels use Pillow's default font"
+    )
     return ImageFont.load_default()
 
 

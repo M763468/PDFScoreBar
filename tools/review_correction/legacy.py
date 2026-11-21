@@ -49,7 +49,7 @@ def validate_attempt(package, name):
         raise ValueError("Invalid legacy attempt ID")
     root = package_path(package.root, f"application_runs/{name}")
     consumed_path = package_path(root, "consumed_inputs.json")
-    consumed = json.loads(consumed_path.read_text())
+    consumed = json.loads(consumed_path.read_text(encoding="utf-8"))
     if consumed.get("checkpoint_id"):
         raise ValueError("This application already has a checkpoint")
     if (
@@ -72,7 +72,7 @@ def validate_attempt(package, name):
             raise ValueError("Legacy source artifacts changed")
     current_bytes = package.handoff_path.read_bytes()
     original_handoff = json.loads(current_bytes)
-    saved_handoff = json.loads(handoff.read_text())
+    saved_handoff = json.loads(handoff.read_text(encoding="utf-8"))
     # output_name alone never disqualifies an attempt; its saved value stays covered by
     # the source identity check below. All other handoff content must match here.
     excluded = {"source_manifest", "output_name"}
@@ -129,7 +129,7 @@ def list_attempts(package):
         if not consumed.is_file():
             continue
         try:
-            data = json.loads(consumed.read_text())
+            data = json.loads(consumed.read_text(encoding="utf-8"))
             if data.get("checkpoint_id"):
                 continue
             validate_attempt(package, path.name)
@@ -161,11 +161,13 @@ def import_attempt(package, name):
                 target = package_path(review, rel)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source, target)
-        payload = json.loads(snapshot.handoff_path.read_text())
+        payload = json.loads(snapshot.handoff_path.read_text(encoding="utf-8"))
         payload.pop("source_artifact_root", None)
         payload["source_manifest"] = str(manifest)
         # A resumed session has no final/ to recover from, so the checkpoint keeps the name.
-        output_name = _imported_output_name(payload, json.loads(package.handoff_path.read_text()))
+        output_name = _imported_output_name(
+            payload, json.loads(package.handoff_path.read_text(encoding="utf-8"))
+        )
         if output_name is not None:
             payload["output_name"] = output_name
         (review / "manual_correction_input.json").write_bytes(encoded(payload))

@@ -22,7 +22,8 @@ from tools.review_correction.resume import trusted_numbered_results
 from tools.review_correction.server import ReviewPackage
 
 JOB = "job-one"
-ENGINE_ROOT = "/results/job-one/.engine-work"
+# A recorded absolute root on this platform (a drive is prepended on Windows).
+ENGINE_ROOT = os.path.abspath("/results/job-one/.engine-work")
 
 
 def _job(tmp_path, where="first"):
@@ -71,7 +72,7 @@ def _move(job, tmp_path, where="moved/deeper"):
     prepare_local_review(target)
     # The prepared manifest records the new absolute location.
     assert _local_manifest(target).read_bytes() != before
-    assert str(target) in _local_manifest(target).read_text()
+    assert json.loads(_local_manifest(target).read_text())["run_dir"].startswith(str(target))
     return target
 
 
@@ -291,6 +292,7 @@ def test_legacy_result_is_stale_when_more_than_the_location_changed(tmp_path, ve
 
 
 def _manifest(root, job=JOB, **config):
+    root = os.path.abspath(root)
     return encoded(
         {
             "run_dir": f"{root}/.engine-retained/runs/{job}",
@@ -315,9 +317,9 @@ def test_canonical_manifest_identity_ignores_only_the_job_location():
         encoded({"run_dir": "/b/runs/job-one", "pages": []})
     )
     escaping = json.loads(_manifest("/a/job"))
-    escaping["config"]["pdf"] = "/a/job/../outside.pdf"
+    escaping["config"]["pdf"] = os.path.abspath("/a/job") + "/../outside.pdf"
     moved = json.loads(_manifest("/b/job"))
-    moved["config"]["pdf"] = "/b/job/../outside.pdf"
+    moved["config"]["pdf"] = os.path.abspath("/b/job") + "/../outside.pdf"
     assert canonical_manifest_identity(encoded(escaping)) != canonical_manifest_identity(
         encoded(moved)
     )

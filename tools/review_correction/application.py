@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -10,6 +9,7 @@ import tempfile
 from pathlib import Path
 from threading import Lock, Thread
 
+from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
 from src.pipeline.review.apply_corrections import (
     _load_movement_boundary_input,
     _merge_existing_override_inputs,
@@ -148,12 +148,10 @@ class CorrectionApplication:
         event = {}
         try:
             self._safe_root()
-            descriptor = os.open(
-                self.root / ".apply.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600
-            )
+            descriptor = open_lock_file(self.root / ".apply.lock")
             self.process_lock = os.fdopen(descriptor, "r+")
             try:
-                fcntl.flock(self.process_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                lock_exclusive_nonblocking(self.process_lock)
             except BlockingIOError as exc:
                 raise ValueError(
                     "A corrected result is already being generated for this package"
@@ -220,7 +218,9 @@ class CorrectionApplication:
         try:
             review = attempt / "input_review"
             self.package.history.materialize(checkpoint, review)
-            payload = json.loads((review / "manual_correction_input.json").read_text())
+            payload = json.loads(
+                (review / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
             if not self.package.history.get(checkpoint).get("source_context"):
                 manifest = _resolve_source_manifest_path(payload, self.package.root)
                 payload["source_manifest"] = str(manifest)
@@ -309,9 +309,9 @@ class CorrectionApplication:
                     ),
                 }
                 summary_path = run / "review/correction_summary.json"
-                report = json.loads(summary_path.read_text())
+                report = json.loads(summary_path.read_text(encoding="utf-8"))
                 report["final_pdf"] = str(numbered.resolve())
-                summary_path.write_text(json.dumps(report, indent=2) + "\n")
+                summary_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
             summary = json.loads(
                 (run / "review" / "correction_summary.json").read_text(encoding="utf-8")
             )

@@ -117,7 +117,7 @@ def test_owned_call_reaps_descendants_left_by_the_child(tmp_path: Path, monkeypa
 
 def _moved_job(tmp_path: Path):
     """A job moved from old/<job> to new/<job>, with a checkpoint dependency recorded
-    at the old absolute path."""
+    at the old absolute path in the platform's native separators."""
 
     job = tmp_path / "new" / JOB
     retained = job / ".engine-retained" / "runs" / JOB / "intermediate" / "page_001"
@@ -125,51 +125,50 @@ def _moved_job(tmp_path: Path):
     (job / "review").mkdir()
     dependency = retained / "numbering_base.json"
     dependency.write_bytes(b'{"pages": []}')
-    old = str(tmp_path / "old" / JOB / ".engine-retained" / "runs" / JOB)
-    recorded = os.path.join(old, "intermediate", "page_001", "numbering_base.json")
-    return job, dependency, recorded
+    old_root = str(tmp_path / "old" / JOB)
+    run_dir = os.path.join(old_root, ".engine-retained", "runs", JOB)
+    recorded = os.path.join(run_dir, "intermediate", "page_001", "numbering_base.json")
+    return job, dependency, recorded, {"run_dir": run_dir}
 
 
-def _store(job: Path, recorded: str, expected: str):
+def _store(job: Path, recorded: str, expected: str, manifest: dict):
     from types import SimpleNamespace
 
     from tools.review_correction.history import CheckpointStore
 
     store = CheckpointStore(SimpleNamespace(root=job / "review"))
-    store.get = lambda _id: {"source_context": {"dependencies": {recorded: expected}}}
+    context = {"manifest": manifest, "dependencies": {recorded: expected}}
+    store.get = lambda _id: {"source_context": context}
     return store
 
 
 def test_checkpoint_dependencies_follow_a_moved_job(tmp_path: Path) -> None:
     from tools.review_correction.history import digest
 
-    job, dependency, recorded = _moved_job(tmp_path)
-    store = _store(job, recorded, digest(dependency.read_bytes()))
-    assert store.validate_dependencies("cp")["source_context"]
-    manifest = store._relocated_context_manifest({"pages": [{"numbering": recorded}]})
-    assert manifest == {"pages": [{"numbering": str(dependency)}]}
+    job, dependency, recorded, manifest = _moved_job(tmp_path)
+    store = _store(job, recorded, digest(dependency.read_bytes()), manifest)
+    context = store.validate_dependencies("cp")["source_context"]
+    rebound = store._rebinder(context)({"pages": [{"numbering": recorded}]})
+    assert rebound == {"pages": [{"numbering": str(dependency)}]}
 
 
 def test_moved_checkpoint_dependencies_still_need_identical_bytes(tmp_path: Path) -> None:
-    job, _dependency, recorded = _moved_job(tmp_path)
-    store = _store(job, recorded, "0" * 64)
+    job, _dependency, recorded, manifest = _moved_job(tmp_path)
+    store = _store(job, recorded, "0" * 64, manifest)
     with pytest.raises(ValueError, match="Retained source dependency"):
         store.validate_dependencies("cp")
 
 
-@pytest.mark.parametrize(
-    "recorded",
-    [
-        "/elsewhere/other-job/.engine-retained/runs/job-ffffffffffff/x.json",  # another job
-        "/elsewhere/{job}/.engine-retained/runs/{job}/../../../../secret.json",  # escape
-        "/elsewhere/{job}/not-retained/x.json",  # outside the retained layout
-    ],
-)
-def test_rebase_only_maps_this_jobs_retained_layout(tmp_path: Path, recorded: str) -> None:
-    from tools.review_correction.history import rebase_retained_path
+def test_rebind_rejects_a_reference_that_escapes_the_job(tmp_path: Path) -> None:
+    from tools.review_correction.history import rebind_job_paths
 
-    job, _dependency, _recorded = _moved_job(tmp_path)
-    assert rebase_retained_path(recorded.format(job=JOB), job) is None
+    job, _dependency, _recorded, manifest = _moved_job(tmp_path)
+    old_root = str(tmp_path / "old" / JOB)
+    escape = os.path.join(old_root, ".engine-retained", "..", "..", "secret.json")
+    with pytest.raises(ValueError):
+        rebind_job_paths(escape, old_root, job)
+    other = os.path.join(str(tmp_path / "old" / "job-ffffffffffff"), "x.json")
+    assert rebind_job_paths(other, old_root, job) == other
 
 
 @pytest.mark.parametrize("server_name", ["LocalHTTPServer", "LocalThreadingHTTPServer"])
@@ -185,10 +184,14 @@ def test_review_and_browser_servers_refuse_a_port_in_use(server_name: str) -> No
             server_class(("127.0.0.1", first.server_port), BaseHTTPRequestHandler)
 
 
-def test_rebase_covers_the_retained_detector_output(tmp_path: Path) -> None:
-    from tools.review_correction.history import rebase_retained_path
+def test_rebind_covers_the_retained_detector_output(tmp_path: Path) -> None:
+    from tools.review_correction.history import rebind_job_paths
 
     # Windows retains detector output under .engine-retained/h/<job> (short work root).
     job = tmp_path / "new" / JOB
-    old = os.path.join(str(tmp_path / "old"), JOB, ".engine-retained", "h", JOB, "mask.png")
-    assert rebase_retained_path(old, job) == job / ".engine-retained" / "h" / JOB / "mask.png"
+    job.mkdir(parents=True)
+    old_root = os.path.join(str(tmp_path / "old"), JOB)
+    old = os.path.join(old_root, ".engine-retained", "h", JOB, "mask.png")
+    assert rebind_job_paths(old, old_root, job) == str(
+        job / ".engine-retained" / "h" / JOB / "mask.png"
+    )

@@ -23,7 +23,7 @@ from src.pipeline.review.manual_correction_handoff import (
     load_manual_correction_handoff,
     validate_manual_correction_handoff,
 )
-from tools.review_correction.history import identity_matches, now
+from tools.review_correction.history import identity_matches, now, recorded_package_file
 
 
 def preview_numbering(handoff_path: str | Path) -> dict:
@@ -160,9 +160,12 @@ class CorrectionApplication:
                 checkpoint = self.package.history.capture()
                 identity = self.package.state.begin_apply()
                 apply_started = True
+                # A v1/v2 checkpoint reused after a job move matches only through the
+                # same relocation proof that `capture()` accepted it with (#543).
                 if not identity_matches(
                     self.package.history.get(checkpoint)["identity"],
                     self.package.state.capture_identities(),
+                    self.package.state.relocated_identities(),
                 ):
                     raise ValueError("Review changed while preparing application")
                 attempt = self._allocate()
@@ -354,14 +357,15 @@ class CorrectionApplication:
         result = self.package.state.snapshot()["package"]["last_successful_result"]
         if not result:
             raise ValueError("No corrected final PDF has been generated")
-        final = Path(result["final_pdf"])
         self._safe_root()
+        # Resolved inside the current package: the job may have moved since (#543).
+        final = recorded_package_file(self.package.root, result, "final_pdf")
         if final.resolve() != final or self.root not in final.parents or not final.is_file():
             raise ValueError("The corrected final PDF is unavailable")
         if hashlib.sha256(final.read_bytes()).hexdigest() != result["final_pdf_sha256"]:
             raise ValueError("The corrected final PDF changed after generation")
         if result.get("number_layer_sidecar"):
-            sidecar = Path(result["number_layer_sidecar"])
+            sidecar = recorded_package_file(self.package.root, result, "number_layer_sidecar")
             if (
                 sidecar.resolve() != sidecar
                 or sidecar.parent != final.parent

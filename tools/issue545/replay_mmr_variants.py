@@ -11,7 +11,8 @@ import re
 import sys
 from pathlib import Path
 
-CODE = Path(__file__).resolve().parents[2]
+# PDFSCORE_CODE selects the code tree under test (default: this checkout).
+CODE = Path(os.environ.get("PDFSCORE_CODE") or Path(__file__).resolve().parents[2]).resolve()
 sys.path.insert(0, str(CODE))
 os.chdir(CODE)
 import cv2  # noqa: E402
@@ -95,6 +96,7 @@ def main():
         mmr_sha256=sha(CODE / "src/measure_numbering/mmr.py"),
         support_sha256=sha(CODE / "src/pipeline/mmr_support_reuse.py"),
         runner_sha256=sha(__file__),
+        code_root=str(CODE),
         sets={},
     )
     for spec in a.set:

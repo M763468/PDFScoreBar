@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -22,6 +23,7 @@ from tools.review_correction.history import (
 )
 
 SCHEMA_VERSION = 1
+LOGGER = logging.getLogger(__name__)
 STATE_FILENAME = ".correction_state.json"
 # Handoff fields that name outputs without affecting what is computed from the review.
 HANDOFF_OUTPUT_METADATA = frozenset({"output_name"})
@@ -473,10 +475,11 @@ class CorrectionState:
         }
         try:
             self._safe_write_metadata()
-        except Exception as exc:
+        except Exception:
+            LOGGER.exception("Could not record corrected result identity")
             self._metadata["last_successful_result"] = previous
             self._metadata["last_application"] = previous_application
-            self.fail_apply(f"Could not record corrected result identity: {exc}")
+            self.fail_apply("Could not record corrected result identity")
             raise
         self.applying = False
         self._own_apply = False

@@ -15,6 +15,7 @@ from urllib.parse import quote, unquote, urlsplit
 
 from tools.browser_jobs.jobs import JOB_ID, MAX_BYTES, MAX_PAGES, Jobs, exclusive_root
 from tools.review_correction.application import CorrectionApplication
+from tools.review_correction.history import safe_http_error_message
 from tools.review_correction.server import (
     LocalThreadingHTTPServer,
     ReviewHandler,
@@ -116,11 +117,17 @@ class JobHandler(ReviewHandler):
                     raise ValueError("Enter positive page numbers separated by commas")
                 pages = [int(p) for p in entries]
             job_id = self.server.jobs.submit(self.rfile, size, name, pages)
+        except UnicodeError:
+            self.send_error(400, "Choose a PDF filename")
+            return
         except ValueError as exc:
-            self.send_error(400, str(exc))
+            message = safe_http_error_message(exc, "Invalid PDF upload")
+            if message == "Invalid PDF upload":
+                logging.warning("Rejected PDF upload: %s", exc)
+            self.send_error(400, message)
             return
         except OverflowError as exc:
-            self.send_error(409, str(exc))
+            self.send_error(409, safe_http_error_message(exc, "Wait for a submitted job to finish"))
             return
         except TimeoutError:
             self.send_error(408, "PDF upload timed out")

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import binascii
 import hashlib
 import json
 import os
@@ -27,6 +28,92 @@ SUPPORTED_IDENTITY_VERSIONS = (1, 2, 3)
 _PATH_SEPARATORS = ("/", "\\") if os.name == "nt" else ("/",)
 _SPLIT_PATH = re.compile(r"[\\/]+" if os.name == "nt" else r"/+")
 RETAINED_DIR = ".engine-retained"
+_MAX_SAFE_ERROR_LENGTH = 200
+_UNSAFE_ERROR_PATTERNS = (
+    # Windows drive paths (e.g. C:\..., S:/...)
+    re.compile(r"(?:^|[\s'\"(\[{:=])[A-Za-z]:[\\/]"),
+    # Backslashes (Windows separators, UNC \\server\..., \\?\...)
+    re.compile(r"\\"),
+    # POSIX absolute paths (leading or delimiter-preceded /segment...)
+    re.compile(r"(?:^|[\s'\"(\[{:=])/[A-Za-z0-9._~-]+(?:/[A-Za-z0-9._~-]*)*"),
+    # Multi-segment relative paths (3+ segments such as pages/page_001/source.png)
+    re.compile(r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+"),
+    # Parent traversal tokens
+    re.compile(r"(?:^|[/\\])\.{2}(?:$|[/\\])"),
+    # Internal job / session identifiers
+    re.compile(r"\bjob-[0-9a-f]{12,32}\b|\bs_[0-9a-f]{32}\b", re.IGNORECASE),
+    # Internal package directories and filenames
+    re.compile(
+        r"\b(?:resumed_sessions|application_runs|review/corrections)\b"
+        r"|\.engine-(?:retained|work)|\.browser-jobs",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\.(?:json|pdf|png|py|lock|tmp)\b", re.IGNORECASE),
+    # OS errno / WinError / Python traceback markers
+    re.compile(r"\[Errno\s+\d+\]|\[WinError\s+\d+\]|Traceback\s*\(", re.IGNORECASE),
+)
+
+
+def is_safe_error_text(text: str, *, forbidden_roots: tuple[Path | str, ...] = ()) -> bool:
+    """Return True only when text is printable ASCII and free of local path/internal details."""
+    if not isinstance(text, str):
+        return False
+    stripped = text.strip()
+    if not stripped or len(stripped) > _MAX_SAFE_ERROR_LENGTH or not stripped.isascii():
+        return False
+    if any(ord(ch) < 32 or ord(ch) >= 127 for ch in stripped):
+        return False
+    lowered = stripped.lower()
+    for root in forbidden_roots:
+        candidates = {str(root), Path(root).as_posix()}
+        try:
+            resolved = Path(root).resolve()
+            candidates.update({str(resolved), resolved.as_posix()})
+        except OSError:
+            pass
+        for candidate in candidates:
+            if len(candidate) > 1 and candidate.lower() in lowered:
+                return False
+    return not any(pattern.search(stripped) for pattern in _UNSAFE_ERROR_PATTERNS)
+
+
+def safe_http_error_message(
+    exc: BaseException,
+    fallback: str,
+    *,
+    forbidden_roots: tuple[Path | str, ...] = (),
+) -> str:
+    """Return a safe HTTP error message for ValueError, otherwise the fixed fallback."""
+    if (
+        isinstance(exc, ValueError)
+        and not isinstance(exc, (json.JSONDecodeError, UnicodeError))
+        and type(exc).__name__ != "ManualCorrectionHandoffError"
+    ):
+        text = str(exc).strip()
+        if is_safe_error_text(text, forbidden_roots=forbidden_roots):
+            return text
+    return fallback
+
+
+def safe_recorded_error(
+    exc: BaseException,
+    fallback: str,
+    *,
+    forbidden_roots: tuple[Path | str, ...] = (),
+) -> str:
+    """Return a sanitized error string suitable for persisted state/history JSON."""
+    if isinstance(exc, OSError):
+        if exc.filename is not None or exc.filename2 is not None or exc.errno is not None:
+            return fallback
+    elif (
+        isinstance(exc, (json.JSONDecodeError, UnicodeError, KeyError, TypeError, binascii.Error))
+        or type(exc).__name__ == "ManualCorrectionHandoffError"
+    ):
+        return fallback
+    text = str(exc).strip()
+    if is_safe_error_text(text, forbidden_roots=forbidden_roots):
+        return text
+    return fallback
 
 
 def digest(data):

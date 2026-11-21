@@ -24,7 +24,7 @@ contains no historical Stage-E runtime. Historical reproduction uses commit `f6b
 The image installs project/runtime dependencies and the maintained HOMR ONNX provider patch
 from `docker/patch_homr_onnx_provider.py`. Use this image for the verified dense production
 route and full-pipeline validation that needs Docker/GPU execution. Historical Stage-E
-reproduction uses a separate image (see below).
+reproduction uses a separate checkout of commit `f6bbd1c0` (see [HOMR profiles](#homr-profiles)).
 
 `make verify-gpu-smoke` is the authoritative environment gate. Before pipeline execution it
 runs `scripts/docker_runtime_validation.sh`, which checks the bind-mounted source against the
@@ -345,22 +345,24 @@ docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev 
 Remove this persistent container only when cleanup is explicitly intended; its purpose is to
 avoid reinstalling validation-only tooling into short-lived production-runtime containers.
 
-### Production-only adoption snapshot (#398)
+### Maintained environment snapshot (#540)
 
-The local maintained environment was updated on 2026-10-03:
+The local maintained environment was refreshed on 2026-11-22 from `develop` commit `44b6ddec`:
 
 | Reference | Adopted environment |
 | --- | --- |
-| `pdfscore_pipeline_gpu:latest` | production-only image `5311cf22ab01`, built from application revision `b25af348` |
-| `pdfscore_stage_e_reproduction:latest` | retained Stage-E component compatibility image `c5da1954371d`; current main venv, not a complete historical environment |
-| `pdfscore_pipeline_pytest_dev` | running development container based on `5311cf22ab01`, with GPU, checkout/external-model mounts, pytest 8.4.2 and Git |
-| `pdfscore_pipeline_gpu:before-issue398` | retained prior all-in-one image, excluded from current setup instructions |
-| `pdfscore_pipeline_pytest_dev_before_issue398` | stopped archive of the old development container; its writable layer was preserved |
+| `pdfscore_pipeline_gpu:latest` | production-only image `e7a2045e207c`, built from `44b6ddec`; source fingerprint `aa20cda5…`, runtime compatibility fingerprint `d715911c…` |
+| `pdfscore_pipeline_pytest_dev` | development container based on `e7a2045e207c`, with GPU, the manager checkout at `/workspace`, pytest 8.4.2 and Git; no external model mount (OMR-DLN is retired since #522) |
+| `pdfscore_pytest_validation:e7a2045e207c` | disposable pytest validation image for the base above |
+| `pdfscore_pipeline_pytest_dev_before_issue540` | stopped archive of the previous development container (image `5311cf22ab01`, obsolete OMR-DLN mount); its writable layer was preserved |
+| `pdfscore_pipeline_gpu:before-issue398`, `pdfscore_stage_e_reproduction:latest`, `pdfscore_pytest_validation:5311cf22ab01` | retained older images; incompatible with the current runtime contract and excluded from setup instructions |
 
-Other Issue-scoped or historical containers were not promoted to maintained environments.
-This is an adoption snapshot; tags can change later. Use `docker image inspect` and
-`docker inspect` to establish current identities. Inspect snapshots, migration commands,
-preflight and test evidence are retained locally under `logs/issue398/environment-update/`.
+The previous #398 snapshot (`5311cf22ab01`, built from `b25af348` on 2026-10-03) is
+superseded. This is an adoption snapshot; tags can change later. Use `docker image inspect` and
+`docker inspect` to establish current identities, and `python3 scripts/docker_image_resolver.py
+resolve` to check compatibility. Inspect snapshots, build provenance, smoke and test evidence are
+retained locally under `logs/issue540/environment-update/` (#398 evidence remains under
+`logs/issue398/environment-update/`).
 
 ## Disposable pytest validation image
 

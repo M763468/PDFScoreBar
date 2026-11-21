@@ -47,7 +47,7 @@ def _support_with_current(
     return build_mmr_support_data(base, Path("current_staff_mask.png"))
 
 
-def test_support_preserves_phase_a_topology_numbers_and_normal_x(
+def test_support_preserves_phase_a_topology_numbers_and_geometry(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     base = _page(staves=[[20, 100, 380, 140]], measures=[[20, 100, 180, 140], [190, 100, 380, 140]])
@@ -57,10 +57,34 @@ def test_support_preserves_phase_a_topology_numbers_and_normal_x(
 
     assert [item["number"] for item in measures] == [1, 2]
     assert [item["bbox"][0::2] for item in measures] == [[20, 180], [190, 380]]
-    assert [item["bbox"][1::2] for item in measures] == [[110, 135], [110, 135]]
+    # #545: the x4 staff (y 110-135) is diagnostic only; MMR keeps Phase-A y.
+    assert [item["bbox"][1::2] for item in measures] == [[100, 140], [100, 140]]
+    assert primary["pages"][0]["systems"][0]["staves"][0]["bbox"] == [20, 100, 380, 140]
+    assert support["provenance"]["primary_y_source"] == "phase_a_numbering_base"
+    assert support["schema_version"] == "pipeline.mmr_support_reuse.v2"
 
 
-def test_support_mapping_handles_single_many_to_one_union_and_unmapped(
+def test_mmr_views_do_not_depend_on_current_x4_staff_mask(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#545 regression: an SR change that moves x4 staves must not move MMR geometry."""
+    base = _page(
+        staves=[[20, 100, 380, 140], [20, 200, 380, 240]],
+        measures=[[21, 100, 180, 240], [190, 100, 380, 240]],
+    )
+    views = [
+        _support_with_current(monkeypatch, current, base)["views"]
+        for current in (
+            [[5, 110, 390, 135], [5, 210, 390, 235]],
+            [[8, 93, 390, 147], [2, 233, 390, 245]],
+            [],
+        )
+    ]
+    assert views[0] == views[1] == views[2]
+    assert views[0]["implicit_start_alternate"] == views[0]["primary"]
+
+
+def test_support_mapping_records_single_many_to_one_union_and_unmapped(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     many_base = _page(
@@ -76,6 +100,7 @@ def test_support_mapping_handles_single_many_to_one_union_and_unmapped(
     union_base = _page(staves=[[20, 100, 380, 150]], measures=[[20, 100, 380, 150]])
     union = _support_with_current(monkeypatch, [[5, 100, 390, 121], [5, 125, 390, 150]], union_base)
     assert union["provenance"]["union_count"] == 1
+    assert union["provenance"]["mappings"][0]["raw_mapped_bbox"] == [5, 100, 390, 150]
     assert union["provenance"]["mappings"][0]["effective_bbox"] == [20, 100, 380, 150]
 
     unmatched = _support_with_current(monkeypatch, [[5, 220, 390, 250]], union_base)
@@ -83,45 +108,13 @@ def test_support_mapping_handles_single_many_to_one_union_and_unmapped(
     assert unmatched["provenance"]["mappings"][0]["mode"] == "phase_a_fallback"
 
 
-def test_implicit_start_changes_only_alternate_start_x(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_implicit_start_alternate_equals_primary(monkeypatch: pytest.MonkeyPatch) -> None:
     base = _page(staves=[[20, 100, 380, 140]], measures=[[21, 100, 180, 140], [190, 100, 380, 140]])
     support = _support_with_current(monkeypatch, [[5, 110, 390, 135]], base)
     primary = support["views"]["primary"]["pages"][0]["systems"][0]["measures"]
     alternate = support["views"]["implicit_start_alternate"]["pages"][0]["systems"][0]["measures"]
-    assert alternate[0]["bbox"][0] == 6
-    assert alternate[1]["bbox"][0] == 190
+    assert [item["bbox"] for item in alternate] == [item["bbox"] for item in primary]
     assert [item["bbox"][0] for item in primary] == [21, 190]
-
-
-def test_implicit_start_uses_system_minimum_base_and_mapped_x(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    base = _page(
-        staves=[[100, 100, 380, 140], [20, 200, 380, 240]],
-        measures=[[21, 100, 380, 240], [200, 100, 380, 240]],
-    )
-    support = _support_with_current(
-        monkeypatch,
-        [[90, 110, 390, 135], [5, 210, 390, 235]],
-        base,
-    )
-    primary = support["views"]["primary"]["pages"][0]["systems"][0]["measures"]
-    alternate = support["views"]["implicit_start_alternate"]["pages"][0]["systems"][0]["measures"]
-
-    assert alternate[0]["bbox"][0] == 6
-    assert primary[0]["bbox"][0] == 21
-    assert alternate[1]["bbox"][0] == primary[1]["bbox"][0] == 200
-
-
-def test_near_staff_left_normal_measure_does_not_enable_alternate(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    base = _page(staves=[[20, 100, 380, 140]], measures=[[22, 100, 180, 140], [190, 100, 380, 140]])
-    support = _support_with_current(monkeypatch, [[5, 110, 390, 135]], base)
-    primary = support["views"]["primary"]["pages"][0]["systems"][0]["measures"]
-    alternate = support["views"]["implicit_start_alternate"]["pages"][0]["systems"][0]["measures"]
-
-    assert [item["bbox"][0] for item in alternate] == [item["bbox"][0] for item in primary]
 
 
 class _FixedClassifier:

@@ -1,7 +1,10 @@
-"""Build MMR-only views by reusing current-x4 HOMR support artifacts.
+"""Build MMR-only views from Phase-A geometry, auditing current-x4 HOMR staves.
 
-The Phase-A numbering payload remains authoritative for topology, numbering and
-horizontal geometry.  This module only supplies vertical staff geometry to MMR.
+The Phase-A numbering payload is authoritative for topology, numbering and both
+horizontal and vertical MMR geometry.  Since Issue #545 the current-x4 HOMR staff
+mask no longer moves the MMR staff y range: x4 staff y depends on the SR model, and
+a few-pixel shift changed MMR OCR results (#533 SR replacement).  The x4 staves are
+still matched and recorded in ``provenance.mappings`` as diagnostics.
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ from typing import Any, Mapping
 from src.measure_numbering.pipeline import StaffExtractor
 from src.pipeline.core import load_json, write_json
 
-SCHEMA_VERSION = "pipeline.mmr_support_reuse.v1"
+SCHEMA_VERSION = "pipeline.mmr_support_reuse.v2"
 
 
 def _bbox(value: Mapping[str, Any]) -> list[int]:
@@ -61,16 +64,10 @@ def _raw_mapped_bbox(base: list[int], candidates: list[dict[str, Any]]) -> tuple
     ], "union_current_staff"
 
 
-def _is_implicit_start(measure: Mapping[str, Any], base_sys_x1: int) -> bool:
-    """Recognise only the already-present Phase-A system-start geometry."""
-
-    return _bbox(measure)[0] == base_sys_x1 + 1
-
-
 def build_mmr_support_data(
     numbering_base: Mapping[str, Any], current_homr_staff_mask: Path
 ) -> dict[str, Any]:
-    """Return immutable Phase-A views with current-x4 staff y coordinates."""
+    """Return immutable Phase-A MMR views plus current-x4 staff-mapping diagnostics."""
 
     pages = numbering_base.get("pages")
     if not isinstance(pages, list) or len(pages) != 1:
@@ -92,7 +89,6 @@ def build_mmr_support_data(
         primary_system = primary["pages"][0]["systems"][sys_idx]
         alternate_system = alternate["pages"][0]["systems"][sys_idx]
         effective_staves: list[list[int]] = []
-        raw_mapped_staves: list[list[int]] = []
         for staff_idx, staff in enumerate(base_system.get("staves", [])):
             base_bbox = _bbox(staff)
             candidates = [
@@ -101,7 +97,8 @@ def build_mmr_support_data(
             ]
             candidates = [item for item in candidates if _matches(item)]
             raw_mapped, mode = _raw_mapped_bbox(base_bbox, candidates)
-            effective = [base_bbox[0], raw_mapped[1], base_bbox[2], raw_mapped[3]]
+            # #545: MMR geometry stays on Phase-A; the x4 mapping is diagnostic only.
+            effective = list(base_bbox)
             if mode == "phase_a_fallback":
                 fallback_count += 1
             else:
@@ -111,7 +108,6 @@ def build_mmr_support_data(
             primary_system["staves"][staff_idx]["bbox"] = effective
             alternate_system["staves"][staff_idx]["bbox"] = effective
             effective_staves.append(effective)
-            raw_mapped_staves.append(raw_mapped)
             mappings.append(
                 {
                     "system": sys_idx,
@@ -129,18 +125,15 @@ def build_mmr_support_data(
             continue
         envelope_y1 = min(item[1] for item in effective_staves)
         envelope_y2 = max(item[3] for item in effective_staves)
-        base_sys_x1 = min(_bbox(staff)[0] for staff in base_system.get("staves", []))
-        mapped_sys_x1 = min(item[0] for item in raw_mapped_staves)
         primary_system["measures"] = deepcopy(base_system.get("measures", []))
         alternate_system["measures"] = deepcopy(base_system.get("measures", []))
         for measure_idx, measure in enumerate(base_system.get("measures", [])):
             base_measure_bbox = _bbox(measure)
             primary_bbox = [base_measure_bbox[0], envelope_y1, base_measure_bbox[2], envelope_y2]
             primary_system["measures"][measure_idx]["bbox"] = primary_bbox
-            alternate_bbox = list(primary_bbox)
-            if measure_idx == 0 and _is_implicit_start(measure, base_sys_x1):
-                alternate_bbox[0] = mapped_sys_x1 + 1
-            alternate_system["measures"][measure_idx]["bbox"] = alternate_bbox
+            # The implicit-start alternate used the x4 staff start x; with Phase-A
+            # geometry it equals the primary view and never vetoes on its own.
+            alternate_system["measures"][measure_idx]["bbox"] = list(primary_bbox)
 
     staff_slot_count = len(mappings)
     return {
@@ -152,7 +145,8 @@ def build_mmr_support_data(
             "coordinate_space": "source_page",
             "topology_source": "phase_a_numbering_base",
             "normal_x_source": "phase_a_final_hybrid_barlines",
-            "primary_y_source": "current_x4_homr",
+            "primary_y_source": "phase_a_numbering_base",
+            "current_x4_mapping_role": "diagnostic",
             "original_image_homr": False,
             "second_numbering_rebuild": False,
             "staff_slot_count": staff_slot_count,

@@ -94,9 +94,9 @@ PDF or persisted page images
   -> Phase A: optional user barline corrections, physical grouping + numbering_base
        -> maintained original-image staff geometry
        -> current-x4 connector semantic evidence
-  -> current-x4 MMR support sidecar
-       -> reuse Phase-A topology/x geometry
-       -> map current-x4 HOMR staff y geometry
+  -> MMR support sidecar
+       -> reuse Phase-A topology and x/y geometry
+       -> record current-x4 HOMR staff mapping as diagnostics only (#545)
   -> MMR CNN + RapidOCR
   -> merge MMR and user measure overrides
   -> Phase C final numbering / optional overlay
@@ -386,10 +386,12 @@ The contract is asymmetric by design:
 
 - Phase-A `numbering_base` remains authoritative for topology, measure numbers, system
   membership, and normal horizontal/x geometry.
-- current-x4 HOMR staff geometry contributes vertical/y crop support for MMR.
-- staff-slot mapping is scale-free. If a current-x4 staff cannot be mapped for a slot, the
-  support view falls back to that slot's Phase-A geometry rather than creating a new
-  topology.
+- Phase-A staff geometry also supplies the vertical/y crop range for MMR. Since Issue #545,
+  current-x4 HOMR staff geometry no longer moves it: x4 staff y depends on the SR model, and a
+  few-pixel shift after the #533 SR replacement changed MMR OCR readings and the downstream
+  measure numbers. The implicit-start alternate view therefore equals the primary view.
+- current-x4 staves are still mapped scale-free to Phase-A staff slots and recorded in
+  `provenance.mappings` (schema `pipeline.mmr_support_reuse.v2`) as diagnostics only.
 - `original_image_homr` is false and `second_numbering_rebuild` is false in MMR support
   provenance.
 

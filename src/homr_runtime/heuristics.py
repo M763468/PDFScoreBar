@@ -59,6 +59,21 @@ from src.homr_runtime.transforms import compute_transform_info as compute_transf
 from src.homr_runtime.utils import eprint
 
 
+def start_title_detection(config: Any, debug: Any, top_staff: Any) -> Future[str]:
+    """Start HOMR title OCR only when ``config.title_detection`` asks for it (as homr.main).
+
+    PDFScoreBar disables it (``api_compat``). Starting it anyway leaves an OCR thread
+    reading its temporary input while the SegNet-only path already removes HOMR's
+    temporary files, which fails on Windows with a sharing violation (#535).
+    """
+
+    if getattr(config, "title_detection", True):
+        return detect_title(debug, top_staff)
+    done: Future[str] = Future()
+    done.set_result("")
+    return done
+
+
 def detect_staffs_with_barlines(
     image_path: str,
     config: ProcessingConfig,
@@ -245,7 +260,7 @@ def detect_staffs_with_barlines(
             ),
         )
 
-    title_future = detect_title(debug, staffs[0])
+    title_future = start_title_detection(config, debug, staffs[0])
     debug.write_bounding_boxes_alternating_colors("staffs", staffs)
 
     brace_dot_img = prepare_brace_dot_image(predictions.symbols, predictions.staff)

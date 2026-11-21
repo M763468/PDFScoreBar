@@ -15,7 +15,11 @@ from urllib.parse import quote, unquote, urlsplit
 
 from tools.browser_jobs.jobs import JOB_ID, MAX_BYTES, MAX_PAGES, Jobs, exclusive_root
 from tools.review_correction.application import CorrectionApplication
-from tools.review_correction.server import ReviewHandler, ReviewPackage
+from tools.review_correction.server import (
+    LocalThreadingHTTPServer,
+    ReviewHandler,
+    ReviewPackage,
+)
 
 UI_ROOT = Path(__file__).resolve().parent
 
@@ -167,7 +171,7 @@ class JobHandler(ReviewHandler):
 
 
 def create_server(jobs: Jobs, *, port: int = 8010) -> ThreadingHTTPServer:
-    server = ThreadingHTTPServer(("127.0.0.1", port), JobHandler)
+    server = LocalThreadingHTTPServer(("127.0.0.1", port), JobHandler)
     server.daemon_threads = False
     server.jobs = jobs
     server.reviews = {}

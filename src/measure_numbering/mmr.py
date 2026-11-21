@@ -607,6 +607,8 @@ class MMRProcessor:
                         ):
                             continue
                         x1, y1, x2, y2 = measure["bbox"]
+                        if self._too_narrow_for_mmr(system, measure["bbox"]):
+                            continue
                         margin = 20
                         cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
                         cx2, cy2 = int(min(w_img, x2 + margin)), int(min(h_img, y2 + margin))
@@ -769,6 +771,8 @@ class MMRProcessor:
                     continue
                 primary_measure = primary_system["measures"][m_idx]
                 x1, y1, x2, y2 = primary_measure["bbox"]
+                if self._too_narrow_for_mmr(primary_system, primary_measure["bbox"]):
+                    continue
                 margin = 20
                 cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
                 cx2, cy2 = int(min(image_width, x2 + margin)), int(min(image_height, y2 + margin))
@@ -848,6 +852,25 @@ class MMRProcessor:
                         prob,
                     )
         return overrides
+
+    # A multi-measure rest needs room for its horizontal bar and number. A measure
+    # narrower than this fraction of the staff height (a key-signature or barline
+    # sliver from over-segmentation) cannot be one, so it gets no MMR decision.
+    # Measured on evaluation2: legitimate MMR measures are >= 0.455 staff heights;
+    # the only narrower decision (0.196) was a sliver whose OCR result depended on
+    # a borderline text-detection score and differed between runtimes (#535).
+    MIN_MMR_WIDTH_STAFF_RATIO = 0.3
+
+    @classmethod
+    def _too_narrow_for_mmr(cls, system: Dict, bbox: List[int]) -> bool:
+        heights = [
+            stave["bbox"][3] - stave["bbox"][1]
+            for stave in system.get("staves", [])
+            if stave.get("bbox") and stave["bbox"][3] > stave["bbox"][1]
+        ]
+        if not heights:
+            return False
+        return (bbox[2] - bbox[0]) < cls.MIN_MMR_WIDTH_STAFF_RATIO * min(heights)
 
     def _detect_number(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         found_number, best_score, best_debug, _one_bar_evidence_count = (

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import logging
@@ -15,7 +14,8 @@ from pathlib import Path
 from threading import Lock
 from uuid import uuid4
 
-from docker.distribution_job import run_local_job
+from docker.distribution_job import _windows_job_id, run_local_job
+from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
 from src.pipeline.engine_contract import JobResult, JobStatus
 from src.pipeline.engine_input_safety import DEFAULT_JOB_SAFETY_POLICY
 from tools.review_correction.history import atomic_bytes, encoded, now, package_path
@@ -30,11 +30,16 @@ MAX_PAGES = DEFAULT_JOB_SAFETY_POLICY.max_selected_pages
 def exclusive_root(root: Path):
     """Keep one browser service per output root, including during shutdown."""
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    lock_path = root / ".browser-jobs.lock"
-    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    # POSIX: O_NOFOLLOW + flock; Windows: link-refusing open + msvcrt lock (#535).
+    fd = open_lock_file(root / ".browser-jobs.lock")
     with os.fdopen(fd, "rb") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        lock_exclusive_nonblocking(lock)
         yield
+
+
+def new_job_id() -> str:
+    """Browser job id; Windows uses the short id that keeps engine paths below MAX_PATH."""
+    return _windows_job_id() if os.name == "nt" else f"job-{uuid4().hex}"
 
 
 class Jobs:
@@ -54,7 +59,7 @@ class Jobs:
         with self.lock:
             if len(self.active) >= 2:
                 raise OverflowError("Wait for a submitted job to finish")
-            job_id = f"job-{uuid4().hex}"
+            job_id = new_job_id()
             if (self.root / job_id).exists():
                 raise FileExistsError(job_id)
             directory = self.uploads / job_id

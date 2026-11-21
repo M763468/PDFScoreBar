@@ -11,9 +11,10 @@ import json
 import mimetypes
 import os
 import re
+import socket
 import sys
 import tempfile
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -593,9 +594,34 @@ class ReviewHandler(BaseHTTPRequestHandler):
             self.send_error(400, str(exc))
 
 
+class _ExclusivePort:
+    """Refuse a port that another server already listens on (#535).
+
+    http.server enables SO_REUSEADDR. On Windows that lets a second server bind a port in
+    use, so two review/browser servers answered the same address nondeterministically.
+    Windows binds with SO_EXCLUSIVEADDRUSE instead; POSIX keeps SO_REUSEADDR, which
+    never allows two listeners there.
+    """
+
+    allow_reuse_address = os.name != "nt"
+
+    def server_bind(self):
+        if os.name == "nt":
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
+class LocalHTTPServer(_ExclusivePort, HTTPServer):
+    pass
+
+
+class LocalThreadingHTTPServer(_ExclusivePort, ThreadingHTTPServer):
+    pass
+
+
 def create_server(handoff: Path, *, port: int = 8010) -> HTTPServer:
     package = ReviewPackage(handoff)
-    server = HTTPServer(("127.0.0.1", port), ReviewHandler)
+    server = LocalHTTPServer(("127.0.0.1", port), ReviewHandler)
     server.sessions = {}
     server.package = package
     server.application = CorrectionApplication(package, handoff)

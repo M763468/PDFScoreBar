@@ -13,6 +13,35 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from src.common.process_tree import OwnedProcessTree
+
+
+def _windows_available_ram_bytes() -> int:
+    """Available physical memory from GlobalMemoryStatusEx (Windows has no /proc)."""
+    import ctypes
+    from ctypes import wintypes
+
+    class MemoryStatusEx(ctypes.Structure):
+        _fields_ = [
+            ("dwLength", wintypes.DWORD),
+            ("dwMemoryLoad", wintypes.DWORD),
+            ("ullTotalPhys", ctypes.c_ulonglong),
+            ("ullAvailPhys", ctypes.c_ulonglong),
+            ("ullTotalPageFile", ctypes.c_ulonglong),
+            ("ullAvailPageFile", ctypes.c_ulonglong),
+            ("ullTotalVirtual", ctypes.c_ulonglong),
+            ("ullAvailVirtual", ctypes.c_ulonglong),
+            ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+        ]
+
+    status = MemoryStatusEx()
+    status.dwLength = ctypes.sizeof(MemoryStatusEx)
+    if not ctypes.WinDLL("kernel32", use_last_error=True).GlobalMemoryStatusEx(
+        ctypes.byref(status)
+    ):
+        raise ctypes.WinError(ctypes.get_last_error(), "GlobalMemoryStatusEx")
+    return int(status.ullAvailPhys)
+
 
 def select_workers(policy, images, *, available_ram_gib, available_vram_gib, device):
     requested = policy.get("workers", 1)
@@ -91,8 +120,11 @@ def select_workers(policy, images, *, available_ram_gib, available_vram_gib, dev
 
 def available_resources():
     """Respect both host available memory and remaining cgroup-v2 allowance."""
-    mem = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
-    ram = int(mem["MemAvailable"].split()[0]) * 1024
+    if os.name == "nt":
+        ram = _windows_available_ram_bytes()
+    else:
+        mem = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
+        ram = int(mem["MemAvailable"].split()[0]) * 1024
     limit = Path("/sys/fs/cgroup/memory.max")
     if limit.exists() and limit.read_text().strip() != "max":
         ram = min(
@@ -138,25 +170,22 @@ class SourceJobs:
     def run(self, command, **kwargs):
         if self.cancelled.is_set():
             raise SourceCancelled("Source jobs cancelled")
-        process = subprocess.Popen(command, start_new_session=True, **kwargs)
+        tree = OwnedProcessTree(command, **kwargs)
         started = time.monotonic()
         try:
-            while process.poll() is None:
+            while tree.poll() is None:
                 if self.cancelled.wait(0.05):
                     raise SourceCancelled("Source jobs cancelled")
                 if time.monotonic() - started > self.timeout:
                     raise TimeoutError(f"Source job timeout: {command}")
-            return subprocess.CompletedProcess(command, process.returncode)
+            return subprocess.CompletedProcess(command, tree.process.returncode)
         except BaseException as error:
             self._fail(error)
             raise
         finally:
-            # Kill the entire session group, including descendants after leader exit.
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait()
+            # Kill the entire owned tree, including descendants after leader exit
+            # (POSIX session group / Windows kill-on-close Job Object).
+            tree.close()
 
     def ordered(self, keys, execute, workers, events):
         keys = list(keys)

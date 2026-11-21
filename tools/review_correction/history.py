@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -14,11 +13,20 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
 from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
 
 CHECKPOINT_ID = re.compile(r"cp_[0-9a-f]{64}\Z")
-CHECKPOINT_SCHEMA_VERSION = 2
-IDENTITY_VERSION = 2
+# A checkpoint schema is bound to the identity rule its record was written with:
+# schema 1 <-> identity v1, schema 2 <-> v2, schema 3 <-> v3 (#543).
+CHECKPOINT_SCHEMA_VERSION = 3
+IDENTITY_VERSION = 3
+SUPPORTED_IDENTITY_VERSIONS = (1, 2, 3)
+# Separators of recorded absolute references: a Windows-native engine writes a
+# backslash; on POSIX a backslash is an ordinary file-name character.
+_PATH_SEPARATORS = ("/", "\\") if os.name == "nt" else ("/",)
+_SPLIT_PATH = re.compile(r"[\\/]+" if os.name == "nt" else r"/+")
+RETAINED_DIR = ".engine-retained"
 
 
 def digest(data):
@@ -64,39 +72,149 @@ def atomic_bytes(path, data):
             os.unlink(temporary)
 
 
+def _path_parts(value):
+    return [part for part in _SPLIT_PATH.split(value) if part]
+
+
+def declared_job_root(manifest):
+    """Absolute job root that a prepared local manifest declares through its run_dir.
+
+    A local review binds its manifest to ``<job>/.engine-retained/runs/<job-id>``. Returns
+    ``(root_text, job_id)`` exactly as recorded, or None for any other layout.
+    """
+    run_dir = manifest.get("run_dir") if isinstance(manifest, dict) else None
+    if not isinstance(run_dir, str) or not Path(run_dir).is_absolute():
+        return None
+    parts = _path_parts(run_dir)
+    if (
+        len(parts) < 4
+        or parts[-3:-1] != [RETAINED_DIR, "runs"]
+        or any(part in {".", ".."} for part in parts)
+    ):
+        return None
+    root = run_dir
+    for _ in range(3):
+        root = root.rstrip("".join(_PATH_SEPARATORS))
+        root = root[: max(root.rfind(sep) for sep in _PATH_SEPARATORS)]
+    if not root or not Path(root).is_absolute():
+        return None
+    return root, parts[-1]
+
+
+def map_job_paths(value, old_root, convert):
+    """Replace every string at or below ``old_root`` with ``convert(relative_parts)``.
+
+    Other values, including paths outside the job and strings that only embed the root,
+    are kept unchanged. A relative part of ``.`` or ``..`` is never a job reference.
+    """
+    if isinstance(value, dict):
+        return {key: map_job_paths(item, old_root, convert) for key, item in value.items()}
+    if isinstance(value, list):
+        return [map_job_paths(item, old_root, convert) for item in value]
+    if isinstance(value, str) and (
+        value == old_root or any(value.startswith(old_root + sep) for sep in _PATH_SEPARATORS)
+    ):
+        rest = _path_parts(value[len(old_root) :])
+        if any(part in {".", ".."} for part in rest):
+            raise ValueError("Retained reference escapes its job root")
+        return convert(rest)
+    return value
+
+
+def rebind_job_paths(value, old_root, job_root):
+    """Resolve references recorded below ``old_root`` inside the current ``job_root``."""
+    job_root = Path(job_root)
+    resolved_root = job_root.resolve()
+
+    def convert(rest):
+        target = job_root.joinpath(*rest)
+        if not target.resolve().is_relative_to(resolved_root):
+            raise ValueError("Retained reference escaped job root")
+        return str(target)
+
+    return map_job_paths(value, old_root, convert)
+
+
 def relocate_manifest(data, manifest_path):
     """Only the retained engine-job layout permits a fixed-prefix relocation."""
     actual = manifest_path.parent.resolve()
-    declared = Path(str(data.get("run_dir", "")))
-    if len(actual.parts) < 4 or list(actual.parts[-3:-1]) != [".engine-retained", "runs"]:
+    if len(actual.parts) < 4 or list(actual.parts[-3:-1]) != [RETAINED_DIR, "runs"]:
         return deepcopy(data)
-    if not declared.is_absolute() or declared.parts[-3:] != actual.parts[-3:]:
+    declared = declared_job_root(data)
+    if declared is None or declared[1] != actual.name:
         raise ValueError("Retained source layout does not match its manifest")
-    old_root, new_root = declared.parents[2], actual.parents[2]
-
-    def convert(value):
-        if isinstance(value, str) and (
-            value == str(old_root) or value.startswith(str(old_root) + "/")
-        ):
-            target = new_root / value[len(str(old_root)) :].lstrip("/")
-            if not target.resolve().is_relative_to(new_root):
-                raise ValueError("Retained reference escaped job root")
-            return str(target)
-        if isinstance(value, dict):
-            return {k: convert(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [convert(v) for v in value]
-        return value
-
-    return convert(data)
+    return rebind_job_paths(data, declared[0], actual.parents[2])
 
 
-def semantic_identity_digest(source, corrections):
-    """Combined identity v2. The version is hashed so it can never equal a v1 digest."""
-    return digest(
-        encoded(
-            {"identity_version": IDENTITY_VERSION, "source": source, "corrections": corrections}
+def canonical_manifest_identity(raw):
+    """Location-independent digest of a source manifest (identity v3, #543).
+
+    A prepared local manifest records absolute paths under its job root, so moving the job
+    (another storage root, mount point or portable folder) rewrites its bytes on the next
+    preparation. Only references at or below the declared job root become job-relative;
+    every other value, the job ID and all numerical/config/model provenance stay hashed
+    as recorded. Any other manifest keeps its exact bytes.
+    """
+    exact = {"manifest_sha256": digest(raw)}
+    try:
+        manifest = json.loads(raw)
+    except (TypeError, ValueError):
+        return digest(encoded(exact))
+    declared = declared_job_root(manifest)
+    if declared is None:
+        return digest(encoded(exact))
+    try:
+        relative = map_job_paths(
+            manifest, declared[0], lambda rest: {"job_relative": "/".join(rest)}
         )
+    except ValueError:
+        return digest(encoded(exact))
+    return digest(encoded({"job_relative_manifest": relative}))
+
+
+def current_job_root(package_root, job_id):
+    """The nearest ancestor of a review package that retains run ``job_id``, if any.
+
+    A main review lives at ``<job>/review``; a resumed session at
+    ``<job>/review/resumed_sessions/<session>/review``.
+    """
+    if not isinstance(job_id, str) or job_id in {"", ".", ".."} or Path(job_id).name != job_id:
+        return None
+    for candidate in list(Path(package_root).parents)[:4]:
+        retained = candidate / RETAINED_DIR
+        run = retained / "runs" / job_id
+        if not retained.is_symlink() and not run.is_symlink() and run.is_dir():
+            return candidate
+    return None
+
+
+def recorded_package_file(root, record, key):
+    """A file a result record names, resolved inside the current package ``root``.
+
+    Records since identity v3 store ``<key>_package_path``. An older record has only the
+    absolute path where it was written; its ``application_runs/...`` suffix is resolved in
+    this package instead, because the package may have moved since (#543). Callers still
+    verify the recorded SHA-256 of the file.
+    """
+    relative = record.get(f"{key}_package_path")
+    if relative is None:
+        value = record.get(key)
+        if not isinstance(value, str):
+            raise ValueError("Recorded result path is unavailable")
+        parts = _path_parts(value)
+        if "application_runs" not in parts:
+            raise ValueError("Recorded result is outside this review package")
+        index = len(parts) - 1 - parts[::-1].index("application_runs")
+        relative = "/".join(parts[index:])
+    if not isinstance(relative, str) or not relative.startswith("application_runs/"):
+        raise ValueError("Recorded result is outside this review package")
+    return package_path(Path(root), relative)
+
+
+def semantic_identity_digest(source, corrections, version=IDENTITY_VERSION):
+    """Combined identity v2+. The version is hashed so no version can equal another."""
+    return digest(
+        encoded({"identity_version": version, "source": source, "corrections": corrections})
     )
 
 
@@ -110,26 +228,97 @@ def identity_record_version(recorded):
     if "identity_version" not in recorded:
         return 1
     version = recorded["identity_version"]
-    if type(version) is not int or version != IDENTITY_VERSION:
+    if type(version) is not int or version not in SUPPORTED_IDENTITY_VERSIONS or version == 1:
         raise ValueError("Unsupported identity version")
     source, corrections = recorded.get("source_identity"), recorded.get("corrections_identity")
     if (
         not isinstance(source, str)
         or not isinstance(corrections, str)
-        or recorded.get("identity") != semantic_identity_digest(source, corrections)
+        or recorded.get("identity") != semantic_identity_digest(source, corrections, version)
     ):
         raise ValueError("Recorded identity is inconsistent")
     return version
 
 
-def identity_matches(recorded, identities):
+def identity_matches(recorded, identities, relocated=()):
     """Compare a stored record with the current package under the record's own version.
 
     `identities` maps each supported version to the current identity, because a version 1
-    record stores only digests and cannot be converted to a later rule.
+    record stores only digests and cannot be converted to a later rule. A v1/v2 record
+    hashed its source manifest's exact bytes, which include the job's former absolute
+    location. `relocated` may yield the identities the current package had under an
+    earlier manifest whose only difference is that location (see
+    `CorrectionState.relocated_identities`); it is consulted only for those versions.
     """
     version = identity_record_version(recorded)
-    return recorded.get("identity") == identities[version]["identity"]
+    if recorded.get("identity") == identities[version]["identity"]:
+        return True
+    if version >= 3:
+        return False
+    return any(recorded.get("identity") == item[version]["identity"] for item in relocated)
+
+
+def retained_source_manifests(history_root):
+    """Exact source-manifest bytes retained by this package's verified checkpoints."""
+    seen = set()
+    checkpoints = Path(history_root) / "checkpoints"
+    blobs = Path(history_root) / "blobs"
+    if (
+        Path(history_root).is_symlink()
+        or checkpoints.is_symlink()
+        or blobs.is_symlink()
+        or not checkpoints.is_dir()
+    ):
+        return
+    for directory in sorted(checkpoints.iterdir()):
+        path = directory / "checkpoint.json"
+        if (
+            not CHECKPOINT_ID.fullmatch(directory.name)
+            or directory.is_symlink()
+            or path.is_symlink()
+            or not path.is_file()
+        ):
+            continue
+        try:
+            value = json.loads(path.read_bytes())
+            if "cp_" + digest(encoded(value)) != directory.name:
+                continue
+            ref = (value.get("source_context") or {}).get("original_manifest") or {}
+            key = ref.get("sha256")
+            if not isinstance(key, str) or not re.fullmatch(r"[0-9a-f]{64}", key) or key in seen:
+                continue
+            blob = blobs / key
+            if blob.is_symlink():
+                continue
+            data = blob.read_bytes()
+        except (OSError, ValueError, AttributeError):
+            continue
+        if len(data) == ref.get("size") and digest(data) == key:
+            seen.add(key)
+            yield data
+
+
+def _recorded_attempt(root, result):
+    """The application attempt whose run produced ``result``, wherever the job moved."""
+    try:
+        run = recorded_package_file(root, result, "corrected_run")
+    except ValueError:
+        return None
+    parts = run.relative_to(Path(root)).parts
+    return parts[1] if len(parts) == 3 else None
+
+
+class _Lazy:
+    """Evaluate an iterable once, on first use, and replay it afterwards."""
+
+    def __init__(self, factory):
+        self.factory = factory
+        self.items = None
+
+    def __iter__(self):
+        if self.items is None:
+            self.items = list(self.factory())
+        return iter(self.items)
 
 
 class ReviewBusyError(ValueError):
@@ -154,19 +343,19 @@ class CheckpointStore:
     @contextmanager
     def transaction(self, *, allow_apply=False):
         self._prepare()
-        fd = os.open(self.root / ".transaction.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+        fd = open_lock_file(self.root / ".transaction.lock")
         with os.fdopen(fd, "r+") as lock:
             try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                lock_exclusive_nonblocking(lock)
             except BlockingIOError as exc:
                 raise ReviewBusyError("Another review operation is in progress") from exc
             if not allow_apply:
                 apply_lock = package_path(self.package.root, "application_runs/.apply.lock")
                 if apply_lock.exists() or apply_lock.is_symlink():
-                    afd = os.open(apply_lock, os.O_RDWR | os.O_NOFOLLOW)
+                    afd = open_lock_file(apply_lock, create=False)
                     with os.fdopen(afd, "r+") as active:
                         try:
-                            fcntl.flock(active, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            lock_exclusive_nonblocking(active)
                         except BlockingIOError as exc:
                             raise ReviewBusyError(
                                 "Wait for corrected PDF generation before saving"
@@ -209,7 +398,7 @@ class CheckpointStore:
 
     def _source_context(self, package=None):
         package = package or self.package
-        payload = json.loads(package.handoff_path.read_text())
+        payload = json.loads(package.handoff_path.read_text(encoding="utf-8"))
         path = _resolve_source_manifest_path(payload, package.root)
         if not path.is_file():
             return None
@@ -286,8 +475,9 @@ class CheckpointStore:
         identities = package.state.capture_identities()
         identity = identities[IDENTITY_VERSION]
         if not force:
+            relocated = _Lazy(package.state.relocated_identities)
             for item in reversed(self.list()):
-                if identity_matches(item["identity"], identities):
+                if identity_matches(item["identity"], identities, relocated):
                     self.validate_dependencies(item["id"])
                     return item["id"]
         refs = {}
@@ -332,18 +522,16 @@ class CheckpointStore:
         path = directory / "checkpoint.json"
         if directory.is_symlink() or path.is_symlink():
             raise ValueError("Checkpoint must not use symlinks")
-        value = json.loads(path.read_text())
+        value = json.loads(path.read_text(encoding="utf-8"))
         schema = value.get("schema_version")
-        if type(schema) is not int or schema not in (1, CHECKPOINT_SCHEMA_VERSION):
+        if type(schema) is not int or schema not in SUPPORTED_IDENTITY_VERSIONS:
             raise ValueError("Unsupported checkpoint schema")
         if "cp_" + digest(encoded(value)) != checkpoint:
             raise ValueError("Checkpoint metadata changed")
         # Each schema is bound to the identity rule it was written with.
         if identity_record_version(value.get("identity")) != schema:
             raise ValueError("Checkpoint identity does not match its schema")
-        if schema == CHECKPOINT_SCHEMA_VERSION and not value["files"].get(
-            "manual_correction_input.json"
-        ):
+        if schema >= 2 and not value["files"].get("manual_correction_input.json"):
             raise ValueError("Checkpoint does not retain its complete handoff")
         for rel, ref in value["files"].items():
             package_path(self.package.root, rel)
@@ -374,11 +562,32 @@ class CheckpointStore:
             )
         return sorted(result, key=lambda item: item["created_at"])
 
+    def _rebinder(self, context):
+        """Map a checkpoint's recorded job references into the job's current location.
+
+        A checkpoint records the absolute paths of its job when it was saved. When the
+        manifest declares the retained job layout and this package still belongs to that
+        job (same retained run ID), references below the recorded job root are resolved
+        below the current one, whether or not the job moved, and never outside it (#543).
+        References outside the job are kept as recorded. Callers verify content digests.
+        """
+        declared = declared_job_root((context or {}).get("manifest"))
+        if declared is None:
+            return lambda value: value
+        job_root = current_job_root(self.package.root, declared[1])
+        if job_root is None:
+            return lambda value: value
+        return lambda value: rebind_job_paths(value, declared[0], job_root)
+
     def validate_dependencies(self, checkpoint):
         value = self.get(checkpoint)
         context = value.get("source_context") or {}
+        rebind = self._rebinder(context)
         for path, expected in context.get("dependencies", {}).items():
-            source = Path(path)
+            try:
+                source = Path(rebind(path))
+            except ValueError as exc:
+                raise ValueError("Retained source dependency escapes its job") from exc
             if not source.is_file() or digest(source.read_bytes()) != expected:
                 raise ValueError("Retained source dependency changed or is unavailable")
         return value
@@ -395,7 +604,7 @@ class CheckpointStore:
         if context:
             retained = review.parent / "retained"
             retained.mkdir()
-            manifest = deepcopy(context["manifest"])
+            manifest = self._rebinder(context)(deepcopy(context["manifest"]))
             for page_id, ref in context["bases"].items():
                 path = package_path(retained, f"intermediate/{page_id}/numbering_base.json")
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -408,7 +617,9 @@ class CheckpointStore:
             if context.get("source_pdf"):
                 (retained / "source.pdf").write_bytes(self.blob(context["source_pdf"]))
             (retained / "manifest.json").write_bytes(encoded(manifest))
-            handoff = json.loads((review / "manual_correction_input.json").read_text())
+            handoff = json.loads(
+                (review / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
             handoff.pop("source_artifact_root", None)
             handoff["source_manifest"] = "../retained/manifest.json"
             (review / "manual_correction_input.json").write_bytes(encoded(handoff))
@@ -423,7 +634,7 @@ class CheckpointStore:
             raise ValueError("Application record must not be a symlink")
         if value is not None:
             atomic_bytes(path, encoded({"schema_version": 1, **value}))
-        result = json.loads(path.read_text())
+        result = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(result, dict) or result.get("schema_version") != 1:
             raise ValueError("Invalid application history record")
         return result
@@ -445,8 +656,7 @@ class CheckpointStore:
                         attested = (
                             (package.get("last_application") or {}).get("status") == "succeeded"
                             and last.get("identity") == record.get("identity", {}).get("identity")
-                            and Path(last.get("corrected_run") or "").parent
-                            == self.package.root / "application_runs" / name
+                            and _recorded_attempt(self.package.root, last) == name
                         )
                         updated = {
                             **record,

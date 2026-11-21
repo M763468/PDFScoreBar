@@ -1,3 +1,4 @@
+import os
 from types import SimpleNamespace
 
 import numpy as np
@@ -547,7 +548,8 @@ def test_current_worker_environment_removes_homr_shadow_paths() -> None:
     workspace_homr = str(PROJECT_ROOT / "homr")
     external_homr = str(PROJECT_ROOT / "external" / "homr")
     base_env = {
-        "PYTHONPATH": ":".join(
+        # The worker joins with os.pathsep (";" on Windows, where ":" follows drives).
+        "PYTHONPATH": os.pathsep.join(
             [
                 external_homr,
                 workspace_homr,
@@ -560,7 +562,7 @@ def test_current_worker_environment_removes_homr_shadow_paths() -> None:
     }
 
     env = _build_worker_environment(base_env)
-    entries = env["PYTHONPATH"].split(":")
+    entries = env["PYTHONPATH"].split(os.pathsep)
 
     assert entries[0] == str(PROJECT_ROOT)
     assert external_homr not in entries

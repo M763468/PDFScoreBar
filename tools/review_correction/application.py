@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -10,6 +9,7 @@ import tempfile
 from pathlib import Path
 from threading import Lock, Thread
 
+from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
 from src.pipeline.review.apply_corrections import (
     _load_movement_boundary_input,
     _merge_existing_override_inputs,
@@ -23,7 +23,7 @@ from src.pipeline.review.manual_correction_handoff import (
     load_manual_correction_handoff,
     validate_manual_correction_handoff,
 )
-from tools.review_correction.history import identity_matches, now
+from tools.review_correction.history import identity_matches, now, recorded_package_file
 
 
 def preview_numbering(handoff_path: str | Path) -> dict:
@@ -148,12 +148,10 @@ class CorrectionApplication:
         event = {}
         try:
             self._safe_root()
-            descriptor = os.open(
-                self.root / ".apply.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600
-            )
+            descriptor = open_lock_file(self.root / ".apply.lock")
             self.process_lock = os.fdopen(descriptor, "r+")
             try:
-                fcntl.flock(self.process_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                lock_exclusive_nonblocking(self.process_lock)
             except BlockingIOError as exc:
                 raise ValueError(
                     "A corrected result is already being generated for this package"
@@ -162,9 +160,12 @@ class CorrectionApplication:
                 checkpoint = self.package.history.capture()
                 identity = self.package.state.begin_apply()
                 apply_started = True
+                # A v1/v2 checkpoint reused after a job move matches only through the
+                # same relocation proof that `capture()` accepted it with (#543).
                 if not identity_matches(
                     self.package.history.get(checkpoint)["identity"],
                     self.package.state.capture_identities(),
+                    self.package.state.relocated_identities(),
                 ):
                     raise ValueError("Review changed while preparing application")
                 attempt = self._allocate()
@@ -217,7 +218,9 @@ class CorrectionApplication:
         try:
             review = attempt / "input_review"
             self.package.history.materialize(checkpoint, review)
-            payload = json.loads((review / "manual_correction_input.json").read_text())
+            payload = json.loads(
+                (review / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
             if not self.package.history.get(checkpoint).get("source_context"):
                 manifest = _resolve_source_manifest_path(payload, self.package.root)
                 payload["source_manifest"] = str(manifest)
@@ -306,9 +309,9 @@ class CorrectionApplication:
                     ),
                 }
                 summary_path = run / "review/correction_summary.json"
-                report = json.loads(summary_path.read_text())
+                report = json.loads(summary_path.read_text(encoding="utf-8"))
                 report["final_pdf"] = str(numbered.resolve())
-                summary_path.write_text(json.dumps(report, indent=2) + "\n")
+                summary_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
             summary = json.loads(
                 (run / "review" / "correction_summary.json").read_text(encoding="utf-8")
             )
@@ -354,14 +357,15 @@ class CorrectionApplication:
         result = self.package.state.snapshot()["package"]["last_successful_result"]
         if not result:
             raise ValueError("No corrected final PDF has been generated")
-        final = Path(result["final_pdf"])
         self._safe_root()
+        # Resolved inside the current package: the job may have moved since (#543).
+        final = recorded_package_file(self.package.root, result, "final_pdf")
         if final.resolve() != final or self.root not in final.parents or not final.is_file():
             raise ValueError("The corrected final PDF is unavailable")
         if hashlib.sha256(final.read_bytes()).hexdigest() != result["final_pdf_sha256"]:
             raise ValueError("The corrected final PDF changed after generation")
         if result.get("number_layer_sidecar"):
-            sidecar = Path(result["number_layer_sidecar"])
+            sidecar = recorded_package_file(self.package.root, result, "number_layer_sidecar")
             if (
                 sidecar.resolve() != sidecar
                 or sidecar.parent != final.parent

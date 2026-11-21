@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from pathlib import Path
 from threading import Event, Thread
 
@@ -21,6 +22,10 @@ from tools.review_correction.application import CorrectionApplication
 from tools.review_correction.history import digest, encoded
 from tools.review_correction.resume import create_session
 from tools.review_correction.server import ReviewPackage, create_server
+
+# Former engine results root of the legacy fixtures. It must be absolute on the running
+# platform (a drive-less "/results" is not absolute on Windows, #535).
+LEGACY_RESULTS = Path("C:/results") if os.name == "nt" else Path("/results")
 
 
 def _pdf_package(tmp_path):
@@ -64,7 +69,7 @@ def test_null_source_reference_preserves_correction_save_and_apply(tmp_path, mon
 
     app = _application(tmp_path)
     manifest = app.package.root.parent / "manifest.json"
-    payload = json.loads(manifest.read_text())
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
     payload["pages"] = [{"source_reference": None}]
     manifest.write_bytes(encoded(payload))
     package = app.package
@@ -176,7 +181,7 @@ def test_running_failure_and_interruption_survive_restart(tmp_path, monkeypatch)
     assert restarted.state.snapshot()["package"]["last_application"]["status"] == "failed"
     # A crash leaves running metadata but releases the OS file lock.
     metadata = restarted.state.metadata_path
-    data = json.loads(metadata.read_text())
+    data = json.loads(metadata.read_text(encoding="utf-8"))
     data["last_application"] = {"status": "running"}
     metadata.write_bytes(encoded(data))
     recovered = ReviewPackage(app.handoff)
@@ -206,14 +211,17 @@ def test_resume_sessions_are_independent_and_reject_unknown_background(tmp_path)
     with pytest.raises(ValueError, match="background"):
         create_session(package, cp, unknown)
     assert sorted((package.root / "resumed_sessions").iterdir()) == before
-    assert digest(pdf) == json.loads(restored.handoff_path.read_text())["resume"]["input_sha256"]
+    assert (
+        digest(pdf)
+        == json.loads(restored.handoff_path.read_text(encoding="utf-8"))["resume"]["input_sha256"]
+    )
 
 
 def test_resumed_apply_uses_safe_layer_and_records_sidecar(tmp_path, monkeypatch):
     package, pdf = _pdf_package(tmp_path)
     session = create_session(package, _checkpoint(package), pdf)
     handoff = package.root / f"resumed_sessions/{session}/review/manual_correction_input.json"
-    payload = json.loads(handoff.read_text())
+    payload = json.loads(handoff.read_text(encoding="utf-8"))
     payload["output_name"] = "Sym4 Vn2"
     handoff.write_bytes(encoded(payload))
     restored = ReviewPackage(handoff)
@@ -284,7 +292,7 @@ def test_retained_dependency_mutation_blocks_reusing_checkpoint(tmp_path):
     retained = tmp_path / "retained.json"
     retained.write_text("{}")
     manifest = app.package.root.parent / "manifest.json"
-    payload = json.loads(manifest.read_text())
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
     payload["pages"] = [{"retained_numbering": str(retained)}]
     manifest.write_bytes(encoded(payload))
     cp = _checkpoint(app.package)
@@ -390,10 +398,12 @@ def _legacy_attempt(app, number=1, manifest=None):
             target = review / rel
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
-    data = json.loads(package.handoff_path.read_text())
+    data = json.loads(package.handoff_path.read_text(encoding="utf-8"))
     data["source_manifest"] = str(manifest or package.root.parent / "manifest.json")
     # Pre-checkpoint applications saved this exact form, keeping the handoff's key order.
-    (review / "manual_correction_input.json").write_text(json.dumps(data, indent=2) + "\n")
+    (review / "manual_correction_input.json").write_text(
+        json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     (attempt / "consumed_inputs.json").write_bytes(encoded(identity))
     return attempt, identity
 
@@ -448,7 +458,7 @@ def test_legacy_import_rejects_changed_inputs_and_keeps_checkpoints(tmp_path, ch
             encoded({"correction_type": "barline_construction", "items": [{"page": 0, "x": 100}]})
         )
     else:
-        data = json.loads((attempt / "consumed_inputs.json").read_text())
+        data = json.loads((attempt / "consumed_inputs.json").read_text(encoding="utf-8"))
         data["source_identity"] = "0" * 64
         (attempt / "consumed_inputs.json").write_bytes(encoded(data))
     before = app.package.history.list()
@@ -470,7 +480,7 @@ def _prepared_legacy_job(tmp_path, saved_name=None):
         page.draw_line((60, 100), (180, 100))
         doc.save(source)
         page.get_pixmap().save(handoff.parent / "pages/page_001/source.png")
-    payload = json.loads(handoff.read_text())
+    payload = json.loads(handoff.read_text(encoding="utf-8"))
     # Non-ASCII content pins the byte-exact serialization used by the adapter.
     payload.update(source_job_id="job-one", source_title="交響曲第4番")
     if saved_name is not None:
@@ -481,7 +491,7 @@ def _prepared_legacy_job(tmp_path, saved_name=None):
     retained.write_text(
         json.dumps(
             {
-                "run_dir": "/results/job-one/.engine-work/runs/job-one",
+                "run_dir": str(LEGACY_RESULTS / "job-one/.engine-work/runs/job-one"),
                 "config": {"inputs": {}, "steps": {}, "outputs": {}},
                 "pages": [
                     {
@@ -501,7 +511,8 @@ def _prepared_legacy_job(tmp_path, saved_name=None):
     app = CorrectionApplication(ReviewPackage(handoff), handoff)
     app.package.record_correction(0, "barline_construction", [])
     attempt, identity = _legacy_attempt(
-        app, manifest="/results/job-one/.engine-retained/runs/job-one/local_manifest.json"
+        app,
+        manifest=str(LEGACY_RESULTS / "job-one/.engine-retained/runs/job-one/local_manifest.json"),
     )
     return handoff, job, attempt, identity
 
@@ -513,19 +524,21 @@ def _reopen_with_recovered_name(handoff, job):
     (job / "final").mkdir()
     (job / "final/Festival_Overture_score_numbered.pdf").write_bytes(b"%PDF-1.4\nexample")
     prepared = prepare_local_review(job)
-    assert json.loads(handoff.read_text())["output_name"] == "Festival_Overture"
+    assert json.loads(handoff.read_text(encoding="utf-8"))["output_name"] == "Festival_Overture"
     assert prepare_local_review(job) == prepared
     return ReviewPackage(handoff)
 
 
 def _set_job_output_name(handoff, name):
     """Change only the job's optional name, in the form the launcher preparation writes."""
-    payload = json.loads(handoff.read_text())
+    payload = json.loads(handoff.read_text(encoding="utf-8"))
     if name is None:
         payload.pop("output_name", None)
     else:
         payload["output_name"] = name
-    handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    handoff.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
 
 
 def _tree_bytes(root):
@@ -557,7 +570,7 @@ def test_legacy_import_output_name_matrix(tmp_path, saved, current, expected):
     _set_job_output_name(handoff, current)
     # Re-preparing a job that is not missing its name, or has no final/, keeps the bytes.
     assert prepare_local_review(job) == prepare_local_review(job)
-    assert json.loads(handoff.read_text()).get("output_name") == current
+    assert json.loads(handoff.read_text(encoding="utf-8")).get("output_name") == current
     package = ReviewPackage(handoff)
     assert list_attempts(package) == [
         {"id": attempt.name, "available": True, "status": "saved_inputs_only"}
@@ -594,10 +607,10 @@ def test_legacy_import_survives_review_recovering_output_name(tmp_path):
     saved = package.history.get(checkpoint)
     assert saved["origin"]["original_identity"] == identity
     assert saved["identity"]["corrections_identity"] == identity["corrections_identity"]
-    assert json.loads(handoff.read_text())["output_name"] == "Festival_Overture"
+    assert json.loads(handoff.read_text(encoding="utf-8"))["output_name"] == "Festival_Overture"
     restored = tmp_path / "restored/review"
     package.history.materialize(checkpoint, restored)
-    payload = json.loads((restored / "manual_correction_input.json").read_text())
+    payload = json.loads((restored / "manual_correction_input.json").read_text(encoding="utf-8"))
     assert _derive_output_name(None, payload) == "Festival_Overture"
 
 
@@ -686,15 +699,21 @@ def test_legacy_import_with_recovered_name_rejects_real_changes(
         )
     elif changed == "manifest":
         retained = job / ".engine-retained/runs/job-one/manifest.json"
-        retained.write_text(json.dumps({**json.loads(retained.read_text()), "changed": True}))
+        retained.write_text(
+            json.dumps({**json.loads(retained.read_text(encoding="utf-8")), "changed": True})
+        )
     if saved_name is None:
         _reopen_with_recovered_name(handoff, job)
     if changed == "handoff_body":
-        payload = json.loads(handoff.read_text())
+        payload = json.loads(handoff.read_text(encoding="utf-8"))
         payload["source_title"] = "別の曲"
-        handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+        handoff.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
     elif changed.startswith("saved_name"):
-        payload = json.loads(saved_handoff.read_text())
+        payload = json.loads(saved_handoff.read_text(encoding="utf-8"))
         if changed == "saved_name_removed":
             del payload["output_name"]
         elif changed == "saved_name_equal_to_job":

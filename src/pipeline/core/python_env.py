@@ -22,7 +22,9 @@ def is_in_container() -> bool:
 
 def get_docker_exec_prefix() -> List[str]:
     """Returns the canonical pipeline docker exec prefix when available from the host."""
-    if is_in_container():
+    if is_in_container() or os.name == "nt":
+        # A Windows-native engine owns its runtime; it must never delegate a step to a
+        # Linux container that cannot see its Windows paths.
         return []
 
     try:

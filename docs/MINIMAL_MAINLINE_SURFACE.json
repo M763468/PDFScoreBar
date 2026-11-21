@@ -69,8 +69,16 @@
       "role": "Connector evidence artifact loading for system grouping"
     },
     {
+      "pattern": "src/common/file_lock.py",
+      "role": "Cross-platform non-blocking lock files for the correction application (#535)"
+    },
+    {
       "pattern": "src/common/model_artifacts.py",
       "role": "Verified model identities, download/cache and image/external asset resolution"
+    },
+    {
+      "pattern": "src/common/process_tree.py",
+      "role": "Owned child-process trees killed as a unit (POSIX session group, Windows Job Object) (#535)"
     },
     {
       "pattern": "src/third_party/__init__.py",
@@ -231,6 +239,10 @@
     {
       "pattern": "src/pipeline/detection/current_sr_runtime.py",
       "role": "x4 SR runtime"
+    },
+    {
+      "pattern": "src/pipeline/detection/ort_session_audit.py",
+      "role": "Records real ONNX Runtime sessions and fails closed on CUDA-to-CPU fallback (#535)"
     },
     {
       "pattern": "src/pipeline/detection/sr_compiler_cache.py",
@@ -838,6 +850,8 @@
       "tests/test_issue441_mobilesheets_roundtrip.py",
       "tests/test_issue458_source_concurrency.py",
       "tests/test_issue532_empty_page_contract.py",
+      "tests/test_issue535_portable_launcher.py",
+      "tests/test_issue535_windows_native_support.py",
       "tests/test_job_lifecycle.py",
       "tests/test_manual_correction_handoff.py",
       "tests/test_manual_correction_materializer.py",
@@ -860,6 +874,7 @@
       "tests/test_python_env.py",
       "tests/test_review_correction_history.py",
       "tests/test_review_correction_identity_v2.py",
+      "tests/test_review_correction_identity_v3.py",
       "tests/test_reviewed_movement_apply.py",
       "tests/test_source_page_provenance.py",
       "tests/test_sr_compiler_cache.py",

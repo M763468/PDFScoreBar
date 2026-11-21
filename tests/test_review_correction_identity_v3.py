@@ -253,6 +253,20 @@ def test_legacy_result_survives_a_move_through_its_retained_manifest(tmp_path, v
 
 
 @pytest.mark.parametrize("version", [1, 2])
+def test_reused_legacy_checkpoint_after_a_move_can_be_applied(tmp_path, monkeypatch, version):
+    job = _job(tmp_path)
+    _, checkpoint = _legacy_result(job, version)
+    moved = _move(job, tmp_path)
+    app = _app(moved)
+    applied = _apply(app, monkeypatch)
+    assert applied["checkpoint_id"] == checkpoint
+    assert applied["identity_version"] == IDENTITY_VERSION
+    assert app.package.history.list_applications()[0]["checkpoint_id"] == checkpoint
+    assert app.package.state.snapshot()["package"]["current_result"] == applied
+    assert app.result().is_relative_to(moved)
+
+
+@pytest.mark.parametrize("version", [1, 2])
 def test_legacy_result_without_a_relocation_proof_is_stale(tmp_path, version):
     job = _job(tmp_path)
     result, checkpoint = _legacy_result(job, version)

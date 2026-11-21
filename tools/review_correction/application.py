@@ -162,9 +162,12 @@ class CorrectionApplication:
                 checkpoint = self.package.history.capture()
                 identity = self.package.state.begin_apply()
                 apply_started = True
+                # A v1/v2 checkpoint reused after a job move matches only through the
+                # same relocation proof that `capture()` accepted it with (#543).
                 if not identity_matches(
                     self.package.history.get(checkpoint)["identity"],
                     self.package.state.capture_identities(),
+                    self.package.state.relocated_identities(),
                 ):
                     raise ValueError("Review changed while preparing application")
                 attempt = self._allocate()

@@ -860,6 +860,7 @@
       "tests/test_python_env.py",
       "tests/test_review_correction_history.py",
       "tests/test_review_correction_identity_v2.py",
+      "tests/test_review_correction_identity_v3.py",
       "tests/test_reviewed_movement_apply.py",
       "tests/test_source_page_provenance.py",
       "tests/test_sr_compiler_cache.py",

@@ -617,7 +617,9 @@ class CheckpointStore:
             if context.get("source_pdf"):
                 (retained / "source.pdf").write_bytes(self.blob(context["source_pdf"]))
             (retained / "manifest.json").write_bytes(encoded(manifest))
-            handoff = json.loads((review / "manual_correction_input.json").read_text(encoding="utf-8"))
+            handoff = json.loads(
+                (review / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
             handoff.pop("source_artifact_root", None)
             handoff["source_manifest"] = "../retained/manifest.json"
             (review / "manual_correction_input.json").write_bytes(encoded(handoff))

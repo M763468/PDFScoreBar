@@ -12,10 +12,12 @@ from typing import Any
 
 from tools.review_correction.history import (
     IDENTITY_VERSION,
+    canonical_manifest_identity,
     identity_matches,
     identity_record_version,
     now,
     package_path,
+    retained_source_manifests,
     semantic_identity_digest,
 )
 
@@ -240,9 +242,33 @@ class CorrectionState:
         """Current identity under each rule stored records may use.
 
         Version 1 hashes the whole handoff file and must stay byte-for-byte reproducible for
-        existing records. Version 2 excludes output metadata from the handoff. The source and
-        correction inputs are otherwise the same under both versions.
+        existing records. Version 2 excludes output metadata from the handoff. Version 3
+        (#543) additionally hashes the source manifest without the job's absolute location
+        (`canonical_manifest_identity`), so moving a job does not change it. The source and
+        correction inputs are otherwise the same under every version.
         """
+        return self._identities()[0]
+
+    def relocated_identities(self):
+        """v1/v2 identities of this package under each relocation-equivalent manifest.
+
+        v1/v2 records hashed the source manifest's exact bytes, which a job move rewrites.
+        A checkpoint retains the exact manifest bytes it was saved with. Each one whose
+        location-independent identity equals the current manifest's differs only in the
+        job location, so substituting its digest reproduces what v1/v2 would have recorded
+        for the current, otherwise unchanged inputs. A record still has to match the whole
+        identity; nothing is rewritten.
+        """
+        _, manifest = self._identities()
+        if manifest is None:
+            return
+        current, canonical = manifest
+        for data in retained_source_manifests(self.root / "history"):
+            sha = hashlib.sha256(data).hexdigest()
+            if sha != current and canonical_manifest_identity(data) == canonical:
+                yield self._identities(manifest_sha256=sha)[0]
+
+    def _identities(self, manifest_sha256: str | None = None):
         source_files: dict[str, str | None] = {}
         for page in self.pages:
             for field in (
@@ -268,8 +294,14 @@ class CorrectionState:
         from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
 
         manifest_path = _resolve_source_manifest_path(handoff_data, self.root)
+        manifest = None
         if manifest_path.is_file():
-            source_files["source_manifest"] = _file_identity(manifest_path)
+            manifest_bytes = manifest_path.read_bytes()
+            manifest = (
+                hashlib.sha256(manifest_bytes).hexdigest(),
+                canonical_manifest_identity(manifest_bytes),
+            )
+            source_files["source_manifest"] = manifest_sha256 or manifest[0]
         if handoff_data.get("resume"):
             source_files["resume_input_pdf"] = _file_identity(
                 package_path(self.root, handoff_data["resume"]["input_pdf"])
@@ -305,26 +337,35 @@ class CorrectionState:
                 else hashlib.sha256(handoff_bytes).hexdigest(),
             }
         )
+        semantic_handoff = _semantic_handoff_identity(handoff_bytes)
         source_v2 = _digest(
-            {
-                **source_files,
-                "identity_version": IDENTITY_VERSION,
-                "semantic_handoff": _semantic_handoff_identity(handoff_bytes),
-            }
+            {**source_files, "identity_version": 2, "semantic_handoff": semantic_handoff}
         )
-        return {
+        identities = {
             1: {
                 "source_identity": source_v1,
                 "corrections_identity": corrections,
                 "identity": _digest({"source": source_v1, "corrections": corrections}),
             },
-            IDENTITY_VERSION: {
-                "identity_version": IDENTITY_VERSION,
+            2: {
+                "identity_version": 2,
                 "source_identity": source_v2,
                 "corrections_identity": corrections,
-                "identity": semantic_identity_digest(source_v2, corrections),
+                "identity": semantic_identity_digest(source_v2, corrections, 2),
             },
         }
+        if manifest is not None:
+            source_files["source_manifest"] = {"canonical": manifest[1]}
+        source_v3 = _digest(
+            {**source_files, "identity_version": 3, "semantic_handoff": semantic_handoff}
+        )
+        identities[3] = {
+            "identity_version": 3,
+            "source_identity": source_v3,
+            "corrections_identity": corrections,
+            "identity": semantic_identity_digest(source_v3, corrections, 3),
+        }
+        return identities, manifest
 
     def set_pending(self, page: object, kind: object, items: list) -> None:
         key = self._key(page, kind)
@@ -395,12 +436,24 @@ class CorrectionState:
         ):
             self.fail_apply("Review inputs changed while corrected result was generated")
             raise ValueError(self.apply_error)
+        # Absolute paths stay as provenance of where the result was generated; runtime
+        # lookups use the package-relative form, which survives a job move (#543).
+        locations = {
+            f"{key}_package_path": self._package_relative(value)
+            for key, value in (
+                ("corrected_run", corrected_run),
+                ("final_pdf", final_pdf),
+                ("number_layer_sidecar", identity.get("number_layer_sidecar")),
+            )
+            if value is not None and self._package_relative(value) is not None
+        }
         result = {
             **identity,
+            **locations,
             "result_identity": result_identity
             or _digest(
                 {
-                    "run": corrected_run,
+                    "run": locations.get("corrected_run_package_path", corrected_run),
                     "final_pdf_sha256": final_pdf_sha256,
                     "consumed": identity["identity"],
                 }
@@ -430,6 +483,19 @@ class CorrectionState:
         self.apply_error = None
         return result
 
+    def _package_relative(self, value: str) -> str | None:
+        """A result path inside this package as a package-relative path, else None."""
+        path = Path(value)
+        if not path.is_absolute() or not path.is_relative_to(self.root):
+            return None
+        relative = path.relative_to(self.root).as_posix()
+        try:
+            if package_path(self.root, relative).resolve() != path.resolve():
+                return None
+        except ValueError:
+            return None
+        return relative
+
     def fail_apply(self, error: str) -> None:
         self.applying = False
         self._own_apply = False
@@ -451,7 +517,7 @@ class CorrectionState:
         identities = self.capture_identities()
         current = identities[IDENTITY_VERSION]
         last = self._metadata.get("last_successful_result")
-        matched = bool(last and identity_matches(last, identities))
+        matched = bool(last and identity_matches(last, identities, self.relocated_identities()))
         states = []
         counts = {
             "pending": 0,

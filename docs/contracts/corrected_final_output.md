@@ -92,38 +92,68 @@ handoff provides the name when a session resumes, because a session has no `fina
 
 ## Versioned identity
 
-The review package has two identity rules. `tools/review_correction/state.py` computes both, and a
-stored record is always compared under its own rule:
+The review package has three identity rules. `tools/review_correction/state.py` computes all of
+them, and a stored record is always compared under its own rule:
 
-| | Identity v1 | Identity v2 |
-| --- | --- | --- |
-| Written by | Checkpoint schema 1, older results and pre-checkpoint attempts | Checkpoint schema 2 and new results |
-| Marked by | No `identity_version` | `identity_version: 2` |
-| Handoff input | SHA-256 of the whole file | Digest of the parsed JSON object without top-level `output_name` |
+| | Identity v1 | Identity v2 | Identity v3 |
+| --- | --- | --- | --- |
+| Written by | Checkpoint schema 1, older results and pre-checkpoint attempts | Checkpoint schema 2 and results before #543 | Checkpoint schema 3 and new results |
+| Marked by | No `identity_version` | `identity_version: 2` | `identity_version: 3` |
+| Handoff input | SHA-256 of the whole file | Digest of the parsed JSON object without top-level `output_name` | Same as v2 |
+| Source manifest | SHA-256 of its bytes | SHA-256 of its bytes | Location-independent digest |
 
-Everything else is the same under both rules: declared source files, the source manifest, the resume
-PDFs, and the corrections. Under v2, handoff content such as page order and the `resume` block still
+Everything else is the same under every rule: declared source files, the resume PDFs, and the
+corrections. Under v2 and v3, handoff content such as page order and the `resume` block still
 changes the identity. JSON formatting and key order do not. A handoff that is not a JSON object is
-hashed by its exact bytes. `corrections_identity` has one value under both rules.
+hashed by its exact bytes. `corrections_identity` has one value under every rule.
 
-**No migration.** Schema 1 checkpoints, their blobs, and their `cp_...` IDs are never rewritten, and
-they can still be listed, materialized, and resumed. Unknown schema or identity versions, and records
-whose version or digests are inconsistent, are rejected. Code from before this change cannot read
-schema 2 checkpoints.
+**Location-independent source manifest (v3).** A prepared local review binds its source manifest to
+`<job>/.engine-retained/runs/<job-id>/local_manifest.json`, and that manifest records absolute paths
+below the job folder. Moving the job (another storage root, mount point, or Windows portable
+folder) rewrites those paths the next time the review is prepared. When the manifest's `run_dir`
+declares that retained layout, v3 hashes the parsed manifest with each string at or below the
+declared job root replaced by its job-relative path. The job ID, every numerical, config, and
+model/provenance value, and any path outside the job stay hashed as recorded. Any other manifest, an
+invalid one, or one with a `.` or `..` component below the job root is hashed by its exact bytes.
+Only the location therefore stops mattering: a different input, recognition result, setting, model
+reference, or job still changes the identity.
+
+**No bulk migration.** Schema 1 and 2 checkpoints, their blobs, their `cp_...` IDs, and stored
+results are never rewritten, and they can still be listed, materialized, and resumed. Unknown schema
+or identity versions, and records whose version or digests are inconsistent, are rejected. Code from
+before identity v3 cannot read schema 3 checkpoints.
+
+**v1/v2 records after a move.** A v1/v2 record hashed the manifest's bytes, including the former job
+location. Each checkpoint retains the exact manifest bytes it was saved with. A v1/v2 record matches
+the moved package only when such retained bytes, verified by their checkpoint ID and blob hash, have
+the same location-independent digest as the current manifest and substituting their digest
+reproduces the record's whole identity. Without such a checkpoint, or when anything besides the
+location changed, the record stays stale. Matching never rewrites the record.
 
 **Reuse and status:**
 
 - Saving reuses the newest checkpoint whose identity matches under its own rule, so changing only
-  `output_name` does not add a v2 checkpoint or make a v2 result stale.
+  `output_name`, or only moving the job, does not add a checkpoint or make a v2/v3 result stale.
 - A v1 record stores digests only and cannot be converted. It matches only while the handoff bytes
-  are unchanged, so after a name change the next save writes one v2 checkpoint, and a v1 result shows
+  are unchanged, so after a name change the next save writes one v3 checkpoint, and a v1 result shows
   as stale until the next successful application.
-- `current_identity` in the state response is always v2. A matching v1 result keeps its recorded
+- `current_identity` in the state response is always v3. A matching v1/v2 result keeps its recorded
   digests in `current_result`.
+
+**Paths after a move.** A checkpoint keeps the absolute paths its job had when it was saved.
+Retained dependencies and the restored manifest resolve references below that recorded job root
+inside the job that currently holds the same retained run ID, never outside it (a symlink leaving the
+job is rejected), and their SHA-256 must still match. References outside the job are used as
+recorded. A result also records `final_pdf_package_path`, `corrected_run_package_path`, and, when
+present, `number_layer_sidecar_package_path`. Downloading, resuming from a numbered result, and
+recovering an interrupted application resolve those paths, or the `application_runs/...` suffix of
+an older absolute path, inside the current package and verify the recorded SHA-256. The absolute
+paths stay in the record as provenance. A pre-checkpoint attempt whose job moved is not importable,
+because its exact source manifest bytes were not retained.
 
 **Integrity is separate.** A checkpoint still retains the complete handoff, including `output_name`,
 in a content-addressed blob. The blob hash and the `cp_...` manifest hash cover those bytes, and a
-schema 2 checkpoint without the handoff blob is rejected.
+schema 2 or 3 checkpoint without the handoff blob is rejected.
 
 **Name after reuse:**
 

@@ -1,10 +1,10 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"f588ae0a4fcb170fc254f8d84736c09ccdf58c63439a96a412335be83b443ef7"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"14528fcc9a212b4483be70662209ec278c778b37532e6e344a245f45043e08e1"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `f588ae0a4fcb170fc254f8d84736c09ccdf58c63439a96a412335be83b443ef7`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `14528fcc9a212b4483be70662209ec278c778b37532e6e344a245f45043e08e1`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 本ドキュメントには、保守対象となっている開発環境および評価環境を記録しています。過去の単発コンテナやブランチ固有の worktree は、進行中の Issue で明示的に復活させない限り、現在の運用手順ではありません。
 
@@ -22,7 +22,7 @@
 - コンテナ内インタプリタ: `/opt/venv_pipeline/bin/python`
 - 通常のマウント先リポジトリルート: `/workspace`
 
-このイメージには、プロジェクトおよびランタイムの依存関係と、`docker/patch_homr_onnx_provider.py` による保守対象の HOMR ONNX プロバイダパッチがインストールされます。検証済みの dense 本番ルート、および Docker/GPU 実行を必要とするフルパイプライン検証には、このイメージを使用してください。過去の Stage-E の再現には別のイメージを使用します（後述）。
+このイメージには、プロジェクトおよびランタイムの依存関係と、`docker/patch_homr_onnx_provider.py` による保守対象の HOMR ONNX プロバイダパッチがインストールされます。検証済みの dense 本番ルート、および Docker/GPU 実行を必要とするフルパイプライン検証には、このイメージを使用してください。過去の Stage-E の再現には commit `f6bbd1c0` の別チェックアウトを使用します（[HOMR プロファイル](#homr-プロファイル)を参照）。
 
 `make verify-gpu-smoke` は正式な環境ゲートです。パイプライン実行前に `scripts/docker_runtime_validation.sh` を実行し、バインドマウントされたソースをイメージビルド時に記録されたソースフィンガープリントと照合し、必須アセットを検証し、コンテナ内で CUDA のプローブを行います。その後、標準の `configs/smoke_test.yaml` により、新規に 360 DPI で PDF レンダリングした `Va_Prokofiev_Symphony1/page_001` に対して現在の dense 本番検出器コントラクトを実行し、明示的な GT 精度ゲートを適用します。レンダリングされた入力が承認済みの評価画像アイデンティティと一致しなくなった場合、検出器設定が `configs/dense_full_pipeline.yaml` から乖離している場合、またはページで hard FP/FN や soft residual が発生した場合、スモークテストは失敗します。ホスト側の `nvidia-smi` 出力はメタデータにすぎず、コンテナ内の CUDA プローブが正式な判定基準となります。
 
@@ -233,19 +233,18 @@ docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev 
 
 この永続コンテナは、クリーンアップを明示的に意図する場合にのみ削除してください。このコンテナの目的は、短命な本番ランタイムコンテナに対して検証専用ツールを繰り返し再インストールする手間を省くことです。
 
-### 本番専用環境の採用スナップショット (#398)
+### 保守対象環境のスナップショット (#540)
 
-ローカルの保守対象環境は 2026-10-03 に更新されました。
+ローカルの保守対象環境は 2026-11-22 に `develop` commit `44b6ddec` から更新されました。
 
 | 参照 | 採用された環境 |
 | --- | --- |
-| `pdfscore_pipeline_gpu:latest` | アプリケーションリビジョン `b25af348` からビルドされた本番専用イメージ `5311cf22ab01` |
-| `pdfscore_stage_e_reproduction:latest` | 保持されている Stage-E コンポーネント互換イメージ `c5da1954371d`（現行のメイン venv であり、完全な過去環境ではない） |
-| `pdfscore_pipeline_pytest_dev` | `5311cf22ab01` をベースとした実行中の開発用コンテナ（GPU、チェックアウト／外部モデルマウント、pytest 8.4.2、および Git を含む） |
-| `pdfscore_pipeline_gpu:before-issue398` | 保持されている以前のオールインワンイメージ（現在のセットアップ手順からは除外） |
-| `pdfscore_pipeline_pytest_dev_before_issue398` | 旧開発用コンテナの停止済みアーカイブ（書き込み可能レイヤーを保持） |
+| `pdfscore_pipeline_gpu:latest` | `44b6ddec` からビルドされた本番専用イメージ `e7a2045e207c`（source fingerprint `aa20cda5…`、runtime 互換 fingerprint `d715911c…`） |
+| `pdfscore_pipeline_pytest_dev` | `e7a2045e207c` をベースとした開発用コンテナ（GPU、manager チェックアウトを `/workspace` にマウント、pytest 8.4.2、Git）。#522 で OMR-DLN を廃止したため外部モデルのマウントはなし |
+| `pdfscore_pytest_validation:e7a2045e207c` | 上記ベースに対応する使い捨て pytest 検証イメージ |
+| `pdfscore_pytest_validation_base:e7a2045e207c` | 検証イメージのローカルベースタグ。`pdfscore_pipeline_gpu:latest` と同じイメージ ID |
 
-その他の Issue スコープのコンテナや過去のコンテナは、保守対象環境へ昇格されませんでした。これは採用時点のスナップショットであり、タグは今後変更される可能性があります。現在のアイデンティティを確認するには、`docker image inspect` および `docker inspect` を使用してください。inspect スナップショット、移行コマンド、プリフライト、およびテストのエビデンスは、ローカルの `logs/issue398/environment-update/` 配下に保持されています。
+以前の #398 スナップショット（2026-10-03 に `b25af348` からビルドした `5311cf22ab01`）は置き換えられました。オーナー承認のもと、2026-11-22 に使用していない旧 PDFScoreBar 資産を個別に削除しました。対象は `5311cf22ab01` ベースのアーカイブ済み開発用コンテナと、イメージ `5311cf22ab01`、その検証イメージ、`pdfscore_pipeline_gpu:before-issue398`、`pdfscore_stage_e_reproduction:latest`、および #505 のライセンスリハーサル用イメージです。これらの環境のローカルイメージは残っていないため、必要な場合はソースから再現してください（過去の Stage-E は commit `f6bbd1c0`）。これは採用時点のスナップショットであり、タグは今後変更される可能性があります。現在のアイデンティティは `docker image inspect` と `docker inspect`、互換性は `python3 scripts/docker_image_resolver.py resolve` で確認してください。inspect スナップショット、ビルド来歴、スモーク、テスト、および削除のエビデンスはローカルの `logs/issue540/environment-update/` 配下に保持されています（#398 のエビデンスは `logs/issue398/environment-update/` に残っています）。
 
 ## 使い捨て pytest 検証イメージ
 

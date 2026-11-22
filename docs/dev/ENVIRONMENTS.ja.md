@@ -1,10 +1,10 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"f588ae0a4fcb170fc254f8d84736c09ccdf58c63439a96a412335be83b443ef7"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"6b85c5e0397add5c4d372c2bbbd42ee170c979af213dd3ff8b121fcdb44bfdfc"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `f588ae0a4fcb170fc254f8d84736c09ccdf58c63439a96a412335be83b443ef7`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `6b85c5e0397add5c4d372c2bbbd42ee170c979af213dd3ff8b121fcdb44bfdfc`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 本ドキュメントには、保守対象となっている開発環境および評価環境を記録しています。過去の単発コンテナやブランチ固有の worktree は、進行中の Issue で明示的に復活させない限り、現在の運用手順ではありません。
 

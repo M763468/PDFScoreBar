@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import shutil
 import tempfile
 from pathlib import Path
 
 from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
-from tools.review_correction.history import digest, encoded, package_path
+from tools.review_correction.history import (
+    digest,
+    encoded,
+    package_path,
+    safe_recorded_error,
+)
 
+LOGGER = logging.getLogger(__name__)
 ATTEMPT = re.compile(r"attempt_[0-9]{4,}\Z")
 
 
@@ -135,12 +142,19 @@ def list_attempts(package):
             validate_attempt(package, path.name)
             result.append({"id": path.name, "available": True, "status": "saved_inputs_only"})
         except (ValueError, OSError, KeyError, TypeError) as exc:
+            safe_msg = safe_recorded_error(
+                exc,
+                "Saved inputs could not be verified",
+                forbidden_roots=(package.root, package.root.parent),
+            )
+            if safe_msg == "Saved inputs could not be verified":
+                LOGGER.warning("Unverifiable legacy attempt %s: %s", path.name, exc)
             result.append(
                 {
                     "id": path.name,
                     "available": False,
                     "status": "unverified",
-                    "error": str(exc)[:300],
+                    "error": safe_msg[:300],
                 }
             )
     return result

@@ -1,5 +1,7 @@
 import http.client
 import json
+import logging
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -8,7 +10,9 @@ from threading import Thread
 import pytest
 
 import tools.review_correction.server as review_server_module
+from src.pipeline.review.manual_correction_handoff import ManualCorrectionHandoffError
 from tools.gt_relabel_gui.server import Handler as DeveloperHandler
+from tools.review_correction.history import safe_http_error_message, safe_recorded_error
 from tools.review_correction.server import ReviewPackage, create_server
 
 
@@ -59,8 +63,13 @@ def review_server(tmp_path):
 
 
 def _request(server, method, path, body=None, headers=None):
+    status, _, content = _request_with_reason(server, method, path, body=body, headers=headers)
+    return status, content
+
+
+def _request_with_reason(server, method, path, body=None, headers=None):
     conn = http.client.HTTPConnection("127.0.0.1", server.server_port)
-    data = None if body is None else json.dumps(body)
+    data = None if body is None else (body if isinstance(body, (bytes, str)) else json.dumps(body))
     request_headers = {"Content-Type": "application/json"} if body is not None else {}
     request_headers.update(headers or {})
     conn.request(
@@ -70,9 +79,26 @@ def _request(server, method, path, body=None, headers=None):
         headers=request_headers,
     )
     response = conn.getresponse()
-    result = response.status, response.read()
+    result = response.status, response.reason, response.read()
     conn.close()
     return result
+
+
+def _assert_no_path_disclosure(reason, body, *roots):
+    text = (
+        f"{reason}\n{body.decode('utf-8', errors='replace') if isinstance(body, bytes) else body}"
+    )
+    assert not re.search(
+        r"resumed_sessions|manual_correction_input\.json|Traceback|\[Errno|\[WinError"
+        r"|(?:^|[\s'\"(\[{:=])[A-Za-z]:[\\/]|\\\\"
+        r"|(?:^|[\s'\"(\[{:=])/(?:home|tmp|var|opt|workspace|Users|mnt|private)/",
+        text,
+        re.IGNORECASE,
+    ), text
+    for root in roots:
+        for candidate in (str(root), Path(root).as_posix()):
+            if len(candidate) > 1:
+                assert candidate.lower() not in text.lower(), (candidate, text)
 
 
 def test_review_entry_requires_handoff_and_has_no_developer_modes(tmp_path):
@@ -190,13 +216,14 @@ def test_failed_atomic_save_preserves_last_recorded_correction(review_server, mo
         raise OSError("simulated disk failure")
 
     monkeypatch.setattr(review_server_module.os, "replace", fail_replace)
-    status, _ = _request(
+    status, reason, body = _request_with_reason(
         server,
         "POST",
         "/api/save",
         {"page": 0, "correction_type": "barline_construction", "items": [{"page": 0}]},
     )
-    assert status == 400
+    assert status == 500
+    _assert_no_path_disclosure(reason, body, handoff.parent, handoff.parent.parent)
     assert output.read_bytes() == original
     state = json.loads(_request(server, "GET", "/api/state")[1])
     barline = next(s for s in state["states"] if s["correction_type"] == "barline_construction")
@@ -533,3 +560,309 @@ def test_all_corrections_share_record_transition_and_failure_preservation(
     state = next(s for s in package.state.snapshot()["states"] if s["correction_type"] == kind)
     assert state["edit_status"] == "none"
     assert "error" not in state
+
+
+def test_review_session_errors_hide_local_paths_and_classify_status(
+    review_server, tmp_path, caplog
+):
+    server, handoff = review_server
+    package_root = handoff.parent
+    caplog.set_level(logging.WARNING)
+
+    for invalid in ("../../other", "", "not-valid", "s_1234"):
+        for method, route, body in (
+            ("GET", f"/api/pages?session={invalid}", None),
+            ("GET", f"/api/state?session={invalid}", None),
+            (
+                "POST",
+                f"/api/save?session={invalid}",
+                {"page": 0, "correction_type": "barline_construction", "items": []},
+            ),
+        ):
+            status, reason, content = _request_with_reason(server, method, route, body)
+            assert status == 400
+            assert "Invalid review session" in reason
+            _assert_no_path_disclosure(reason, content, package_root, tmp_path)
+
+    status, reason, content = _request_with_reason(
+        server, "GET", f"/api/pages?session=s_{'a' * 32}&session=s_{'b' * 32}"
+    )
+    assert status == 400
+    assert "Invalid review session" in reason
+    _assert_no_path_disclosure(reason, content, package_root, tmp_path)
+
+    unknown = "s_" + "0" * 32
+    for method, route, body in (
+        ("GET", f"/api/pages?session={unknown}", None),
+        ("GET", f"/api/state?session={unknown}", None),
+        ("GET", f"/api/checkpoints?session={unknown}", None),
+        ("GET", f"/api/result?session={unknown}", None),
+        (
+            "GET",
+            f"/api/manual_corrections?type=barline_construction&page=0&session={unknown}",
+            None,
+        ),
+        ("GET", f"/file?path=pages/page_001/source.png&session={unknown}", None),
+        (
+            "POST",
+            f"/api/save?session={unknown}",
+            {"page": 0, "correction_type": "barline_construction", "items": []},
+        ),
+        ("POST", f"/api/checkpoints?session={unknown}", {"label": "x"}),
+        ("POST", f"/api/apply?session={unknown}", {}),
+        ("POST", f"/api/preview_numbering?session={unknown}", {}),
+        ("POST", f"/api/resume?session={unknown}", {"checkpoint_id": "x", "pdf_base64": "eA=="}),
+        (
+            "POST",
+            f"/api/state/pending?session={unknown}",
+            {"page": 0, "correction_type": "barline_construction", "items": []},
+        ),
+    ):
+        status, reason, content = _request_with_reason(server, method, route, body)
+        assert status == 404
+        assert "Review session not found" in reason
+        _assert_no_path_disclosure(reason, content, package_root, tmp_path)
+    assert any(unknown in rec.getMessage() for rec in caplog.records)
+
+    foreign_handoff = _handoff(tmp_path / "foreign")
+    sessions_dir = package_root / "resumed_sessions"
+    sessions_dir.mkdir(exist_ok=True)
+    symlink_session = "s_" + "1" * 32
+    (sessions_dir / symlink_session).symlink_to(foreign_handoff.parent.parent)
+    status, reason, content = _request_with_reason(
+        server, "GET", f"/api/state?session={symlink_session}"
+    )
+    assert status == 404
+    assert "Review session not found" in reason
+    _assert_no_path_disclosure(reason, content, package_root, tmp_path)
+
+    corrupt_session = "s_" + "2" * 32
+    corrupt_dir = sessions_dir / corrupt_session / "review"
+    corrupt_dir.mkdir(parents=True)
+    (corrupt_dir / "manual_correction_input.json").write_text("{not-json", encoding="utf-8")
+    caplog.clear()
+    status, reason, content = _request_with_reason(
+        server, "GET", f"/api/state?session={corrupt_session}"
+    )
+    assert status == 404
+    assert "Review session unavailable" in reason
+    _assert_no_path_disclosure(reason, content, package_root, tmp_path)
+    assert any(corrupt_session in rec.getMessage() for rec in caplog.records)
+
+
+def test_review_api_missing_files_and_storage_errors_hide_paths(review_server, monkeypatch):
+    server, handoff = review_server
+    package_root = handoff.parent
+
+    status, reason, content = _request_with_reason(server, "GET", "/api/result")
+    assert status == 404
+    assert "No corrected final PDF has been generated" in reason
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    (package_root / "pages" / "page_001" / "source.png").unlink()
+    status, reason, content = _request_with_reason(
+        server, "GET", "/file?path=pages/page_001/source.png"
+    )
+    assert status == 404
+    assert "Declared artifact is unavailable" in reason
+    _assert_no_path_disclosure(reason, content, package_root)
+    (package_root / "pages" / "page_001" / "source.png").write_bytes(b"image")
+
+    def missing_manifest(_handoff):
+        raise FileNotFoundError(
+            f"Source manifest not found: {package_root / 'secret' / 'manifest.json'}"
+        )
+
+    monkeypatch.setattr(review_server_module, "preview_numbering", missing_manifest)
+    status, reason, content = _request_with_reason(server, "POST", "/api/preview_numbering", {})
+    assert status == 404
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    def windows_path_value_error(_handoff):
+        raise ValueError(
+            r"Missing file: S:\pb535\mv14\jobs\job-123\review\resumed_sessions\s_abc\review\manual_correction_input.json"
+        )
+
+    monkeypatch.setattr(review_server_module, "preview_numbering", windows_path_value_error)
+    status, reason, content = _request_with_reason(server, "POST", "/api/preview_numbering", {})
+    assert status == 400
+    assert "Could not preview numbering" in reason
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    def fail_permission(_src, _dst):
+        raise PermissionError(
+            13,
+            "Permission denied",
+            r"S:\pb535\mv14\jobs\job-123\review\corrections\barline_construction_overrides.json",
+        )
+
+    with monkeypatch.context() as patch:
+        patch.setattr(review_server_module.os, "replace", fail_permission)
+        status, reason, content = _request_with_reason(
+            server,
+            "POST",
+            "/api/save",
+            {"page": 0, "correction_type": "barline_construction", "items": [{"page": 0}]},
+        )
+    assert status == 500
+    assert "Could not save correction" in reason
+    _assert_no_path_disclosure(reason, content, package_root)
+    state = json.loads(_request(server, "GET", "/api/state")[1])
+    barline = next(s for s in state["states"] if s["correction_type"] == "barline_construction")
+    assert barline["error"] == "Could not save correction"
+    assert (
+        _request(
+            server,
+            "POST",
+            "/api/state/pending/clear",
+            {"page": 0, "correction_type": "barline_construction"},
+        )[0]
+        == 200
+    )
+    assert (
+        _request(
+            server,
+            "POST",
+            "/api/save",
+            {"page": 0, "correction_type": "barline_construction", "items": []},
+        )[0]
+        == 200
+    )
+
+    status, reason, content = _request_with_reason(
+        server,
+        "POST",
+        "/api/resume",
+        {"checkpoint_id": "cp_" + "0" * 64, "pdf_base64": "JVBERi0xLjQK"},
+    )
+    assert status == 404
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    status, reason, content = _request_with_reason(
+        server,
+        "POST",
+        "/api/resume",
+        {"checkpoint_id": "cp_" + "0" * 64, "pdf_base64": "not-valid-base64!"},
+    )
+    assert status == 400
+    assert "Invalid base64 payload" in reason
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    status, reason, content = _request_with_reason(
+        server, "POST", "/api/legacy/import", {"attempt_id": "attempt_9999"}
+    )
+    assert status == 404
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    status, reason, content = _request_with_reason(
+        server,
+        "POST",
+        "/api/save",
+        b"{bad json",
+        headers={"Content-Type": "application/json"},
+    )
+    assert status == 400
+    assert "Invalid JSON request body" in reason
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    status, reason, content = _request_with_reason(
+        server,
+        "POST",
+        "/api/save",
+        b"{}",
+        headers={"Content-Type": "application/json", "Content-Length": "abc"},
+    )
+    assert status == 400
+    assert "Invalid request size" in reason
+    _assert_no_path_disclosure(reason, content, package_root)
+
+    for method, route, body, expected_msg in (
+        (
+            "POST",
+            "/api/save",
+            {"page": "missing", "correction_type": "barline_construction", "items": []},
+            "Unknown page or correction type",
+        ),
+        (
+            "POST",
+            "/api/save",
+            {
+                "page": 0,
+                "correction_type": "movement_boundary",
+                "items": [{"page": 0, "system": 99, "op": "boundary"}],
+            },
+            "Unknown movement boundary system",
+        ),
+        (
+            "POST",
+            "/api/export_movement_boundaries",
+            {},
+            "No movement boundary evidence is attached",
+        ),
+        (
+            "POST",
+            "/api/apply",
+            {"handoff": "/etc/passwd"},
+            "Apply uses the active review package and accepts no paths or options",
+        ),
+    ):
+        status, reason, _ = _request_with_reason(server, method, route, body)
+        assert status == 400
+        assert expected_msg in reason
+
+
+def test_safe_error_helpers_redact_posix_and_windows_paths_and_preserve_user_messages(tmp_path):
+    roots = (tmp_path,)
+    for raw in (
+        r"S:\pb535\mv14\jobs\job-0123456789abcdef\review\resumed_sessions\s_0123\review\manual_correction_input.json",
+        "C:/Users/example/AppData/Local/manual_correction_input.json",
+        r"\\server\share\score\manual_correction_input.json",
+        r"\\?\S:\pb535\secret.pdf",
+        r"C:\Users\太郎\score.pdf",
+        f"Unexpected file {tmp_path / 'secret.json'}",
+        "Traceback (most recent call last): ValueError",
+        "[Errno 2] No such file or directory: '/tmp/foo'",
+        "[WinError 5] Access is denied: 'S:\\secret'",
+        "Line 1\nLine 2",
+    ):
+        assert safe_http_error_message(ValueError(raw), "Safe fallback", forbidden_roots=roots) == (
+            "Safe fallback"
+        )
+        assert safe_recorded_error(ValueError(raw), "Safe fallback", forbidden_roots=roots) == (
+            "Safe fallback"
+        )
+
+    assert (
+        safe_http_error_message(
+            ManualCorrectionHandoffError("pages/page_001/source.png does not exist"),
+            "Safe fallback",
+        )
+        == "Safe fallback"
+    )
+    assert (
+        safe_http_error_message(
+            OSError("simulated disk failure"),
+            "Safe fallback",
+        )
+        == "Safe fallback"
+    )
+    assert (
+        safe_recorded_error(
+            PermissionError(13, "Permission denied", r"S:\pb535\file.json"),
+            "Safe fallback",
+        )
+        == "Safe fallback"
+    )
+    assert safe_recorded_error(OSError("disk full"), "Safe fallback") == "disk full"
+    assert safe_recorded_error(RuntimeError("retained failure"), "Safe fallback") == (
+        "retained failure"
+    )
+    assert (
+        safe_http_error_message(
+            ValueError(
+                "PDF background/content does not match the source or an attested numbering result in this review package"
+            ),
+            "Safe fallback",
+        )
+        == "PDF background/content does not match the source or an attested numbering result in this review package"
+    )

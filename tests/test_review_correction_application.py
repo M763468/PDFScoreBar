@@ -428,3 +428,57 @@ def test_end_to_end_review_save_apply_and_download_preserves_pdf_and_filename(tm
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+def test_failed_application_redacts_local_paths_in_state_and_history_json(tmp_path, monkeypatch):
+    from threading import Thread
+
+    from tools.review_correction import application
+    from tools.review_correction.server import create_server
+
+    handoff = _handoff(tmp_path)
+    manifest = handoff.parent.parent / "manifest.json"
+    manifest.write_text(
+        json.dumps({"config": {"inputs": {}, "steps": {}, "outputs": {}}}), encoding="utf-8"
+    )
+    server = create_server(handoff, port=0)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for raised in (
+            FileNotFoundError(
+                2,
+                "No such file or directory",
+                str(tmp_path / "secret_job" / ".engine-retained" / "manifest.json"),
+            ),
+            PermissionError(
+                13,
+                "Permission denied",
+                r"S:\pb535\mv14\jobs\job-123\secret.pdf",
+            ),
+        ):
+
+            def fail_engine(*_args, _exc=raised, **_kwargs):
+                raise _exc
+
+            monkeypatch.setattr(application, "apply_corrections_and_rerun", fail_engine)
+            apply_status, _ = _request(server, "POST", "/api/apply", {})
+            assert apply_status == 200
+            server.application.thread.join(5)
+
+            state = json.loads(_request(server, "GET", "/api/state")[1])
+            history = json.loads(_request(server, "GET", "/api/checkpoints")[1])
+            last_error = state["package"]["last_application"]["error"]
+            state_errors = [entry["error"] for entry in state["states"] if "error" in entry]
+            app_errors = [entry["error"] for entry in history["applications"] if "error" in entry]
+            assert last_error == "Could not generate the corrected PDF"
+            assert state_errors and all(err == last_error for err in state_errors)
+            assert app_errors and all(err == last_error for err in app_errors)
+            serialized = json.dumps({"state": state, "history": history})
+            assert ".engine-retained" not in serialized
+            assert r"S:\pb535" not in serialized
+            assert "secret_job" not in serialized
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()

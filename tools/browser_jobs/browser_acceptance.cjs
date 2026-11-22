@@ -4,6 +4,17 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 
+async function assertRejectedWithoutPathLeak(response, label) {
+  const status = response.status();
+  assert.ok(status >= 400 && status < 500, `${label}: expected 4xx rejection, got ${status}`);
+  const body = await response.text();
+  const combined = `${response.statusText()}\n${body}`;
+  const leakPattern =
+    /resumed_sessions|manual_correction_input\.json|Traceback|\[Errno|\[WinError|[A-Za-z]:[\\/]|\\\\|(?:^|[\s'"(])\/(?:home|tmp|workspace|var|opt|mnt)\//i;
+  assert.ok(!leakPattern.test(combined), `${label}: leaked internal path in error response: ${combined}`);
+  return status;
+}
+
 async function main() {
   const [url, pdf, evidence, existingJob, existingFailure] = process.argv.slice(2);
   if (!url || !pdf || !evidence) throw new Error("Supply launcher URL, score PDF and evidence directory");
@@ -66,7 +77,7 @@ async function main() {
     await ready.click();
     const reviewUrl = page.url();
     assert.equal(new URL(reviewUrl).pathname, `/jobs/${id}/review/`);
-    await page.waitForFunction(() => currentPage && measures.length > 0);
+    await page.waitForFunction(() => typeof currentPage !== "undefined" && currentPage && typeof measures !== "undefined" && measures.length > 0);
     await page.locator("#typeSelect").selectOption("mmr_measure_span");
     const point = await page.evaluate(() => {
       const box = measures[0].bbox;
@@ -119,8 +130,23 @@ async function main() {
     assert.equal(resumed.pathname, new URL(reviewUrl).pathname);
     const session = resumed.searchParams.get("session");
     const crossed = await reopened.request.get(new URL(`/jobs/${bad}/review/api/state?session=${session}`, url).href);
-    assert.equal(crossed.status(), 404);
-    await reopened.waitForFunction(() => currentPage && measures.length > 0);
+    await assertRejectedWithoutPathLeak(crossed, "cross-job failed target");
+    const unknownGet = await reopened.request.get(new URL(`/jobs/${id}/review/api/state?session=s_00000000000000000000000000000000`, url).href);
+    assert.equal(await assertRejectedWithoutPathLeak(unknownGet, "unknown session GET"), 404);
+    const unknownPost = await reopened.request.post(
+      new URL(`/jobs/${id}/review/api/save?session=s_00000000000000000000000000000000`, url).href,
+      {
+        headers: {
+          Origin: new URL(url).origin,
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify({ page: 0, correction_type: "barline_construction", items: [] }),
+      },
+    );
+    assert.equal(await assertRejectedWithoutPathLeak(unknownPost, "unknown session POST"), 404);
+    const malformedGet = await reopened.request.get(new URL(`/jobs/${id}/review/api/state?session=../../other`, url).href);
+    assert.equal(await assertRejectedWithoutPathLeak(malformedGet, "malformed session GET"), 400);
+    await reopened.waitForFunction(() => typeof currentPage !== "undefined" && currentPage && typeof measures !== "undefined" && measures.length > 0);
     await reopened.screenshot({ path: path.join(evidence, "resumed.png") });
     assert.deepEqual(errors, []);
     report.session = session;

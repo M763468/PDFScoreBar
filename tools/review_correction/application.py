@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -23,7 +24,14 @@ from src.pipeline.review.manual_correction_handoff import (
     load_manual_correction_handoff,
     validate_manual_correction_handoff,
 )
-from tools.review_correction.history import identity_matches, now, recorded_package_file
+from tools.review_correction.history import (
+    identity_matches,
+    now,
+    recorded_package_file,
+    safe_recorded_error,
+)
+
+LOGGER = logging.getLogger(__name__)
 
 
 def preview_numbering(handoff_path: str | Path) -> dict:
@@ -203,12 +211,23 @@ class CorrectionApplication:
                 number += 1
 
     def _fail_apply(self, error, attempt, event):
-        self.package.state.fail_apply(str(error))
+        LOGGER.exception("Corrected PDF generation failed", exc_info=error)
+        safe_message = safe_recorded_error(
+            error,
+            "Could not generate the corrected PDF",
+            forbidden_roots=(self.package.root, self.package.root.parent),
+        )
+        self.package.state.fail_apply(safe_message)
         if attempt is not None:
             try:
                 self.package.history.application_record(
                     attempt.name,
-                    {**event, "status": "failed", "finished_at": now(), "error": str(error)[:500]},
+                    {
+                        **event,
+                        "status": "failed",
+                        "finished_at": now(),
+                        "error": safe_message[:500],
+                    },
                 )
             except (OSError, ValueError):
                 # The package error remains authoritative if journal storage fails.

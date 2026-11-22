@@ -1,10 +1,10 @@
 # 環境およびツールガイド
 
-<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"6b85c5e0397add5c4d372c2bbbd42ee170c979af213dd3ff8b121fcdb44bfdfc"},"state":"reviewed"} -->
+<!-- translation: {"original":"ENVIRONMENTS.md","source":{"sha256":"14528fcc9a212b4483be70662209ec278c778b37532e6e344a245f45043e08e1"},"state":"reviewed"} -->
 
 [English / 原文](ENVIRONMENTS.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `6b85c5e0397add5c4d372c2bbbd42ee170c979af213dd3ff8b121fcdb44bfdfc`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `14528fcc9a212b4483be70662209ec278c778b37532e6e344a245f45043e08e1`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 本ドキュメントには、保守対象となっている開発環境および評価環境を記録しています。過去の単発コンテナやブランチ固有の worktree は、進行中の Issue で明示的に復活させない限り、現在の運用手順ではありません。
 
@@ -242,10 +242,9 @@ docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev 
 | `pdfscore_pipeline_gpu:latest` | `44b6ddec` からビルドされた本番専用イメージ `e7a2045e207c`（source fingerprint `aa20cda5…`、runtime 互換 fingerprint `d715911c…`） |
 | `pdfscore_pipeline_pytest_dev` | `e7a2045e207c` をベースとした開発用コンテナ（GPU、manager チェックアウトを `/workspace` にマウント、pytest 8.4.2、Git）。#522 で OMR-DLN を廃止したため外部モデルのマウントはなし |
 | `pdfscore_pytest_validation:e7a2045e207c` | 上記ベースに対応する使い捨て pytest 検証イメージ |
-| `pdfscore_pipeline_pytest_dev_before_issue540` | 旧開発用コンテナの停止済みアーカイブ（イメージ `5311cf22ab01`、廃止済み OMR-DLN マウントあり）。書き込み可能レイヤーを保持 |
-| `pdfscore_pipeline_gpu:before-issue398`、`pdfscore_stage_e_reproduction:latest`、`pdfscore_pytest_validation:5311cf22ab01` | 保持されている旧イメージ。現行ランタイム契約とは非互換で、セットアップ手順からは除外 |
+| `pdfscore_pytest_validation_base:e7a2045e207c` | 検証イメージのローカルベースタグ。`pdfscore_pipeline_gpu:latest` と同じイメージ ID |
 
-以前の #398 スナップショット（2026-10-03 に `b25af348` からビルドした `5311cf22ab01`）は置き換えられました。これは採用時点のスナップショットであり、タグは今後変更される可能性があります。現在のアイデンティティは `docker image inspect` と `docker inspect`、互換性は `python3 scripts/docker_image_resolver.py resolve` で確認してください。inspect スナップショット、ビルド来歴、スモークおよびテストのエビデンスはローカルの `logs/issue540/environment-update/` 配下に保持されています（#398 のエビデンスは `logs/issue398/environment-update/` に残っています）。
+以前の #398 スナップショット（2026-10-03 に `b25af348` からビルドした `5311cf22ab01`）は置き換えられました。オーナー承認のもと、2026-11-22 に使用していない旧 PDFScoreBar 資産を個別に削除しました。対象は `5311cf22ab01` ベースのアーカイブ済み開発用コンテナと、イメージ `5311cf22ab01`、その検証イメージ、`pdfscore_pipeline_gpu:before-issue398`、`pdfscore_stage_e_reproduction:latest`、および #505 のライセンスリハーサル用イメージです。これらの環境のローカルイメージは残っていないため、必要な場合はソースから再現してください（過去の Stage-E は commit `f6bbd1c0`）。これは採用時点のスナップショットであり、タグは今後変更される可能性があります。現在のアイデンティティは `docker image inspect` と `docker inspect`、互換性は `python3 scripts/docker_image_resolver.py resolve` で確認してください。inspect スナップショット、ビルド来歴、スモーク、テスト、および削除のエビデンスはローカルの `logs/issue540/environment-update/` 配下に保持されています（#398 のエビデンスは `logs/issue398/environment-update/` に残っています）。
 
 ## 使い捨て pytest 検証イメージ
 

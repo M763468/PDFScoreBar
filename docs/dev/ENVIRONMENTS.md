@@ -354,13 +354,17 @@ The local maintained environment was refreshed on 2026-11-22 from `develop` comm
 | `pdfscore_pipeline_gpu:latest` | production-only image `e7a2045e207c`, built from `44b6ddec`; source fingerprint `aa20cda5…`, runtime compatibility fingerprint `d715911c…` |
 | `pdfscore_pipeline_pytest_dev` | development container based on `e7a2045e207c`, with GPU, the manager checkout at `/workspace`, pytest 8.4.2 and Git; no external model mount (OMR-DLN is retired since #522) |
 | `pdfscore_pytest_validation:e7a2045e207c` | disposable pytest validation image for the base above |
-| `pdfscore_pipeline_pytest_dev_before_issue540` | stopped archive of the previous development container (image `5311cf22ab01`, obsolete OMR-DLN mount); its writable layer was preserved |
-| `pdfscore_pipeline_gpu:before-issue398`, `pdfscore_stage_e_reproduction:latest`, `pdfscore_pytest_validation:5311cf22ab01` | retained older images; incompatible with the current runtime contract and excluded from setup instructions |
+| `pdfscore_pytest_validation_base:e7a2045e207c` | local base tag of the validation image; same image ID as `pdfscore_pipeline_gpu:latest` |
 
 The previous #398 snapshot (`5311cf22ab01`, built from `b25af348` on 2026-10-03) is
-superseded. This is an adoption snapshot; tags can change later. Use `docker image inspect` and
+superseded. With owner approval, the unused older PDFScoreBar assets were removed individually on
+2026-11-22: the archived development container on `5311cf22ab01`, and the images
+`5311cf22ab01`, its validation image, `pdfscore_pipeline_gpu:before-issue398`,
+`pdfscore_stage_e_reproduction:latest` and the #505 license-rehearsal image. No local image
+for those environments remains; reproduce them from source (historical Stage-E: commit
+`f6bbd1c0`). This is an adoption snapshot; tags can change later. Use `docker image inspect` and
 `docker inspect` to establish current identities, and `python3 scripts/docker_image_resolver.py
-resolve` to check compatibility. Inspect snapshots, build provenance, smoke and test evidence are
+resolve` to check compatibility. Inspect snapshots, build provenance, smoke, test and cleanup evidence are
 retained locally under `logs/issue540/environment-update/` (#398 evidence remains under
 `logs/issue398/environment-update/`).
 

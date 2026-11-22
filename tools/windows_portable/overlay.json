@@ -1,0 +1,124 @@
+{
+  "schema_version": "pdfscore.windows_portable.overlay.v1",
+  "source_issue": 551,
+  "description": "Windows portable payload = the main minimal-distribution application (app/, selected by docs/MINIMAL_MAINLINE_SURFACE.json with the release selector) plus only the Windows launcher/runtime listed here. Everything else in the source commit stays out of the folder.",
+  "application": {
+    "root": "app",
+    "manifest": "docs/MINIMAL_MAINLINE_SURFACE.json",
+    "selector": "tools/materialize_distribution.py:selected_files",
+    "provenance": "DISTRIBUTION_PROVENANCE.json"
+  },
+  "source_files": [
+    {
+      "source": "tools/windows_portable/launcher.py",
+      "path": "launcher/launcher.py",
+      "transform": "copy",
+      "reason": "Windows entry point run by PDFScoreBar.cmd: preflight, serve, run, review, verify, child environment, job-root lock, owned process trees and relocation rebinding"
+    },
+    {
+      "source": "tools/windows_portable/manifest.py",
+      "path": "launcher/manifest.py",
+      "transform": "copy",
+      "reason": "Imported by launcher.py; checks the folder against runtime/build_manifest.json (verify, verify --full, preflight)"
+    },
+    {
+      "source": "tools/windows_portable/PDFScoreBar.cmd",
+      "path": "PDFScoreBar.cmd",
+      "transform": "crlf-ascii",
+      "reason": "User-facing command that starts launcher/launcher.py with the bundled isolated interpreter"
+    }
+  ],
+  "generated": [
+    {
+      "path": "python",
+      "reason": "uv-managed relocatable CPython with exactly the locked packages (torch/torchvision cu126 with their CUDA/cuDNN DLLs, onnxruntime-gpu, triton-windows, OpenCV, PyMuPDF, RapidOCR, HOMR with its SegNet/OCR models)",
+      "verified_by": "requirements-cu126.txt equality, HOMR commit pin, excluded-distribution and transformer-checkpoint checks"
+    },
+    {
+      "path": "assets",
+      "reason": "Hash-pinned barline CNN weights (model cache layout) and the DejaVu label font with its copyright notice; the Linux image owns them outside the source",
+      "verified_by": "assets.json SHA-256 values"
+    },
+    {
+      "path": "runtime/markers",
+      "files": [
+        "homr_maintained_profile_commit.txt",
+        "pdfscore_maintained_profile_commit.txt"
+      ],
+      "reason": "Profile identity markers read by the maintained HOMR runtime overlay, as written by the Dockerfile",
+      "verified_by": "builder constants"
+    }
+  ],
+  "build_inputs": {
+    "tools/windows_portable/build_portable.py": "Windows builder; not shipped",
+    "tools/windows_portable/payload.py": "Application/overlay selection and audit used by the builder; not shipped",
+    "tools/windows_portable/overlay.json": "This allowlist; recorded by hash, not shipped",
+    "tools/windows_portable/requirements-cu126.txt": "Package lock installed into python/; recorded by hash, not shipped",
+    "tools/windows_portable/assets.json": "Asset pins staged into assets/; recorded by hash, not shipped",
+    "tools/materialize_distribution.py": "Release selector and isolated-tree checker reused for app/; not shipped",
+    "tools/release_candidate.py": "Pinned Git blob reader reused for app/; not shipped"
+  },
+  "build_time_application_scripts": {
+    "docker/patch_homr_onnx_provider.py": "Applied to the installed HOMR package, as in the Dockerfile",
+    "docker/init_homr_segnet.py": "SegNet-only HOMR model initialization with hash check, as in the Dockerfile"
+  },
+  "common_inactive_on_windows": {
+    "Dockerfile": "Main/Linux image recipe. Shipped unchanged so app/ equals the main distribution; the Windows runtime never reads it",
+    ".dockerignore": "Docker build context filter of the main distribution; unused on Windows",
+    ".gitignore": "Main checkout cache filter (distribution metadata); inert in the portable folder, which contains no Git metadata",
+    "docker/distribution.py": "Linux host Docker launcher of the main distribution; Windows uses PDFScoreBar.cmd instead",
+    "docker/review_relay.py": "Docker-network relay imported only in container mode of tools/browser_jobs; the Windows server binds 127.0.0.1 directly"
+  },
+  "rights_pending_required": {
+    "models/mmr/mmr_classifier_best.pth": "Required production MMR weight, listed NotLicensed in docs/licensing/REPOSITORY_LICENSE_OPTIONS.md section 3; shipped exactly as in main, rights/notice gate unresolved (#505/#508)"
+  },
+  "forbidden_payload_patterns": [
+    {"pattern": "data/evaluation2/*", "category": "not_licensed", "reason": "Evaluation/GT data derived from third-party scores"},
+    {"pattern": "configs/cnn_barline_runs/issue44_baseline_v1/fixtures/*", "category": "not_licensed", "reason": "Score-derived training/evaluation fixtures"},
+    {"pattern": "experiments/issue333/corpus.json", "category": "not_licensed", "reason": "Score-derived evaluation corpus"},
+    {"pattern": "experiments/issue333/phase25_ground_truth.json", "category": "not_licensed", "reason": "Score-derived ground truth"},
+    {"pattern": "experiments/issue333/results/*", "category": "not_licensed", "reason": "Score-derived evaluation output"},
+    {"pattern": "tools/issue522/evidence/*.jpg", "category": "not_licensed", "reason": "Score page crops"},
+    {"pattern": "tools/issue522/evidence/review_audit.json", "category": "not_licensed", "reason": "Score-derived reviewed evidence"},
+    {"pattern": "tools/issue415/reviewed_gt.json", "category": "not_licensed", "reason": "Reviewed GT"},
+    {"pattern": "tools/issue415/row_start_samples.json", "category": "not_licensed", "reason": "Score-derived samples"},
+    {"pattern": "tools/issue416/production_validation.json", "category": "not_licensed", "reason": "Score-derived validation output"},
+    {"pattern": "tests/fixtures/expected_overrides_page_*.json", "category": "not_licensed", "reason": "Score-derived test expectations"},
+    {"pattern": "tests/fixtures/movement_boundaries/*", "category": "not_licensed", "reason": "Score-derived test fixtures"},
+    {"pattern": "tests/fixtures/system_grouping/issue218_la_mer*", "category": "not_licensed", "reason": "Score-derived test fixtures"},
+    {"pattern": "tests/fixtures/system_grouping/issue218_measure_gt*", "category": "not_licensed", "reason": "Score-derived test fixtures"},
+    {"pattern": "tests/fixtures/system_grouping/issue218_real_detection*", "category": "not_licensed", "reason": "Score-derived test fixtures"},
+    {"pattern": "tests/fixtures/system_grouping/issue218_real_score*", "category": "not_licensed", "reason": "Score-derived test fixtures"},
+    {"pattern": "*.jpg", "category": "score_image", "reason": "No score image or crop belongs in the application"},
+    {"pattern": "*.jpeg", "category": "score_image", "reason": "No score image or crop belongs in the application"},
+    {"pattern": "*.png", "category": "score_image", "reason": "No score image or crop belongs in the application"},
+    {"pattern": "*.pdf", "category": "score_image", "reason": "No input or output PDF belongs in the application"},
+    {"pattern": "tests/*", "category": "development", "reason": "Regression tests and fixtures"},
+    {"pattern": "data/*", "category": "development", "reason": "Evaluation and training data"},
+    {"pattern": "experiments/*", "category": "development", "reason": "Research surface"},
+    {"pattern": "scripts/*", "category": "development", "reason": "Development automation"},
+    {"pattern": "logs/*", "category": "development", "reason": "Generated evidence"},
+    {"pattern": ".github/*", "category": "development", "reason": "CI"},
+    {"pattern": ".agents/*", "category": "development", "reason": "Agent tooling"},
+    {"pattern": ".gemini/*", "category": "development", "reason": "Agent tooling"},
+    {"pattern": "graphify-out/*", "category": "development", "reason": "Generated navigation"},
+    {"pattern": "docs/dev/*", "category": "development", "reason": "Developer documentation"},
+    {"pattern": "docs/history/*", "category": "development", "reason": "Historical documentation"},
+    {"pattern": "docs/licensing/*", "category": "development", "reason": "Rights audit working documents"},
+    {"pattern": "tools/issue*", "category": "development", "reason": "Issue experiments and reproducers"},
+    {"pattern": "tools/verification/*", "category": "development", "reason": "Verification tooling"},
+    {"pattern": "tools/gt_relabel_gui/*", "category": "development", "reason": "GT developer GUI"},
+    {"pattern": "tools/mmr_training/*", "category": "development", "reason": "Training tooling"},
+    {"pattern": "tools/windows_portable/*", "category": "development", "reason": "Builder sources; the shipped launcher lives in launcher/"},
+    {"pattern": "tools/review_correction/*acceptance*", "category": "development", "reason": "Developer acceptance runners"},
+    {"pattern": "tools/check_repository_surface.py", "category": "development", "reason": "Repository drift gate"},
+    {"pattern": "tools/materialize_distribution.py", "category": "development", "reason": "Release tooling"},
+    {"pattern": "tools/release_candidate.py", "category": "development", "reason": "Release tooling"},
+    {"pattern": "AGENTS.md", "category": "development", "reason": "Agent instructions"},
+    {"pattern": "Makefile", "category": "development", "reason": "Development targets"},
+    {"pattern": ".git", "category": "development", "reason": "Git metadata"},
+    {"pattern": ".git/*", "category": "development", "reason": "Git metadata"},
+    {"pattern": "*/.git", "category": "development", "reason": "Git metadata"},
+    {"pattern": "*/.git/*", "category": "development", "reason": "Git metadata"}
+  ]
+}

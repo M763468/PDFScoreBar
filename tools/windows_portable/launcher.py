@@ -33,7 +33,8 @@ import webbrowser
 from contextlib import contextmanager
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+# Shipped as <root>/launcher/launcher.py, outside the main application in <root>/app (#551).
+ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app"
 PYTHON = ROOT / "python" / "python.exe"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -178,7 +179,12 @@ def check_gpu(env: dict[str, str]) -> tuple[dict, list[str]]:
 def preflight(*, full_verify: bool = False, gpu: bool = True) -> dict:
     problems = check_location()
     problems += verify(ROOT, full=full_verify)
-    report: dict = {"root": str(ROOT), "source_commit": load_manifest(ROOT)["source_commit"]}
+    manifest = load_manifest(ROOT)
+    report: dict = {
+        "root": str(ROOT),
+        "source_commit": manifest["source_commit"],
+        "application_manifest_sha256": manifest["application"]["manifest_sha256"],
+    }
     if not problems and gpu:
         info, gpu_problems = check_gpu(child_environment())
         report["gpu"] = info

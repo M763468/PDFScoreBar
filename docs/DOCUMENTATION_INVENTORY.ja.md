@@ -131,6 +131,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [FUTURE_SERVICE_ARCHITECTURE.md](architecture/FUTURE_SERVICE_ARCHITECTURE.md) | future/roadmap | EN | JA needed; deferred until #449 resumes (#484) | P3 |
 | [licensing/THIRD_PARTY_LICENSE_AUDIT.md](licensing/THIRD_PARTY_LICENSE_AUDIT.md) | Issue-scoped audit; current §0 with final review 2026-11-15 (§0.8/§0.9); reverify against the actual distribution image | JA | EN needed (#504) | P3 |
 | [licensing/REPOSITORY_LICENSE_OPTIONS.md](licensing/REPOSITORY_LICENSE_OPTIONS.md) | policy: AGPL-3.0-or-later adopted, application deferred to a future `main` release; readiness record; not a granted license | JA | EN needed (#505) | P3 |
+| [licensing/DISTRIBUTION_READINESS.md](licensing/DISTRIBUTION_READINESS.md) | Issue-scoped distribution readiness (#553, 2026-11-23): model lineage, Windows portable component dispositions, main source distribution, legal questions; with `windows_portable_components.json` | JA | EN needed (#553) | P3 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |

@@ -303,9 +303,9 @@ def _assert_no_browser_path_leak(reason: str, body: bytes, *needles: str) -> Non
 
 
 def test_cross_job_review_session_rejected_without_path_disclosure(tmp_path: Path):
-    job_a = "job-" + "a" * 32
-    job_b = "job-" + "b" * 32
-    job_c = "job-" + "c" * 32
+    job_a = "job-" + "a" * 12
+    job_b = "job-" + "b" * 12
+    job_c = "job-" + "c" * 12
     _write_ready_job(tmp_path, job_a, browser_submission=True)
     _write_ready_job(tmp_path, job_b, browser_submission=False)
 

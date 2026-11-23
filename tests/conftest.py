@@ -33,6 +33,26 @@ def _strip_inherited_repository_env() -> None:
 _strip_inherited_repository_env()
 
 
+# Windows: creating a symlink needs Developer Mode or the "Create symbolic links" privilege
+# (WinError 1314, ERROR_PRIVILEGE_NOT_HELD). Tests that build symlink fixtures cannot run
+# without it; report them as skipped (an environment constraint), not as failures (#553).
+_WINDOWS_SYMLINK_PRIVILEGE_NOT_HELD = 1314
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_call(item):
+    outcome = yield
+    error = outcome.excinfo[1] if outcome.excinfo else None
+    if (
+        sys.platform == "win32"
+        and isinstance(error, OSError)
+        and getattr(error, "winerror", None) == _WINDOWS_SYMLINK_PRIVILEGE_NOT_HELD
+    ):
+        outcome.force_exception(
+            pytest.skip.Exception("symlink creation needs Developer Mode or admin rights")
+        )
+
+
 def _git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", "-C", str(root), *args], text=True).strip()
 

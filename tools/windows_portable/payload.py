@@ -58,6 +58,7 @@ BUILDER_MODULES = {
     "tools/windows_portable/build_portable.py": HERE / "build_portable.py",
     "tools/windows_portable/payload.py": HERE / "payload.py",
     "tools/windows_portable/manifest.py": HERE / "manifest.py",
+    "tools/windows_portable/user_setup.py": HERE / "user_setup.py",
     "tools/materialize_distribution.py": Path(materialize_distribution.__file__),
     "tools/release_candidate.py": Path(release_candidate.__file__),
 }
@@ -184,7 +185,8 @@ def validate_spec(spec: dict, selected: set[str], tracked: set[str]) -> None:
         errors.append(f"Generated Windows roots must be exactly {GENERATED_ROOTS} with reasons")
     inputs = spec.get("build_inputs", {})
     for path in {LOCK, ASSETS, OVERLAY_SPEC} | set(BUILDER_MODULES) - {
-        "tools/windows_portable/manifest.py"
+        "tools/windows_portable/manifest.py",
+        "tools/windows_portable/user_setup.py",
     }:
         if path not in inputs:
             errors.append(f"Build input is not recorded: {path}")

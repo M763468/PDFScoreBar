@@ -798,7 +798,6 @@
     "maintained_contract": [
       "tests/test_issue533_first_party_sr.py",
       "tests/test_issue533_license_reduction.py",
-      "tests/test_issue553_portable_compliance.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",
       "tests/test_apply_corrections_final_output.py",

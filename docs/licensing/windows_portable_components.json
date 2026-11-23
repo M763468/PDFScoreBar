@@ -1,11 +1,20 @@
 {
  "schema_version": "pdfscore.portable_compliance_policy.v1",
  "reviewed": {
-  "date": "2026-11-23",
+  "date": "2026-11-24",
   "issue": 553,
-  "portable_source_commit": "93e2c2b2cdb5a24dbd9fd8a7ceb8b2dc5a4e6460",
-  "basis": "pinned win_amd64 wheels of tools/windows_portable/requirements-cu126.txt (sha256 from the package indexes) and python-build-standalone cpython-3.12.12+20260211; must be re-checked against the real build_manifest.json"
+  "portable_source_commit": "b14251544cea11dcb092fccdd1428ad0b3e4f62b",
+  "basis": "pinned win_amd64 wheels of tools/windows_portable/requirements-cu126.txt and python-build-standalone cpython-3.12.12 (contents read from the real files); license review per distribution version, not per file digest; re-check against the real build_manifest.json"
  },
+ "recipient_acquired": [
+  {
+   "name": "triton-windows",
+   "version": "3.8.0.post29",
+   "source": "https://pypi.org/project/triton-windows/ (PDFScoreBar.cmd setup)",
+   "license": "MIT (triton-windows); contains NVIDIA CUDA components ptxas.exe, cuda.h, cuda.lib (NVIDIA CUDA Toolkit EULA) and TinyCC (LGPL-2.1)",
+   "note": "downloaded by the recipient from PyPI into addons/; not distributed by the PDFScoreBar owner"
+  }
+ ],
  "components": {
   "pdfscorebar-first-party": {
    "title": "PDFScoreBar application, launcher and first-party SR weights",
@@ -194,25 +203,8 @@
   "opencv-ffmpeg": {
    "title": "FFmpeg (opencv_videoio_ffmpeg DLL in opencv-python and opencv-python-headless)",
    "license": "LGPL-2.1-or-later",
-   "disposition": "cleared_with_notice",
-   "obligations": [
-    "LGPL text (in cv2/LICENSE-3RD-PARTY.txt)",
-    "unmodified separate DLL, replaceable",
-    "written offer of source (3 years) or the source"
-   ],
-   "supplemental": [
-    {
-     "name": "GNU LGPL 2.1 text",
-     "file": "common/LGPL-2.1.txt",
-     "url": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt",
-     "status": "collected"
-    },
-    {
-     "name": "written source offer for FFmpeg/TinyCC",
-     "file": "source/LGPL_SOURCE_OFFER.md",
-     "status": "collected"
-    }
-   ]
+   "disposition": "exclude",
+   "open_issue": "must not be shipped: the builder removes the unused video plugins (build_exclusions, #553), so no LGPL source offer is needed"
   },
   "nvidia-cuda-redistributable": {
    "title": "NVIDIA CUDA 12.6 runtime DLLs listed in CUDA EULA Attachment A (cudart, cuBLAS/cuBLASLt, cuFFT/cuFFTW, cuRAND, cuSOLVER, cuSPARSE, NVRTC, nvJitLink, CUPTI, NVTX, nvJPEG, libdevice)",
@@ -228,6 +220,12 @@
      "file": "nvidia/cuda-eula-12.6.3.txt",
      "url": "https://docs.nvidia.com/cuda/archive/12.6.3/eula/index.html",
      "status": "collected"
+    },
+    {
+     "name": "Recipient terms (owner draft)",
+     "file": "terms/RECIPIENT_TERMS.md",
+     "status": "collected",
+     "note": "draft; the owner approves the final text before handoff"
     }
    ]
   },
@@ -249,10 +247,10 @@
    ]
   },
   "nvidia-unlisted": {
-   "title": "NVIDIA files not listed as Windows redistributables: nvperf_host.dll, cusolverMg64_11.dll (torch); ptxas.exe, cuda.h, cuda.lib (triton-windows)",
+   "title": "NVIDIA files not listed as Windows redistributables in torch: nvperf_host.dll, cusolverMg64_11.dll",
    "license": "NVIDIA CUDA Toolkit EULA",
-   "disposition": "legal_interpretation_needed",
-   "open_issue": "CUDA EULA §1.1.2/Attachment A list no Windows ptxas.exe/nvperf_host/cusolverMg/cuda.lib/cuda.h; §2.3 (unmodified redistribution) covers Linux/FreeBSD only. Resolve by excluding them (Windows eager SR without triton; drop nvperf_host/cusolverMg after a Windows GPU test) or by NVIDIA permission/legal opinion",
+   "disposition": "exclude",
+   "open_issue": "must not be shipped: the builder removes them (user_setup.SETUP_SPEC build_exclusions, #553); no torch library loads them for inference",
    "supplemental": [
     {
      "name": "NVIDIA CUDA Toolkit EULA v12.6 (Attachment A)",
@@ -262,16 +260,29 @@
     }
    ]
   },
+  "triton-recipient": {
+   "title": "triton-windows 3.8.0.post29 incl. NVIDIA ptxas.exe/cuda.h/cuda.lib and TinyCC",
+   "license": "MIT; NVIDIA CUDA Toolkit EULA; LGPL-2.1",
+   "disposition": "exclude",
+   "open_issue": "must not be shipped: the recipient installs it from PyPI with PDFScoreBar.cmd setup (#553)"
+  },
   "intel-openmp": {
    "title": "Intel OpenMP runtime (libiomp5md.dll, libiompstubs5md.dll bundled by torch)",
    "license": "Intel End User License Agreement for Developer Tools (Version August 2024), from intel-openmp 2026.2.0; shipped DLL FileVersion 20260213",
-   "disposition": "legal_interpretation_needed",
-   "open_issue": "EULA 2.1.D(2) requires distributing the DLL under a license that prohibits reverse engineering it, and 3.1(x) forbids distribution that makes it Reciprocal Open Source Software; compatibility with handing it over inside an AGPL application folder (and the exact EULA version for the shipped build) needs review",
+   "disposition": "cleared_with_notice",
    "obligations": [
-    "recipient terms scoped to the Intel DLL prohibiting reverse engineering",
+    "EULA 2.1.D: distribute only as part of the application, unmodified, under recipient terms that prohibit reverse engineering the Intel DLL (RECIPIENT_TERMS.md)",
+    "3.1(x): not linked or relicensed into the AGPL work; it stays a separate torch dependency",
     "Intel EULA and third-party-programs.txt"
    ],
+   "residual": "the exact EULA version of the torch-bundled build (FileVersion 20260213; intel-openmp 2026.1.0 on PyPI has the same version and size) is not stated in the wheel; fallback: let setup install intel-openmp 2026.1.0 from PyPI",
    "supplemental": [
+    {
+     "name": "Recipient terms (owner draft)",
+     "file": "terms/RECIPIENT_TERMS.md",
+     "status": "collected",
+     "note": "draft; the owner approves the final text before handoff"
+    },
     {
      "name": "Intel Developer Tools EULA (Aug 2024)",
      "file": "intel/LICENSE.utf8.txt",
@@ -300,31 +311,9 @@
     }
    ]
   },
-  "tinycc": {
-   "title": "TinyCC (tcc.exe, libtcc.dll, runtime headers/libs bundled by triton-windows)",
-   "license": "LGPL-2.1-or-later",
-   "disposition": "cleared_with_notice",
-   "obligations": [
-    "LGPL text (missing from the wheel)",
-    "written offer or source for the shipped TinyCC revision"
-   ],
-   "supplemental": [
-    {
-     "name": "GNU LGPL 2.1 text",
-     "file": "common/LGPL-2.1.txt",
-     "url": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt",
-     "status": "collected"
-    },
-    {
-     "name": "written source offer for FFmpeg/TinyCC",
-     "file": "source/LGPL_SOURCE_OFFER.md",
-     "status": "collected"
-    }
-   ]
-  },
   "torch": {
-   "title": "PyTorch 2.14.0+cu126 / torchvision 0.29.0+cu126 / triton-windows 3.8.0.post29 (own code)",
-   "license": "BSD-3-Clause / MIT and bundled third-party licenses",
+   "title": "PyTorch 2.14.0+cu126 / torchvision 0.29.0+cu126 (own code)",
+   "license": "BSD-3-Clause and bundled third-party licenses",
    "disposition": "cleared_with_notice",
    "obligations": [
     "retain torch dist-info licenses/third_party/*"
@@ -559,7 +548,7 @@
   },
   "triton-windows": {
    "version": "3.8.0.post29",
-   "component": "torch"
+   "component": "triton-recipient"
   },
   "types-pillow": {
    "version": "10.2.0.20240822",
@@ -605,6 +594,10 @@
    "sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd"
   },
   {
+   "pattern": "python/Lib/site-packages/pdfscorebar_addons.pth",
+   "component": "pdfscorebar-first-party"
+  },
+  {
    "pattern": "assets/fonts/*.ttf",
    "component": "dejavu-font",
    "sha256": "d1c3ff99f1e1ce1827a33efd4dad81f40babda06bff9e43bd7591c86662a287b"
@@ -645,18 +638,6 @@
   {
    "pattern": "python/Lib/site-packages/torch/lib/cusolverMg64_*.dll",
    "component": "nvidia-unlisted"
-  },
-  {
-   "pattern": "python/Lib/site-packages/triton/backends/nvidia/bin/ptxas.exe",
-   "component": "nvidia-unlisted"
-  },
-  {
-   "pattern": "python/Lib/site-packages/triton/backends/nvidia/lib/x64/cuda.lib",
-   "component": "nvidia-unlisted"
-  },
-  {
-   "pattern": "python/Lib/site-packages/triton/backends/nvidia/lib/libdevice.10.bc",
-   "component": "nvidia-cuda-redistributable"
   },
   {
    "pattern": "python/Lib/site-packages/torch/lib/cudnn*64_9.dll",
@@ -755,8 +736,8 @@
    "component": "torch-native-misc"
   },
   {
-   "pattern": "python/Lib/site-packages/triton/runtime/tcc/*",
-   "component": "tinycc"
+   "pattern": "python/Lib/site-packages/triton/*",
+   "component": "triton-recipient"
   },
   {
    "pattern": "python/Lib/site-packages/cv2/opencv_videoio_ffmpeg*_64.dll",
@@ -776,10 +757,6 @@
   },
   {
    "pattern": "python/Lib/site-packages/torchvision/*",
-   "component": "torch"
-  },
-  {
-   "pattern": "python/Lib/site-packages/triton/*",
    "component": "torch"
   },
   {
@@ -805,7 +782,7 @@
   "- PDFScoreBar: `app/` of the portable folder is the complete application source; the builder (`tools/windows_portable/*`, `requirements-cu126.txt`, `assets.json`) at `builder_source_commit` is in `source/pdfscorebar-builder-<commit>.tar.gz`.",
   "- HOMR (AGPL-3.0): `source/homr-457e7c6518a10ba755db2e60883419e56c4d7369.tar.gz` (upstream commit) plus `app/docker/patch_homr_onnx_provider.py` (modification, applied at build time) and `app/docker/init_homr_segnet.py` (model initialization).",
   "- PyMuPDF / MuPDF (AGPL-3.0): `source/pymupdf-1.26.4.tar.gz` and `source/mupdf-1.26.7-source.tar.gz` (the MuPDF release pinned by PyMuPDF 1.26.4).",
-  "- FFmpeg (opencv) and TinyCC (triton-windows), LGPL-2.1: see `source/LGPL_SOURCE_OFFER.md`.",
+  "- No LGPL binary is shipped: OpenCV's FFmpeg plugins are removed at build time and TinyCC comes with triton-windows, which the recipient installs from PyPI.",
   "- All other Python packages are unmodified releases from PyPI / download.pytorch.org at the versions in `THIRD_PARTY_NOTICES.md`."
  ]
 }

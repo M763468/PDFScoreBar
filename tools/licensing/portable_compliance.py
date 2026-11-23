@@ -7,13 +7,19 @@ shipped file with its SHA-256. This tool maps that inventory onto the reviewed
 component dispositions in ``docs/licensing/windows_portable_components.json`` and
 
 * ``check``: fails closed when a shipped distribution, native binary or model file has no
-  reviewed disposition, when a distribution version differs from the reviewed one, or
-  (unless ``--allow-blocked``) when a shipped component is not cleared for handoff;
+  reviewed disposition or a model/font differs from its reviewed bytes; reports as
+  blocked (``--allow-blocked`` for rehearsals) a shipped component that is not cleared
+  for handoff, must not be shipped (``exclude``: removed at build time or installed by the
+  recipient with ``PDFScoreBar.cmd setup``), or whose distribution version has not been
+  license-reviewed yet. Licenses are reviewed per distribution version, not per file
+  digest: a compatible version update needs a license re-review, not new file hashes;
 * ``bundle``: writes an *adjacent* compliance bundle (it never modifies the portable
   folder, its ``app/`` payload or ``verify --full`` inventory): license files copied
   from the folder, supplemental texts/sources from a private directory, a generated
   ``THIRD_PARTY_NOTICES.md``, ``COMPLIANCE_REPORT.json`` bound to the exact
-  ``build_manifest.json`` digest, and ``SHA256SUMS``.
+  ``build_manifest.json`` digest, and ``SHA256SUMS``. Components that the recipient
+  obtains directly from the official source at setup (``recipient_acquired``) are listed
+  separately: they are not distributed by the folder's provider.
 
 The policy is a record of reviewed facts, not legal advice. A ``cleared`` disposition
 means the license terms and evidence were reviewed and the obligations are carried by the
@@ -121,6 +127,7 @@ class Evaluation:
     errors: list[str] = field(default_factory=list)
     used: dict[str, dict] = field(default_factory=dict)  # component -> evidence
     blocked: dict[str, list[str]] = field(default_factory=dict)
+    unreviewed_versions: dict[str, list[str]] = field(default_factory=dict)
 
     def use(self, cid: str, kind: str, item: str) -> None:
         self.used.setdefault(cid, {"distributions": [], "files": []})[kind].append(item)
@@ -137,10 +144,9 @@ def evaluate(manifest: dict, policy: dict) -> Evaluation:
             )
             continue
         if entry["version"] != version:
-            result.errors.append(
-                f"distribution {name}: shipped {version}, reviewed {entry['version']}"
+            result.unreviewed_versions.setdefault(entry["component"], []).append(
+                f"license not reviewed for {name}=={version} (reviewed {entry['version']})"
             )
-            continue
         result.use(entry["component"], "distributions", f"{name}=={version}")
     for path in sorted(manifest["files"]):
         if not needs_rule(path):
@@ -155,7 +161,7 @@ def evaluate(manifest: dict, policy: dict) -> Evaluation:
         result.use(rule["component"], "files", path)
     for cid in sorted(result.used):
         comp = policy["components"][cid]
-        reasons = []
+        reasons = list(result.unreviewed_versions.get(cid, []))
         if comp["disposition"] not in HANDOFF_OK:
             reasons.append(
                 f"disposition {comp['disposition']}: {comp.get('open_issue', '')}".strip()
@@ -179,6 +185,7 @@ def report(
         "builder_source_commit": manifest.get("builder_source_commit"),
         "policy_sha256": policy_sha,
         "policy_reviewed": policy.get("reviewed"),
+        "recipient_acquired": policy.get("recipient_acquired", []),
         "errors": ev.errors,
         "blocked": ev.blocked,
         "handoff_ready": not ev.errors and not ev.blocked,
@@ -247,6 +254,21 @@ def notices_markdown(payload: dict, policy: dict) -> str:
     if attributions:
         lines += ["", "## Attributions", ""]
         lines += [f"- **{title}**: {text}" for title, text in attributions]
+    acquired = payload.get("recipient_acquired", [])
+    if acquired:
+        lines += [
+            "",
+            "## Obtained by the recipient, not distributed with this folder",
+            "",
+            "`PDFScoreBar.cmd setup` downloads these from their official source into `addons/`;",
+            "the recipient obtains them under the upstream terms below.",
+            "",
+            "| Package | Source | License / contents |",
+            "| --- | --- | --- |",
+        ]
+        lines += [
+            f"| {a['name']} {a['version']} | {a['source']} | {a['license']} |" for a in acquired
+        ]
     return "\n".join(lines) + "\n"
 
 

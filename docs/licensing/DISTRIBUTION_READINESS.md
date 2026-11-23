@@ -1,7 +1,7 @@
 # 配布候補ごとの権利・通知・対応ソースの判定（#553）
 
 [#553](https://github.com/M763468/PDFScoreBar/issues/553) の記録。原文は日本語（正本）。英語版は未作成。
-判定日 **2026-11-23**。
+判定日 **2026-11-23**、配布方式の変更（利用者の初回セットアップ）を反映 **2026-11-24**。
 
 > **法的助言ではない。** ライセンス本文・上流の表示・実物（wheel、checkpoint、データ）から確認した事実と、
 > それに基づく分類を記録する。「法的判断が必要」とした論点は推測で埋めず、§5 に必要資料とともに示す。
@@ -15,7 +15,8 @@ AGPL-3.0-or-later に決定、適用は未実施）。これらを再調査せ�
 
 | 配布候補 | 固定値 | 当方が渡すもの |
 | --- | --- | --- |
-| **Windows 限定試用**（#508、同一組織の 1〜2 人） | portable source `93e2c2b2cdb5a24dbd9fd8a7ceb8b2dc5a4e6460`（#551 / PR #552） | フォルダ一式：`app/`（main 最小配布 135 件 + provenance）、`launcher/`、**CPython と第三者 wheel 一式（ネイティブ DLL を含む）**、barline CNN 重み、DejaVu フォント |
+| **Windows 限定試用**（#508、同一組織の 1〜2 人） | portable source `b14251544cea11dcb092fccdd1428ad0b3e4f62b`（PR #552 の上に積んだ #553 の変更。旧 `93e2c2b2` から `app/` は不変） | フォルダ一式：`app/`（main 最小配布 135 件 + provenance）、`launcher/`、CPython と第三者 wheel（ネイティブ DLL を含む。**triton-windows と §3 の除外ファイルを除く**）、barline CNN 重み、DejaVu フォント |
+| 同上・**受領者が初回セットアップで直接取得** | `PDFScoreBar.cmd setup` | `triton-windows==3.8.0.post29`（PyPI から受領者のフォルダ内へ。NVIDIA `ptxas.exe`・`cuda.h`・`cuda.lib` と TinyCC を含む） |
 | **main 最小配布**（#550 rc1） | source `a757211a9e02e5b3c9626db6a188227dbcd1738b`、candidate `9bb4f416…` | **ソースのみ**（manifest 選定 135 件。MMR 重みと first-party SR 重みを含む）。第三者部品・HOMR・NVIDIA は受領者の `docker build` が上流から取得。barline CNN は GitHub release asset から取得 |
 
 Docker image の配布は選定されていない（§4.3）。
@@ -24,8 +25,8 @@ Docker image の配布は選定されていない（§4.3）。
 
 | 配布候補 | 判定 | 理由（詳細は §3・§4） |
 | --- | --- | --- |
-| **Windows 限定試用** | **判断待ち**（オーナー判断・法的判断）＋ **未完了**（実ビルドでの照合） | (1) first-party の許諾が未付与（#505）。(2) MMR・barline CNN 重みの受領者への許諾と、学習用スキャンの入手条件の確認がオーナー待ち。barline CNN の初期化重みには「ImageNet の条件が重みに及ぶと想定すべき」という上流作者の表示がある。(3) Windows では CUDA EULA の再配布対象に**列挙されていない NVIDIA ファイル**（`ptxas.exe`、`nvperf_host.dll`、`cusolverMg64_11.dll`、`cuda.lib`、`cuda.h`）が同梱される。(4) torch 同梱の Intel OpenMP DLL の条件（逆アセンブル禁止を受領者契約で課す義務、Reciprocal OSS 化の禁止）と AGPL 製品フォルダとの関係。(5) 実ビルドの `build_manifest.json` での照合と bundle 生成は Windows ビルド後 |
-| **main 最小配布** | **判断待ち**（オーナー判断） | 第三者のバイナリは配布しない。必要な通知・対応ソース・ライセンス一式は非公開パッケージで準備し検証済み（§4）。残るのは (1) #505 の正式適用の承認、(2) MMR 重み（ソースに同梱）と barline CNN release asset の扱い（現状 NotLicensed のまま配布するか、許諾・置換するか） |
+| **Windows 限定試用** | **判断待ち**（オーナー判断 3 件）＋ **未完了**（新 SHA の Windows ビルド・セットアップ実機確認と、実 manifest での bundle 生成） | 第三者部品は、再配布の根拠が確認できない NVIDIA ファイルを**同梱しない構成に変えた**（受領者が PyPI から直接取得、または使わないファイルをビルドで除外）。残るのは (1) first-party の許諾（#505）、(2) MMR 重み、(3) barline CNN 重みの扱い（§2）と、受領者条件（下書き済み）の承認 |
+| **main 最小配布** | **判断待ち**（オーナー判断） | 第三者のバイナリは配布しない。必要な通知・対応ソース・ライセンス一式は非公開パッケージで準備し検証済み（§4）。残るのは (1) #505 の正式適用の承認、(2) MMR 重み（ソースに同梱）と barline CNN release asset の扱い |
 
 どちらも **GO ではない**。受領者への受け渡し、LICENSE の公開、main 昇格、tag/release は実施していない。
 
@@ -80,44 +81,68 @@ ImageNet データセットの利用契約の当事者でもない。**事前学
 なお MMR 重みは 2026-01-12 から公開リポジトリに、barline CNN は GitHub release に、ライセンス表示なし（＝許諾なし）で既に置かれている。
 これは許諾の根拠にならない（#505 では NotLicensed として扱う）。
 
+### 2.5 オーナーに確認していただく事項（楽譜スキャン）
+
+推測で許諾済みとはしない。次の事実はリポジトリに記録がなく、オーナーにしか分からない。
+
+| # | 確認事項 | 対象 |
+| --- | --- | --- |
+| S1 | evaluation2 の 5 曲（Shostakovich「祝典序曲」「交響曲5番」、Sibelius「ヴァイオリン協奏曲」、Prokofiev「交響曲1番」「交響曲5番」、いずれもヴィオラ・パート）の紙の楽譜の入手経路：購入／出版社・代理店からのレンタル／所属団体の所有／図書館等 | MMR、barline CNN |
+| S2 | 入手時の契約・注意書きで、複写・スキャン・電子化・社外持ち出しが禁止または制限されていたか（レンタル譜は複製禁止の条件が多い） | 同上 |
+| S3 | スキャンを行った人・機器（PDF の producer は KONICA MINOLTA、RICOH の複合機と tiff2pdf）と、その目的（個人の練習用か、団体の業務か） | 同上 |
+| S4 | 旧 `data/evaluation/pdfs/target.pdf`（MMR の学習に 1 ページ使用）の出典 | MMR |
+| S5 | 試用の目的が商用か非商用の評価か（ImageNet 由来の初期化重みの扱いに関係。§2.2） | MMR、barline CNN |
+
+S1〜S3 で契約上の制限がなく、S5 が非商用の評価であれば、限定試用で評価目的に限った許諾を付けて渡す判断の材料になる。制限があった場合は、該当曲を学習から外した置換（§6.2）が確実な解消策になる。
+
 ## 3. Windows 限定試用：構成物ごとの判定
 
-**根拠の範囲**：`tools/windows_portable/requirements-cu126.txt` の固定版に対応する **win_amd64 wheel 57 件**（各 index の
-SHA-256。中身は HTTP range で一覧化し、ライセンス・通知ファイルと DLL の版情報を実物から取得）と、
-python-build-standalone `cpython-3.12.12+20260211`（Windows、`c38fba3a…`）。Linux image の #504 台帳は流用していない。
-**Windows で実際にビルドした `build_manifest.json` ではまだ照合していない**（Windows 担当の検証中。§7）。
+**根拠の範囲**：`tools/windows_portable/requirements-cu126.txt` の固定版に対応する **win_amd64 wheel 57 件**（中身は HTTP range で一覧化し、
+ライセンス・通知ファイルと DLL の版情報を実物から取得）と、python-build-standalone `cpython-3.12.12+20260211`（Windows、`c38fba3a…`）。
+Linux image の #504 台帳は流用していない。旧 `93e2c2b2` の Windows 実ビルド（manifest `3317b262…`、25,833 ファイル）は動作検証済みだが、
+新構成の実ビルドでの照合は Windows 担当のビルド後（§8）。
 
-照合結果（擬似 manifest 24,906 ファイル）：審査済み規則のない配布物・DLL・モデル **0 件**、ブロック **5 件**。
+**配布方式（#553、2026-11-24）**：`torch.compile`/Triton は維持し、当方の再配布の根拠が確認できない物は渡さない。
+
+| 区分 | 対象 | 方法 |
+| --- | --- | --- |
+| **受領者が直接取得** | `triton-windows==3.8.0.post29`（MIT。NVIDIA `ptxas.exe`・`cuda.h`・`cuda.lib`、TinyCC を含む） | `PDFScoreBar.cmd setup` が PyPI から受領者のフォルダの `addons\` にダウンロード・インストール（`tools/windows_portable/user_setup.py`。PR #552 の上に積んだ topic branch `feat/issue553-portable-user-setup`）。triton-windows の README は CUDA ツールチェーンと TinyCC の同梱を述べるが、NVIDIA ファイルの再配布の根拠は示していない。当方は再ホストしない |
+| **ビルドで除外**（使わない） | `torch\lib\nvperf_host.dll`（Nsight Perf SDK）、`torch\lib\cusolverMg64_11.dll`、`cv2\opencv_videoio_ffmpeg4110_64.dll`・`…4140_64.dll`（FFmpeg、LGPL-2.1） | torch の DLL はどれも前 2 者を推論で読み込まない（CUPTI のプロファイラ経路だけが `nvperf_host` を参照）。FFmpeg は `cv2.VideoCapture`/`VideoWriter` 用で、PDFScoreBar と HOMR は動画を使わない。**Windows 実機の GPU 動作で確認する** |
+| **提供者が同梱** | 下表の残り | 通知・本文・対応ソースを compliance bundle に入れる |
+
+Attachment A に名前がないことは「再配布禁止」を意味しない。ただし当方が再配布してよい根拠を EULA から示せないため、**問い合わせではなく配布方式で**解消した。
+
+照合結果（模擬 manifest 24,564 ファイル、新構成）：審査済み規則のない配布物・DLL・モデル **0 件**、ブロック **3 件**（first-party、MMR、barline CNN。すべてオーナー判断）。
+旧構成（`93e2c2b2` 相当）は同じツールで「同梱してはならない物を含む」として 6 件ブロックになる。
 
 | 構成物 | 条件 | 判定 | 根拠・残作業 |
 | --- | --- | --- | --- |
-| PDFScoreBar（`app/`、`launcher/`、SR 重み） | AGPL-3.0-or-later（決定済み・未付与） | **permission_needed** | #505。受領者は許諾を持たない。正式適用、または試用者への書面の個別許諾をオーナーが決める |
-| MMR / barline CNN 重み | §2 | **permission_needed** / **legal_interpretation_needed** | §2.4 |
-| CPython 3.12.12（OpenSSL、SQLite、libffi、Tcl/Tk、`vcruntime140*.dll`） | PSF-2.0 ほか。`python/LICENSE.txt` に同梱物と Microsoft Distributable Code の条件 | cleared_with_notice | 同梱の `LICENSE.txt` を保持。**PBS の release tag を build manifest が記録していない**（版の特定は `python312.dll` 等の hash による） |
+| PDFScoreBar（`app/`、`launcher/`、SR 重み、`pdfscorebar_addons.pth`） | AGPL-3.0-or-later（決定済み・未付与） | **permission_needed** | #505。正式適用、または試用者への書面の個別許諾をオーナーが決める |
+| MMR / barline CNN 重み | §2 | **permission_needed** / **legal_interpretation_needed** | §2.4、§2.5 |
+| CPython 3.12.12（OpenSSL、SQLite、libffi、Tcl/Tk、`vcruntime140*.dll`） | PSF-2.0 ほか。`python/LICENSE.txt` に同梱物と Microsoft Distributable Code の条件 | cleared_with_notice | 同梱の `LICENSE.txt` を保持 |
 | Microsoft VC++ ランタイム（`msvcp140*`、`vcomp140`、`vcruntime140*`） | Visual Studio Distributable Code | cleared_with_notice | 未改変、Windows 上でのみ使用 |
 | 一般の Python パッケージ（49 件。CPython 同梱の pip を含む） | MIT/BSD/Apache-2.0/PSF/MPL-2.0 | cleared_with_notice | dist-info の本文を bundle にコピー |
 | flatbuffers、rapidocr-onnxruntime、types-Pillow | Apache-2.0（wheel に本文なし） | cleared_with_notice | Apache-2.0 本文を補う（収集済み） |
-| PyMuPDF 1.26.4 / MuPDF | AGPL-3.0 | cleared_with_notice | wheel の `COPYING` は1行のみ。AGPL 全文、**対応ソース**：PyMuPDF sdist（`be13a066…`）と、その `setup.py` が固定する MuPDF 1.26.7 source（`52014fce…`）を収集済み |
-| HOMR `457e7c65`（ビルド時に改変） | AGPL-3.0 | cleared_with_notice | 上流 source（`41511b37…`）＋ `app/docker/patch_homr_onnx_provider.py`（改変）＋ `init_homr_segnet.py`。改変表示は THIRD_PARTY_NOTICES 案 |
-| OpenCV の FFmpeg DLL（`opencv_videoio_ffmpeg*.dll` ×2） | LGPL-2.1 | cleared_with_notice | 未改変・置換可能な別 DLL。書面の申し出（3年）を用意。**申し出を守れるよう、受け渡し前に該当 source を取得・保持する** |
-| TinyCC 0.9.28rc（triton-windows の `tcc.exe`、`libtcc.dll`） | LGPL-2.1 | cleared_with_notice | wheel には MIT 本文しかない。LGPL 本文と書面の申し出を補う。上と同じく source の取得・保持が必要 |
-| NVIDIA CUDA 12.6 DLL（cudart、cuBLAS/cuBLASLt、cuFFT/cuFFTW、cuRAND、cuSOLVER、cuSPARSE、NVRTC、nvJitLink、CUPTI、NVTX、nvJPEG、libdevice） | CUDA EULA 12.6 **Attachment A に Windows 版が列挙** | cleared_with_notice | §1.1.2（実質的な追加機能、アプリ経由のみ、EULA と整合する受領条件、不遵守の通知）。**torch / torchvision の wheel には NVIDIA の本文がない**ため EULA 本文を補う（収集済み） |
-| NVIDIA cuDNN 9.10.2.21（`cudnn*64_9.dll`） | cuDNN SLA：runtime の `.so`/`.dll` は再配布可 | cleared_with_notice | SLA 本文を補う（最新版の本文。対象版との差は §5） |
-| **NVIDIA の非列挙ファイル**：`ptxas.exe`、`cuda.lib`、`cuda.h`（triton-windows）、`nvperf_host.dll`（Nsight Perf SDK）、`cusolverMg64_11.dll`（torch） | Attachment A に Windows 版の記載なし。§2.3 の「未改変なら再配布可」は Linux/FreeBSD 向けのみ | **legal_interpretation_needed** | 解消策は §6.1（除外）。`ptxas.exe` は本番 SR の `torch.compile`（triton）に必要 |
-| **Intel OpenMP**（`libiomp5md.dll` FileVersion 20260213、`libiompstubs5md.dll`） | Intel EULA for Developer Tools（2024-08）。§2.1.D(2) 受領者に逆アセンブル禁止の契約を課す、§3.1(x) Reciprocal OSS 化の禁止 | **legal_interpretation_needed** | wheel に本文なし（intel-openmp 2026.2.0 から本文を収集）。AGPL 製品フォルダ内での同梱と両立するか、対象版の EULA 版の確認 |
-| torch / torchvision 同梱の libuv、zlib 1.2.3、libjpeg-turbo、libpng、libwebp | MIT / Zlib / IJG・BSD / libpng / BSD | cleared_with_notice | wheel に本文なし。上流の本文を補う（収集済み。版は最新の本文） |
-| ONNX Runtime GPU 1.24.4 | MIT ＋ `ThirdPartyNotices.txt` | cleared_with_notice | TensorRT は同梱しない（provider DLL は ORT のコード） |
+| PyMuPDF 1.26.4 / MuPDF | AGPL-3.0 | cleared_with_notice | AGPL 全文、**対応ソース**：PyMuPDF sdist（`be13a066…`）と MuPDF 1.26.7 source（`52014fce…`）を収集済み |
+| HOMR `457e7c65`（ビルド時に改変） | AGPL-3.0 | cleared_with_notice | 上流 source（`41511b37…`）＋ `app/docker/patch_homr_onnx_provider.py`（改変）＋ `init_homr_segnet.py` |
+| NVIDIA CUDA 12.6 DLL（cudart、cuBLAS/cuBLASLt、cuFFT/cuFFTW、cuRAND、cuSOLVER、cuSPARSE、NVRTC、nvJitLink、CUPTI、NVTX、nvJPEG） | CUDA EULA 12.6 **Attachment A に Windows 版が列挙** | cleared_with_notice | §1.1.2（実質的な追加機能、アプリ経由のみ、EULA と整合する受領条件、不遵守の通知）。EULA 本文を補う。受領条件は下書き済み（`RECIPIENT_TERMS.md`） |
+| NVIDIA cuDNN 9.10.2.21 | cuDNN SLA：runtime `.dll` は再配布可 | cleared_with_notice | SLA 本文（最新版）を補う |
+| Intel OpenMP（`libiomp5md.dll` FileVersion 20260213、`libiompstubs5md.dll`） | Intel EULA for Developer Tools（2024-08）§2.1.D：製品の一部としての再配布を許可。受領者条件で逆アセンブル禁止を課す。§3.1(x) Reciprocal OSS 化の禁止 | cleared_with_notice | 受領者条件に Intel DLL 限定の条項を入れる（下書き済み）。DLL は torch（BSD）の依存で AGPL の作品に組み込まず再許諾しない。**残る点**：torch 同梱 build に対応する EULA 版の表示がない。必要なら同じ FileVersion・同サイズの `intel-openmp==2026.1.0` を setup で受領者に取得させる代替がある |
+| torch / torchvision 同梱の libuv、zlib 1.2.3、libjpeg-turbo、libpng、libwebp | MIT / Zlib / IJG・BSD / libpng / BSD | cleared_with_notice | 上流の本文を補う（収集済み） |
+| ONNX Runtime GPU 1.24.4 | MIT ＋ `ThirdPartyNotices.txt` | cleared_with_notice | TensorRT は同梱しない |
 | DejaVu Sans Bold | Bitstream Vera / DejaVu | cleared_with_notice | `COPYRIGHT.fonts-dejavu-core` を隣に同梱 |
+| triton-windows、`nvperf_host.dll`、`cusolverMg64_11.dll`、FFmpeg DLL | — | **exclude**（同梱しない） | 実ビルドに残っていれば照合ツールが blocked にする |
+
+LGPL のバイナリ（TinyCC、FFmpeg）を当方は渡さなくなったため、LGPL の書面の申し出は不要になった。
 
 ### 3.1 compliance bundle の方式
 
 `app/`（main と同一の 135 件）や `verify --full` の対象を変えないため、**portable フォルダの外に隣接する bundle** とした。
 
-- 判定データ：[`windows_portable_components.json`](windows_portable_components.json)（配布物・ファイル規則→構成物→判定・義務・補う本文）。
+- 判定データ：[`windows_portable_components.json`](windows_portable_components.json)。ライセンスは**配布物の版ごと**に審査し、個々の wheel・DLL の SHA-256 には依存しない（モデル重みとフォントは、版の取り違え・破損を防ぐため bytes を照合する）。`recipient_acquired` に受領者が取得する物を記録する。
 - 検査・生成：`tools/licensing/portable_compliance.py`
-  - `check <folder>/runtime/build_manifest.json`：manifest の全配布物・全 DLL/EXE/PYD/モデル/フォントが審査済みの規則に当たらなければ、版が審査時と違えば、モデルの hash が違えば **error（exit 2）**。判定が cleared でない構成物、補う本文が未収集のものは **blocked（exit 1）**。
-  - `bundle <folder> <隣の新ディレクトリ> --supplemental-dir <非公開資料>`：フォルダ内のライセンス本文（manifest の hash を照合してコピー）、補う本文・対応ソース、生成した `THIRD_PARTY_NOTICES.md`・`SOURCE.md`、**`build_manifest.json` の SHA-256 と tree digest に結び付けた** `COMPLIANCE_REPORT.json`、`SHA256SUMS`。フォルダ内への出力は拒否する。
-- 補う本文と対応ソースは非公開の作業領域に収集済み（§7）。
+  - `check <folder>/runtime/build_manifest.json`：審査済みの規則に当たらない配布物・DLL/EXE/PYD・モデル・フォント、モデル/フォントの bytes の差は **error（exit 2）**。cleared でない構成物、同梱してはならない物（`exclude`）、**版が審査時と違う配布物（ライセンスの再審査が必要）**、補う本文が未収集のものは **blocked（exit 1）**。互換版への更新でファイルの hash を登録し直す必要はない。
+  - `bundle <folder> <隣の新ディレクトリ> --supplemental-dir <非公開資料>`：フォルダ内のライセンス本文（manifest の hash を照合してコピー）、補う本文・対応ソース・受領者条件、生成した `THIRD_PARTY_NOTICES.md`（受領者が取得する物の節を含む）・`SOURCE.md`、`build_manifest.json` の SHA-256 と tree digest に結び付けた `COMPLIANCE_REPORT.json`、`SHA256SUMS`。フォルダ内への出力は拒否する。
 
 ## 4. main 最小配布
 
@@ -145,28 +170,22 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 
 ## 5. 法的判断が必要な論点と必要資料
 
-| # | 論点 | 必要な資料・事実 |
+| # | 論点 | 状態・必要な資料 |
 | --- | --- | --- |
-| L1 | ImageNet で学習した初期化重み（特に timm 由来 EfficientNet-B0）の条件が、fine-tune した重みの配布に及ぶか | ImageNet Terms of Access の本文（今回取得不能）、timm README の該当節、torchvision の注記、試用・公開の目的（非商用評価か） |
-| L2 | 楽譜スキャンを学習に使った重みの配布（日本の著作権法 30 条の 4、契約） | **オーナーが持つ事実**：各スキャンの元資料の入手経路と契約（購入・レンタル・団体所有、複製・電子化の可否）、スキャン実施者 |
-| L3 | Windows 向け NVIDIA の非列挙ファイル（`ptxas.exe`、`nvperf_host.dll`、`cusolverMg64_11.dll`、`cuda.lib`、`cuda.h`）の再配布 | CUDA EULA 12.6（収集済み）、triton-windows / PyTorch がこれらを配布している根拠、必要なら NVIDIA への確認 |
-| L4 | Intel OpenMP EULA と AGPL 製品フォルダ内の同梱（受領者契約での逆アセンブル禁止の付け方、Reciprocal OSS 条項） | Intel EULA（収集済み）、対象 DLL 版に対応する EULA 版 |
-| L5 | NVIDIA / Intel の独自条件の部品と AGPL 結合物の同時配布（#504 §0.8.3 の継続） | AGPL §1 System Libraries、§10、各 EULA |
-| L6 | cuDNN 9.10.2.21 に適用される SLA の版 | 収集した SLA は「latest」。対象版の SLA |
+| L1 | ImageNet で学習した初期化重み（特に timm 由来 EfficientNet-B0）の条件が、fine-tune した重みの配布に及ぶか | 未解決。ImageNet Terms of Access の本文（取得不能だった）、試用・公開の目的（§2.5 S5） |
+| L2 | 楽譜スキャンを学習に使った重みの配布（日本の著作権法 30 条の 4、契約） | 未解決。§2.5 S1〜S4 のオーナーの事実 |
+| L3 | Windows 向け NVIDIA の非列挙ファイルの再配布 | **配布方式で解消**（同梱しない）。受領者が PyPI から得る際の条件は受領者と配布元の間の問題として案内する |
+| L4 | Intel OpenMP EULA と AGPL 製品フォルダ内の同梱 | 受領者条件で対応（§3）。対象 build の EULA 版は残る。代替あり |
+| L5 | NVIDIA / Intel の独自条件の部品と AGPL 結合物の同時配布（#504 §0.8.3 の継続） | 受領者条件は NVIDIA/Intel のライブラリだけを対象にし、first-party と AGPL 部品には制限を加えない形で下書きした |
+| L6 | cuDNN 9.10.2.21 に適用される SLA の版 | 収集した SLA は最新版。版ごとの差は未確認 |
 
-## 6. 技術的な解消策（実施にはオーナー承認と事前の回帰契約）
+## 6. 技術的な解消策
 
-### 6.1 Windows の NVIDIA 非列挙ファイルを除く
+### 6.1 Windows の NVIDIA 非列挙ファイル（実装済み、Windows 実機確認待ち）
 
-- `nvperf_host.dll`、`cusolverMg64_11.dll`：torch の DLL（`torch_cpu`、`cusolver64_11`、`cupti64`）を調べると、`cusolverMg64_11.dll` はどこからも名前で参照されず、
-  `nvperf_host.dll` は CUPTI のプロファイラ経路からだけ参照される（静的な文字列検査。`torch_cuda.dll` は ASCII のみ確認）。
-  ビルダーで除外し、**Windows の GPU 実機で preflight・E2E を確認**できれば解消する。
-- `ptxas.exe`、`cuda.lib`、`cuda.h`（triton-windows）：本番設定 `sr_compile_mode: reduce-overhead` の `torch.compile` が使う。
-  Windows だけ SR を eager にし triton-windows を同梱しない構成にすれば、これらと TinyCC（LGPL）が消える。
-  **回帰契約（事前に固定）**：(a) Linux GPU で SR x4 の出力を eager と compile で Full68 の 73 ページ比較し、byte 一致なら下流は不変。
-  (b) 一致しなければ #533 §0.11.1 と同じ Full68 replay（対照比で FP 増なし、新規 FN なし、TP 減なし、小節数・番号列の全ページ一致）。
-  (c) Windows 実機で GPU E2E。処理時間は記録のみ（#533 の計測で eager は 1 ページ約 8.5 秒、compile は 2 ページ目以降約 6.9 秒）。
-  **今回は実行していない**：GPU を Windows の E2E 検証と共有しているため、検証中の作業を乱さない。
+- 採用：triton-windows を受領者が初回セットアップで PyPI から取得（`torch.compile`/Triton は維持）、`nvperf_host.dll`・`cusolverMg64_11.dll`・FFmpeg プラグインはビルドで除外。
+- 比較した案：(a) 対象 5 ファイルだけを wheel から取り出して置く案は、torch/triton の正規パッケージ構成から外れ、版の更新や修復が独自処理になる。(b) 公式パッケージ（triton-windows wheel）を丸ごと受領者がインストールする案は、通常の pip で検証・修復でき、ダウンロード 51 MB・展開 150 MB と軽い。**(b) を採用**。torch の 2 DLL は使わないため、取得させずに除外した（必要と判明すれば `nvidia-cusolver-cu12` / `nvidia-cuda-cupti-cu12` を setup で取得させる代替がある）。
+- 第二案（この方式が成立しない場合のみ）：Windows だけ SR を eager にして triton を使わない。回帰契約（事前固定）：Linux GPU で eager と compile の SR 出力を Full68 の 73 ページで比較し、差があれば #533 §0.11.1 と同じ Full68 replay（FP 増なし、新規 FN なし、小節数・番号列の全ページ一致）。
 
 ### 6.2 MMR / barline CNN の置換（公開配布で L1/L2 を避ける場合）
 
@@ -193,21 +212,19 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 
 | 検証 | 結果 |
 | --- | --- |
-| `tests/test_issue553_portable_compliance.py`（使い捨て `pdfscore_pytest_validation:e7a2045e207c`） | 10 passed |
-| `check_repository_surface.py`、ruff check / format | Passed |
-| wheel 実物による擬似 manifest の照合 | error 0、blocked 5（§3） |
-| #505 パッケージの隔離適用（§4.2） | reuse lint・surface・materialize・pytest 99 Passed |
-| Windows 実ビルドでの `check`/`bundle` | **Not run**（Windows ビルド待ち） |
-| §6.1 eager/compile の比較、§6.2 の再学習 | **Not run**（承認待ち。GPU 共有） |
+| 照合ツールと判定データのテスト（`tests/test_issue533_license_reduction.py` の #553 節） | Passed |
+| 新構成の模擬 manifest での照合 | error 0、blocked 3（オーナー判断のみ） |
+| 実 triton-windows 3.8.0.post29 wheel（PyPI、`937ba2ee…`）の取得・展開 | 必要 5 ファイルが存在（Linux 上で win_amd64 wheel を `--target` 展開） |
+| setup の動作（portable 側 PR のテスト） | download/install/記録、再実行で再取得しない、wheel-dir、失敗・中断からの復旧、改ざん・版ずれ、移設 |
+| #505 パッケージの隔離適用（§4.2） | reuse lint・surface・materialize・pytest 99 Passed（2026-11-23） |
+| Windows 実ビルド・`setup`・GPU/ブラウザ E2E、実 manifest での `check`/`bundle` | **Not run**（Windows 担当へ引継ぎ） |
 
-非公開の証拠（git 管理外）：`logs/issue553/`（`windows-inventory/`：wheel 一覧・抽出したライセンス本文・CPython 一覧・生成スクリプト、
-`upstream-terms/`、`model-lineage/`：初期化重みとの比較・lineage 記録、`compliance-private/supplemental/`：補う本文と対応ソース＋`SHA256SUMS`、
-`compliance-rehearsal/`、`license-package-a757211a/`：#505 の適合版パッケージ、`validation/`）。
+非公開の証拠（git 管理外）：`logs/issue553/`（`windows-inventory/`、`upstream-terms/`、`model-lineage/`、`compliance-private/supplemental/`（補う本文、対応ソース、`terms/RECIPIENT_TERMS.md` の下書き、`SHA256SUMS`）、
+`compliance-rehearsal/`、`portable-setup/`、`license-package-a757211a/`、`validation/`）。
 
 ## 9. オーナーの判断事項
 
-1. **Windows の NVIDIA 非列挙ファイル**：§6.1 の除外（eager SR）を進めるか、法的確認・NVIDIA への確認を取るか。
-2. **MMR / barline CNN**：試用では評価目的に限った許諾で渡すか（スキャンの入手条件の確認を含む）、置換（§6.2）を先に行うか。公開配布ではどちらにするか。
-3. **Intel OpenMP**：受領者条件に Intel DLL の条項を入れる形で進めるか、法的確認を取るか。
-4. **first-party の許諾**：#505 の正式適用（main）と、試用者への書面の個別許諾のどちらで試用を行うか。
-5. 上記の後、Windows 実ビルドの `build_manifest.json` で `portable_compliance.py check` → `bundle`、LGPL の source 取得・保持、受け渡し手順と SHA256 を確定してから、試用の Go/No-go。
+1. **first-party の許諾**：#505 の正式適用（main）と、試用者への書面の個別許諾のどちらで試用を行うか。
+2. **MMR / barline CNN**：§2.5 の S1〜S5 を確認のうえ、試用では評価目的に限った許諾で渡すか、置換（§6.2）を先に行うか。公開配布ではどちらにするか。
+3. **受領者条件**：`RECIPIENT_TERMS.md` 下書き（NVIDIA/Intel の条項、モデルの利用範囲、再配布禁止）の承認。
+4. 上記の後、新 SHA の Windows 実ビルドで `setup` と E2E、`portable_compliance.py check` → `bundle`、受け渡し手順と SHA256 を確定してから、試用の Go/No-go。

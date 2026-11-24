@@ -336,8 +336,10 @@ def test_repository_policy_is_valid_and_reviews_every_pinned_distribution():
     assert components["mmr-weights"]["disposition"] == "cleared_with_notice"
     assert "ImageNet-use caution" in components["barline-cnn-weights"]["obligations"][0]
     assert "NOT included" in components["mmr-weights"]["review_note"]
-    # First-party licensing is still a single distinct gate; model provenance is not another blocker.
-    assert components["pdfscorebar-first-party"]["disposition"] == "permission_needed"
+    # The owner granted AGPL-3.0-or-later for the trial build (#505); the grant texts are pinned.
+    assert components["pdfscorebar-first-party"]["disposition"] == "cleared_with_notice"
+    granted = {s["file"] for s in components["pdfscorebar-first-party"]["supplemental"]}
+    assert {"first-party/LICENSE", "first-party/FIRST_PARTY_NOTICE.md"} <= granted
     # Real Windows build unlocked distributions (#553): setuptools, homr, pip.
     assert policy["distributions"]["setuptools"]["version"] == "84.2.1"
     assert policy["distributions"]["setuptools"]["component"] == "setuptools"
@@ -378,8 +380,8 @@ def test_repository_source_instructions_point_at_bundled_supplemental_files():
     assert builder and builder[0]["status"] == "collected" and len(builder[0]["sha256"]) == 64
     homr_files = [s["file"] for s in policy["components"]["homr"]["supplemental"]]
     assert "homr/MODIFICATIONS.md" in homr_files
-    # Supplying source and notices does not grant the first-party license (#505).
-    assert first_party["disposition"] == "permission_needed"
+    # The grant is recorded only together with its LICENSE and notice (#505).
+    assert first_party["disposition"] == "cleared_with_notice"
 
 
 def test_repository_policy_routes_unlisted_nvidia_before_catch_all():
@@ -403,7 +405,7 @@ def test_repository_policy_routes_unlisted_nvidia_before_catch_all():
     assert hit["component"] == "setuptools"
 
 
-def test_repository_policy_real_build_unlocked_versions_leave_only_first_party_blocker():
+def test_repository_policy_real_build_hands_off_after_the_first_party_grant():
     policy = pc.load_policy(pc.DEFAULT_POLICY)
     files = {
         "python/python312.dll": [2, "0" * 64],
@@ -426,7 +428,7 @@ def test_repository_policy_real_build_unlocked_versions_leave_only_first_party_b
     }
     ev = pc.evaluate(manifest, policy)
     assert ev.errors == []
-    assert set(ev.blocked) == {"pdfscorebar-first-party"}
+    assert ev.blocked == {}
     assert "setuptools" in ev.used and "homr" in ev.used and "pypi-permissive" in ev.used
     assert "mmr-weights" in ev.used and "barline-cnn-weights" in ev.used
 

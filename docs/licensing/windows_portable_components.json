@@ -24,12 +24,11 @@
  "components": {
   "pdfscorebar-first-party": {
    "title": "PDFScoreBar application, launcher and first-party SR weights",
-   "license": "AGPL-3.0-or-later (decided, #505; not yet granted)",
-   "disposition": "permission_needed",
-   "open_issue": "#505: owner has not applied the first-party license; recipients have no license until the owner grants AGPL-3.0-or-later or a written individual permission",
+   "license": "AGPL-3.0-or-later (granted by the owner on 2026-11-24 for the build with manifest 1173dfb44654…, #505)",
+   "disposition": "cleared_with_notice",
    "obligations": [
-    "first-party LICENSE/NOTICE staged privately (#505 package) and released only on owner approval",
-    "Corresponding Source = app/ + launcher + builder (tools/windows_portable, lock, assets.json) at the build commit"
+    "LICENSE (GNU AGPL-3.0) and FIRST_PARTY_NOTICE.md in the bundle",
+    "Corresponding Source = app/ + launcher + builder (supplemental pdfscorebar-builder-<commit>.tar.gz)"
    ],
    "evidence": [
     "#505",
@@ -42,12 +41,24 @@
      "file": "source/pdfscorebar-builder-33836ac5eaf3af70eecfc5c56710148d8822bf89.tar.gz",
      "sha256": "91d064dc672a4f602a3bd0868d2c073147ad3c2e604b33c38acd0455e49d9637",
      "status": "collected"
+    },
+    {
+     "name": "GNU AGPL 3.0 text (first-party license)",
+     "file": "first-party/LICENSE",
+     "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+     "status": "collected"
+    },
+    {
+     "name": "First-party license notice for this build",
+     "file": "first-party/FIRST_PARTY_NOTICE.md",
+     "sha256": "f1b5acd4b40ee31cc5d7b9d9c084ccc228cc35d6ca28b24982b084b424ce7b65",
+     "status": "collected"
     }
    ]
   },
   "mmr-weights": {
    "title": "MMR classifier (models/mmr/mmr_classifier_best.pth, sha256 f163fa2a…)",
-   "license": "first-party fine-tuned checkpoint (torchvision ResNet18 IMAGENET1K_V1 initialization); first-party grant remains pending under #505",
+   "license": "first-party fine-tuned checkpoint (torchvision ResNet18 IMAGENET1K_V1 initialization); covered by the first-party AGPL-3.0-or-later grant of 2026-11-24",
    "disposition": "cleared_with_notice",
    "obligations": [
     "Record first-party training and torchvision ResNet18 IMAGENET1K_V1 initialization provenance",
@@ -57,7 +68,7 @@
   },
   "barline-cnn-weights": {
    "title": "Barline CNN issue296-d27-v1 (sha256 f41a9b57…)",
-   "license": "first-party fine-tuned checkpoint (torchvision EfficientNet-B0 IMAGENET1K_V1, originally trained in timm); first-party grant remains pending under #505",
+   "license": "first-party fine-tuned checkpoint (torchvision EfficientNet-B0 IMAGENET1K_V1, originally trained in timm); covered by the first-party AGPL-3.0-or-later grant of 2026-11-24",
    "disposition": "cleared_with_notice",
    "obligations": [
     "Retain torchvision BSD-3-Clause / timm Apache-2.0 provenance and upstream ImageNet-use caution in NOTICE",
@@ -268,10 +279,11 @@
      "status": "collected"
     },
     {
-     "name": "Recipient terms (owner draft)",
+     "name": "Recipient terms (owner approved)",
      "file": "terms/RECIPIENT_TERMS.md",
      "status": "collected",
-     "note": "draft; the owner approves the final text before handoff"
+     "note": "approved by the owner on 2026-11-24",
+     "sha256": "13cf6f8d42ac2cb805f77d670daee406a5b681d610c4f73560b94706618a3113"
     }
    ]
   },
@@ -324,10 +336,11 @@
    "residual": "the exact EULA version of the torch-bundled build (FileVersion 20260213; intel-openmp 2026.1.0 on PyPI has the same version and size) is not stated in the wheel; fallback: let setup install intel-openmp 2026.1.0 from PyPI",
    "supplemental": [
     {
-     "name": "Recipient terms (owner draft)",
+     "name": "Recipient terms (owner approved)",
      "file": "terms/RECIPIENT_TERMS.md",
      "status": "collected",
-     "note": "draft; the owner approves the final text before handoff"
+     "note": "approved by the owner on 2026-11-24",
+     "sha256": "13cf6f8d42ac2cb805f77d670daee406a5b681d610c4f73560b94706618a3113"
     },
     {
      "name": "Intel Developer Tools EULA (Aug 2024)",

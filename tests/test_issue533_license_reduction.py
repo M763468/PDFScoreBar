@@ -338,6 +338,21 @@ def test_repository_policy_is_valid_and_reviews_every_pinned_distribution():
     assert "NOT included" in components["mmr-weights"]["review_note"]
     # First-party licensing is still a single distinct gate; model provenance is not another blocker.
     assert components["pdfscorebar-first-party"]["disposition"] == "permission_needed"
+    # Real Windows build unlocked distributions (#553): setuptools, homr, pip.
+    assert policy["distributions"]["setuptools"]["version"] == "84.2.1"
+    assert policy["distributions"]["setuptools"]["component"] == "setuptools"
+    assert policy["distributions"]["homr"]["version"] == "0.1.0"
+    assert policy["distributions"]["pip"]["version"] == "25.3"
+    assert components["setuptools"]["disposition"] == "cleared_with_notice"
+    assert SP + "setuptools/config/NOTICE" in components["setuptools"]["notice_files"]
+    assert (
+        SP + "setuptools/config/_validate_pyproject/NOTICE"
+        in components["setuptools"]["notice_files"]
+    )
+    assert any(
+        item["file"] == "common/GPL-3.0.txt" and item["status"] == "collected"
+        for item in components["setuptools"]["supplemental"]
+    )
     unlisted = [r["pattern"] for r in policy["file_rules"] if r["component"] == "nvidia-unlisted"]
     assert any(p.endswith("nvperf_host.dll") for p in unlisted)
     assert any(p.endswith("cusolverMg64_*.dll") for p in unlisted)
@@ -360,6 +375,36 @@ def test_repository_policy_routes_unlisted_nvidia_before_catch_all():
     assert hit["component"] == "nvidia-cudnn"
     hit = pc.match_rule(SP + "torch/lib/libiomp5md.dll", rules)
     assert hit["component"] == "intel-openmp"
+    hit = pc.match_rule(SP + "setuptools/cli-64.exe", rules)
+    assert hit["component"] == "setuptools"
+
+
+def test_repository_policy_real_build_unlocked_versions_leave_only_first_party_blocker():
+    policy = pc.load_policy(pc.DEFAULT_POLICY)
+    files = {
+        "python/python312.dll": [2, "0" * 64],
+        SP + "setuptools/cli-64.exe": [14336, "1" * 64],
+        SP + "pdfscorebar_addons.pth": [10, "2" * 64],
+        "app/models/mmr/mmr_classifier_best.pth": [
+            1,
+            "f163fa2a7679d12c0f4fe6fc2fadc7ed1f144035779a18b83a303bfa6d35903a",
+        ],
+        "assets/model-cache/barline_cnn/d27.pth": [
+            1,
+            "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+        ],
+    }
+    manifest = {
+        "schema_version": pc.MANIFEST_SCHEMA,
+        "distributions": {"setuptools": "84.2.1", "homr": "0.1.0", "pip": "25.3"},
+        "files": files,
+        "tree_digest": pc.tree_digest(files),
+    }
+    ev = pc.evaluate(manifest, policy)
+    assert ev.errors == []
+    assert set(ev.blocked) == {"pdfscorebar-first-party"}
+    assert "setuptools" in ev.used and "homr" in ev.used and "pypi-permissive" in ev.used
+    assert "mmr-weights" in ev.used and "barline-cnn-weights" in ev.used
 
 
 def test_cleared_folder_passes_and_bundle_is_adjacent(tmp_path):

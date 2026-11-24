@@ -100,9 +100,8 @@ ImageNet データセットの利用契約の当事者でもない。**事前学
 ## 3. Windows 限定試用：構成物ごとの判定
 
 **根拠の範囲**：`tools/windows_portable/requirements-cu126.txt` の固定版に対応する **win_amd64 wheel 57 件**（中身は HTTP range で一覧化し、
-ライセンス・通知ファイルと DLL の版情報を実物から取得）と、python-build-standalone `cpython-3.12.12+20260211`（Windows、`c38fba3a…`）。
-Linux image の #504 台帳は流用していない。旧 `93e2c2b2` の Windows 実ビルド（manifest `3317b262…`、25,833 ファイル）は動作検証済みだが、
-新構成の実ビルドでの照合は Windows 担当のビルド後（§8）。
+ライセンス・通知ファイルと DLL の版情報を実物から取得）、python-build-standalone `cpython-3.12.12+20251209`（実ビルド `win553` の `python/BUILD` で確認、`pip==25.3` 同梱、`python/LICENSE.txt` は `20260211` と SHA-256 一致）、および実ビルド `win553`（source `b1425154`、manifest `eb256330…`、25,490 ファイル）の実 dist-info / metadata / ライセンス本文（`setuptools==84.2.1`、`homr==0.1.0`、`pip==25.3` を含む）。
+Linux image の #504 台帳は流用していない。新候補 SHA（`33836ac5…`）の実機受入後に、最終フォルダで `check` → `bundle` を行う（§8）。
 
 **配布方式（#553、2026-11-24）**：`torch.compile`/Triton は維持し、当方の再配布の根拠が確認できない物は渡さない。
 
@@ -114,19 +113,20 @@ Linux image の #504 台帳は流用していない。旧 `93e2c2b2` の Windows
 
 Attachment A に名前がないことは「再配布禁止」を意味しない。ただし当方が再配布してよい根拠を EULA から示せないため、**問い合わせではなく配布方式で**解消した。
 
-照合結果（模擬 manifest 24,564 ファイル、新構成）：審査済み規則のない配布物・DLL・モデル **0 件**、ブロック **3 件**（first-party、MMR、barline CNN。すべてオーナー判断）。
-旧構成（`93e2c2b2` 相当）は同じツールで「同梱してはならない物を含む」として 6 件ブロックになる。
+照合結果（実ビルド `win553_build_manifest.json`、25,490 ファイル、source `b1425154`）：審査済み規則のない配布物・DLL・モデル **0 件（error 0）**、ブロック **1 件**（`pdfscorebar-first-party`、#505 のオーナー許諾ゲートのみ。モデル固有の blocked は 0 件）。
+履歴：旧判定（モデル再分類前・模擬 manifest 24,564 ファイル）は error 0 / blocked 3、旧構成（`93e2c2b2` 相当）は「同梱してはならない物を含む」として 6 件ブロック。
 
 | 構成物 | 条件 | 判定 | 根拠・残作業 |
 | --- | --- | --- | --- |
 | PDFScoreBar（`app/`、`launcher/`、SR 重み、`pdfscorebar_addons.pth`） | AGPL-3.0-or-later（決定済み・未付与） | **permission_needed** | #505。正式適用、または試用者への書面の個別許諾をオーナーが決める |
 | MMR / barline CNN 重み | §2 | **cleared_with_notice**（モデル固有の再配布禁止は未特定） | First-party重みとしての出典・ImageNet初期化・DeepScoresV2帰属・学習用楽譜非同梱を通知。モデルを含むfirst-party全体の許諾は#505で適用する |
-| CPython 3.12.12（OpenSSL、SQLite、libffi、Tcl/Tk、`vcruntime140*.dll`） | PSF-2.0 ほか。`python/LICENSE.txt` に同梱物と Microsoft Distributable Code の条件 | cleared_with_notice | 同梱の `LICENSE.txt` を保持 |
+| CPython 3.12.12（`python-build-standalone` `20251209`；OpenSSL、SQLite、libffi、Tcl/Tk、`vcruntime140*.dll`） | PSF-2.0 ほか。`python/LICENSE.txt` に同梱物と Microsoft Distributable Code の条件 | cleared_with_notice | 同梱の `LICENSE.txt` を保持 |
 | Microsoft VC++ ランタイム（`msvcp140*`、`vcomp140`、`vcruntime140*`） | Visual Studio Distributable Code | cleared_with_notice | 未改変、Windows 上でのみ使用 |
-| 一般の Python パッケージ（49 件。CPython 同梱の pip を含む） | MIT/BSD/Apache-2.0/PSF/MPL-2.0 | cleared_with_notice | dist-info の本文を bundle にコピー |
+| 一般の Python パッケージ（49 件。CPython 同梱の `pip 25.3` を含む） | MIT/BSD/Apache-2.0/PSF/MPL-2.0 | cleared_with_notice | dist-info の本文を bundle にコピー |
+| `setuptools 84.2.1`（`torch==2.14.0+cu126` の実行時依存 `setuptools>=77.0.3` により PyPI から導入） | MIT（`_vendor` に MIT / Apache-2.0 / BSD-2-Clause / `autocommand 2.2.2` LGPL-3.0、`config/**/NOTICE` に `fastjsonschema` BSD-3-Clause・`validate-pyproject` MPL-2.0、ランチャー `cli/gui*.exe` は MIT） | cleared_with_notice | dist-info・`_vendor` の LICENSE 本文と `setuptools/config/**/NOTICE` を bundle にコピー。`autocommand` は未改変の pure-Python ソースのまま同梱されており、LGPL-3.0 が組み込む GPL-3.0 本文（`common/GPL-3.0.txt`）を補う |
 | flatbuffers、rapidocr-onnxruntime、types-Pillow | Apache-2.0（wheel に本文なし） | cleared_with_notice | Apache-2.0 本文を補う（収集済み） |
 | PyMuPDF 1.26.4 / MuPDF | AGPL-3.0 | cleared_with_notice | AGPL 全文、**対応ソース**：PyMuPDF sdist（`be13a066…`）と MuPDF 1.26.7 source（`52014fce…`）を収集済み |
-| HOMR `457e7c65`（ビルド時に改変） | AGPL-3.0 | cleared_with_notice | 上流 source（`41511b37…`）＋ `app/docker/patch_homr_onnx_provider.py`（改変）＋ `init_homr_segnet.py` |
+| HOMR `457e7c65`（導入版 `0.1.0`、`POETRY_DYNAMIC_VERSIONING_BYPASS=0.1.0`、ビルド時に改変） | AGPL-3.0 | cleared_with_notice | 上流 source（`41511b37…`）＋ `app/docker/patch_homr_onnx_provider.py`（改変）＋ `init_homr_segnet.py` |
 | NVIDIA CUDA 12.6 DLL（cudart、cuBLAS/cuBLASLt、cuFFT/cuFFTW、cuRAND、cuSOLVER、cuSPARSE、NVRTC、nvJitLink、CUPTI、NVTX、nvJPEG） | CUDA EULA 12.6 **Attachment A に Windows 版が列挙** | cleared_with_notice | §1.1.2（実質的な追加機能、アプリ経由のみ、EULA と整合する受領条件、不遵守の通知）。EULA 本文を補う。受領条件は下書き済み（`RECIPIENT_TERMS.md`） |
 | NVIDIA cuDNN 9.10.2.21 | cuDNN SLA：runtime `.dll` は再配布可 | cleared_with_notice | SLA 本文（最新版）を補う |
 | Intel OpenMP（`libiomp5md.dll` FileVersion 20260213、`libiompstubs5md.dll`） | Intel EULA for Developer Tools（2024-08）§2.1.D：製品の一部としての再配布を許可。受領者条件で逆アセンブル禁止を課す。§3.1(x) Reciprocal OSS 化の禁止 | cleared_with_notice | 受領者条件に Intel DLL 限定の条項を入れる（下書き済み）。DLL は torch（BSD）の依存で AGPL の作品に組み込まず再許諾しない。**残る点**：torch 同梱 build に対応する EULA 版の表示がない。必要なら同じ FileVersion・同サイズの `intel-openmp==2026.1.0` を setup で受領者に取得させる代替がある |
@@ -135,7 +135,7 @@ Attachment A に名前がないことは「再配布禁止」を意味しない�
 | DejaVu Sans Bold | Bitstream Vera / DejaVu | cleared_with_notice | `COPYRIGHT.fonts-dejavu-core` を隣に同梱 |
 | triton-windows、`nvperf_host.dll`、`cusolverMg64_11.dll`、FFmpeg DLL | — | **exclude**（同梱しない） | 実ビルドに残っていれば照合ツールが blocked にする |
 
-LGPL のバイナリ（TinyCC、FFmpeg）を当方は渡さなくなったため、LGPL の書面の申し出は不要になった。
+LGPL のバイナリ（TinyCC、FFmpeg）を当方は渡さなくなったため、LGPL の書面の申し出は不要になった。`setuptools` 同梱の `autocommand 2.2.2`（LGPL-3.0）は未改変の Python ソースコード（`.py`）のままフォルダ内に含まれており、LGPL-3.0 本文と組み込み先の GPL-3.0 本文を compliance bundle に添付する。
 
 ### 3.1 compliance bundle の方式
 
@@ -214,11 +214,11 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 | 検証 | 結果 |
 | --- | --- |
 | 照合ツールと判定データのテスト（`tests/test_issue533_license_reduction.py` の #553 節） | Passed |
-| 新構成の模擬 manifest での照合 | **旧判定による履歴**：error 0、blocked 3。今回のモデル再分類により模擬manifestの再評価が必要（想定：first-party許諾のみblocked 1） |
+| 実 Windows ビルド manifest（`win553_build_manifest.json`、`eb256330…`、旧 source `b1425154`）での `portable_compliance.py check` | **error 0、blocked 1**（`pdfscorebar-first-party` #505 のみ、モデル固有 blocked 0、18 components、`handoff_ready=false`）。履歴：旧判定（`adf75cfe`）では error 1（`setuptools==84.2.1`）・blocked 3（`homr==0.1.0`、`pip==25.3`、`pdfscorebar-first-party`）、旧模擬 manifest は error 0・blocked 3 |
 | 実 triton-windows 3.8.0.post29 wheel（PyPI、`937ba2ee…`）の取得・展開 | 必要 5 ファイルが存在（Linux 上で win_amd64 wheel を `--target` 展開） |
 | setup の動作（portable 側 PR のテスト） | download/install/記録、再実行で再取得しない、wheel-dir、失敗・中断からの復旧、改ざん・版ずれ、移設 |
 | #505 パッケージの隔離適用（§4.2） | reuse lint・surface・materialize・pytest 99 Passed（2026-11-23） |
-| Windows 実ビルド・`setup`・GPU/ブラウザ E2E、実 manifest での `check`/`bundle` | **Not run**（Windows 担当へ引継ぎ） |
+| 新 SHA（`33836ac5…`）の Windows 実機受入・最終配布フォルダでの `check` / `bundle` | **Not run**（Windows 実機受入後に、その最終配布フォルダと既存の非公開補足資料を対象に実施） |
 
 非公開の証拠（git 管理外）：`logs/issue553/`（`windows-inventory/`、`upstream-terms/`、`model-lineage/`、`compliance-private/supplemental/`（補う本文、対応ソース、`terms/RECIPIENT_TERMS.md` の下書き、`SHA256SUMS`）、
 `compliance-rehearsal/`、`portable-setup/`、`license-package-a757211a/`、`validation/`）。

@@ -4,7 +4,7 @@
   "date": "2026-11-24",
   "issue": 553,
   "portable_source_commit": "b14251544cea11dcb092fccdd1428ad0b3e4f62b",
-  "basis": "pinned win_amd64 wheels of tools/windows_portable/requirements-cu126.txt and python-build-standalone cpython-3.12.12 (contents read from the real files); license review per distribution version, not per file digest; re-check against the real build_manifest.json"
+  "basis": "pinned win_amd64 wheels of tools/windows_portable/requirements-cu126.txt, python-build-standalone cpython-3.12.12+20251209, and real Windows portable build manifest/metadata (win553, b1425154); license review per distribution version, not per file digest"
  },
  "recipient_acquired": [
   {
@@ -143,6 +143,31 @@
    "notice_files": [
     "python/LICENSE.txt",
     "python/tcl/*license.terms"
+   ]
+  },
+  "setuptools": {
+   "title": "setuptools 84.2.1 (torch runtime dependency; includes vendored packages)",
+   "license": "MIT (vendored: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0 pure-Python autocommand 2.2.2)",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "retain setuptools dist-info, _vendor dist-info licenses, and setuptools/config/**/NOTICE",
+    "vendored autocommand 2.2.2 (LGPL-3.0) is shipped unmodified as Python source (.py); supply the GPL-3.0 text incorporated by LGPL-3.0 alongside autocommand's LGPL-3.0 text",
+    "unmodified PyPI release (installed as a required runtime dependency of torch==2.14.0+cu126)"
+   ],
+   "notice_files": [
+    "python/Lib/site-packages/setuptools-*.dist-info/licenses/*",
+    "python/Lib/site-packages/setuptools/_vendor/*.dist-info/*LICEN[CS]E*",
+    "python/Lib/site-packages/setuptools/_vendor/*.dist-info/licenses/*",
+    "python/Lib/site-packages/setuptools/config/NOTICE",
+    "python/Lib/site-packages/setuptools/config/_validate_pyproject/NOTICE"
+   ],
+   "supplemental": [
+    {
+     "name": "GNU GPL 3.0 text (incorporated by vendored autocommand LGPL-3.0)",
+     "file": "common/GPL-3.0.txt",
+     "url": "https://www.gnu.org/licenses/gpl-3.0.txt",
+     "status": "collected"
+    }
    ]
   },
   "pypi-permissive": {
@@ -519,6 +544,11 @@
    "version": "1.18.1",
    "component": "pypi-permissive"
   },
+  "setuptools": {
+   "version": "84.2.1",
+   "component": "setuptools",
+   "note": "installed by uv from PyPI as a required dependency of torch==2.14.0+cu126 (Requires-Dist: setuptools>=77.0.3); unlocked in build_portable.py; confirmed from win553 real build metadata and licenses"
+  },
   "shapely": {
    "version": "2.2.0",
    "component": "pypi-permissive"
@@ -568,14 +598,14 @@
    "component": "pypi-permissive"
   },
   "homr": {
-   "version": "0.0.0",
+   "version": "0.1.0",
    "component": "homr",
-   "note": "git 457e7c6518a10ba755db2e60883419e56c4d7369; confirm the installed version string on the first real build"
+   "note": "git 457e7c6518a10ba755db2e60883419e56c4d7369 built with POETRY_DYNAMIC_VERSIONING_BYPASS=0.1.0; confirmed from win553 real build metadata/direct_url.json"
   },
   "pip": {
-   "version": "26.0.1",
+   "version": "25.3",
    "component": "pypi-permissive",
-   "note": "from python-build-standalone 20260211; other releases ship other pip versions"
+   "note": "bundled in python-build-standalone cpython-3.12.12+20251209 (python/BUILD; uv 0.9.17); MIT license and vendored license set verified on win553 (identical file set to 26.0.1); other python-build-standalone releases may ship other pip versions"
   }
  },
  "file_rules": [
@@ -769,6 +799,10 @@
    "component": "homr"
   },
   {
+   "pattern": "python/Lib/site-packages/setuptools/*",
+   "component": "setuptools"
+  },
+  {
    "pattern": "python/Lib/site-packages/*",
    "component": "pypi-permissive"
   },
@@ -783,7 +817,7 @@
   "- PDFScoreBar: `app/` of the portable folder is the complete application source; the builder (`tools/windows_portable/*`, `requirements-cu126.txt`, `assets.json`) at `builder_source_commit` is in `source/pdfscorebar-builder-<commit>.tar.gz`.",
   "- HOMR (AGPL-3.0): `source/homr-457e7c6518a10ba755db2e60883419e56c4d7369.tar.gz` (upstream commit) plus `app/docker/patch_homr_onnx_provider.py` (modification, applied at build time) and `app/docker/init_homr_segnet.py` (model initialization).",
   "- PyMuPDF / MuPDF (AGPL-3.0): `source/pymupdf-1.26.4.tar.gz` and `source/mupdf-1.26.7-source.tar.gz` (the MuPDF release pinned by PyMuPDF 1.26.4).",
-  "- No LGPL binary is shipped: OpenCV's FFmpeg plugins are removed at build time and TinyCC comes with triton-windows, which the recipient installs from PyPI.",
+  "- No LGPL binary is shipped: OpenCV's FFmpeg plugins are removed at build time and TinyCC comes with triton-windows, which the recipient installs from PyPI. setuptools' vendored autocommand 2.2.2 (LGPL-3.0) is shipped unmodified as Python source files under `python/Lib/site-packages/setuptools/_vendor/autocommand/` with its LGPL-3.0 notice and the incorporated GPL-3.0 text.",
   "- All other Python packages are unmodified releases from PyPI / download.pytorch.org at the versions in `THIRD_PARTY_NOTICES.md`."
  ]
 }

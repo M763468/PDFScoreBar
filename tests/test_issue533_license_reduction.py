@@ -455,26 +455,33 @@ def test_build_scoped_grant_requires_exact_manifest_digest(tmp_path):
     changed["builder_source_commit"] = "b" * 40
     _manifest(root).write_text(json.dumps(changed), encoding="utf-8")
     payload_path = tmp_path / "checked.json"
-    assert pc.main([
-        "check",
-        str(_manifest(root)),
-        "--policy",
-        str(policy_path),
-        "--report",
-        str(payload_path),
-    ]) == 1
+    assert (
+        pc.main(
+            [
+                "check",
+                str(_manifest(root)),
+                "--policy",
+                str(policy_path),
+                "--report",
+                str(payload_path),
+            ]
+        )
+        == 1
+    )
     payload = json.loads(payload_path.read_text(encoding="utf-8"))
     assert payload["errors"] == []
     assert payload["handoff_ready"] is False
     assert "owner grant limited to build manifest" in payload["blocked"]["weights"][0]
-    assert pc.main([
-        "check", str(_manifest(root)), "--policy", str(policy_path), "--allow-blocked"
-    ]) == 0
+    assert (
+        pc.main(["check", str(_manifest(root)), "--policy", str(policy_path), "--allow-blocked"])
+        == 0
+    )
     # Rehearsal flags cannot make an out-of-scope build handoff-ready.
     assert payload["handoff_ready"] is False
 
-    assert pc.main(["bundle", str(root), str(tmp_path / "bundle"),
-                    "--policy", str(policy_path)]) == 1
+    assert (
+        pc.main(["bundle", str(root), str(tmp_path / "bundle"), "--policy", str(policy_path)]) == 1
+    )
     bundle_report = json.loads(
         (tmp_path / "bundle" / "COMPLIANCE_REPORT.json").read_text(encoding="utf-8")
     )
@@ -495,10 +502,20 @@ def test_trial_guide_is_bundled_next_to_portable(tmp_path, monkeypatch):
     (supplemental / "nvidia" / "eula.txt").write_text("EULA", encoding="utf-8")
 
     out = tmp_path / "bundle"
-    assert pc.main([
-        "bundle", str(root), str(out), "--policy", str(policy_path),
-        "--supplemental-dir", str(supplemental),
-    ]) == 0
+    assert (
+        pc.main(
+            [
+                "bundle",
+                str(root),
+                str(out),
+                "--policy",
+                str(policy_path),
+                "--supplemental-dir",
+                str(supplemental),
+            ]
+        )
+        == 0
+    )
     assert (out / "TRIAL_GUIDE.md").read_bytes() == guide_path.read_bytes()
     assert "TRIAL_GUIDE.md" in (out / "SHA256SUMS").read_text(encoding="utf-8")
     # The user guide is not copied into the 25,490-file immutable portable payload.

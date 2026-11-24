@@ -108,16 +108,29 @@ C:\PDFScoreBar\PDFScoreBar.cmd verify --full
   into `addons\downloads`, installs it into a staging folder, checks that it imports from
   the folder and that `torch.compile` with Triton runs on the GPU, and only then swaps it
   into `addons\site-packages` and writes `addons\setup_state.json`. A failed or
-  interrupted setup leaves any previous installation untouched; just run it again. A
-  completed setup is not repeated (`--force` reinstalls, reusing the downloaded wheel);
-  nothing is updated automatically. Without internet, `--wheel-dir <dir>` installs a wheel
-  that was downloaded from PyPI beforehand. No administrator rights, no system Python and
-  no files outside the folder are used; `setup` refuses to run while `serve`/`run` use
-  the jobs. After setup, normal use needs no network.
+  interrupted setup (Ctrl+C) leaves any previous installation untouched; just run it
+  again. A completed setup is not repeated (`--force` reinstalls, reusing the downloaded
+  wheel); nothing is updated automatically. Without internet, `--wheel-dir <dir>` installs
+  a wheel that was downloaded from PyPI beforehand: a wheel named this way is always used
+  (even if one was kept from an earlier run) and becomes the kept wheel only after the
+  installation passed; if `<dir>` has no matching wheel, setup fails and changes nothing.
+  `--no-gpu-check` (diagnosis only) skips the GPU check; `preflight` then refuses jobs
+  until a plain `setup` has run it from the kept wheel. No administrator rights, no system
+  Python, no compiler or CUDA Toolkit and no files outside the folder are used; `setup`
+  refuses to run while `serve`/`run` use the jobs. After setup, normal use needs no
+  network.
+* Triton compiles with the TinyCC and the CUDA files of its own wheel, but looks for them
+  only below `python\Lib\site-packages`. The launcher therefore sets `CC` (to
+  `addons\site-packages\triton\runtime\tcc\tcc.exe`) and `CUDA_PATH` (to
+  `addons\site-packages\triton\backends\nvidia`) for its own processes only, derived
+  from the folder's current location at every start, and drops an inherited `CUDA_HOME`;
+  system environment variables are not changed and the folder can still be moved.
 * `preflight` checks the location, free space, the folder against its manifest (sizes),
-  that setup was completed and its files are present, the GPU, a real ONNX Runtime CUDA
-  session and that Triton is loaded from the folder's add-ons. `serve` and `run` require
-  it. Jobs run with
+  that setup was completed with its GPU check and its files (including the TinyCC and
+  CUDA files Triton compiles with) are present, the GPU, a real ONNX Runtime CUDA session,
+  that Triton is loaded from the folder's add-ons and that it resolves its C compiler and
+  CUDA to those add-ons (without compiling; `setup` ran the real compile). `serve` and
+  `run` require it. Jobs run with
   `PDFSCORE_REQUIRE_CUDA_ORT=1`: a CUDA session that silently runs on CPU fails the job.
 * `serve` starts the browser application of #507 (`tools/browser_jobs`, unchanged) on
   `http://127.0.0.1:8010/` and opens it (`--no-browser` to skip, `--port` to change):

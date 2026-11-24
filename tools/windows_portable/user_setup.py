@@ -18,10 +18,17 @@ reach ``sys.path`` through the shipped ``python/Lib/site-packages/pdfscorebar_ad
 (a relative line, so the folder stays relocatable). Nothing is written outside the
 folder; no administrator rights or system Python are used.
 
+Triton looks for its bundled TinyCC and CUDA files below ``python/Lib/site-packages`` only,
+so every PDFScoreBar process gets ``CC`` and ``CUDA_PATH`` pointing into the add-ons
+(``TOOLCHAIN_ENV``), built from the folder's current location; nothing system-wide changes.
+
 Installation is staged and swapped in only after the package imports (and, by default,
-after a small ``torch.compile`` GPU smoke test), so a failed or interrupted setup leaves a
-previous installation untouched and can simply be re-run. Downloaded wheels are kept in
-``addons/downloads`` and reused; setup never upgrades on its own. Version pins are
+after a small ``torch.compile`` GPU smoke test with the staged toolchain), so a failed or
+interrupted setup leaves a previous installation untouched and can simply be re-run. A
+setup completed with ``--no-gpu-check`` is not accepted by ``preflight`` until a plain
+``setup`` has run the check. Downloaded wheels are kept in ``addons/downloads`` and reused;
+a wheel named with ``--wheel-dir`` takes precedence and replaces the kept one once the
+installation has passed. Setup never upgrades on its own. Version pins are
 compatibility choices (the combination validated on Windows), not byte pins: the record
 keeps package names, versions, wheel names, sources and local file digests for diagnosis,
 and ``verify --full`` re-hashes the installed add-on files. Standard library only.
@@ -105,9 +112,65 @@ SETUP_SPEC: dict = {
     ],
 }
 
+# triton-windows finds its bundled TinyCC and CUDA (ptxas, cuda.h, cuda.lib) only below
+# sysconfig's platlib (python/Lib/site-packages), not below addons/site-packages: it reads
+# ``CC`` first (runtime/build.py) and ``CUDA_PATH`` first (windows_utils.find_cuda). Every
+# process that may compile gets both, built from the add-ons it imports Triton from, so a
+# moved folder uses its new location. Nothing is set outside PDFScoreBar's processes.
+TOOLCHAIN_ENV = {
+    "CC": "triton/runtime/tcc/tcc.exe",
+    "CUDA_PATH": "triton/backends/nvidia",
+}
+# Inherited values that could make Triton pick another compiler or CUDA than the above.
+TOOLCHAIN_ENV_DROPPED = ("CUDA_HOME",)
+# What Triton needs below them (windows_utils.check_and_find_cuda, "bundled" layout, and
+# TinyCC with its own headers and runtime library next to tcc.exe).
+TOOLCHAIN_FILES = (
+    "triton/runtime/tcc/tcc.exe",
+    "triton/runtime/tcc/libtcc.dll",
+    "triton/runtime/tcc/include/stdio.h",
+    "triton/runtime/tcc/lib/libtcc1.a",
+    "triton/backends/nvidia/bin/ptxas.exe",
+    "triton/backends/nvidia/include/cuda.h",
+    "triton/backends/nvidia/lib/x64/cuda.lib",
+)
+
+
+def toolchain_environment(site: Path) -> dict[str, str]:
+    """``CC``/``CUDA_PATH`` pointing at the Triton toolchain installed in ``site``."""
+
+    return {key: str(site / PurePosixPath(rel)) for key, rel in TOOLCHAIN_ENV.items()}
+
+
+def apply_toolchain_environment(env: dict[str, str], site: Path) -> dict[str, str]:
+    """Return ``env`` with the Triton toolchain of ``site`` (case-insensitive keys)."""
+
+    replaced = {k.upper() for k in (*TOOLCHAIN_ENV, *TOOLCHAIN_ENV_DROPPED)}
+    result = {k: v for k, v in env.items() if k.upper() not in replaced}
+    result.update(toolchain_environment(site))
+    return result
+
+
+def toolchain_problems(site: Path) -> list[str]:
+    """Missing parts of the Triton TinyCC/CUDA toolchain below ``site`` (cheap checks)."""
+
+    return [
+        f"Triton toolchain is incomplete: {rel} is missing"
+        for rel in TOOLCHAIN_FILES
+        if not (site / PurePosixPath(rel)).is_file()
+    ]
+
+
 GPU_SMOKE = r"""
+import os
+from pathlib import Path
 import torch, triton
+from triton.runtime.build import _find_compiler
+from triton.windows_utils import find_cuda
 assert torch.cuda.is_available(), "No CUDA GPU is visible to PyTorch"
+cc, cuda_bin = _find_compiler("c"), find_cuda()[0]
+assert Path(cc) == Path(os.environ["CC"]), f"Triton uses the C compiler {cc}"
+assert cuda_bin and Path(cuda_bin).is_relative_to(os.environ["CUDA_PATH"]), cuda_bin
 fn = torch.compile(lambda x: torch.relu(x * 2.0 + 1.0))
 x = torch.linspace(-4.0, 4.0, 4096, device="cuda")
 y = fn(x)
@@ -200,7 +263,28 @@ def addons_problems(root: Path, *, full: bool = False, required: bool = True) ->
             problems.append(f"add-on size mismatch: {name}")
         elif full and sha256_file(path) != digest:
             problems.append(f"add-on sha256 mismatch: {name}")
+    if not problems:
+        problems += toolchain_problems(site)
     return problems
+
+
+def compile_check_problems(root: Path) -> list[str]:
+    """A completed setup whose torch.compile GPU check did not run (``--no-gpu-check``).
+
+    Jobs compile the SR model with Triton, so ``preflight`` refuses such a setup instead of
+    letting the first job fail; a plain ``setup`` re-runs the check from the kept wheel.
+    """
+
+    try:
+        state = load_state(root)
+    except SetupError:
+        return []  # reported by addons_problems
+    if state is None or state.get("gpu_smoke") is True:
+        return []
+    return [
+        "The torch.compile GPU check of setup has not passed (it was skipped with "
+        "--no-gpu-check): run 'PDFScoreBar.cmd setup' to run it"
+    ]
 
 
 def status(root: Path) -> dict:
@@ -239,6 +323,27 @@ def _recover(root: Path) -> None:
             previous.rename(site)
     if staging.exists():
         shutil.rmtree(staging)
+
+
+def _keep_wheel(wheel: Path, downloads: Path) -> None:
+    """Make ``wheel`` the kept wheel of its package (replacing older kept copies)."""
+
+    target = downloads / wheel.name
+    if wheel.resolve() != target.resolve():
+        temporary = downloads / (wheel.name + ".tmp")
+        shutil.copyfile(wheel, temporary)
+        os.replace(temporary, target)
+    prefix = wheel.name.lower().split("-", 2)
+    for other in downloads.glob("*.whl"):
+        if other.name != wheel.name and other.name.lower().split("-", 2)[:2] == prefix[:2]:
+            other.unlink()
+
+
+def _ask(confirm: Callable[[str], str], prompt: str) -> str:
+    try:
+        return confirm(prompt).strip().lower()
+    except EOFError:
+        return ""
 
 
 Runner = Callable[..., subprocess.CompletedProcess]
@@ -292,11 +397,15 @@ def run_setup(
     addons = root / ADDONS
     addons.mkdir(parents=True, exist_ok=True)
     _recover(root)
-    if not force and not addons_problems(root, full=False):
+    completed = not addons_problems(root, full=False)
+    if completed and gpu_smoke and compile_check_problems(root):
+        out("The GPU compile check of the previous setup was skipped; running it now.")
+        completed = False
+    if completed and not force:
         out("Setup is already completed; nothing to download (use --force to reinstall).")
         return status(root)
     out(notice())
-    if not assume_yes and confirm("Continue? [y/N] ").strip().lower() not in {"y", "yes"}:
+    if not assume_yes and _ask(confirm, "Continue? [y/N] ") not in {"y", "yes"}:
         raise SetupError("Setup cancelled; nothing was changed")
 
     downloads, staging = root / DOWNLOADS, root / STAGING
@@ -307,18 +416,21 @@ def run_setup(
     pip_env["PYTHONNOUSERSITE"] = "1"
     pip = [str(python), "-m", "pip", "--isolated", "--disable-pip-version-check"]
     records = []
+    keep: list[Path] = []  # wheels from --wheel-dir, kept in downloads once setup passed
     try:
         for package in SETUP_SPEC["packages"]:
             requirement = f"{package['name']}=={package['version']}"
-            wheel = find_wheel(downloads, package)
-            source = "downloads"
-            if wheel is None and wheel_dir is not None:
-                provided = find_wheel(wheel_dir, package)
-                if provided is None:
+            # A wheel the user names explicitly wins over the one kept from earlier runs;
+            # it replaces the kept one only after the new installation has passed.
+            if wheel_dir is not None:
+                wheel = find_wheel(wheel_dir, package)
+                if wheel is None:
                     raise SetupError(f"No {requirement} wheel in {wheel_dir}")
-                wheel = downloads / provided.name
-                shutil.copyfile(provided, wheel)
                 source = "wheel-dir"
+                keep.append(wheel)
+            else:
+                wheel = find_wheel(downloads, package)
+                source = "downloads"
             if wheel is None:
                 out(f"Downloading {requirement} from {SETUP_SPEC['index_url']} ...")
                 fetched = staging / "download"
@@ -379,7 +491,12 @@ def run_setup(
             missing = [n for n in package["required_files"] if not (target / n).is_file()]
             if missing:
                 raise SetupError(f"{package['name']} wheel lacks required files: {missing}")
-        smoke_env = dict(env)
+        problems = toolchain_problems(target)
+        if problems:
+            raise SetupError("\n".join(problems))
+        # Check the staged add-ons with the toolchain paths of the staged location; the
+        # launcher builds the same variables from addons/site-packages after the swap.
+        smoke_env = apply_toolchain_environment(env, target)
         smoke_env["PYTHONPATH"] = os.pathsep.join(
             [str(target), *filter(None, [env.get("PYTHONPATH")])]
         )
@@ -400,6 +517,8 @@ def run_setup(
             out("Checking torch.compile with Triton on the GPU (first run takes a while) ...")
             _run(runner, [str(python), "-c", GPU_SMOKE], smoke_env, "GPU compile check")
         files = _record_files(target)
+        for wheel in keep:
+            _keep_wheel(wheel, downloads)
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise

@@ -117,7 +117,9 @@ def child_environment() -> dict[str, str]:
             "TMP": str(cache / "tmp"),
         }
     )
-    return env
+    # Triton's TinyCC and CUDA in this folder's add-ons (CC, CUDA_PATH), derived from the
+    # current root at every start; only PDFScoreBar's own processes receive them (#553).
+    return user_setup.apply_toolchain_environment(env, ROOT / user_setup.ADDONS_SITE)
 
 
 def check_location() -> list[str]:
@@ -156,6 +158,11 @@ if result["cuda_available"]:
     import triton  # torch.compile reduce-overhead needs triton-windows (setup, #553)
     result["triton"] = triton.__version__
     result["triton_location"] = str(Path(triton.__file__).resolve().parent)
+    # What Triton will compile with (no compilation here; setup ran the real check).
+    from triton.runtime.build import _find_compiler
+    from triton.windows_utils import find_cuda
+    result["triton_cc"] = _find_compiler("c")
+    result["triton_cuda_bin"] = find_cuda()[0]
 print(json.dumps(result))
 """
 
@@ -184,6 +191,19 @@ def check_gpu(env: dict[str, str]) -> tuple[dict, list[str]]:
             f"Triton was loaded from {info.get('triton_location')}, not from this folder's "
             "add-ons; run 'PDFScoreBar.cmd setup --force'"
         )
+    else:
+        toolchain = user_setup.toolchain_environment(ROOT / user_setup.ADDONS_SITE)
+        cc, cuda_bin = info.get("triton_cc"), info.get("triton_cuda_bin")
+        if not cc or Path(cc) != Path(toolchain["CC"]):
+            problems.append(
+                f"Triton would compile with {cc!r}, not with the TinyCC of this folder's "
+                f"add-ons ({toolchain['CC']})"
+            )
+        if not cuda_bin or not Path(cuda_bin).is_relative_to(toolchain["CUDA_PATH"]):
+            problems.append(
+                f"Triton would use CUDA from {cuda_bin!r}, not the CUDA files of this "
+                f"folder's add-ons ({toolchain['CUDA_PATH']})"
+            )
     return info, problems
 
 
@@ -191,6 +211,7 @@ def preflight(*, full_verify: bool = False, gpu: bool = True) -> dict:
     problems = check_location()
     problems += verify(ROOT, full=full_verify)
     problems += user_setup.addons_problems(ROOT, full=full_verify)
+    problems += user_setup.compile_check_problems(ROOT)
     manifest = load_manifest(ROOT)
     report: dict = {
         "root": str(ROOT),
@@ -473,6 +494,15 @@ def command_setup(args: argparse.Namespace) -> int:
         except user_setup.SetupError as error:
             print(f"PDFScoreBar setup: {error}", file=sys.stderr)
             return 1
+        except KeyboardInterrupt:
+            # run_setup has already removed its staging folder; a swap that was cut short
+            # is undone by the next run. Kept downloads and the previous add-ons stay.
+            print(
+                "\nPDFScoreBar setup: interrupted. Any previous installation is unchanged; "
+                "run 'PDFScoreBar.cmd setup' again to finish.",
+                file=sys.stderr,
+            )
+            return 130
     print(json.dumps(result, indent=2))
     return 0
 

@@ -3,6 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shutil
+import sys
+import tempfile
 from http.client import HTTPConnection
 from pathlib import Path
 from threading import Event, Thread
@@ -302,15 +305,48 @@ def _assert_no_browser_path_leak(reason: str, body: bytes, *needles: str) -> Non
             assert needle.lower() not in text.lower(), (needle, text)
 
 
-def test_cross_job_review_session_rejected_without_path_disclosure(tmp_path: Path):
+# Below a job, a resumed review session writes its checkpoints at
+#   <job>/review/resumed_sessions/s_<32 hex>/review/history/checkpoints/cp_<64 hex>/<temp>
+# (job id: 12+ hex; session and checkpoint ids: fixed formats of the review contract), about
+# 200 characters. The portable keeps its own root at <= 40 characters for that reason
+# (#535); pytest's per-test directory on Windows (...\Temp\pytest-of-<user>\pytest-<n>\
+# <test name>0) is long enough to push the checkpoint path past MAX_PATH (#553 F3). So the
+# cross-job test runs in a short directory created directly in the temporary directory.
+_SESSION_CHECKPOINT_TAIL = (
+    "/job-"
+    + "a" * 12
+    + "/review/resumed_sessions/s_"
+    + "e" * 32
+    + "/review/history/checkpoints/cp_"
+    + "0" * 64
+    + "/.checkpoint.json.xxxxxxxx"
+)
+_WINDOWS_MAX_PATH = 260
+
+
+@pytest.fixture
+def short_root() -> Path:
+    root = Path(tempfile.mkdtemp(prefix="pb"))
+    try:
+        if sys.platform == "win32":
+            assert len(str(root)) + len(_SESSION_CHECKPOINT_TAIL) < _WINDOWS_MAX_PATH, (
+                f"temporary directory {root} is too long for the review checkpoint paths; "
+                "set TEMP to a shorter directory"
+            )
+        yield root
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_cross_job_review_session_rejected_without_path_disclosure(short_root: Path):
     job_a = "job-" + "a" * 12
     job_b = "job-" + "b" * 12
     job_c = "job-" + "c" * 12
-    _write_ready_job(tmp_path, job_a, browser_submission=True)
-    _write_ready_job(tmp_path, job_b, browser_submission=False)
+    _write_ready_job(short_root, job_a, browser_submission=True)
+    _write_ready_job(short_root, job_b, browser_submission=False)
 
     session_a = "s_" + "e" * 32
-    session_review = tmp_path / job_a / "review" / "resumed_sessions" / session_a / "review"
+    session_review = short_root / job_a / "review" / "resumed_sessions" / session_a / "review"
     session_page = session_review / "pages" / "page_001"
     session_page.mkdir(parents=True)
     (session_page / "source.png").write_bytes(b"image")
@@ -318,17 +354,19 @@ def test_cross_job_review_session_rejected_without_path_disclosure(tmp_path: Pat
         (session_page / name).write_text("{}", encoding="utf-8")
     (session_page / "numbering_final.json").write_text(json.dumps({"systems": [{"index": 0}]}))
     (session_review / "manual_correction_input.json").write_text(
-        (tmp_path / job_a / "review" / "manual_correction_input.json").read_text(encoding="utf-8"),
+        (short_root / job_a / "review" / "manual_correction_input.json").read_text(
+            encoding="utf-8"
+        ),
         encoding="utf-8",
     )
 
     atomic_bytes(
-        tmp_path / ".browser-jobs" / job_c / "submission.json",
+        short_root / ".browser-jobs" / job_c / "submission.json",
         b'{"filename":"broken.pdf","created_at":"2026-01-01T00:00:00Z"}',
     )
-    atomic_bytes(tmp_path / ".browser-jobs" / job_c / "failed", b"")
+    atomic_bytes(short_root / ".browser-jobs" / job_c / "failed", b"")
 
-    jobs = Jobs(tmp_path)
+    jobs = Jobs(short_root)
     try:
         with create_server(jobs, port=0) as server:
             port = server.server_port
@@ -389,8 +427,8 @@ def test_cross_job_review_session_rejected_without_path_disclosure(tmp_path: Pat
                     _assert_no_browser_path_leak(
                         reason,
                         content,
-                        str(tmp_path),
-                        tmp_path.name,
+                        str(short_root),
+                        short_root.name,
                         job_a,
                         job_b,
                         job_c,
@@ -406,8 +444,8 @@ def test_cross_job_review_session_rejected_without_path_disclosure(tmp_path: Pat
                     _assert_no_browser_path_leak(
                         reason,
                         content,
-                        str(tmp_path),
-                        tmp_path.name,
+                        str(short_root),
+                        short_root.name,
                         job_b,
                     )
 

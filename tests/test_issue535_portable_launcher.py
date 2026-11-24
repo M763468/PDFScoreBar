@@ -534,6 +534,7 @@ def test_contract_rejects_a_consistently_rewritten_manifest(
 # a locally built stand-in wheel (no network) and simulate interruptions.
 
 import base64  # noqa: E402
+import contextlib  # noqa: E402
 import shutil  # noqa: E402
 import zipfile  # noqa: E402
 
@@ -544,7 +545,8 @@ WHEEL_NAME = f"triton_windows-{PACKAGE['version']}-py3-none-any.whl"
 
 
 def _wheel(directory: Path, *, version_text: str = "3.8.0", drop: str | None = None) -> Path:
-    files = {name: f"stand-in {name}\n".encode() for name in PACKAGE["required_files"]}
+    names = [*PACKAGE["required_files"], *user_setup.TOOLCHAIN_FILES]
+    files = {name: f"stand-in {name}\n".encode() for name in names}
     files["triton/__init__.py"] = f"__version__ = {version_text!r}\n".encode()
     if drop:
         files.pop(drop)
@@ -600,12 +602,41 @@ class Recorder:
         return sum(1 for c in self.commands if "install" in c)
 
 
+def _isolated_env(root: Path) -> dict[str, str]:
+    """Environment of the real pip runs: no outside Python, pip or temp settings.
+
+    Windows' own variables are kept: with an empty SYSTEMROOT, pip on Windows fails while
+    setting up SSL (``ssl.SSLError: [SSL] unknown error``, #553 F2). Temporary files and
+    pip's user cache stay below the test's directory.
+    """
+
+    temp = root.parent / "tmp"
+    temp.mkdir(parents=True, exist_ok=True)
+    env = {"PATH": "", "PYTHONNOUSERSITE": "1", "TEMP": str(temp), "TMP": str(temp)}
+    # pip resolves its user cache from these at import time; keep it below the test too.
+    env |= {"TMPDIR": str(temp), "HOME": str(temp), "XDG_CACHE_HOME": str(temp / "cache")}
+    for key in ("SYSTEMROOT", "WINDIR", "SYSTEMDRIVE"):
+        if os.environ.get(key):
+            env[key] = os.environ[key]
+    return env
+
+
+def test_isolated_setup_env_keeps_the_windows_system_variables(tmp_path, monkeypatch):
+    monkeypatch.setenv("SYSTEMROOT", r"C:\Windows")
+    monkeypatch.setenv("PIP_INDEX_URL", "https://elsewhere.invalid/simple")
+    monkeypatch.setenv("PYTHONPATH", "/elsewhere")
+    env = _isolated_env(tmp_path / "PDFScoreBar")
+    assert env["SYSTEMROOT"] == r"C:\Windows"
+    assert not any(k.startswith("PIP_") for k in env) and "PYTHONPATH" not in env
+    assert Path(env["TEMP"]).is_relative_to(tmp_path)
+
+
 def _setup(root: Path, runner, **kwargs):
     lines: list[str] = []
     result = user_setup.run_setup(
         root,
         Path(sys.executable),
-        env={"PATH": "", "SYSTEMROOT": ""} | {"PYTHONNOUSERSITE": "1"},
+        env=_isolated_env(root) | kwargs.pop("extra_env", {}),
         assume_yes=kwargs.pop("assume_yes", True),
         gpu_smoke=kwargs.pop("gpu_smoke", False),
         runner=runner,
@@ -863,5 +894,262 @@ def test_gpu_probe_requires_triton_from_the_folder_addons(tmp_path, monkeypatch)
     assert "not from this folder's add-ons" in launcher.check_gpu({})[1][0]
     inside = tmp_path / user_setup.ADDONS_SITE / "triton"
     inside.mkdir(parents=True)
+    toolchain = user_setup.toolchain_environment(tmp_path / user_setup.ADDONS_SITE)
+    info["triton_cc"] = toolchain["CC"]
+    info["triton_cuda_bin"] = str(Path(toolchain["CUDA_PATH"]) / "bin")
     monkeypatch.setattr(launcher.subprocess, "run", probe(inside))
     assert launcher.check_gpu({})[1] == []
+
+
+# --- #553 F1: Triton's TinyCC/CUDA live in addons/, outside sysconfig's platlib ----------
+# triton-windows reads CC and CUDA_PATH before it searches python/Lib/site-packages, so
+# every PDFScoreBar process gets both, derived from the folder's current location.
+
+TOOLCHAIN_SMOKE = r"""
+import os, pathlib
+cc, cuda = pathlib.Path(os.environ["CC"]), pathlib.Path(os.environ["CUDA_PATH"])
+assert cc.is_file() and cc.name == "tcc.exe", cc
+assert (cuda / "bin" / "ptxas.exe").is_file() and (cuda / "include" / "cuda.h").is_file()
+assert (cuda / "lib" / "x64" / "cuda.lib").is_file()
+staging = pathlib.Path(os.environ["EXPECT_UNDER"])
+assert cc.is_relative_to(staging) and cuda.is_relative_to(staging), (cc, cuda, staging)
+assert "CUDA_HOME" not in os.environ
+print("ok")
+"""
+
+
+def test_toolchain_environment_is_built_from_the_given_site_only(tmp_path):
+    site = tmp_path / "C" / user_setup.ADDONS_SITE
+    inherited = {"PATH": "x", "CC": "gcc", "cuda_path": r"C:\CUDA\v12.6", "CUDA_HOME": "/cuda"}
+    env = user_setup.apply_toolchain_environment(inherited, site)
+    assert env == {
+        "PATH": "x",
+        "CC": str(site / "triton" / "runtime" / "tcc" / "tcc.exe"),
+        "CUDA_PATH": str(site / "triton" / "backends" / "nvidia"),
+    }
+    assert inherited["CC"] == "gcc"  # the caller's mapping is not changed
+    assert len(user_setup.toolchain_problems(site)) == len(user_setup.TOOLCHAIN_FILES)
+    for rel in user_setup.TOOLCHAIN_FILES:
+        (site / rel).parent.mkdir(parents=True, exist_ok=True)
+        (site / rel).write_bytes(b"x")
+    assert user_setup.toolchain_problems(site) == []
+    (site / "triton/runtime/tcc/tcc.exe").unlink()
+    assert user_setup.toolchain_problems(site) == [
+        "Triton toolchain is incomplete: triton/runtime/tcc/tcc.exe is missing"
+    ]
+
+
+def test_spec_toolchain_matches_what_triton_windows_looks_for():
+    # windows_utils.check_and_find_cuda ("bundled" layout) and runtime/build.py's TinyCC.
+    assert user_setup.TOOLCHAIN_ENV == {
+        "CC": "triton/runtime/tcc/tcc.exe",
+        "CUDA_PATH": "triton/backends/nvidia",
+    }
+    cuda = user_setup.TOOLCHAIN_ENV["CUDA_PATH"]
+    for rel in ("bin/ptxas.exe", "include/cuda.h", "lib/x64/cuda.lib"):
+        assert f"{cuda}/{rel}" in user_setup.TOOLCHAIN_FILES
+    assert user_setup.TOOLCHAIN_ENV["CC"] in user_setup.TOOLCHAIN_FILES
+    # The compile check of setup asks Triton itself which compiler and CUDA it resolves.
+    assert "_find_compiler" in user_setup.GPU_SMOKE and "find_cuda" in user_setup.GPU_SMOKE
+    assert "torch.compile" in user_setup.GPU_SMOKE
+
+
+def test_setup_smoke_uses_the_staged_toolchain_and_the_launcher_the_installed_one(
+    folder: Path, tmp_path: Path, monkeypatch
+):
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", TOOLCHAIN_SMOKE)
+    staging = folder / user_setup.STAGING
+    bogus = {"CC": "gcc", "CUDA_PATH": str(tmp_path / "toolkit"), "CUDA_HOME": "/cuda"}
+    result, _ = _setup(
+        folder,
+        Recorder(_wheel(tmp_path / "pypi")),
+        gpu_smoke=True,
+        extra_env=bogus | {"EXPECT_UNDER": str(staging.resolve())},
+    )
+    assert result["completed"] is True
+    assert user_setup.compile_check_problems(folder) == []
+    site = folder / user_setup.ADDONS_SITE
+    assert user_setup.toolchain_problems(site) == []
+    installed = user_setup.toolchain_environment(site)
+    assert Path(installed["CC"]).is_file()
+    assert (Path(installed["CUDA_PATH"]) / "bin" / "ptxas.exe").is_file()
+
+
+def test_setup_rejects_a_wheel_without_the_toolchain_and_keeps_the_previous(
+    folder: Path, tmp_path: Path
+):
+    _setup(folder, Recorder(_wheel(tmp_path / "pypi")))
+    state_before = (folder / user_setup.STATE).read_bytes()
+    (folder / user_setup.DOWNLOADS / WHEEL_NAME).unlink()
+    broken = Recorder(_wheel(tmp_path / "broken", drop="triton/runtime/tcc/libtcc.dll"))
+    with pytest.raises(user_setup.SetupError, match="Triton toolchain is incomplete"):
+        _setup(folder, broken, force=True)
+    assert (folder / user_setup.STATE).read_bytes() == state_before
+    assert user_setup.addons_problems(folder, full=True) == []
+    assert not (folder / user_setup.STAGING).exists()
+
+
+def test_installed_toolchain_loss_is_reported(folder: Path, tmp_path: Path):
+    _setup(folder, Recorder(_wheel(tmp_path / "pypi")))
+    site = folder / user_setup.ADDONS_SITE
+    state = json.loads((folder / user_setup.STATE).read_text(encoding="utf-8"))
+    del state["files"]["triton/runtime/tcc/include/stdio.h"]  # an older/partial record
+    (folder / user_setup.STATE).write_text(json.dumps(state), encoding="utf-8")
+    (site / "triton/runtime/tcc/include/stdio.h").unlink()
+    assert user_setup.addons_problems(folder) == [
+        "Triton toolchain is incomplete: triton/runtime/tcc/include/stdio.h is missing"
+    ]
+    assert user_setup.addons_problems(folder, required=False)  # verify reports it as well
+
+
+def test_no_gpu_check_setup_is_refused_until_the_check_ran(
+    folder: Path, tmp_path: Path, monkeypatch
+):
+    runner = Recorder(_wheel(tmp_path / "pypi"))
+    _setup(folder, runner)  # gpu_smoke=False: like --no-gpu-check
+    assert user_setup.addons_problems(folder, full=True) == []  # integrity is fine
+    assert "--no-gpu-check" in user_setup.compile_check_problems(folder)[0]
+    # Repeating --no-gpu-check does nothing; a plain setup runs the check from the kept
+    # wheel; a failing check keeps the existing installation and its record.
+    _, lines = _setup(folder, runner)
+    assert "already completed" in lines[-1]
+    state_before = (folder / user_setup.STATE).read_bytes()
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "raise SystemExit('Failed to find C compiler')")
+    with pytest.raises(user_setup.SetupError, match="GPU compile check failed"):
+        _setup(folder, runner, gpu_smoke=True)
+    assert (folder / user_setup.STATE).read_bytes() == state_before
+    assert user_setup.addons_problems(folder, full=True) == []
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    _, lines = _setup(folder, runner, gpu_smoke=True)
+    assert lines[0].startswith("The GPU compile check of the previous setup was skipped")
+    assert user_setup.compile_check_problems(folder) == []
+    assert runner.downloads() == 1
+    _, lines = _setup(folder, runner, gpu_smoke=True)
+    assert "already completed" in lines[-1]
+
+
+def test_explicit_wheel_dir_wins_over_the_kept_wheel(folder: Path, tmp_path: Path, monkeypatch):
+    runner = Recorder(_wheel(tmp_path / "pypi"))
+    _setup(folder, runner)
+    kept = folder / user_setup.DOWNLOADS / WHEEL_NAME
+    kept_bytes, state_before = kept.read_bytes(), (folder / user_setup.STATE).read_bytes()
+
+    # A named directory without the wheel fails even though a kept wheel exists.
+    with pytest.raises(user_setup.SetupError, match="No triton-windows"):
+        _setup(folder, runner, force=True, wheel_dir=tmp_path / "empty")
+    assert kept.read_bytes() == kept_bytes
+    assert (folder / user_setup.STATE).read_bytes() == state_before
+
+    # A named wheel whose check fails does not replace the kept wheel or the installation.
+    usb = _wheel(tmp_path / "usb", version_text="3.8.0+usb")
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "raise SystemExit('no CUDA GPU')")
+    with pytest.raises(user_setup.SetupError, match="GPU compile check failed"):
+        _setup(folder, runner, force=True, wheel_dir=usb.parent, gpu_smoke=True)
+    assert kept.read_bytes() == kept_bytes
+    assert (folder / user_setup.STATE).read_bytes() == state_before
+
+    # A named wheel that passes is installed and becomes the kept wheel.
+    result, _ = _setup(folder, runner, force=True, wheel_dir=usb.parent)
+    assert result["packages"][0]["source"] == "wheel-dir"
+    assert kept.read_bytes() == usb.read_bytes()
+    assert "3.8.0+usb" in (folder / user_setup.ADDONS_SITE / "triton/__init__.py").read_text()
+    assert sorted(p.name for p in (folder / user_setup.DOWNLOADS).iterdir()) == [WHEEL_NAME]
+    assert runner.downloads() == 1
+
+
+def test_interrupted_setup_cleans_up_and_keeps_the_previous(folder: Path, tmp_path: Path):
+    runner = Recorder(_wheel(tmp_path / "pypi"))
+    _setup(folder, runner)
+    state_before = (folder / user_setup.STATE).read_bytes()
+
+    def interrupted(command, **kwargs):
+        if "install" in command:
+            raise KeyboardInterrupt
+        return runner(command, **kwargs)
+
+    with pytest.raises(KeyboardInterrupt):
+        _setup(folder, interrupted, force=True)
+    assert not (folder / user_setup.STAGING).exists()
+    assert (folder / user_setup.STATE).read_bytes() == state_before
+    assert user_setup.addons_problems(folder, full=True) == []
+
+
+def test_launcher_setup_reports_ctrl_c_without_a_traceback(monkeypatch, capsys):
+    def interrupted(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(launcher, "check_location", lambda: [])
+    monkeypatch.setattr(launcher, "verify", lambda root, full: [])
+    monkeypatch.setattr(launcher, "jobs_root_lock", contextlib.nullcontext)
+    monkeypatch.setattr(launcher, "child_environment", lambda: {})
+    monkeypatch.setattr(launcher.user_setup, "run_setup", interrupted)
+    assert launcher.main(["setup"]) == 130
+    err = capsys.readouterr().err
+    assert "interrupted" in err and "Traceback" not in err
+
+
+def test_child_environment_points_triton_at_the_current_folder(snap, tmp_path: Path, monkeypatch):
+    root = tmp_path / "PDFScoreBar"
+    _portable(snap, root)
+    monkeypatch.setenv("CC", "cl.exe")
+    monkeypatch.setenv("CUDA_PATH", r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6")
+    monkeypatch.setenv("CUDA_HOME", "/usr/local/cuda")
+    for current in (root, tmp_path / "moved" / "PDFScoreBar"):
+        if current != root:
+            current.parent.mkdir()
+            root.rename(current)
+        monkeypatch.setattr(launcher, "ROOT", current)
+        monkeypatch.setattr(launcher, "APP", current / "app")
+        env = launcher.child_environment()
+        site = current / user_setup.ADDONS_SITE
+        assert env["CC"] == str(site / "triton" / "runtime" / "tcc" / "tcc.exe")
+        assert env["CUDA_PATH"] == str(site / "triton" / "backends" / "nvidia")
+        assert "CUDA_HOME" not in env
+    assert os.environ["CC"] == "cl.exe"  # the launcher's own (and the system) env is kept
+
+
+def test_gpu_probe_requires_triton_to_compile_with_the_folder_toolchain(tmp_path, monkeypatch):
+    monkeypatch.setattr(launcher, "ROOT", tmp_path)
+    inside = tmp_path / user_setup.ADDONS_SITE / "triton"
+    inside.mkdir(parents=True)
+    toolchain = user_setup.toolchain_environment(tmp_path / user_setup.ADDONS_SITE)
+    good = {
+        "cuda_available": True,
+        "vram_gib": 8.0,
+        "ort_session_providers": ["CUDAExecutionProvider"],
+        "triton_location": str(inside),
+        "triton_cc": toolchain["CC"],
+        "triton_cuda_bin": str(Path(toolchain["CUDA_PATH"]) / "bin"),
+    }
+
+    def probe(**changes):
+        out = json.dumps(good | changes)
+        return lambda *a, **k: subprocess.CompletedProcess(a, 0, out + "\n", "")
+
+    monkeypatch.setattr(launcher.subprocess, "run", probe())
+    assert launcher.check_gpu({})[1] == []
+    for changes, expected in (
+        ({"triton_cc": r"C:\VS\cl.exe"}, "not with the TinyCC"),
+        ({"triton_cc": None}, "not with the TinyCC"),
+        ({"triton_cuda_bin": r"C:\CUDA\v12.6\bin"}, "not the CUDA files"),
+        ({"triton_cuda_bin": None}, "not the CUDA files"),
+    ):
+        monkeypatch.setattr(launcher.subprocess, "run", probe(**changes))
+        problems = launcher.check_gpu({})[1]
+        assert len(problems) == 1 and expected in problems[0], problems
+    # The probe asks Triton without compiling anything.
+    assert "_find_compiler" in launcher._GPU_PROBE and "torch.compile(" not in launcher._GPU_PROBE
+
+
+def test_preflight_refuses_a_setup_without_its_gpu_check(snap, tmp_path, monkeypatch, capsys):
+    root = tmp_path / "PDFScoreBar"
+    _portable(snap, root)
+    _setup(root, Recorder(_wheel(tmp_path / "pypi")))  # gpu_smoke=False
+    monkeypatch.setattr(launcher, "ROOT", root)
+    monkeypatch.setattr(launcher, "check_location", lambda: [])
+    assert launcher.command_verify(SimpleArgs(full=True)) == 0
+    capsys.readouterr()
+    with pytest.raises(launcher.LauncherError):
+        launcher.preflight(gpu=False)
+    problems = json.loads(capsys.readouterr().out)["problems"]
+    assert len(problems) == 1 and "--no-gpu-check" in problems[0], problems

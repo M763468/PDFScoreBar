@@ -33,22 +33,22 @@
   },
   "mmr-weights": {
    "title": "MMR classifier (models/mmr/mmr_classifier_best.pth, sha256 f163fa2a…)",
-   "license": "first-party fine-tune of torchvision ResNet18 IMAGENET1K_V1; no grant yet",
-   "disposition": "permission_needed",
-   "open_issue": "owner grant of the weights + owner confirmation of the acquisition terms of the training scans; ImageNet-derived initialization is a legal-interpretation item for public/commercial release (docs/licensing/DISTRIBUTION_READINESS.md §2)",
+   "license": "first-party fine-tuned checkpoint (torchvision ResNet18 IMAGENET1K_V1 initialization); first-party grant remains pending under #505",
+   "disposition": "cleared_with_notice",
    "obligations": [
-    "torchvision BSD-3-Clause notice for the initialization weights",
-    "weight permission statement (owner)"
-   ]
+    "Record first-party training and torchvision ResNet18 IMAGENET1K_V1 initialization provenance",
+    "Include the checkpoint in the first-party grant under #505; no training score images/PDFs/GT are shipped"
+   ],
+   "review_note": "No applicable checkpoint-specific redistribution prohibition was identified in #553. Training score PDFs, scans, crops and GT are NOT included in the distributable. No blanket conclusion is made about all ImageNet weights; any later identified binding restriction must be assessed for the specific file and use. Owner's actual grant of the first-party work is tracked by pdfscorebar-first-party (#505), not a second independent model gate."
   },
   "barline-cnn-weights": {
    "title": "Barline CNN issue296-d27-v1 (sha256 f41a9b57…)",
-   "license": "first-party fine-tune of torchvision EfficientNet-B0 IMAGENET1K_V1 (ported from timm); no grant yet",
-   "disposition": "legal_interpretation_needed",
-   "open_issue": "the initialization weights' upstream author states the ImageNet non-commercial research terms should be assumed to apply to the weights; plus owner grant and scan acquisition terms (§2)",
+   "license": "first-party fine-tuned checkpoint (torchvision EfficientNet-B0 IMAGENET1K_V1, originally trained in timm); first-party grant remains pending under #505",
+   "disposition": "cleared_with_notice",
    "obligations": [
+    "Retain torchvision BSD-3-Clause / timm Apache-2.0 provenance and upstream ImageNet-use caution in NOTICE",
     "DeepScoresV2 CC BY 4.0 attribution",
-    "torchvision BSD-3-Clause / timm Apache-2.0 notices"
+    "Include checkpoint in first-party grant under #505; training score images/PDFs/GT are not shipped"
    ],
    "attribution": "Trained in part on DeepScoresV2 (Tuggener et al., 2020, doi:10.5281/zenodo.4012193), CC BY 4.0.",
    "supplemental": [
@@ -58,7 +58,8 @@
      "url": "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
      "status": "collected"
     }
-   ]
+   ],
+   "review_note": "The upstream timm README cautions that ImageNet-derived weights may have dataset-related terms, especially in commercial use; #553 did not identify a binding prohibition on redistribution of this fine-tuned checkpoint. Record that caution and provenance, rather than mandating retraining. Training score PDFs, scans, crops and GT are NOT included. Reassess if a specific applicable restriction is identified. The first-party license grant remains a separate #505 gate."
   },
   "homr": {
    "title": "HOMR 457e7c6518a1 (modified by docker/patch_homr_onnx_provider.py)",

@@ -1,5 +1,6 @@
 {
  "schema_version": "pdfscore.portable_compliance_policy.v1",
+ "trial_user_guide": "docs/windows_portable/TRIAL_GUIDE.md",
  "reviewed": {
   "date": "2026-11-24",
   "issue": 553,

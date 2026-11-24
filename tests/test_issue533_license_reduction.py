@@ -409,7 +409,7 @@ def test_repository_policy_routes_unlisted_nvidia_before_catch_all():
     assert hit["component"] == "setuptools"
 
 
-def test_repository_policy_real_build_hands_off_after_the_first_party_grant():
+def test_repository_policy_maps_components_without_inheriting_build_grant():
     policy = pc.load_policy(pc.DEFAULT_POLICY)
     files = {
         "python/python312.dll": [2, "0" * 64],
@@ -480,6 +480,29 @@ def test_build_scoped_grant_requires_exact_manifest_digest(tmp_path):
     )
     assert bundle_report["handoff_ready"] is False
     assert "weights" in bundle_report["blocked"]
+
+
+def test_trial_guide_is_bundled_next_to_portable(tmp_path, monkeypatch):
+    guide_path = tmp_path / "repo" / "docs" / "windows_portable" / "TRIAL_GUIDE.md"
+    guide_path.parent.mkdir(parents=True)
+    guide_path.write_text("# Windows trial guide\\n", encoding="utf-8")
+    monkeypatch.setattr(pc, "REPO", tmp_path / "repo")
+    policy = _policy(trial_user_guide="docs/windows_portable/TRIAL_GUIDE.md")
+    policy_path = _write_policy(tmp_path, policy)
+    root = _folder(tmp_path, BASE_FILES, {"demo-pkg": "1.0"})
+    supplemental = tmp_path / "private"
+    (supplemental / "nvidia").mkdir(parents=True)
+    (supplemental / "nvidia" / "eula.txt").write_text("EULA", encoding="utf-8")
+
+    out = tmp_path / "bundle"
+    assert pc.main([
+        "bundle", str(root), str(out), "--policy", str(policy_path),
+        "--supplemental-dir", str(supplemental),
+    ]) == 0
+    assert (out / "TRIAL_GUIDE.md").read_bytes() == guide_path.read_bytes()
+    assert "TRIAL_GUIDE.md" in (out / "SHA256SUMS").read_text(encoding="utf-8")
+    # The user guide is not copied into the 25,490-file immutable portable payload.
+    assert not (root / "TRIAL_GUIDE.md").exists()
 
 
 def test_cleared_folder_passes_and_bundle_is_adjacent(tmp_path):
@@ -614,4 +637,7 @@ def test_invalid_policy_is_rejected(tmp_path):
     policy = _policy()
     policy["components"]["weights"]["grant_manifest_sha256"] = "not-a-sha256"
     with pytest.raises(ValueError, match="invalid grant_manifest_sha256"):
+        pc.load_policy(_write_policy(tmp_path, policy))
+    policy = _policy(trial_user_guide="../../outside.md")
+    with pytest.raises(ValueError, match="invalid trial_user_guide"):
         pc.load_policy(_write_policy(tmp_path, policy))

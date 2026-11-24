@@ -11,7 +11,8 @@ component dispositions in ``docs/licensing/windows_portable_components.json`` an
   blocked (``--allow-blocked`` for rehearsals) a shipped component that is not cleared
   for handoff, must not be shipped (``exclude``: removed at build time or installed by the
   recipient with ``PDFScoreBar.cmd setup``), or whose distribution version has not been
-  license-reviewed yet. Licenses are reviewed per distribution version, not per file
+  license-reviewed yet, or whose first-party grant is for a different build manifest.
+  Licenses are reviewed per distribution version, not per file
   digest: a compatible version update needs a license re-review, not new file hashes;
 * ``bundle``: writes an *adjacent* compliance bundle (it never modifies the portable
   folder, its ``app/`` payload or ``verify --full`` inventory): license files copied
@@ -96,6 +97,11 @@ def load_policy(path: Path) -> dict:
     for cid, comp in components.items():
         if comp.get("disposition") not in DISPOSITIONS:
             problems.append(f"component {cid}: invalid disposition {comp.get('disposition')!r}")
+        grant_scope = comp.get("grant_manifest_sha256")
+        if grant_scope is not None and (
+            not isinstance(grant_scope, str) or not re.fullmatch(r"[0-9a-f]{64}", grant_scope)
+        ):
+            problems.append(f"component {cid}: invalid grant_manifest_sha256")
         for item in comp.get("supplemental", []):
             if item.get("status") not in {"collected", "pending"}:
                 problems.append(f"component {cid}: supplemental {item.get('name')} lacks status")
@@ -133,7 +139,9 @@ class Evaluation:
         self.used.setdefault(cid, {"distributions": [], "files": []})[kind].append(item)
 
 
-def evaluate(manifest: dict, policy: dict) -> Evaluation:
+def evaluate(
+    manifest: dict, policy: dict, *, manifest_sha256: str | None = None
+) -> Evaluation:
     result = Evaluation()
     dists = policy["distributions"]
     for name, version in sorted(manifest.get("distributions", {}).items()):
@@ -162,6 +170,13 @@ def evaluate(manifest: dict, policy: dict) -> Evaluation:
     for cid in sorted(result.used):
         comp = policy["components"][cid]
         reasons = list(result.unreviewed_versions.get(cid, []))
+        # A build-scoped owner grant does not authorize other build identities.
+        grant_scope = comp.get("grant_manifest_sha256")
+        if grant_scope and manifest_sha256 != grant_scope:
+            reasons.append(
+                "owner grant limited to build manifest "
+                f"{grant_scope}; actual manifest {manifest_sha256 or 'not provided'}"
+            )
         if comp["disposition"] not in HANDOFF_OK:
             reasons.append(
                 f"disposition {comp['disposition']}: {comp.get('open_issue', '')}".strip()
@@ -204,7 +219,7 @@ def report(
 def cmd_check(args: argparse.Namespace) -> int:
     manifest, manifest_sha = load_manifest(args.manifest)
     policy = load_policy(args.policy)
-    ev = evaluate(manifest, policy)
+    ev = evaluate(manifest, policy, manifest_sha256=manifest_sha)
     payload = report(manifest, manifest_sha, policy, sha256_file(args.policy), ev)
     if args.report:
         args.report.write_text(
@@ -276,7 +291,7 @@ def cmd_bundle(args: argparse.Namespace) -> int:
     manifest_path = args.root / "runtime" / "build_manifest.json"
     manifest, manifest_sha = load_manifest(manifest_path)
     policy = load_policy(args.policy)
-    ev = evaluate(manifest, policy)
+    ev = evaluate(manifest, policy, manifest_sha256=manifest_sha)
     if ev.errors:
         for line in ev.errors:
             print(f"ERROR {line}")

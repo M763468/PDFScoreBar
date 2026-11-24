@@ -1,10 +1,10 @@
 # 永続的なドキュメントの台帳
 
-<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"fd9a409b66f0aeb416c8bf0ab8a857a5f3a18ac0bc40342462892d5933d7b55d"},"state":"reviewed"} -->
+<!-- translation: {"original":"DOCUMENTATION_INVENTORY.md","source":{"sha256":"f636aaf56f42b24402d056ffd4cf623decf209f2a6a58bf694951b7beb926fc2"},"state":"reviewed"} -->
 
 [English / 原文](DOCUMENTATION_INVENTORY.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `fd9a409b66f0aeb416c8bf0ab8a857a5f3a18ac0bc40342462892d5933d7b55d`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `f636aaf56f42b24402d056ffd4cf623decf209f2a6a58bf694951b7beb926fc2`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして、リポジトリのドキュメント監査を確立しました。このファイルは、ドキュメントの経緯と保守のルールを記録します。最小ランタイム選定の入口ではありません。その問いには `MINIMAL_MAINLINE_SURFACE.md`（[日本語](MINIMAL_MAINLINE_SURFACE.ja.md)）を使ってください。
 
@@ -132,6 +132,7 @@ Issue #280 は、受け入れ済みの #274 時点の本番状態に照らして
 | [licensing/THIRD_PARTY_LICENSE_AUDIT.md](licensing/THIRD_PARTY_LICENSE_AUDIT.md) | Issue-scoped audit; current §0 with final review 2026-11-15 (§0.8/§0.9); reverify against the actual distribution image | JA | EN needed (#504) | P3 |
 | [licensing/REPOSITORY_LICENSE_OPTIONS.md](licensing/REPOSITORY_LICENSE_OPTIONS.md) | policy: AGPL-3.0-or-later adopted, application deferred to a future `main` release; readiness record; not a granted license | JA | EN needed (#505) | P3 |
 | [licensing/DISTRIBUTION_READINESS.md](licensing/DISTRIBUTION_READINESS.md) | Issue-scoped distribution readiness (#553, 2026-11-23): model lineage, Windows portable component dispositions, main source distribution, legal questions; with `windows_portable_components.json` | JA | EN needed (#553) | P3 |
+| [windows_portable/TRIAL_GUIDE.md](windows_portable/TRIAL_GUIDE.md) | Windows portable 限定試用の暫定ユーザーガイド（#508/#553、日本語正本）。固定portable本体の外に隣接するbundleへ収録 | JA | EN needed (trial) | P1 |
 | [MINIMAL_MAINLINE_SURFACE.md](MINIMAL_MAINLINE_SURFACE.md) | current extraction reference; frozen evidence moved to `releases/issue409/` | EN | [JA reviewed](MINIMAL_MAINLINE_SURFACE.ja.md); #484 | P2 |
 | [HISTORY_INDEX.md](HISTORY_INDEX.md) | history navigation / retention rules | EN | [JA reviewed](HISTORY_INDEX.ja.md); #484 | P2 |
 | [ai-workflow/LESSONS.md](ai-workflow/LESSONS.md) | historical heuristics; revalidate before use | EN | selective; no bulk translation | P3 |

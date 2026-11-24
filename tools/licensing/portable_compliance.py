@@ -146,9 +146,7 @@ class Evaluation:
         self.used.setdefault(cid, {"distributions": [], "files": []})[kind].append(item)
 
 
-def evaluate(
-    manifest: dict, policy: dict, *, manifest_sha256: str | None = None
-) -> Evaluation:
+def evaluate(manifest: dict, policy: dict, *, manifest_sha256: str | None = None) -> Evaluation:
     result = Evaluation()
     dists = policy["distributions"]
     for name, version in sorted(manifest.get("distributions", {}).items()):

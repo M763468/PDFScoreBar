@@ -358,6 +358,30 @@ def test_repository_policy_is_valid_and_reviews_every_pinned_distribution():
     assert any(p.endswith("cusolverMg64_*.dll") for p in unlisted)
 
 
+def test_repository_source_instructions_point_at_bundled_supplemental_files():
+    """SOURCE.md must name where `bundle` actually puts each Corresponding Source file."""
+
+    import re
+
+    policy = pc.load_policy(pc.DEFAULT_POLICY)
+    text = "\n".join(policy["source_instructions"])
+    assert "`source/" not in text
+    referenced = re.findall(r"`supplemental/([^/`]+)/([^`]+)`", text)
+    assert referenced
+    for cid, name in referenced:
+        # `<commit>` stands for the build's builder_source_commit.
+        prefix, _, rest = name.partition("<commit>")
+        files = [Path(item["file"]).name for item in policy["components"][cid]["supplemental"]]
+        assert any(f.startswith(prefix) and f.endswith(rest) for f in files), (cid, name)
+    first_party = policy["components"]["pdfscorebar-first-party"]
+    builder = [s for s in first_party["supplemental"] if "pdfscorebar-builder-" in s["file"]]
+    assert builder and builder[0]["status"] == "collected" and len(builder[0]["sha256"]) == 64
+    homr_files = [s["file"] for s in policy["components"]["homr"]["supplemental"]]
+    assert "homr/MODIFICATIONS.md" in homr_files
+    # Supplying source and notices does not grant the first-party license (#505).
+    assert first_party["disposition"] == "permission_needed"
+
+
 def test_repository_policy_routes_unlisted_nvidia_before_catch_all():
     policy = pc.load_policy(pc.DEFAULT_POLICY)
     rules = policy["file_rules"]

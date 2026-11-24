@@ -4,7 +4,13 @@
   "date": "2026-11-24",
   "issue": 553,
   "portable_source_commit": "b14251544cea11dcb092fccdd1428ad0b3e4f62b",
-  "basis": "pinned win_amd64 wheels of tools/windows_portable/requirements-cu126.txt, python-build-standalone cpython-3.12.12+20251209, and real Windows portable build manifest/metadata (win553, b1425154); license review per distribution version, not per file digest"
+  "basis": "pinned win_amd64 wheels of tools/windows_portable/requirements-cu126.txt, python-build-standalone cpython-3.12.12+20251209, and real Windows portable build manifest/metadata (win553, b1425154); license review per distribution version, not per file digest",
+  "final_windows_build": {
+   "portable_source_commit": "33836ac5eaf3af70eecfc5c56710148d8822bf89",
+   "build_manifest_sha256": "1173dfb44654f25ee2f7b3a3b99e60a22a57e67cc10756055e0540fa84a00e90",
+   "tree_digest": "46f5cfd70b88e160c5da3f2456f25fffebbf39b24f26461ba1d464deea7c8677",
+   "windows_acceptance": "https://github.com/M763468/PDFScoreBar/issues/553#issuecomment-7130471211"
+  }
  },
  "recipient_acquired": [
   {
@@ -29,6 +35,14 @@
     "#505",
     "docs/licensing/REPOSITORY_LICENSE_OPTIONS.md",
     "SR weights sha256 3b6b37a3947c7960632175efa81d24b5efbfc29e621004df79361ce040d8a1a6 (#533 §0.11: random init, synthetic data only)"
+   ],
+   "supplemental": [
+    {
+     "name": "PDFScoreBar builder source at 33836ac5eaf3af70eecfc5c56710148d8822bf89",
+     "file": "source/pdfscorebar-builder-33836ac5eaf3af70eecfc5c56710148d8822bf89.tar.gz",
+     "sha256": "91d064dc672a4f602a3bd0868d2c073147ad3c2e604b33c38acd0455e49d9637",
+     "status": "collected"
+    }
    ]
   },
   "mmr-weights": {
@@ -81,6 +95,12 @@
      "name": "HOMR source at 457e7c65 + patch",
      "file": "source/homr-457e7c6518a10ba755db2e60883419e56c4d7369.tar.gz",
      "sha256": "41511b373d6ae1a182f07c8657eec86a52aea706f54351cdd79228a7c76bafa5",
+     "status": "collected"
+    },
+    {
+     "name": "HOMR modification notice (AGPL-3.0 section 5(a))",
+     "file": "homr/MODIFICATIONS.md",
+     "sha256": "24e63f0fac6c7dcbfed93863ca1ac6f268dca5e9d763313581d846930b0e9751",
      "status": "collected"
     }
    ]
@@ -814,9 +834,9 @@
  "source_instructions": [
   "# Corresponding Source / 対応ソース",
   "",
-  "- PDFScoreBar: `app/` of the portable folder is the complete application source; the builder (`tools/windows_portable/*`, `requirements-cu126.txt`, `assets.json`) at `builder_source_commit` is in `source/pdfscorebar-builder-<commit>.tar.gz`.",
-  "- HOMR (AGPL-3.0): `source/homr-457e7c6518a10ba755db2e60883419e56c4d7369.tar.gz` (upstream commit) plus `app/docker/patch_homr_onnx_provider.py` (modification, applied at build time) and `app/docker/init_homr_segnet.py` (model initialization).",
-  "- PyMuPDF / MuPDF (AGPL-3.0): `source/pymupdf-1.26.4.tar.gz` and `source/mupdf-1.26.7-source.tar.gz` (the MuPDF release pinned by PyMuPDF 1.26.4).",
+  "- PDFScoreBar: `app/` of the portable folder is the complete application source; the builder (`tools/windows_portable/*`, `requirements-cu126.txt`, `assets.json`, `tools/materialize_distribution.py`, `tools/release_candidate.py`) at `builder_source_commit` is `supplemental/pdfscorebar-first-party/pdfscorebar-builder-<commit>.tar.gz`.",
+  "- HOMR (AGPL-3.0): `supplemental/homr/homr-457e7c6518a10ba755db2e60883419e56c4d7369.tar.gz` (upstream commit) plus `app/docker/patch_homr_onnx_provider.py` (modification, applied at build time; see `supplemental/homr/MODIFICATIONS.md`) and `app/docker/init_homr_segnet.py` (model initialization).",
+  "- PyMuPDF / MuPDF (AGPL-3.0): `supplemental/pymupdf/pymupdf-1.26.4.tar.gz` and `supplemental/pymupdf/mupdf-1.26.7-source.tar.gz` (the MuPDF release pinned by PyMuPDF 1.26.4).",
   "- No LGPL binary is shipped: OpenCV's FFmpeg plugins are removed at build time and TinyCC comes with triton-windows, which the recipient installs from PyPI. setuptools' vendored autocommand 2.2.2 (LGPL-3.0) is shipped unmodified as Python source files under `python/Lib/site-packages/setuptools/_vendor/autocommand/` with its LGPL-3.0 notice and the incorporated GPL-3.0 text.",
   "- All other Python packages are unmodified releases from PyPI / download.pytorch.org at the versions in `THIRD_PARTY_NOTICES.md`."
  ]

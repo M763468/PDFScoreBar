@@ -25,12 +25,14 @@ Docker image の配布は選定されていない（§4.3）。
 
 | 配布候補 | 判定 | 理由（詳細は §3・§4） |
 | --- | --- | --- |
-| **Windows 限定試用** | **判断待ち**（オーナー判断 3 件）＋ **未完了**（新 SHA の Windows ビルド・セットアップ実機確認と、実 manifest での bundle 生成） | 第三者部品は、再配布の根拠が確認できない NVIDIA ファイルを**同梱しない構成に変えた**（受領者が PyPI から直接取得、または使わないファイルをビルドで除外）。残るのは (1) first-party の許諾（#505）、(2) MMR 重み、(3) barline CNN 重みの扱い（§2）と、受領者条件（下書き済み）の承認 |
-| **main 最小配布** | **判断待ち**（オーナー判断） | 第三者のバイナリは配布しない。必要な通知・対応ソース・ライセンス一式は非公開パッケージで準備し検証済み（§4）。残るのは (1) #505 の正式適用の承認、(2) MMR 重み（ソースに同梱）と barline CNN release asset の扱い |
+| **Windows 限定試用** | **判断待ち**（first-party 許諾・受領者条件）＋ **未完了**（新 SHA の Windows 実機確認と実 manifest の bundle 生成） | NVIDIA 非列挙ファイルは非同梱に変更。MMR・barline CNN は現行 checkpoint を維持し、出典・条件をNOTICEに記録（§2）。学習用楽譜画像・PDF・学習用切り抜きは配布しない。両モデルに固有の明示的な配布禁止条項は今回特定されておらず、独立したブロッカーとはしない。first-party 全体への実際の利用許諾は別途必要（#505） |
+| **main 最小配布** | **判断待ち**（#505 正式適用） | 第三者バイナリは配布しない。MMR重み・barline CNN release assetの出典と学習条件を記録し、現行モデルを維持する。必要な第三者通知と対応ソースの準備は§4。モデル固有の禁止条項が新たに確認された場合のみ追加対応する |
 
 どちらも **GO ではない**。受領者への受け渡し、LICENSE の公開、main 昇格、tag/release は実施していない。
 
 ## 2. モデル重みの lineage と判断
+
+**今回のモデル重みの配布方針（2026-11-24）：** 学習に用いた楽譜PDF・ページ画像・切り抜きは配布しない（オーナー確認）。MMR / barline CNN は本人によるfine-tune済みcheckpointを現行のまま使用する。初期化重みの元と利用上の注意、DeepScoresV2の帰属はNOTICEへ反映し、確認されていない禁止を推定してモデル置換・再学習を配布前提にしない。この分類は第三者が保有する権利を消滅させる判断ではなく、**#505で本人が許諾できるfirst-party部分を現実に許諾する必要**は残る。
 
 ### 2.1 確認した事実
 
@@ -55,17 +57,17 @@ fine-tune であることは確定した。
 | 初期化重み | 上流の表示 | 判断 |
 | --- | --- | --- |
 | ResNet18 `IMAGENET1K_V1`（PyTorch が学習） | torchvision のコードは BSD-3-Clause。ドキュメントは「事前学習モデルは学習データ由来の独自の条件を持ちうる。用途に応じた許可の有無は利用者の責任で判断」とのみ記載。重み個別のライセンス表示はない | 違反を示す条件は見当たらない。ImageNet の利用条件が派生重みに及ぶかは未確定（法的判断） |
-| EfficientNet-B0 `IMAGENET1K_V1`（timm の作者が学習、torchvision が移植） | timm README：「ImageNet は非商用の研究目的に限り公開された。……ImageNet で学習した私のモデルは研究目的で、**元のデータセットのライセンスが重みに適用されると想定すべき**。商用製品で使う場合は法的助言を」 | 上流作者が非商用条件の想定を明示している。**商用・公開配布では法的判断が必要**。非商用の評価目的の内部試用は、この想定の範囲と読める余地がある |
-| ImageNet の利用条件本文 | 公式サイト（image-net.org）にこの環境から接続できず、今回は本文を取得していない | 本文の確認は §5 の必要資料 |
+| EfficientNet-B0 `IMAGENET1K_V1`（timm の作者が学習、torchvision が移植） | timm README：「ImageNet は非商用の研究目的に限り公開された。……ImageNet で学習した私のモデルは研究目的で、**元のデータセットのライセンスが重みに適用されると想定すべき**。商用製品で使う場合は法的助言を」 | 注意書きは尊重して出典を表示する。ただし、PDFScoreBar のfine-tune後checkpointに具体的に適用される再配布禁止条項は本調査では特定されていない。注意書きだけで配布禁止・再学習必須とはしない。具体的な拘束条件が判明した場合に限り用途別に再評価する |
+| ImageNet の利用条件本文 | 公式サイト（image-net.org）にこの環境から接続できず、今回は本文を取得していない | 確認できた範囲ではfine-tune後checkpointの配布禁止を特定できていない。未取得という事実だけを自動ブロッカーにしない |
 
 自前で学習したことは、初期化重みと学習データの条件を消さない。一方、ImageNet の画像そのものは重みに含まれず、当方は
 ImageNet データセットの利用契約の当事者でもない。**事前学習重みの利用だけを理由に違反・再学習必須とは判断しない。**
 
 ### 2.3 楽譜・GT の条件
 
-- 学習に使ったのは楽譜ページの切り抜き（入力）と first-party のラベル。配布する重み（2値分類器）から楽譜の表現を再生できるわけではない。
+- 学習に使ったのは楽譜ページの切り抜き（入力）と first-party のラベル。**配布物に学習用の楽譜PDF・ページ画像・切り抜き・学習用GTは含めない**。配布する重みは分類器であり、楽譜画像を復元する用途ではない。
 - 作曲者の没年：Prokofiev 1953、Sibelius 1957、Shostakovich 1975。日本では Shostakovich の作品は保護期間中。
-- 日本の著作権法 30 条の 4（情報解析）の適用、学習用複製と重み配布の関係、**スキャン元の楽譜に付いた契約条件（レンタル譜の複製禁止等）**は、事実の確認と法的判断が必要（§5）。
+- 日本の著作権法30条の4には、非享受目的の情報解析のための著作物利用に関する規定がある（ただし例外あり）。学習元に具体的な契約制限がある場合はその内容を個別確認する。**入手履歴が残っていないという事実だけで、完成した分類器の配布禁止や再学習必須とは扱わない**（§5）。
 - DeepScoresV2（CC BY 4.0）は商用を含め利用可。帰属表示を compliance bundle と `THIRD_PARTY_NOTICES.md` 案に入れた。
 
 ### 2.4 モデル別の判定
@@ -75,15 +77,15 @@ ImageNet データセットの利用契約の当事者でもない。**事前学
 | SR x4 | **cleared**（first-party。#505 適用で AGPL） | 同左 |
 | HOMR SegNet 308 | **cleared_with_notice**（AGPL、DeepScoresV2 帰属） | 受領者が取得（当方は配布しない） |
 | PP-OCR ONNX | **cleared_with_notice**（Apache-2.0、MODEL_LICENSES.md を同梱） | 受領者が取得 |
-| MMR | **permission_needed**：オーナーによる受領者への許諾（例：評価目的に限定）と、スキャン入手条件の確認 | **legal_interpretation_needed**：ImageNet 由来初期化と楽譜由来の学習データ。置換するなら §6.2 |
-| barline CNN | **legal_interpretation_needed**：上流作者の非商用想定（EfficientNet-B0）＋上記 MMR と同じ確認。非商用の評価試用であることをオーナーが確認し、残るリスクを受け入れるなら許諾付きで渡す判断はオーナーに委ねる | **legal_interpretation_needed** → 解消には §6.2 の置換が最も確実 |
+| MMR | **cleared_with_notice**（モデル固有の禁止条件は未特定、現行重み維持）。ResNet18初期重み・first-party学習・楽譜非同梱を表示。**モデルを含むfirst-partyの実際の利用許諾は#505で別途付与** | 同左。上流の具体的な拘束条件が新たに判明した場合のみ対象を特定して再評価 |
+| barline CNN | **cleared_with_notice**（モデル固有の禁止条件は未特定、現行D27重み維持）。EfficientNet-B0/timmの注意事項とDeepScoresV2のCC BY 4.0帰属を表示。**first-partyの実際の許諾は#505で別途付与** | 同左。注意書きは保持するが、明示的な不適合がない限り置換を配布前提としない |
 
 なお MMR 重みは 2026-01-12 から公開リポジトリに、barline CNN は GitHub release に、ライセンス表示なし（＝許諾なし）で既に置かれている。
 これは許諾の根拠にならない（#505 では NotLicensed として扱う）。
 
 ### 2.5 オーナーに確認していただく事項（楽譜スキャン）
 
-推測で許諾済みとはしない。次の事実はリポジトリに記録がなく、オーナーにしか分からない。
+以下は過去の学習記録を補完するための任意の確認事項。**S1〜S4の完全復元を配布GOの必須条件としない**。具体的な複写禁止契約・第三者権利侵害等を示す事実が判明した場合だけ、その対象について対応する。
 
 | # | 確認事項 | 対象 |
 | --- | --- | --- |
@@ -93,7 +95,7 @@ ImageNet データセットの利用契約の当事者でもない。**事前学
 | S4 | 旧 `data/evaluation/pdfs/target.pdf`（MMR の学習に 1 ページ使用）の出典 | MMR |
 | S5 | 試用の目的が商用か非商用の評価か（ImageNet 由来の初期化重みの扱いに関係。§2.2） | MMR、barline CNN |
 
-S1〜S3 で契約上の制限がなく、S5 が非商用の評価であれば、限定試用で評価目的に限った許諾を付けて渡す判断の材料になる。制限があった場合は、該当曲を学習から外した置換（§6.2）が確実な解消策になる。
+上記は出典情報の補完用であり、過去の履歴不明だけを理由に現行モデルを差し替えない。**実際に適用される具体的な禁止条項・契約違反が特定された場合**に、該当する行為・ファイル・条項を示して対応を判断する（代替策は§6.2）。
 
 ## 3. Windows 限定試用：構成物ごとの判定
 
@@ -118,7 +120,7 @@ Attachment A に名前がないことは「再配布禁止」を意味しない�
 | 構成物 | 条件 | 判定 | 根拠・残作業 |
 | --- | --- | --- | --- |
 | PDFScoreBar（`app/`、`launcher/`、SR 重み、`pdfscorebar_addons.pth`） | AGPL-3.0-or-later（決定済み・未付与） | **permission_needed** | #505。正式適用、または試用者への書面の個別許諾をオーナーが決める |
-| MMR / barline CNN 重み | §2 | **permission_needed** / **legal_interpretation_needed** | §2.4、§2.5 |
+| MMR / barline CNN 重み | §2 | **cleared_with_notice**（モデル固有の再配布禁止は未特定） | First-party重みとしての出典・ImageNet初期化・DeepScoresV2帰属・学習用楽譜非同梱を通知。モデルを含むfirst-party全体の許諾は#505で適用する |
 | CPython 3.12.12（OpenSSL、SQLite、libffi、Tcl/Tk、`vcruntime140*.dll`） | PSF-2.0 ほか。`python/LICENSE.txt` に同梱物と Microsoft Distributable Code の条件 | cleared_with_notice | 同梱の `LICENSE.txt` を保持 |
 | Microsoft VC++ ランタイム（`msvcp140*`、`vcomp140`、`vcruntime140*`） | Visual Studio Distributable Code | cleared_with_notice | 未改変、Windows 上でのみ使用 |
 | 一般の Python パッケージ（49 件。CPython 同梱の pip を含む） | MIT/BSD/Apache-2.0/PSF/MPL-2.0 | cleared_with_notice | dist-info の本文を bundle にコピー |
@@ -172,8 +174,8 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 
 | # | 論点 | 状態・必要な資料 |
 | --- | --- | --- |
-| L1 | ImageNet で学習した初期化重み（特に timm 由来 EfficientNet-B0）の条件が、fine-tune した重みの配布に及ぶか | 未解決。ImageNet Terms of Access の本文（取得不能だった）、試用・公開の目的（§2.5 S5） |
-| L2 | 楽譜スキャンを学習に使った重みの配布（日本の著作権法 30 条の 4、契約） | 未解決。§2.5 S1〜S4 のオーナーの事実 |
+| L1 | ImageNet 由来の初期化重み（特にtimm由来EfficientNet-B0） | READMEの利用上の注意をNOTICEで明示。対象checkpointへの具体的な禁止条項は未特定。注意書きや元データの条件が存在する可能性だけで配布をブロックしない。適用可能な拘束条件が判明した場合のみ再判定 |
+| L2 | 楽譜スキャンを学習に使った重みの配布（日本の著作権法30条の4、契約） | **楽譜スキャン・学習用切り抜きは非同梱**。著作権法上の情報解析と個別契約は別の論点。具体的な不適合は未確認であり、過去の入手履歴未記録だけでモデル配布をブロックしない |
 | L3 | Windows 向け NVIDIA の非列挙ファイルの再配布 | **配布方式で解消**（同梱しない）。受領者が PyPI から得る際の条件は受領者と配布元の間の問題として案内する |
 | L4 | Intel OpenMP EULA と AGPL 製品フォルダ内の同梱 | 受領者条件で対応（§3）。対象 build の EULA 版は残る。代替あり |
 | L5 | NVIDIA / Intel の独自条件の部品と AGPL 結合物の同時配布（#504 §0.8.3 の継続） | 受領者条件は NVIDIA/Intel のライブラリだけを対象にし、first-party と AGPL 部品には制限を加えない形で下書きした |
@@ -187,10 +189,9 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 - 比較した案：(a) 対象 5 ファイルだけを wheel から取り出して置く案は、torch/triton の正規パッケージ構成から外れ、版の更新や修復が独自処理になる。(b) 公式パッケージ（triton-windows wheel）を丸ごと受領者がインストールする案は、通常の pip で検証・修復でき、ダウンロード 51 MB・展開 150 MB と軽い。**(b) を採用**。torch の 2 DLL は使わないため、取得させずに除外した（必要と判明すれば `nvidia-cusolver-cu12` / `nvidia-cuda-cupti-cu12` を setup で取得させる代替がある）。
 - 第二案（この方式が成立しない場合のみ）：Windows だけ SR を eager にして triton を使わない。回帰契約（事前固定）：Linux GPU で eager と compile の SR 出力を Full68 の 73 ページで比較し、差があれば #533 §0.11.1 と同じ Full68 replay（FP 増なし、新規 FN なし、小節数・番号列の全ページ一致）。
 
-### 6.2 MMR / barline CNN の置換（公開配布で L1/L2 を避ける場合）
+### 6.2 MMR / barline CNN の置換（具体的な不適合が判明した場合だけの予備案）
 
-ランダム初期化、または権利が明確なデータ（DeepScoresV2、合成データ）だけでの事前学習から再学習し、学習データから
-条件の確認できない楽譜スキャンを外す。どちらも認識性能が変わり得るため、**結果を見る前に**次を固定する。
+現行のMMR・barline CNNは維持し、**権利の懸念だけで再学習を開始しない**。対象checkpointに適用される具体的な禁止条件が確認され、NOTICEや正規の利用条件の遵守では解決できない場合のみ、この置換手順を検討する。置換が必要となったときは、ランダム初期化または使用条件を満たす事前学習重み・データから学習し、評価基準を事前に固定する。
 
 | 対象 | 契約 |
 | --- | --- |
@@ -205,15 +206,15 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 | 区分 | 必要なもの |
 | --- | --- |
 | 開発者自身の Windows 機能検証（#551/#546、進行中） | 第三者への複製物の提供がないため配布義務は発生しない。継続してよい |
-| 同一組織の 1〜2 人への試用（#508） | **配布にあたる。少人数でも義務は免除されない。** §3 の bundle、first-party と重みの許諾（オーナー）、§5 の判断、受領者の利用条件（評価目的、Intel DLL の条項、NVIDIA EULA と整合する条件）への受領者の同意 |
-| 公開（main、release asset） | 上記に加えて L1/L2 の判断、または §6.2 の置換 |
+| 同一組織の 1〜2 人への試用（#508） | GNU GPL上、同一法人の内部利用か別の権利主体への提供かでconveyingの扱いが異なる。第三者の独自EULAは別途確認し、実際の配布形態に合わせて§3の通知・対応ソース、first-party許諾、受領者条件を適用する |
+| 公開（main、release asset） | #505の正式な許諾適用、必要なNOTICE/対応ソース、配布物の実査。特定のモデルについて実際に拘束する禁止条件が確認された場合のみ§6.2等の対応を追加 |
 
 ## 8. 今回の検証と証拠
 
 | 検証 | 結果 |
 | --- | --- |
 | 照合ツールと判定データのテスト（`tests/test_issue533_license_reduction.py` の #553 節） | Passed |
-| 新構成の模擬 manifest での照合 | error 0、blocked 3（オーナー判断のみ） |
+| 新構成の模擬 manifest での照合 | **旧判定による履歴**：error 0、blocked 3。今回のモデル再分類により模擬manifestの再評価が必要（想定：first-party許諾のみblocked 1） |
 | 実 triton-windows 3.8.0.post29 wheel（PyPI、`937ba2ee…`）の取得・展開 | 必要 5 ファイルが存在（Linux 上で win_amd64 wheel を `--target` 展開） |
 | setup の動作（portable 側 PR のテスト） | download/install/記録、再実行で再取得しない、wheel-dir、失敗・中断からの復旧、改ざん・版ずれ、移設 |
 | #505 パッケージの隔離適用（§4.2） | reuse lint・surface・materialize・pytest 99 Passed（2026-11-23） |
@@ -225,6 +226,6 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 ## 9. オーナーの判断事項
 
 1. **first-party の許諾**：#505 の正式適用（main）と、試用者への書面の個別許諾のどちらで試用を行うか。
-2. **MMR / barline CNN**：§2.5 の S1〜S5 を確認のうえ、試用では評価目的に限った許諾で渡すか、置換（§6.2）を先に行うか。公開配布ではどちらにするか。
+2. **MMR / barline CNN の出典表示**：現行モデルを維持し、§2の初期化重み・学習由来・楽譜画像非同梱とDeepScoresV2帰属をNOTICEへ反映する。両モデル固有の禁止条項は確認されておらず、S1〜S4の履歴復元や無条件再学習を配布前提としない。
 3. **受領者条件**：`RECIPIENT_TERMS.md` 下書き（NVIDIA/Intel の条項、モデルの利用範囲、再配布禁止）の承認。
 4. 上記の後、新 SHA の Windows 実ビルドで `setup` と E2E、`portable_compliance.py check` → `bundle`、受け渡し手順と SHA256 を確定してから、試用の Go/No-go。

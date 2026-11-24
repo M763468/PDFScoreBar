@@ -338,6 +338,10 @@ def test_repository_policy_is_valid_and_reviews_every_pinned_distribution():
     assert "NOT included" in components["mmr-weights"]["review_note"]
     # The owner granted AGPL-3.0-or-later for the trial build (#505); the grant texts are pinned.
     assert components["pdfscorebar-first-party"]["disposition"] == "cleared_with_notice"
+    assert (
+        components["pdfscorebar-first-party"]["grant_manifest_sha256"]
+        == policy["reviewed"]["final_windows_build"]["build_manifest_sha256"]
+    )
     granted = {s["file"] for s in components["pdfscorebar-first-party"]["supplemental"]}
     assert {"first-party/LICENSE", "first-party/FIRST_PARTY_NOTICE.md"} <= granted
     # Real Windows build unlocked distributions (#553): setuptools, homr, pip.
@@ -428,9 +432,54 @@ def test_repository_policy_real_build_hands_off_after_the_first_party_grant():
     }
     ev = pc.evaluate(manifest, policy)
     assert ev.errors == []
-    assert ev.blocked == {}
+    # Synthetic manifests cannot inherit the owner's grant for the real accepted build.
+    assert set(ev.blocked) == {"pdfscorebar-first-party"}
+    assert "owner grant limited to build manifest" in ev.blocked["pdfscorebar-first-party"][0]
     assert "setuptools" in ev.used and "homr" in ev.used and "pypi-permissive" in ev.used
     assert "mmr-weights" in ev.used and "barline-cnn-weights" in ev.used
+
+
+def test_build_scoped_grant_requires_exact_manifest_digest(tmp_path):
+    root = _folder(tmp_path, BASE_FILES, {"demo-pkg": "1.0"})
+    original_sha = hashlib.sha256(_manifest(root).read_bytes()).hexdigest()
+    policy = _policy()
+    policy["components"]["weights"]["grant_manifest_sha256"] = original_sha
+    policy_path = _write_policy(tmp_path, policy)
+
+    # The same manifest bytes are authorized by the grant.
+    assert pc.main(["check", str(_manifest(root)), "--policy", str(policy_path)]) == 0
+
+    # A different, still-valid manifest with identical shipped file inventory is not
+    # covered: only the owner can grant rights for another build.
+    changed = json.loads(_manifest(root).read_text(encoding="utf-8"))
+    changed["builder_source_commit"] = "b" * 40
+    _manifest(root).write_text(json.dumps(changed), encoding="utf-8")
+    payload_path = tmp_path / "checked.json"
+    assert pc.main([
+        "check",
+        str(_manifest(root)),
+        "--policy",
+        str(policy_path),
+        "--report",
+        str(payload_path),
+    ]) == 1
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    assert payload["errors"] == []
+    assert payload["handoff_ready"] is False
+    assert "owner grant limited to build manifest" in payload["blocked"]["weights"][0]
+    assert pc.main([
+        "check", str(_manifest(root)), "--policy", str(policy_path), "--allow-blocked"
+    ]) == 0
+    # Rehearsal flags cannot make an out-of-scope build handoff-ready.
+    assert payload["handoff_ready"] is False
+
+    assert pc.main(["bundle", str(root), str(tmp_path / "bundle"),
+                    "--policy", str(policy_path)]) == 1
+    bundle_report = json.loads(
+        (tmp_path / "bundle" / "COMPLIANCE_REPORT.json").read_text(encoding="utf-8")
+    )
+    assert bundle_report["handoff_ready"] is False
+    assert "weights" in bundle_report["blocked"]
 
 
 def test_cleared_folder_passes_and_bundle_is_adjacent(tmp_path):
@@ -561,4 +610,8 @@ def test_invalid_policy_is_rejected(tmp_path):
     policy = _policy()
     policy["components"]["weights"]["disposition"] = "owner_trained"
     with pytest.raises(ValueError, match="invalid disposition"):
+        pc.load_policy(_write_policy(tmp_path, policy))
+    policy = _policy()
+    policy["components"]["weights"]["grant_manifest_sha256"] = "not-a-sha256"
+    with pytest.raises(ValueError, match="invalid grant_manifest_sha256"):
         pc.load_policy(_write_policy(tmp_path, policy))

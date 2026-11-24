@@ -1,7 +1,7 @@
 # PDFScoreBar Windows版 — 限定試用ガイド
 
 この文書は Issue #508 の限定試用に用いる暫定版です。試用で得たフィードバックに応じて更新します。
-開発者向けのビルド手順は [Windows portable README](../../tools/windows_portable/README.md) を参照してください。Linux/Docker版は [別のユーザーガイド](../USER_GUIDE.ja.md) を使用します。
+開発者向けのビルド手順は [Windows portable README（GitHub、英語）](https://github.com/M763468/PDFScoreBar/blob/develop/tools/windows_portable/README.md) を参照してください。Linux/Docker版は [別のユーザーガイド（GitHub）](https://github.com/M763468/PDFScoreBar/blob/develop/docs/USER_GUIDE.ja.md) を使用します。
 
 ## 1. 動作環境
 
@@ -19,7 +19,7 @@ Docker、WSL、システムPython、CUDA Toolkit、コンパイラーを別途�
 **フォルダーの場所は短い英数字だけのパス（40文字以内）**にしてください。日本語のフォルダー名や深い配置先は避けます。
 処理対象のPDFのファイル名・入力パスには日本語も使用できます。
 
-受け取った `PDFScoreBar-compliance` にある `RECIPIENT_TERMS.md` とライセンス・注意事項を確認し、試用条件への同意を管理者に伝えてください。
+受け取った `PDFScoreBar-compliance/supplemental/nvidia-cuda-redistributable/RECIPIENT_TERMS.md` とライセンス・注意事項を確認し、試用条件への同意を管理者に伝えてください。
 配布物のハッシュ確認用に `PDFScoreBar.build_manifest.sha256` も渡されます。
 `PDFScoreBar` フォルダーと `PDFScoreBar-compliance` は別のフォルダーのまま保管してください。
 
@@ -64,7 +64,7 @@ C:\PDFScoreBar\PDFScoreBar.cmd serve
 
 誤りがあれば補正GUIで対象を選択して修正を追加し、ページの変更を保存してから修正済みPDFを生成します。
 修正した場所だけでなく、後続の小節番号も確認してください。
-詳しい複数小節休符の確認方法は [日本語ユーザーガイド](../USER_GUIDE.ja.md#複数小節休符を確認して修正する) にあります（操作内容は共通ですが、起動手順はこのWindows版ガイドに従ってください）。
+詳しい複数小節休符の確認方法は [日本語ユーザーガイド（GitHub）](https://github.com/M763468/PDFScoreBar/blob/develop/docs/USER_GUIDE.ja.md#複数小節休符を確認して修正する) にあります（操作内容は共通ですが、起動手順はこのWindows版ガイドに従ってください）。
 
 ## 6. 終了・再開
 

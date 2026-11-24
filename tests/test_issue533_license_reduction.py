@@ -332,8 +332,11 @@ def test_repository_policy_is_valid_and_reviews_every_pinned_distribution():
     assert policy["distributions"]["triton-windows"]["component"] == "triton-recipient"
     acquired = {a["name"]: a for a in policy["recipient_acquired"]}
     assert "ptxas.exe" in acquired["triton-windows"]["license"]
-    assert components["barline-cnn-weights"]["disposition"] != "cleared"
-    assert components["mmr-weights"]["disposition"] != "cleared"
+    assert components["barline-cnn-weights"]["disposition"] == "cleared_with_notice"
+    assert components["mmr-weights"]["disposition"] == "cleared_with_notice"
+    assert "ImageNet-use caution" in components["barline-cnn-weights"]["obligations"][0]
+    assert "NOT included" in components["mmr-weights"]["review_note"]
+    # First-party licensing is still a single distinct gate; model provenance is not another blocker.
     assert components["pdfscorebar-first-party"]["disposition"] == "permission_needed"
     unlisted = [r["pattern"] for r in policy["file_rules"] if r["component"] == "nvidia-unlisted"]
     assert any(p.endswith("nvperf_host.dll") for p in unlisted)

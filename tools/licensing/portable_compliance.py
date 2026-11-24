@@ -18,7 +18,8 @@ component dispositions in ``docs/licensing/windows_portable_components.json`` an
   folder, its ``app/`` payload or ``verify --full`` inventory): license files copied
   from the folder, supplemental texts/sources from a private directory, a generated
   ``THIRD_PARTY_NOTICES.md``, ``COMPLIANCE_REPORT.json`` bound to the exact
-  ``build_manifest.json`` digest, and ``SHA256SUMS``. Components that the recipient
+  ``build_manifest.json`` digest, the optional Japanese trial guide, and
+  ``SHA256SUMS``. Components that the recipient
   obtains directly from the official source at setup (``recipient_acquired``) are listed
   separately: they are not distributed by the folder's provider.
 
@@ -94,6 +95,12 @@ def load_policy(path: Path) -> dict:
         raise ValueError(f"Unsupported compliance policy: {policy.get('schema_version')}")
     components = policy["components"]
     problems = []
+    guide = policy.get("trial_user_guide")
+    if guide is not None and (
+        not isinstance(guide, str)
+        or not re.fullmatch(r"docs/windows_portable/[A-Za-z0-9_.-]+\.md", guide)
+    ):
+        problems.append("invalid trial_user_guide path")
     for cid, comp in components.items():
         if comp.get("disposition") not in DISPOSITIONS:
             problems.append(f"component {cid}: invalid disposition {comp.get('disposition')!r}")
@@ -328,6 +335,14 @@ def cmd_bundle(args: argparse.Namespace) -> int:
             target = out / "supplemental" / cid / Path(item["file"]).name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
+    # Keep the accepted build untouched; the recipient guide belongs to the adjacent
+    # compliance bundle so the trial user can read it without repository access.
+    guide = policy.get("trial_user_guide")
+    if guide:
+        source = REPO / guide
+        if not source.is_file():
+            raise SystemExit(f"Trial user guide missing from repository: {guide}")
+        shutil.copyfile(source, out / "TRIAL_GUIDE.md")
     payload = report(manifest, manifest_sha, policy, sha256_file(args.policy), ev)
     (out / "COMPLIANCE_REPORT.json").write_text(
         json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"

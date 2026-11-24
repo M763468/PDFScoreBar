@@ -127,9 +127,9 @@ Attachment A に名前がないことは「再配布禁止」を意味しない�
 | flatbuffers、rapidocr-onnxruntime、types-Pillow | Apache-2.0（wheel に本文なし） | cleared_with_notice | Apache-2.0 本文を補う（収集済み） |
 | PyMuPDF 1.26.4 / MuPDF | AGPL-3.0 | cleared_with_notice | AGPL 全文、**対応ソース**：PyMuPDF sdist（`be13a066…`）と MuPDF 1.26.7 source（`52014fce…`）を収集済み |
 | HOMR `457e7c65`（導入版 `0.1.0`、`POETRY_DYNAMIC_VERSIONING_BYPASS=0.1.0`、ビルド時に改変） | AGPL-3.0 | cleared_with_notice | 上流 source（`41511b37…`）＋ `app/docker/patch_homr_onnx_provider.py`（改変）＋ `init_homr_segnet.py` |
-| NVIDIA CUDA 12.6 DLL（cudart、cuBLAS/cuBLASLt、cuFFT/cuFFTW、cuRAND、cuSOLVER、cuSPARSE、NVRTC、nvJitLink、CUPTI、NVTX、nvJPEG） | CUDA EULA 12.6 **Attachment A に Windows 版が列挙** | cleared_with_notice | §1.1.2（実質的な追加機能、アプリ経由のみ、EULA と整合する受領条件、不遵守の通知）。EULA 本文を補う。受領条件は下書き済み（`RECIPIENT_TERMS.md`） |
+| NVIDIA CUDA 12.6 DLL（cudart、cuBLAS/cuBLASLt、cuFFT/cuFFTW、cuRAND、cuSOLVER、cuSPARSE、NVRTC、nvJitLink、CUPTI、NVTX、nvJPEG） | CUDA EULA 12.6 **Attachment A に Windows 版が列挙** | cleared_with_notice | §1.1.2（実質的な追加機能、アプリ経由のみ、EULA と整合する受領条件、不遵守の通知）。EULA 本文を補う。試用受領者条件は2026-11-24承認済み（`RECIPIENT_TERMS.md`）。main公開条件は別トラック |
 | NVIDIA cuDNN 9.10.2.21 | cuDNN SLA：runtime `.dll` は再配布可 | cleared_with_notice | SLA 本文（最新版）を補う |
-| Intel OpenMP（`libiomp5md.dll` FileVersion 20260213、`libiompstubs5md.dll`） | Intel EULA for Developer Tools（2024-08）§2.1.D：製品の一部としての再配布を許可。受領者条件で逆アセンブル禁止を課す。§3.1(x) Reciprocal OSS 化の禁止 | cleared_with_notice | 受領者条件に Intel DLL 限定の条項を入れる（下書き済み）。DLL は torch（BSD）の依存で AGPL の作品に組み込まず再許諾しない。**残る点**：torch 同梱 build に対応する EULA 版の表示がない。必要なら同じ FileVersion・同サイズの `intel-openmp==2026.1.0` を setup で受領者に取得させる代替がある |
+| Intel OpenMP（`libiomp5md.dll` FileVersion 20260213、`libiompstubs5md.dll`） | Intel EULA for Developer Tools（2024-08）§2.1.D：製品の一部としての再配布を許可。受領者条件で逆アセンブル禁止を課す。§3.1(x) Reciprocal OSS 化の禁止 | cleared_with_notice | 受領者条件に Intel DLL 限定の条項を入れる（試用版は2026-11-24承認済み）。DLL は torch（BSD）の依存で AGPL の作品に組み込まず再許諾しない。**残る点**：torch 同梱 build に対応する EULA 版の表示がない。必要なら同じ FileVersion・同サイズの `intel-openmp==2026.1.0` を setup で受領者に取得させる代替がある |
 | torch / torchvision 同梱の libuv、zlib 1.2.3、libjpeg-turbo、libpng、libwebp | MIT / Zlib / IJG・BSD / libpng / BSD | cleared_with_notice | 上流の本文を補う（収集済み） |
 | ONNX Runtime GPU 1.24.4 | MIT ＋ `ThirdPartyNotices.txt` | cleared_with_notice | TensorRT は同梱しない |
 | DejaVu Sans Bold | Bitstream Vera / DejaVu | cleared_with_notice | `COPYRIGHT.fonts-dejavu-core` を隣に同梱 |
@@ -143,7 +143,7 @@ LGPL のバイナリ（TinyCC、FFmpeg）を当方は渡さなくなったため
 
 - 判定データ：[`windows_portable_components.json`](windows_portable_components.json)。ライセンスは**配布物の版ごと**に審査し、個々の wheel・DLL の SHA-256 には依存しない（モデル重みとフォントは、版の取り違え・破損を防ぐため bytes を照合する）。`recipient_acquired` に受領者が取得する物を記録する。
 - 検査・生成：`tools/licensing/portable_compliance.py`
-  - `check <folder>/runtime/build_manifest.json`：審査済みの規則に当たらない配布物・DLL/EXE/PYD・モデル・フォント、モデル/フォントの bytes の差は **error（exit 2）**。cleared でない構成物、同梱してはならない物（`exclude`）、**版が審査時と違う配布物（ライセンスの再審査が必要）**、補う本文が未収集のものは **blocked（exit 1）**。互換版への更新でファイルの hash を登録し直す必要はない。
+  - `check <folder>/runtime/build_manifest.json`：審査済みの規則に当たらない配布物・DLL/EXE/PYD・モデル・フォント、モデル/フォントの bytes の差は **error（exit 2）**。cleared でない構成物、同梱してはならない物（`exclude`）、**版が審査時と違う配布物（ライセンスの再審査が必要）**、補う本文が未収集のもの、**ownerのfirst-party許諾が対象として指定したmanifest SHA-256と一致しないビルド**は **blocked（exit 1）**。互換版への更新で一般のwheelファイルのhashを登録し直す必要はないが、オーナーのビルド限定許諾は別ビルドへ拡大しない。
   - `bundle <folder> <隣の新ディレクトリ> --supplemental-dir <非公開資料>`：フォルダ内のライセンス本文（manifest の hash を照合してコピー）、補う本文・対応ソース・受領者条件、生成した `THIRD_PARTY_NOTICES.md`（受領者が取得する物の節を含む）・`SOURCE.md`、`build_manifest.json` の SHA-256 と tree digest に結び付けた `COMPLIANCE_REPORT.json`、`SHA256SUMS`。フォルダ内への出力は拒否する。
 
 ## 4. main 最小配布
@@ -178,7 +178,7 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 | L2 | 楽譜スキャンを学習に使った重みの配布（日本の著作権法30条の4、契約） | **楽譜スキャン・学習用切り抜きは非同梱**。著作権法上の情報解析と個別契約は別の論点。具体的な不適合は未確認であり、過去の入手履歴未記録だけでモデル配布をブロックしない |
 | L3 | Windows 向け NVIDIA の非列挙ファイルの再配布 | **配布方式で解消**（同梱しない）。受領者が PyPI から得る際の条件は受領者と配布元の間の問題として案内する |
 | L4 | Intel OpenMP EULA と AGPL 製品フォルダ内の同梱 | 受領者条件で対応（§3）。対象 build の EULA 版は残る。代替あり |
-| L5 | NVIDIA / Intel の独自条件の部品と AGPL 結合物の同時配布（#504 §0.8.3 の継続） | 受領者条件は NVIDIA/Intel のライブラリだけを対象にし、first-party と AGPL 部品には制限を加えない形で下書きした |
+| L5 | NVIDIA / Intel の独自条件の部品と AGPL 結合物の同時配布（#504 §0.8.3 の継続） | 受領者条件は NVIDIA/Intel のライブラリだけを対象にし、first-party と AGPL 部品には制限を加えない形で2026-11-24に承認済み |
 | L6 | cuDNN 9.10.2.21 に適用される SLA の版 | 収集した SLA は最新版。版ごとの差は未確認 |
 
 ## 6. 技術的な解消策
@@ -214,7 +214,7 @@ HOMR の短い引用断片（`docker/patch_homr_onnx_provider.py`）だけ。HOM
 | 検証 | 結果 |
 | --- | --- |
 | 照合ツールと判定データのテスト（`tests/test_issue533_license_reduction.py` の #553 節） | Passed |
-| 実 Windows ビルド manifest（`win553_build_manifest.json`、`eb256330…`、旧 source `b1425154`）での `portable_compliance.py check` | **error 0、blocked 1**（`pdfscorebar-first-party` #505 のみ、モデル固有 blocked 0、18 components、`handoff_ready=false`）。履歴：旧判定（`adf75cfe`）では error 1（`setuptools==84.2.1`）・blocked 3（`homr==0.1.0`、`pip==25.3`、`pdfscorebar-first-party`）、旧模擬 manifest は error 0・blocked 3 |
+| **履歴**：旧 Windows ビルド manifest（`win553_build_manifest.json`、`eb256330…`、旧 source `b1425154`）での `portable_compliance.py check` | **error 0、blocked 1**（`pdfscorebar-first-party` #505 のみ、モデル固有 blocked 0、18 components、`handoff_ready=false`）。履歴：旧判定（`adf75cfe`）では error 1（`setuptools==84.2.1`）・blocked 3（`homr==0.1.0`、`pip==25.3`、`pdfscorebar-first-party`）、旧模擬 manifest は error 0・blocked 3 |
 | 実 triton-windows 3.8.0.post29 wheel（PyPI、`937ba2ee…`）の取得・展開 | 必要 5 ファイルが存在（Linux 上で win_amd64 wheel を `--target` 展開） |
 | setup の動作（portable 側 PR のテスト） | download/install/記録、再実行で再取得しない、wheel-dir、失敗・中断からの復旧、改ざん・版ずれ、移設 |
 | #505 パッケージの隔離適用（§4.2） | reuse lint・surface・materialize・pytest 99 Passed（2026-11-23） |

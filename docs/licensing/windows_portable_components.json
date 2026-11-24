@@ -26,6 +26,7 @@
    "title": "PDFScoreBar application, launcher and first-party SR weights",
    "license": "AGPL-3.0-or-later (granted by the owner on 2026-11-24 for the build with manifest 1173dfb44654…, #505)",
    "disposition": "cleared_with_notice",
+   "grant_manifest_sha256": "1173dfb44654f25ee2f7b3a3b99e60a22a57e67cc10756055e0540fa84a00e90",
    "obligations": [
     "LICENSE (GNU AGPL-3.0) and FIRST_PARTY_NOTICE.md in the bundle",
     "Corresponding Source = app/ + launcher + builder (supplemental pdfscorebar-builder-<commit>.tar.gz)"

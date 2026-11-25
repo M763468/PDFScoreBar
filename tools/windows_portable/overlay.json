@@ -22,6 +22,12 @@
       "reason": "Imported by launcher.py; checks the folder against runtime/build_manifest.json (verify, verify --full, preflight)"
     },
     {
+      "source": "tools/windows_portable/user_setup.py",
+      "path": "launcher/user_setup.py",
+      "transform": "copy",
+      "reason": "Imported by launcher.py (setup, preflight, verify) and by the builder: first-run installation of triton-windows from PyPI into addons/ and the list of NVIDIA files removed at build time (#553)"
+    },
+    {
       "source": "tools/windows_portable/PDFScoreBar.cmd",
       "path": "PDFScoreBar.cmd",
       "transform": "crlf-ascii",
@@ -31,8 +37,8 @@
   "generated": [
     {
       "path": "python",
-      "reason": "uv-managed relocatable CPython with exactly the locked packages (torch/torchvision cu126 with their CUDA/cuDNN DLLs, onnxruntime-gpu, triton-windows, OpenCV, PyMuPDF, RapidOCR, HOMR with its SegNet/OCR models)",
-      "verified_by": "requirements-cu126.txt equality, HOMR commit pin, excluded-distribution and transformer-checkpoint checks"
+      "reason": "uv-managed relocatable CPython with the locked packages except those the recipient installs with setup (torch/torchvision cu126 with their CUDA/cuDNN DLLs minus the build exclusions of user_setup.py, onnxruntime-gpu, OpenCV, PyMuPDF, RapidOCR, HOMR with its SegNet/OCR models) and the relative pdfscorebar_addons.pth that adds addons/site-packages (triton-windows, installed by setup from PyPI, #553)",
+      "verified_by": "requirements-cu126.txt equality minus setup packages, HOMR commit pin, excluded-distribution, build-exclusion and transformer-checkpoint checks"
     },
     {
       "path": "assets",

@@ -2,7 +2,8 @@
 
 Commands (through ``PDFScoreBar.cmd`` in the folder root):
 
-  preflight                 check folder, location, disk, GPU, CUDA sessions
+  setup [--yes]             first run: download triton-windows from PyPI into addons/
+  preflight                 check folder, setup, location, disk, GPU, CUDA, Triton
   serve                     browser app: submit PDFs, follow jobs, download, review (#507)
   run <pdf> --output <dir>  process one PDF; deliverables are copied to <dir>
   review <job>              open the correction GUI for a job (save, regenerate, resume)
@@ -14,7 +15,8 @@ browser session and a command-line job never process at the same time.
 Jobs are processed under ``<root>\\jobs`` (short ASCII paths for OpenCV/ONNX Runtime
 and MAX_PATH); only the finished deliverables are written to the user's output folder,
 which may use any characters. Everything mutable (jobs, caches, temporary files, the
-generated runtime overlay) stays inside the folder; nothing is installed system-wide.
+generated runtime overlay, the add-ons installed by ``setup``) stays inside the folder;
+nothing is installed system-wide.
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app"
 PYTHON = ROOT / "python" / "python.exe"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import user_setup  # noqa: E402
 from manifest import load_manifest, verify  # noqa: E402
 
 JOBS = ROOT / "jobs"
@@ -114,7 +117,9 @@ def child_environment() -> dict[str, str]:
             "TMP": str(cache / "tmp"),
         }
     )
-    return env
+    # Triton's TinyCC and CUDA in this folder's add-ons (CC, CUDA_PATH), derived from the
+    # current root at every start; only PDFScoreBar's own processes receive them (#553).
+    return user_setup.apply_toolchain_environment(env, ROOT / user_setup.ADDONS_SITE)
 
 
 def check_location() -> list[str]:
@@ -150,8 +155,14 @@ if result["cuda_available"]:
     model = sorted((Path(homr.__file__).parent / "segmentation").glob("*.onnx"))[0]
     session = ort.InferenceSession(str(model), providers=["CUDAExecutionProvider"])
     result["ort_session_providers"] = session.get_providers()
-    import triton  # torch.compile reduce-overhead needs triton-windows
+    import triton  # torch.compile reduce-overhead needs triton-windows (setup, #553)
     result["triton"] = triton.__version__
+    result["triton_location"] = str(Path(triton.__file__).resolve().parent)
+    # What Triton will compile with (no compilation here; setup ran the real check).
+    from triton.runtime.build import _find_compiler
+    from triton.windows_utils import find_cuda
+    result["triton_cc"] = _find_compiler("c")
+    result["triton_cuda_bin"] = find_cuda()[0]
 print(json.dumps(result))
 """
 
@@ -173,17 +184,40 @@ def check_gpu(env: dict[str, str]) -> tuple[dict, list[str]]:
             "ONNX Runtime created a CPU session although CUDA was requested "
             f"(providers={info.get('ort_session_providers')})"
         )
+    elif not Path(info.get("triton_location", "")).is_relative_to(
+        (ROOT / user_setup.ADDONS_SITE).resolve()
+    ):
+        problems.append(
+            f"Triton was loaded from {info.get('triton_location')}, not from this folder's "
+            "add-ons; run 'PDFScoreBar.cmd setup --force'"
+        )
+    else:
+        toolchain = user_setup.toolchain_environment(ROOT / user_setup.ADDONS_SITE)
+        cc, cuda_bin = info.get("triton_cc"), info.get("triton_cuda_bin")
+        if not cc or Path(cc) != Path(toolchain["CC"]):
+            problems.append(
+                f"Triton would compile with {cc!r}, not with the TinyCC of this folder's "
+                f"add-ons ({toolchain['CC']})"
+            )
+        if not cuda_bin or not Path(cuda_bin).is_relative_to(toolchain["CUDA_PATH"]):
+            problems.append(
+                f"Triton would use CUDA from {cuda_bin!r}, not the CUDA files of this "
+                f"folder's add-ons ({toolchain['CUDA_PATH']})"
+            )
     return info, problems
 
 
 def preflight(*, full_verify: bool = False, gpu: bool = True) -> dict:
     problems = check_location()
     problems += verify(ROOT, full=full_verify)
+    problems += user_setup.addons_problems(ROOT, full=full_verify)
+    problems += user_setup.compile_check_problems(ROOT)
     manifest = load_manifest(ROOT)
     report: dict = {
         "root": str(ROOT),
         "source_commit": manifest["source_commit"],
         "application_manifest_sha256": manifest["application"]["manifest_sha256"],
+        "setup": user_setup.status(ROOT),
     }
     if not problems and gpu:
         info, gpu_problems = check_gpu(child_environment())
@@ -419,14 +453,72 @@ def command_serve(args: argparse.Namespace) -> int:
 
 
 def command_verify(args: argparse.Namespace) -> int:
+    """Folder integrity against the build manifest, plus installed add-ons if any.
+
+    A folder whose first-run setup has not been done yet verifies clean; ``preflight``
+    (run by ``serve``/``run``) is what requires the setup.
+    """
+
     problems = verify(ROOT, full=args.full)
-    print(json.dumps({"root": str(ROOT), "full": args.full, "problems": problems}, indent=2))
+    problems += user_setup.addons_problems(ROOT, full=args.full, required=False)
+    print(
+        json.dumps(
+            {
+                "root": str(ROOT),
+                "full": args.full,
+                "setup": user_setup.status(ROOT),
+                "problems": problems,
+            },
+            indent=2,
+        )
+    )
     return 1 if problems else 0
+
+
+def command_setup(args: argparse.Namespace) -> int:
+    problems = check_location() + verify(ROOT, full=False)
+    if problems:
+        print("\n".join(problems), file=sys.stderr)
+        return 2
+    with jobs_root_lock():  # no job may run while Triton is being replaced
+        try:
+            result = user_setup.run_setup(
+                ROOT,
+                PYTHON,
+                env=child_environment(),
+                assume_yes=args.yes,
+                force=args.force,
+                wheel_dir=args.wheel_dir,
+                gpu_smoke=not args.no_gpu_check,
+            )
+        except user_setup.SetupError as error:
+            print(f"PDFScoreBar setup: {error}", file=sys.stderr)
+            return 1
+        except KeyboardInterrupt:
+            # run_setup has already removed its staging folder; a swap that was cut short
+            # is undone by the next run. Kept downloads and the previous add-ons stay.
+            print(
+                "\nPDFScoreBar setup: interrupted. Any previous installation is unchanged; "
+                "run 'PDFScoreBar.cmd setup' again to finish.",
+                file=sys.stderr,
+            )
+            return 130
+    print(json.dumps(result, indent=2))
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="PDFScoreBar.cmd", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    setup = commands.add_parser("setup", help="first run: install the downloaded add-ons")
+    setup.add_argument("--yes", action="store_true", help="do not ask for confirmation")
+    setup.add_argument("--force", action="store_true", help="reinstall even if completed")
+    setup.add_argument(
+        "--wheel-dir", type=Path, help="use wheels already downloaded from the official source"
+    )
+    setup.add_argument(
+        "--no-gpu-check", action="store_true", help="skip the torch.compile GPU check"
+    )
     pre = commands.add_parser("preflight")
     pre.add_argument("--full", action="store_true", help="hash every file (slow)")
     serve = commands.add_parser("serve")
@@ -443,6 +535,8 @@ def main(argv: list[str] | None = None) -> int:
     ver.add_argument("--full", action="store_true")
     args = parser.parse_args(argv)
     try:
+        if args.command == "setup":
+            return command_setup(args)
         if args.command == "preflight":
             preflight(full_verify=args.full)
             return 0

@@ -15,7 +15,10 @@ of the application (``models/sr_x4``, #533) and the hash-pinned assets of ``asse
 The running builder must equal the commit's builder files. As in the Dockerfile, HOMR is
 initialized SegNet-only and the build fails if basicsr/realesrgan/gfpgan/facexlib or a
 HOMR transformer checkpoint is present (#533/#536). Every input is checked, the
-installed distribution set must equal the lock, and ``runtime/build_manifest.json``
+installed distribution set must equal the lock minus the packages the recipient installs
+with ``PDFScoreBar.cmd setup`` (triton-windows, #553; see ``user_setup.py``), the NVIDIA
+files listed in ``user_setup.SETUP_SPEC["build_exclusions"]`` are removed, and
+``runtime/build_manifest.json``
 records the provenance plus size/SHA-256 of every runtime file (including native
 DLLs) so ``PDFScoreBar.cmd verify --full`` can re-check the folder anywhere.
 
@@ -39,6 +42,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import payload  # noqa: E402
+import user_setup  # noqa: E402
 from manifest import (  # noqa: E402
     APP_ROOT,
     MANIFEST_PATH,
@@ -82,6 +86,11 @@ def git(*args: str, repo: Path) -> str:
     return subprocess.run(
         ["git", "-C", str(repo), *args], check=True, text=True, capture_output=True
     ).stdout.strip()
+
+
+SETUP_ACQUIRED = {
+    re.sub(r"[-_.]+", "-", p["name"]).lower() for p in user_setup.SETUP_SPEC["packages"]
+}
 
 
 def read_lock() -> dict[str, str]:
@@ -167,7 +176,10 @@ def install_packages(python: Path, *, env: dict[str, str]) -> None:
     if commit != HOMR_COMMIT:
         raise RuntimeError(f"homr commit mismatch: {commit}")
     run([*pip, *torch_index, *lock, ORT_GPU], env=env)
-    run([*pip, *torch_index, "-r", str(LOCK)], env=env)
+    # The recipient installs the setup packages from PyPI themselves (user_setup.py, #553).
+    shipped = LOCK.with_name("requirements-shipped.txt")
+    shipped.write_text(shipped_lock(LOCK.read_text(encoding="utf-8")), encoding="utf-8")
+    run([*pip, *torch_index, "-r", str(shipped)], env=env)
     run([*pip, "--force-reinstall", "--no-deps", OPENCV], env=env)
     run(["uv", "pip", "uninstall", "--python", str(python), "onnxruntime"], env=env)
     run([*pip, "--force-reinstall", "--no-deps", ORT_GPU], env=env)
@@ -177,6 +189,45 @@ def patch_and_init(python: Path, app: Path, *, env: dict[str, str]) -> None:
     run([str(python), str(app / "docker" / "patch_homr_onnx_provider.py")], env=env)
     # SegNet fp16 + OCR only, hash-checked; fails if a transformer checkpoint exists.
     run([str(python), str(app / "docker" / "init_homr_segnet.py")], env=env)
+
+
+def shipped_lock(text: str) -> str:
+    """The lock without the packages that ``PDFScoreBar.cmd setup`` installs (#553)."""
+
+    return "".join(
+        line + "\n"
+        for line in text.splitlines()
+        if not line.strip()
+        or line.lstrip().startswith("#")
+        or canonical(line.split("==", 1)[0].strip()) not in SETUP_ACQUIRED
+    )
+
+
+def remove_build_exclusions(site_packages: Path) -> list[dict]:
+    """Delete the files of ``SETUP_SPEC["build_exclusions"]`` and their RECORD lines."""
+
+    removed = []
+    for entry in user_setup.SETUP_SPEC["build_exclusions"]:
+        path = site_packages / entry["path"]
+        if not path.is_file():
+            raise RuntimeError(f"Excluded file not found (package changed?): {entry['path']}")
+        size = path.stat().st_size
+        path.unlink()
+        removed.append({"path": entry["path"], "size": size, "reason": entry["reason"]})
+    names = {entry["path"] for entry in user_setup.SETUP_SPEC["build_exclusions"]}
+    for record in site_packages.glob("*.dist-info/RECORD"):
+        lines = record.read_text(encoding="utf-8").splitlines(keepends=True)
+        kept = [line for line in lines if line.split(",", 1)[0].replace("\\", "/") not in names]
+        if kept != lines:
+            record.write_text("".join(kept), encoding="utf-8")
+    return removed
+
+
+def write_addons_path(root: Path) -> None:
+    """Put ``<root>/addons/site-packages`` on sys.path through a relative ``.pth`` line."""
+
+    pth = root / user_setup.PTH_PATH
+    pth.write_text(user_setup.PTH_LINE + "\n", encoding="utf-8")
 
 
 def strip_console_scripts(python_root: Path) -> list[str]:
@@ -203,8 +254,11 @@ def strip_console_scripts(python_root: Path) -> list[str]:
 
 
 def check_distributions(site_packages: Path) -> dict[str, str]:
-    expected = read_lock()
+    expected = {k: v for k, v in read_lock().items() if k not in SETUP_ACQUIRED}
     installed = installed_distributions(site_packages)
+    shipped_setup = sorted(set(installed) & SETUP_ACQUIRED)
+    if shipped_setup:
+        raise RuntimeError(f"Setup-acquired packages must not be shipped: {shipped_setup}")
     excluded = sorted(set(installed) & set(EXCLUDED_DISTRIBUTIONS))
     if excluded or set(expected) & set(EXCLUDED_DISTRIBUTIONS):
         raise RuntimeError(f"Excluded SR distributions must not be installed: {excluded}")
@@ -267,7 +321,7 @@ def runtime_identity(python: Path, *, env: dict[str, str]) -> dict:
         "'torch': torch.__version__, 'torch_cuda': torch.version.cuda,"
         "'cudnn': torch.backends.cudnn.version(), 'torchvision': torchvision.__version__,"
         "'onnxruntime': onnxruntime.__version__, 'opencv': cv2.__version__,"
-        "'numpy': numpy.__version__, 'triton_windows': m.version('triton-windows')}))"
+        "'numpy': numpy.__version__}))"
     )
     return json.loads(run([str(python), "-c", probe], env=env))
 
@@ -282,6 +336,7 @@ def write_manifest(
     distributions: dict[str, str],
     assets: list[dict],
     removed_scripts: list[str],
+    excluded: list[dict],
 ) -> Path:
     """Inventory the folder, check the payload contract and write the build manifest."""
 
@@ -309,6 +364,17 @@ def write_manifest(
         "distributions": dict(sorted(distributions.items())),
         "assets": assets,
         "removed_console_scripts": removed_scripts,
+        # Installed by the recipient from PyPI with ``PDFScoreBar.cmd setup`` (#553).
+        "user_setup": {
+            "spec_sha256": user_setup.spec_digest(),
+            "index_url": user_setup.SETUP_SPEC["index_url"],
+            "packages": [
+                {k: p[k] for k in ("name", "version", "project_url")}
+                for p in user_setup.SETUP_SPEC["packages"]
+            ],
+            "addons_path_file": user_setup.PTH_PATH,
+        },
+        "build_exclusions": excluded,
         "file_count": len(files),
         "total_bytes": sum(size for size, _ in files.values()),
         "tree_digest": tree_digest(files),
@@ -364,6 +430,8 @@ def build(args: argparse.Namespace) -> Path:
     patch_and_init(python, root / APP_ROOT, env=env)
     removed_scripts = strip_console_scripts(root / "python")
     site_packages = root / "python" / "Lib" / "site-packages"
+    excluded = remove_build_exclusions(site_packages)
+    write_addons_path(root)
     distributions = check_distributions(site_packages)
     assets = stage_assets(root, args.asset_source, cache)
 
@@ -392,6 +460,7 @@ def build(args: argparse.Namespace) -> Path:
         distributions=distributions,
         assets=assets,
         removed_scripts=removed_scripts,
+        excluded=excluded,
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     digest = sha256_file(manifest_path)

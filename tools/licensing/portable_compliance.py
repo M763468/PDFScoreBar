@@ -54,6 +54,9 @@ DISPOSITIONS = HANDOFF_OK | {
 # Files whose rights cannot be inferred from the owning Python distribution alone.
 NATIVE_SUFFIXES = {".dll", ".exe", ".pyd", ".so", ".lib"}
 MODEL_SUFFIXES = {".onnx", ".pth", ".pt", ".bin", ".ttf", ".otf"}
+FIRST_PARTY_COMPONENT = "pdfscorebar-first-party"
+FIRST_PARTY_PREFIXES = ("app/", "launcher/")
+FIRST_PARTY_EXACT = {"PDFScoreBar.cmd"}
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_POLICY = REPO / "docs" / "licensing" / "windows_portable_components.json"
 
@@ -128,6 +131,26 @@ def needs_rule(path: str) -> bool:
     return suffix in NATIVE_SUFFIXES or suffix in MODEL_SUFFIXES
 
 
+def is_first_party_source(path: str) -> bool:
+    return path in FIRST_PARTY_EXACT or path.startswith(FIRST_PARTY_PREFIXES)
+
+
+def missing_notice_reasons(comp: dict, manifest_files: dict[str, list]) -> list[str]:
+    patterns = comp.get("notice_files", [])
+    if not patterns:
+        return []
+    reasons: list[str] = []
+    matched_any = False
+    for pattern in patterns:
+        if any(fnmatch.fnmatchcase(p, pattern) for p in manifest_files):
+            matched_any = True
+        elif not any(ch in pattern for ch in "*?["):
+            reasons.append(f"required notice missing: {pattern}")
+    if not matched_any and not reasons:
+        reasons.append(f"required notice missing: no file matched {', '.join(patterns)}")
+    return reasons
+
+
 def match_rule(path: str, rules: list[dict]) -> dict | None:
     for rule in rules:
         if fnmatch.fnmatchcase(path, rule["pattern"]):
@@ -162,16 +185,19 @@ def evaluate(manifest: dict, policy: dict, *, manifest_sha256: str | None = None
             )
         result.use(entry["component"], "distributions", f"{name}=={version}")
     for path in sorted(manifest["files"]):
-        if not needs_rule(path):
-            continue
-        rule = match_rule(path, policy["file_rules"])
-        if rule is None:
-            result.errors.append(f"shipped native/model file without reviewed disposition: {path}")
-            continue
-        if rule.get("sha256") and rule["sha256"] != manifest["files"][path][1]:
-            result.errors.append(f"{path}: sha256 differs from the reviewed bytes")
-            continue
-        result.use(rule["component"], "files", path)
+        if needs_rule(path):
+            rule = match_rule(path, policy["file_rules"])
+            if rule is None:
+                result.errors.append(
+                    f"shipped native/model file without reviewed disposition: {path}"
+                )
+                continue
+            if rule.get("sha256") and rule["sha256"] != manifest["files"][path][1]:
+                result.errors.append(f"{path}: sha256 differs from the reviewed bytes")
+                continue
+            result.use(rule["component"], "files", path)
+        elif is_first_party_source(path) and FIRST_PARTY_COMPONENT in policy["components"]:
+            result.use(FIRST_PARTY_COMPONENT, "files", path)
     for cid in sorted(result.used):
         comp = policy["components"][cid]
         reasons = list(result.unreviewed_versions.get(cid, []))
@@ -186,6 +212,7 @@ def evaluate(manifest: dict, policy: dict, *, manifest_sha256: str | None = None
             reasons.append(
                 f"disposition {comp['disposition']}: {comp.get('open_issue', '')}".strip()
             )
+        reasons.extend(missing_notice_reasons(comp, manifest["files"]))
         for item in comp.get("supplemental", []):
             if item["status"] != "collected":
                 reasons.append(f"supplemental pending: {item['name']}")
@@ -315,7 +342,7 @@ def cmd_bundle(args: argparse.Namespace) -> int:
         for pattern in comp.get("notice_files", []):
             for rel in sorted(p for p in files if fnmatch.fnmatchcase(p, pattern)):
                 source = args.root / rel
-                if sha256_file(source) != files[rel][1]:
+                if not source.is_file() or sha256_file(source) != files[rel][1]:
                     raise SystemExit(f"{rel}: folder bytes differ from the build manifest")
                 target = out / "licenses" / cid / rel
                 target.parent.mkdir(parents=True, exist_ok=True)

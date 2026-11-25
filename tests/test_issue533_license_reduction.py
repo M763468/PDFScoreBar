@@ -413,7 +413,11 @@ def test_repository_policy_maps_components_without_inheriting_build_grant():
     policy = pc.load_policy(pc.DEFAULT_POLICY)
     files = {
         "python/python312.dll": [2, "0" * 64],
+        "python/LICENSE.txt": [10, "3" * 64],
         SP + "setuptools/cli-64.exe": [14336, "1" * 64],
+        SP + "setuptools/config/NOTICE": [10, "4" * 64],
+        SP + "setuptools/config/_validate_pyproject/NOTICE": [10, "5" * 64],
+        SP + "onnxruntime/ThirdPartyNotices.txt": [10, "6" * 64],
         SP + "pdfscorebar_addons.pth": [10, "2" * 64],
         "app/models/mmr/mmr_classifier_best.pth": [
             1,
@@ -437,6 +441,86 @@ def test_repository_policy_maps_components_without_inheriting_build_grant():
     assert "owner grant limited to build manifest" in ev.blocked["pdfscorebar-first-party"][0]
     assert "setuptools" in ev.used and "homr" in ev.used and "pypi-permissive" in ev.used
     assert "mmr-weights" in ev.used and "barline-cnn-weights" in ev.used
+
+
+@pytest.mark.parametrize(
+    "first_party_path",
+    ["app/src/main.py", "launcher/launcher.py", "PDFScoreBar.cmd"],
+)
+def test_first_party_source_or_launcher_activates_build_grant_gate(first_party_path):
+    """Application or launcher files must register pdfscorebar-first-party even without models."""
+
+    policy = pc.load_policy(pc.DEFAULT_POLICY)
+    files = {
+        "python/python312.dll": [2, "0" * 64],
+        "python/LICENSE.txt": [10, "1" * 64],
+        first_party_path: [7, "2" * 64],
+    }
+    manifest = {
+        "schema_version": pc.MANIFEST_SCHEMA,
+        "distributions": {},
+        "files": files,
+        "tree_digest": pc.tree_digest(files),
+    }
+    ev = pc.evaluate(manifest, policy, manifest_sha256="9" * 64)
+    assert ev.errors == []
+    assert "pdfscorebar-first-party" in ev.used
+    assert first_party_path in ev.used["pdfscorebar-first-party"]["files"]
+    assert set(ev.blocked) == {"pdfscorebar-first-party"}
+    assert "owner grant limited to build manifest" in ev.blocked["pdfscorebar-first-party"][0]
+
+    # Unreviewed native/model binaries under app/ must still fail closed as errors.
+    rogue_files = dict(files, **{"app/rogue.dll": [4, "3" * 64]})
+    rogue_manifest = dict(manifest, files=rogue_files, tree_digest=pc.tree_digest(rogue_files))
+    rogue_ev = pc.evaluate(rogue_manifest, policy, manifest_sha256="9" * 64)
+    assert any("app/rogue.dll" in e for e in rogue_ev.errors)
+
+
+def test_missing_required_notice_blocks_check_and_bundle(tmp_path):
+    """Absent required notice files must block both check and bundle."""
+
+    # Literal notice missing under the repository policy (e.g. python/LICENSE.txt).
+    root = _folder(tmp_path / "repo-policy", {"python/python312.dll": b"py"}, {})
+    check_report = tmp_path / "check-repo.json"
+    assert pc.main(["check", str(_manifest(root)), "--report", str(check_report)]) == 1
+    payload = json.loads(check_report.read_text(encoding="utf-8"))
+    assert payload["handoff_ready"] is False
+    assert payload["blocked"]["cpython"] == ["required notice missing: python/LICENSE.txt"]
+
+    out_repo = tmp_path / "bundle-repo"
+    assert pc.main(["bundle", str(root), str(out_repo)]) == 1
+    bundle_payload = json.loads((out_repo / "COMPLIANCE_REPORT.json").read_text(encoding="utf-8"))
+    assert bundle_payload["handoff_ready"] is False
+    assert bundle_payload["blocked"]["cpython"] == ["required notice missing: python/LICENSE.txt"]
+
+    # Wildcard-only notice pattern with zero matches must also block.
+    files_no_mit = {
+        k: v for k, v in BASE_FILES.items() if k != SP + "demo_pkg-1.0.dist-info/LICENSE"
+    }
+    root2 = _folder(tmp_path / "wildcard-policy", files_no_mit, {"demo-pkg": "1.0"})
+    policy_path = _write_policy(tmp_path, _policy())
+    supplemental = tmp_path / "private"
+    (supplemental / "nvidia").mkdir(parents=True)
+    (supplemental / "nvidia" / "eula.txt").write_text("EULA", encoding="utf-8")
+    assert pc.main(["check", str(_manifest(root2)), "--policy", str(policy_path)]) == 1
+    out2 = tmp_path / "bundle-wildcard"
+    assert (
+        pc.main(
+            [
+                "bundle",
+                str(root2),
+                str(out2),
+                "--policy",
+                str(policy_path),
+                "--supplemental-dir",
+                str(supplemental),
+            ]
+        )
+        == 1
+    )
+    bundle2 = json.loads((out2 / "COMPLIANCE_REPORT.json").read_text(encoding="utf-8"))
+    assert bundle2["handoff_ready"] is False
+    assert any("required notice missing" in msg for msg in bundle2["blocked"]["permissive"])
 
 
 def test_build_scoped_grant_requires_exact_manifest_digest(tmp_path):

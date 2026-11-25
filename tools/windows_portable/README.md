@@ -11,13 +11,36 @@ Requirements on the build machine: Windows 10/11 x64, Git, Python ≥ 3.11 and
 [uv](https://docs.astral.sh/uv/) on `PATH`, network access to PyPI, the PyTorch cu126
 index and GitHub, an NVIDIA GPU, and ~25 GB free (folder 5.5 GB + uv cache).
 
+Run the builder from a clean checkout of the frozen commit (`git checkout --detach <sha>`);
+the build refuses a builder whose files differ from that commit (line endings aside).
+
 ```bat
 python tools\windows_portable\build_portable.py --output C:\pb\PDFScoreBar ^
-    --asset-source C:\staged-assets --commit <sha>
+    --asset-source C:\staged-assets --commit <40-hex sha>
 ```
 
-* The source is `git archive <sha>`; the lock (`requirements-cu126.txt`), the asset list
-  (`assets.json`) and the launcher are taken from that archived commit.
+* **Payload (#551).** The folder ships the same application as the minimal `main`
+  distribution, plus only the Windows-only allowlist of [`overlay.json`](overlay.json):
+
+  | Folder part | Content | Checked by |
+  | --- | --- | --- |
+  | `app\` | Exactly the files selected by `docs/MINIMAL_MAINLINE_SURFACE.json` (`tools/materialize_distribution.py:selected_files`, the selector of `tools/release_candidate.py`), read as Git blobs of the commit, plus the `DISTRIBUTION_PROVENANCE.json` that `materialize_distribution.py materialize` writes for a clean checkout | `check_tree` of the isolated tree; path + SHA-256 equality with the selection |
+  | `launcher\launcher.py`, `launcher\manifest.py`, `PDFScoreBar.cmd` | The Windows entry point and its manifest checker (from `tools/windows_portable/`) | allowlist with reason, source and output SHA-256 |
+  | `python\` | CPython and the locked packages, DLLs, HOMR SegNet/OCR models | lock equality, HOMR commit, exclusions |
+  | `assets\` | barline CNN weights, DejaVu font and notice | `assets.json` SHA-256 |
+  | `runtime\markers\` | the two HOMR profile markers | fixed names |
+
+  Nothing else of the commit is copied: no tests, GT/evaluation data, score crops or other
+  `NotLicensed` materials, experiments, developer tools, docs other than the user guides,
+  the builder itself or Git metadata. `overlay.json` also lists the forbidden patterns
+  checked on `app\`, the main files that are inert on Windows (`Dockerfile`,
+  `.dockerignore`, `.gitignore`, `docker/distribution.py`, `docker/review_relay.py`, kept
+  so `app\` equals the main distribution) and the required file whose rights are still
+  pending (the MMR weight, #505).
+* The lock (`requirements-cu126.txt`), the asset list (`assets.json`) and the allowlist
+  are read from the commit too, and recorded by hash; they are build inputs, not shipped.
+* The payload without the Windows runtime can be assembled and audited on any platform:
+  `python tools/windows_portable/payload.py stage <new-dir> --commit <sha> --report <json>`.
 * CPython 3.12.12 is a uv-managed, relocatable build copied into `python\`; packages are
   installed into it directly (no venv, so nothing records the build location).
 * The order and pins follow the Dockerfile: torch/torchvision `2.14.0+cu126`, HOMR at the
@@ -33,10 +56,13 @@ python tools\windows_portable\build_portable.py --output C:\pb\PDFScoreBar ^
   image uses — the upstream 2.37 TTF differs and changes label glyphs). Every asset is
   checked against its SHA-256. The font can be exported from the distribution image with
   `docker run --rm --entrypoint cat <image> /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf`.
-* `runtime\build_manifest.json` records the source commit, pins, runtime versions,
+* `runtime\build_manifest.json` (schema v2) records `source_commit` (the application source
+  that jobs record, as before), `application_source_commit`, `builder_source_commit` and the
+  builder file hashes, the application selection (manifest SHA-256, selector hash and
+  sections, every file hash, provenance hash), the overlay records, pins, runtime versions,
   installed distributions, assets, and size + SHA-256 of every runtime file (CPython,
-  packages, native DLLs, app, assets, markers). A copy of the manifest digest is written
-  beside the folder (`<name>.build_manifest.sha256`).
+  packages, native DLLs, app, launcher, assets, markers). A copy of the manifest digest is
+  written beside the folder (`<name>.build_manifest.sha256`).
 
 Why cu126: torch cu130 and the CUDA 12 build of onnxruntime-gpu load two different
 `cudnn64_9.dll` builds into one process and fail (Issue #506). With cu126, ONNX Runtime
@@ -74,6 +100,9 @@ C:\PDFScoreBar\PDFScoreBar.cmd verify --full
   regenerated PDF and resume checkpoints are kept in the job; stopping the server and
   running `review` again resumes the same state.
 * `verify --full` re-hashes every file. Byte-code caches are not part of the inventory.
+  `verify` (and `preflight`) also check the payload contract: `app\` must equal the
+  recorded main selection and its shipped manifest, and every other file must belong to
+  the Windows allowlist.
 
 All mutable state (jobs, caches, temporary files, the generated HOMR runtime overlay) stays
 inside the folder. Moving the folder needs no rebuild: paths are derived at each start,

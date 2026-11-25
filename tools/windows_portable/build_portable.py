@@ -1,16 +1,20 @@
 """Build a Docker-free Windows portable folder from one source commit (#535).
 
-Run on Windows from a PDFScoreBar checkout with Python >= 3.11, Git and uv on PATH:
+Run on Windows from a clean PDFScoreBar checkout of the commit, with Python >= 3.11, Git
+and uv on PATH:
 
     python tools\\windows_portable\\build_portable.py --output C:\\pb\\PDFScoreBar ^
-        --asset-source C:\\staged-assets [--commit <sha>] [--cache C:\\pb-cache]
+        --asset-source C:\\staged-assets --commit <40-hex sha> [--cache C:\\pb-cache]
 
-The folder is assembled only from pinned inputs: ``git archive`` of the commit, a
-uv-managed CPython, ``requirements-cu126.txt``, the HOMR commit of the Dockerfile, the
-first-party SR weights tracked in the source (``models/sr_x4``, #533) and the hash-pinned
-assets of ``assets.json``. As in the Dockerfile, HOMR is initialized SegNet-only and the
-build fails if basicsr/realesrgan/gfpgan/facexlib or a HOMR transformer checkpoint is
-present (#533/#536). Every input is checked, the
+The folder is assembled only from pinned inputs: the main minimal-distribution
+application selected by ``docs/MINIMAL_MAINLINE_SURFACE.json`` and read as Git blobs of
+the commit (``app/``, #551; see ``payload.py``), the Windows-only allowlist of
+``overlay.json`` (``launcher/`` and ``PDFScoreBar.cmd``), a uv-managed CPython,
+``requirements-cu126.txt``, the HOMR commit of the Dockerfile, the first-party SR weights
+of the application (``models/sr_x4``, #533) and the hash-pinned assets of ``assets.json``.
+The running builder must equal the commit's builder files. As in the Dockerfile, HOMR is
+initialized SegNet-only and the build fails if basicsr/realesrgan/gfpgan/facexlib or a
+HOMR transformer checkpoint is present (#533/#536). Every input is checked, the
 installed distribution set must equal the lock, and ``runtime/build_manifest.json``
 records the provenance plus size/SHA-256 of every runtime file (including native
 DLLs) so ``PDFScoreBar.cmd verify --full`` can re-check the folder anywhere.
@@ -22,7 +26,6 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import io
 import json
 import os
 import platform
@@ -31,27 +34,32 @@ import shutil
 import subprocess
 import sys
 import urllib.request
-import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import payload  # noqa: E402
 from manifest import (  # noqa: E402
+    APP_ROOT,
     MANIFEST_PATH,
     MANIFEST_SCHEMA,
+    MARKERS_ROOT,
     build_inventory,
+    check_contract,
     sha256_file,
     tree_digest,
+    verify,
 )
+from materialize_distribution import check_tree  # noqa: E402
 
 CPYTHON_VERSION = "3.12.12"
 TORCH_INDEX = "https://download.pytorch.org/whl/cu126"
 HOMR_COMMIT = "457e7c6518a10ba755db2e60883419e56c4d7369"
 ORT_GPU = "onnxruntime-gpu==1.24.4"
 OPENCV = "opencv-python==4.11.0.86"
+# Replaced by the pinned commit's copies (written to the build cache) in build().
 LOCK = HERE / "requirements-cu126.txt"
 ASSETS = HERE / "assets.json"
-LAUNCHER_CMD = HERE / "PDFScoreBar.cmd"
 # Build tooling that is not part of the runtime lock.
 UNLOCKED = {"pip", "setuptools", "wheel", "homr"}
 # Same exclusion as the Dockerfile and docker/runtime_contract.py (#533/#536).
@@ -101,14 +109,16 @@ def installed_distributions(site_packages: Path) -> dict[str, str]:
     return found
 
 
-def stage_source(repo: Path, commit: str, app: Path) -> None:
-    archive = subprocess.run(
-        ["git", "-C", str(repo), "archive", "--format=zip", commit],
-        check=True,
-        capture_output=True,
-    ).stdout
-    with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
-        bundle.extractall(app)
+def pin_build_inputs(snap: payload.Snapshot, cache: Path) -> None:
+    """Use the lock and asset list of the pinned commit, never the working tree."""
+
+    global LOCK, ASSETS
+    inputs = cache / "inputs" / snap.commit
+    for relative, data in snap.inputs.items():
+        target = inputs / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    LOCK, ASSETS = inputs / payload.LOCK, inputs / payload.ASSETS
 
 
 def install_cpython(target: Path, *, env: dict[str, str], cache: Path) -> Path:
@@ -262,9 +272,66 @@ def runtime_identity(python: Path, *, env: dict[str, str]) -> dict:
     return json.loads(run([str(python), "-c", probe], env=env))
 
 
+def write_manifest(
+    root: Path,
+    snap: payload.Snapshot,
+    *,
+    started: dt.datetime,
+    builder: dict,
+    runtime: dict,
+    distributions: dict[str, str],
+    assets: list[dict],
+    removed_scripts: list[str],
+) -> Path:
+    """Inventory the folder, check the payload contract and write the build manifest."""
+
+    files = build_inventory(root)
+    manifest = {
+        "schema_version": MANIFEST_SCHEMA,
+        # Legacy meaning kept: the application source the jobs record (#535).
+        "source_commit": snap.commit,
+        "application_source_commit": snap.commit,
+        # check_running_builder() requires the builder files of the same commit.
+        "builder_source_commit": snap.commit,
+        "source_tree": snap.tree,
+        "built_at": started.isoformat(),
+        "builder": builder,
+        "application": snap.application_record(),
+        "windows_overlay": snap.overlay_record(),
+        "pins": {
+            "cpython": CPYTHON_VERSION,
+            "torch_index": TORCH_INDEX,
+            "homr_commit": HOMR_COMMIT,
+            "lock_sha256": payload.sha256(snap.inputs[payload.LOCK]),
+            "assets_sha256": payload.sha256(snap.inputs[payload.ASSETS]),
+        },
+        "runtime": runtime,
+        "distributions": dict(sorted(distributions.items())),
+        "assets": assets,
+        "removed_console_scripts": removed_scripts,
+        "file_count": len(files),
+        "total_bytes": sum(size for size, _ in files.values()),
+        "tree_digest": tree_digest(files),
+        "files": files,
+    }
+    problems = check_contract(root, manifest, files=files)
+    if problems:
+        raise RuntimeError("Portable payload contract failed:\n" + "\n".join(problems))
+    manifest_path = root / MANIFEST_PATH
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest, indent=1) + "\n", encoding="utf-8")
+    problems = verify(root, full=False)
+    if problems:
+        raise RuntimeError("Built folder does not verify:\n" + "\n".join(problems))
+    return manifest_path
+
+
 def build(args: argparse.Namespace) -> Path:
     repo = Path(git("rev-parse", "--show-toplevel", repo=Path.cwd()))
-    commit = git("rev-parse", args.commit + "^{commit}", repo=repo)
+    # Read and check everything pinned before creating the output folder.
+    snap = payload.snapshot(repo, args.commit)
+    commit = snap.commit
+    builder_files = payload.check_running_builder(snap)
     root = args.output.resolve()
     if root.exists() and any(root.iterdir()):
         raise FileExistsError(f"Output folder must be new or empty: {root}")
@@ -289,68 +356,51 @@ def build(args: argparse.Namespace) -> Path:
     started = dt.datetime.now(dt.timezone.utc)
     root.mkdir(parents=True, exist_ok=True)
 
-    log(f"source {commit}")
-    stage_source(repo, commit, root / "app")
-    # Use the lock, asset list and launcher of the archived commit, not the working tree.
-    global LOCK, ASSETS, LAUNCHER_CMD
-    pinned = root / "app" / "tools" / "windows_portable"
-    LOCK, ASSETS, LAUNCHER_CMD = (
-        pinned / "requirements-cu126.txt",
-        pinned / "assets.json",
-        pinned / "PDFScoreBar.cmd",
-    )
+    log(f"source {commit}: {len(snap.selected)} application files + Windows overlay")
+    payload.stage(snap, root)
+    pin_build_inputs(snap, cache)
     python = install_cpython(root / "python", env=env, cache=cache)
     install_packages(python, env=env)
-    patch_and_init(python, root / "app", env=env)
+    patch_and_init(python, root / APP_ROOT, env=env)
     removed_scripts = strip_console_scripts(root / "python")
     site_packages = root / "python" / "Lib" / "site-packages"
     distributions = check_distributions(site_packages)
     assets = stage_assets(root, args.asset_source, cache)
 
-    markers = root / "runtime" / "markers"
+    markers = root / MARKERS_ROOT
     markers.mkdir(parents=True, exist_ok=True)
     (markers / "homr_maintained_profile_commit.txt").write_text(HOMR_COMMIT + "\n")
     (markers / "pdfscore_maintained_profile_commit.txt").write_text("workspace-runtime\n")
-    lines = LAUNCHER_CMD.read_text(encoding="utf-8").splitlines()
-    (root / "PDFScoreBar.cmd").write_bytes(("\r\n".join(lines) + "\r\n").encode("ascii"))
     for cache_dir in root.rglob("__pycache__"):
         shutil.rmtree(cache_dir, ignore_errors=True)
+    # The HOMR patch/initialization must not have changed or added application files.
+    errors = check_tree(root / APP_ROOT)
+    if errors:
+        raise RuntimeError("Application changed during the build:\n" + "\n".join(errors))
 
-    files = build_inventory(root)
-    manifest = {
-        "schema_version": MANIFEST_SCHEMA,
-        "source_commit": commit,
-        "built_at": started.isoformat(),
-        "builder": {
+    manifest_path = write_manifest(
+        root,
+        snap,
+        started=started,
+        builder={
             "host_python": platform.python_version(),
             "uv": run(["uv", "--version"], env=env).strip(),
             "windows": platform.platform(),
+            "files": builder_files,
         },
-        "pins": {
-            "cpython": CPYTHON_VERSION,
-            "torch_index": TORCH_INDEX,
-            "homr_commit": HOMR_COMMIT,
-            "lock_sha256": sha256_file(LOCK),
-            "assets_sha256": sha256_file(ASSETS),
-        },
-        "runtime": runtime_identity(python, env=env),
-        "distributions": dict(sorted(distributions.items())),
-        "assets": assets,
-        "removed_console_scripts": removed_scripts,
-        "file_count": len(files),
-        "total_bytes": sum(size for size, _ in files.values()),
-        "tree_digest": tree_digest(files),
-        "files": files,
-    }
-    manifest_path = root / MANIFEST_PATH
-    manifest_path.write_text(json.dumps(manifest, indent=1) + "\n", encoding="utf-8")
+        runtime=runtime_identity(python, env=env),
+        distributions=distributions,
+        assets=assets,
+        removed_scripts=removed_scripts,
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     digest = sha256_file(manifest_path)
     # Keep an out-of-folder copy of the manifest digest beside the candidate.
     (root.parent / f"{root.name}.build_manifest.sha256").write_text(
         f"{digest}  {root.name}/{MANIFEST_PATH.as_posix()}\n", encoding="utf-8"
     )
     log(
-        f"done: {len(files)} files, {manifest['total_bytes'] / 2**30:.2f} GiB, "
+        f"done: {manifest['file_count']} files, {manifest['total_bytes'] / 2**30:.2f} GiB, "
         f"tree {manifest['tree_digest']}, manifest {digest}"
     )
     return root
@@ -362,7 +412,7 @@ def main() -> int:
         return 2
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--commit", default="HEAD")
+    parser.add_argument("--commit", required=True, help="frozen 40-hex source commit")
     parser.add_argument("--asset-source", type=Path)
     parser.add_argument("--cache", type=Path)
     args = parser.parse_args()

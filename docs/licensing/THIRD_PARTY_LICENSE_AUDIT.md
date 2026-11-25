@@ -15,6 +15,7 @@
 
 **2026-11-15 の最終調査は [§0.8](#final-20261115) と、受入条件の照合は [§0.9](#acceptance-final)。**
 **#533 の依存改善（非商用条件コード・HOMR transformer 重みの除去）と試用方式別の最終統合は [§0.10](#issue533-20261117)。** **Real-ESRGAN 重みの first-party SR への置換は [§0.11](#issue533-sr-20261118)。** 依存・重み・方式別の現在値は §0.10 を優先する。
+**実際の配布候補（Windows portable の同梱物、main 最小配布）ごとの判定と、MMR・barline CNN の学習 lineage は [DISTRIBUTION_READINESS.md](DISTRIBUTION_READINESS.md)（#553、2026-11-23）。**
 §0.0–§0.7 の 2026-11-13 時点の記述（Python 台帳の「Metadata only 94 / Unresolved 1」、OS の未検出 3 件、
 GPL/LGPL/AGPL の候補数、HOMR 重みの説明）は当時の結果として残す。分類と管理先が異なる場合は §0.8 を優先する。
 

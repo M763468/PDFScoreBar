@@ -1,10 +1,10 @@
 # ドキュメントガイド
 
-<!-- translation: {"original":"README.md","source":{"sha256":"f85f1c31bc3224ee427d78f2f48c100842267dbdf69d297389215db96f7fc1c4"},"state":"reviewed"} -->
+<!-- translation: {"original":"README.md","source":{"sha256":"2ce136188e38af9bfb1518b3b064c1b22f2949cc11026276d12698b5270dacd8"},"state":"reviewed"} -->
 
 [English / 原文](README.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `f85f1c31bc3224ee427d78f2f48c100842267dbdf69d297389215db96f7fc1c4`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `2ce136188e38af9bfb1518b3b064c1b22f2949cc11026276d12698b5270dacd8`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 知りたいことに答える文書から始めてください。開発リポジトリには過去の検証結果と検証ガイドが保持されていますが、それらの大半は最小配布物には含まれません。[ユーザーガイド](USER_GUIDE.ja.md)はサポート対象のインストールと操作の入口です。
 
@@ -14,6 +14,7 @@
 | 現在のパイプラインはどのように動作するか | [パイプラインアーキテクチャ（英語）](architecture/PIPELINE_ARCHITECTURE.md) / [日本語（reviewed）](architecture/PIPELINE_ARCHITECTURE.ja.md) |
 | 検出／番号付けの厳密な実装契約はどこか | [実装リファレンス（英語）](architecture/PIPELINE_ARCHITECTURE_REFERENCE.md) / [日本語（reviewed）](architecture/PIPELINE_ARCHITECTURE_REFERENCE.ja.md) |
 | 現在のリポジトリを実行するには | [環境ガイド（日本語）](dev/ENVIRONMENTS.ja.md)、必要に応じて[手動補正ワークフロー](dev/manual_correction_review_package.ja.md) |
+| Windows portable試用版を利用するには | [Windows版限定試用ガイド（日本語正本）](windows_portable/TRIAL_GUIDE.md)。ビルド担当者は[Windows portable README（英語）](../tools/windows_portable/README.md) |
 | 利用者の補正と GT／開発者向けツールはどう分離されているか | [利用者補正の境界](contracts/USER_CORRECTION_BOUNDARY.ja.md) |
 | エンジンの呼び出し元は何を送受信するか | [エンジンジョブ契約（英語）](contracts/ENGINE_JOB_CONTRACT.md) / [日本語（reviewed）](contracts/ENGINE_JOB_CONTRACT.ja.md) |
 | このリポジトリを変更・検証するには | [ブランチ方針](dev/BRANCH_POLICY.ja.md)、[検証方針](dev/VALIDATION_POLICY.ja.md)、[ローカル検証](dev/LOCAL_VALIDATION.ja.md)、[設定と実行入口](dev/CONFIGURATION_REFERENCE.ja.md) |

@@ -1,0 +1,858 @@
+{
+ "schema_version": "pdfscore.portable_compliance_policy.v1",
+ "trial_user_guide": "docs/windows_portable/TRIAL_GUIDE.md",
+ "reviewed": {
+  "date": "2026-11-24",
+  "issue": 553,
+  "portable_source_commit": "b14251544cea11dcb092fccdd1428ad0b3e4f62b",
+  "basis": "pinned win_amd64 wheels of tools/windows_portable/requirements-cu126.txt, python-build-standalone cpython-3.12.12+20251209, and real Windows portable build manifest/metadata (win553, b1425154); license review per distribution version, not per file digest",
+  "final_windows_build": {
+   "portable_source_commit": "33836ac5eaf3af70eecfc5c56710148d8822bf89",
+   "build_manifest_sha256": "1173dfb44654f25ee2f7b3a3b99e60a22a57e67cc10756055e0540fa84a00e90",
+   "tree_digest": "46f5cfd70b88e160c5da3f2456f25fffebbf39b24f26461ba1d464deea7c8677",
+   "windows_acceptance": "https://github.com/M763468/PDFScoreBar/issues/553#issuecomment-7130471211"
+  }
+ },
+ "recipient_acquired": [
+  {
+   "name": "triton-windows",
+   "version": "3.8.0.post29",
+   "source": "https://pypi.org/project/triton-windows/ (PDFScoreBar.cmd setup)",
+   "license": "MIT (triton-windows); contains NVIDIA CUDA components ptxas.exe, cuda.h, cuda.lib (NVIDIA CUDA Toolkit EULA) and TinyCC (LGPL-2.1)",
+   "note": "downloaded by the recipient from PyPI into addons/; not distributed by the PDFScoreBar owner"
+  }
+ ],
+ "components": {
+  "pdfscorebar-first-party": {
+   "title": "PDFScoreBar application, launcher and first-party SR weights",
+   "license": "AGPL-3.0-or-later (granted by the owner on 2026-11-24 for the build with manifest 1173dfb44654…, #505)",
+   "disposition": "cleared_with_notice",
+   "grant_manifest_sha256": "1173dfb44654f25ee2f7b3a3b99e60a22a57e67cc10756055e0540fa84a00e90",
+   "obligations": [
+    "LICENSE (GNU AGPL-3.0) and FIRST_PARTY_NOTICE.md in the bundle",
+    "Corresponding Source = app/ + launcher + builder (supplemental pdfscorebar-builder-<commit>.tar.gz)"
+   ],
+   "evidence": [
+    "#505",
+    "docs/licensing/REPOSITORY_LICENSE_OPTIONS.md",
+    "SR weights sha256 3b6b37a3947c7960632175efa81d24b5efbfc29e621004df79361ce040d8a1a6 (#533 §0.11: random init, synthetic data only)"
+   ],
+   "supplemental": [
+    {
+     "name": "PDFScoreBar builder source at 33836ac5eaf3af70eecfc5c56710148d8822bf89",
+     "file": "source/pdfscorebar-builder-33836ac5eaf3af70eecfc5c56710148d8822bf89.tar.gz",
+     "sha256": "91d064dc672a4f602a3bd0868d2c073147ad3c2e604b33c38acd0455e49d9637",
+     "status": "collected"
+    },
+    {
+     "name": "GNU AGPL 3.0 text (first-party license)",
+     "file": "first-party/LICENSE",
+     "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+     "status": "collected"
+    },
+    {
+     "name": "First-party license notice for this build",
+     "file": "first-party/FIRST_PARTY_NOTICE.md",
+     "sha256": "f1b5acd4b40ee31cc5d7b9d9c084ccc228cc35d6ca28b24982b084b424ce7b65",
+     "status": "collected"
+    }
+   ]
+  },
+  "mmr-weights": {
+   "title": "MMR classifier (models/mmr/mmr_classifier_best.pth, sha256 f163fa2a…)",
+   "license": "first-party fine-tuned checkpoint (torchvision ResNet18 IMAGENET1K_V1 initialization); covered by the first-party AGPL-3.0-or-later grant of 2026-11-24",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "Record first-party training and torchvision ResNet18 IMAGENET1K_V1 initialization provenance",
+    "Include the checkpoint in the first-party grant under #505; no training score images/PDFs/GT are shipped"
+   ],
+   "review_note": "No applicable checkpoint-specific redistribution prohibition was identified in #553. Training score PDFs, scans, crops and GT are NOT included in the distributable. No blanket conclusion is made about all ImageNet weights; any later identified binding restriction must be assessed for the specific file and use. Owner's actual grant of the first-party work is tracked by pdfscorebar-first-party (#505), not a second independent model gate."
+  },
+  "barline-cnn-weights": {
+   "title": "Barline CNN issue296-d27-v1 (sha256 f41a9b57…)",
+   "license": "first-party fine-tuned checkpoint (torchvision EfficientNet-B0 IMAGENET1K_V1, originally trained in timm); covered by the first-party AGPL-3.0-or-later grant of 2026-11-24",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "Retain torchvision BSD-3-Clause / timm Apache-2.0 provenance and upstream ImageNet-use caution in NOTICE",
+    "DeepScoresV2 CC BY 4.0 attribution",
+    "Include checkpoint in first-party grant under #505; training score images/PDFs/GT are not shipped"
+   ],
+   "attribution": "Trained in part on DeepScoresV2 (Tuggener et al., 2020, doi:10.5281/zenodo.4012193), CC BY 4.0.",
+   "supplemental": [
+    {
+     "name": "CC BY 4.0 legal code",
+     "file": "common/CC-BY-4.0.txt",
+     "url": "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
+     "status": "collected"
+    }
+   ],
+   "review_note": "The upstream timm README cautions that ImageNet-derived weights may have dataset-related terms, especially in commercial use; #553 did not identify a binding prohibition on redistribution of this fine-tuned checkpoint. Record that caution and provenance, rather than mandating retraining. Training score PDFs, scans, crops and GT are NOT included. Reassess if a specific applicable restriction is identified. The first-party license grant remains a separate #505 gate."
+  },
+  "homr": {
+   "title": "HOMR 457e7c6518a1 (modified by docker/patch_homr_onnx_provider.py)",
+   "license": "AGPL-3.0",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "AGPL-3.0 text",
+    "prominent modification notice with date",
+    "Corresponding Source: upstream commit + patch script + build steps"
+   ],
+   "supplemental": [
+    {
+     "name": "GNU AGPL 3.0 text",
+     "file": "common/AGPL-3.0.txt",
+     "url": "https://www.gnu.org/licenses/agpl-3.0.txt",
+     "status": "collected"
+    },
+    {
+     "name": "HOMR source at 457e7c65 + patch",
+     "file": "source/homr-457e7c6518a10ba755db2e60883419e56c4d7369.tar.gz",
+     "sha256": "41511b373d6ae1a182f07c8657eec86a52aea706f54351cdd79228a7c76bafa5",
+     "status": "collected"
+    },
+    {
+     "name": "HOMR modification notice (AGPL-3.0 section 5(a))",
+     "file": "homr/MODIFICATIONS.md",
+     "sha256": "24e63f0fac6c7dcbfed93863ca1ac6f268dca5e9d763313581d846930b0e9751",
+     "status": "collected"
+    }
+   ]
+  },
+  "homr-segnet": {
+   "title": "HOMR SegNet 308 FP16 ONNX (sha256 60f49549…)",
+   "license": "AGPL-3.0 (upstream FAQ); trained on DeepScoresV2 (CC BY 4.0)",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "DeepScoresV2 attribution"
+   ],
+   "attribution": "HOMR segmentation model trained on DeepScoresV2 (Tuggener et al.), CC BY 4.0.",
+   "supplemental": [
+    {
+     "name": "CC BY 4.0 legal code",
+     "file": "common/CC-BY-4.0.txt",
+     "url": "https://creativecommons.org/licenses/by/4.0/legalcode.txt",
+     "status": "collected"
+    }
+   ]
+  },
+  "pymupdf": {
+   "title": "PyMuPDF 1.26.4 / MuPDF",
+   "license": "AGPL-3.0 (or Artifex commercial)",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "AGPL-3.0 full text (wheel ships only a one-line COPYING)",
+    "Corresponding Source incl. MuPDF",
+    "MuPDF third-party notices"
+   ],
+   "supplemental": [
+    {
+     "name": "GNU AGPL 3.0 text",
+     "file": "common/AGPL-3.0.txt",
+     "url": "https://www.gnu.org/licenses/agpl-3.0.txt",
+     "status": "collected"
+    },
+    {
+     "name": "PyMuPDF 1.26.4 sdist",
+     "file": "source/pymupdf-1.26.4.tar.gz",
+     "sha256": "be13a066d42bfaed343a488168656637c4d9843ddc63b768dc827c9dfc6b9989",
+     "status": "collected"
+    },
+    {
+     "name": "MuPDF 1.26.7 source (version_mupdf of PyMuPDF 1.26.4 setup.py)",
+     "file": "source/mupdf-1.26.7-source.tar.gz",
+     "sha256": "52014fcecac48ae3ead947eb90572ff7da9acf9550711675872944e8ef8c4966",
+     "status": "collected"
+    }
+   ]
+  },
+  "cpython": {
+   "title": "CPython 3.12.12 (python-build-standalone) incl. OpenSSL, SQLite, libffi, Tcl/Tk, MSVC runtime",
+   "license": "PSF-2.0 and bundled licenses; Microsoft Distributable Code conditions",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "retain python/LICENSE.txt (includes Microsoft Distributable Code conditions)",
+    "record the python-build-standalone release tag (not in build_manifest v2)"
+   ],
+   "notice_files": [
+    "python/LICENSE.txt",
+    "python/tcl/*license.terms"
+   ]
+  },
+  "setuptools": {
+   "title": "setuptools 84.2.1 (torch runtime dependency; includes vendored packages)",
+   "license": "MIT (vendored: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0 pure-Python autocommand 2.2.2)",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "retain setuptools dist-info, _vendor dist-info licenses, and setuptools/config/**/NOTICE",
+    "vendored autocommand 2.2.2 (LGPL-3.0) is shipped unmodified as Python source (.py); supply the GPL-3.0 text incorporated by LGPL-3.0 alongside autocommand's LGPL-3.0 text",
+    "unmodified PyPI release (installed as a required runtime dependency of torch==2.14.0+cu126)"
+   ],
+   "notice_files": [
+    "python/Lib/site-packages/setuptools-*.dist-info/licenses/*",
+    "python/Lib/site-packages/setuptools/_vendor/*.dist-info/*LICEN[CS]E*",
+    "python/Lib/site-packages/setuptools/_vendor/*.dist-info/licenses/*",
+    "python/Lib/site-packages/setuptools/config/NOTICE",
+    "python/Lib/site-packages/setuptools/config/_validate_pyproject/NOTICE"
+   ],
+   "supplemental": [
+    {
+     "name": "GNU GPL 3.0 text (incorporated by vendored autocommand LGPL-3.0)",
+     "file": "common/GPL-3.0.txt",
+     "url": "https://www.gnu.org/licenses/gpl-3.0.txt",
+     "status": "collected"
+    }
+   ]
+  },
+  "pypi-permissive": {
+   "title": "Python packages under permissive licenses (MIT/BSD/Apache-2.0/PSF/MPL-2.0 unmodified)",
+   "license": "see licenses/",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "retain the dist-info license files (copied into licenses/)",
+    "certifi: MPL-2.0 source is the unmodified PyPI release"
+   ],
+   "notice_files": [
+    "python/Lib/site-packages/*.dist-info/*LICEN[CS]E*",
+    "python/Lib/site-packages/*.dist-info/licenses/*",
+    "python/Lib/site-packages/*.dist-info/COPYING*",
+    "python/Lib/site-packages/*.dist-info/NOTICE*",
+    "python/Lib/site-packages/*.dist-info/AUTHORS*",
+    "python/Lib/site-packages/onnxruntime/ThirdPartyNotices.txt",
+    "python/Lib/site-packages/cv2/LICENSE*.txt",
+    "python/Lib/site-packages/numpy/*LICENSE*",
+    "python/Lib/site-packages/scipy/*LICENSE*",
+    "python/Lib/site-packages/scipy/*COPYING*",
+    "python/Lib/site-packages/sklearn/*LICENSE",
+    "python/Lib/site-packages/sklearn/*COPYRIGHT",
+    "python/Lib/site-packages/torch/_vendor/*LICENSE*"
+   ]
+  },
+  "pypi-missing-license-text": {
+   "title": "flatbuffers, rapidocr-onnxruntime, types-Pillow (Apache-2.0, wheel ships no license text)",
+   "license": "Apache-2.0",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "supply the Apache-2.0 text"
+   ],
+   "supplemental": [
+    {
+     "name": "Apache License 2.0 text",
+     "file": "common/Apache-2.0.txt",
+     "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+     "status": "collected"
+    }
+   ]
+  },
+  "paddleocr-models": {
+   "title": "PP-OCR ONNX models bundled by rapidocr / rapidocr-onnxruntime",
+   "license": "Apache-2.0 (rapidocr MODEL_LICENSES.md; PaddleOCR)",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "Apache-2.0 text and RapidOCR MODEL_LICENSES.md"
+   ],
+   "supplemental": [
+    {
+     "name": "Apache License 2.0 text",
+     "file": "common/Apache-2.0.txt",
+     "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+     "status": "collected"
+    }
+   ]
+  },
+  "opencv-ffmpeg": {
+   "title": "FFmpeg (opencv_videoio_ffmpeg DLL in opencv-python and opencv-python-headless)",
+   "license": "LGPL-2.1-or-later",
+   "disposition": "exclude",
+   "open_issue": "must not be shipped: the builder removes the unused video plugins (build_exclusions, #553), so no LGPL source offer is needed"
+  },
+  "nvidia-cuda-redistributable": {
+   "title": "NVIDIA CUDA 12.6 runtime DLLs listed in CUDA EULA Attachment A (cudart, cuBLAS/cuBLASLt, cuFFT/cuFFTW, cuRAND, cuSOLVER, cuSPARSE, NVRTC, nvJitLink, CUPTI, NVTX, nvJPEG, libdevice)",
+   "license": "NVIDIA CUDA Toolkit EULA",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "§1.1.2: application has material additional functionality; DLLs only accessed by the application; recipient terms consistent with the EULA; notify NVIDIA of known non-compliance",
+    "unmodified object code"
+   ],
+   "supplemental": [
+    {
+     "name": "NVIDIA CUDA Toolkit EULA v12.6 (Attachment A)",
+     "file": "nvidia/cuda-eula-12.6.3.txt",
+     "url": "https://docs.nvidia.com/cuda/archive/12.6.3/eula/index.html",
+     "status": "collected"
+    },
+    {
+     "name": "Recipient terms (owner approved)",
+     "file": "terms/RECIPIENT_TERMS.md",
+     "status": "collected",
+     "note": "approved by the owner on 2026-11-24",
+     "sha256": "13cf6f8d42ac2cb805f77d670daee406a5b681d610c4f73560b94706618a3113"
+    }
+   ]
+  },
+  "nvidia-cudnn": {
+   "title": "NVIDIA cuDNN 9 runtime DLLs (bundled by torch cu126)",
+   "license": "NVIDIA cuDNN Software License Agreement",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "distribute only the runtime DLLs with the application; SLA conditions"
+   ],
+   "supplemental": [
+    {
+     "name": "NVIDIA cuDNN SLA text for 9.x",
+     "file": "nvidia/cudnn-sla.txt",
+     "url": "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+     "status": "collected",
+     "note": "latest SLA (updated 2026-09-02); shipped DLL is cuDNN 9.10.2.21"
+    }
+   ]
+  },
+  "nvidia-unlisted": {
+   "title": "NVIDIA files not listed as Windows redistributables in torch: nvperf_host.dll, cusolverMg64_11.dll",
+   "license": "NVIDIA CUDA Toolkit EULA",
+   "disposition": "exclude",
+   "open_issue": "must not be shipped: the builder removes them (user_setup.SETUP_SPEC build_exclusions, #553); no torch library loads them for inference",
+   "supplemental": [
+    {
+     "name": "NVIDIA CUDA Toolkit EULA v12.6 (Attachment A)",
+     "file": "nvidia/cuda-eula-12.6.3.txt",
+     "url": "https://docs.nvidia.com/cuda/archive/12.6.3/eula/index.html",
+     "status": "collected"
+    }
+   ]
+  },
+  "triton-recipient": {
+   "title": "triton-windows 3.8.0.post29 incl. NVIDIA ptxas.exe/cuda.h/cuda.lib and TinyCC",
+   "license": "MIT; NVIDIA CUDA Toolkit EULA; LGPL-2.1",
+   "disposition": "exclude",
+   "open_issue": "must not be shipped: the recipient installs it from PyPI with PDFScoreBar.cmd setup (#553)"
+  },
+  "intel-openmp": {
+   "title": "Intel OpenMP runtime (libiomp5md.dll, libiompstubs5md.dll bundled by torch)",
+   "license": "Intel End User License Agreement for Developer Tools (Version August 2024), from intel-openmp 2026.2.0; shipped DLL FileVersion 20260213",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "EULA 2.1.D: distribute only as part of the application, unmodified, under recipient terms that prohibit reverse engineering the Intel DLL (RECIPIENT_TERMS.md)",
+    "3.1(x): not linked or relicensed into the AGPL work; it stays a separate torch dependency",
+    "Intel EULA and third-party-programs.txt"
+   ],
+   "residual": "the exact EULA version of the torch-bundled build (FileVersion 20260213; intel-openmp 2026.1.0 on PyPI has the same version and size) is not stated in the wheel; fallback: let setup install intel-openmp 2026.1.0 from PyPI",
+   "supplemental": [
+    {
+     "name": "Recipient terms (owner approved)",
+     "file": "terms/RECIPIENT_TERMS.md",
+     "status": "collected",
+     "note": "approved by the owner on 2026-11-24",
+     "sha256": "13cf6f8d42ac2cb805f77d670daee406a5b681d610c4f73560b94706618a3113"
+    },
+    {
+     "name": "Intel Developer Tools EULA (Aug 2024)",
+     "file": "intel/LICENSE.utf8.txt",
+     "status": "collected"
+    },
+    {
+     "name": "Intel OpenMP third-party-programs.txt",
+     "file": "intel/third-party-programs.txt",
+     "status": "collected"
+    }
+   ]
+  },
+  "torch-native-misc": {
+   "title": "libuv (uv.dll) and zlib (zlibwapi.dll) bundled by torch; libjpeg-turbo, libpng, libwebp, zlib bundled by torchvision",
+   "license": "MIT / Zlib / IJG+BSD-3 / libpng / BSD-3",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "include the upstream notices missing from the wheels"
+   ],
+   "supplemental": [
+    {
+     "name": "libuv, zlib, libjpeg-turbo, libpng, libwebp license texts",
+     "file": "misc/native-libs-licenses.txt",
+     "status": "collected",
+     "note": "current upstream texts; zlibwapi.dll reports zlib 1.2.3"
+    }
+   ]
+  },
+  "torch": {
+   "title": "PyTorch 2.14.0+cu126 / torchvision 0.29.0+cu126 (own code)",
+   "license": "BSD-3-Clause and bundled third-party licenses",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "retain torch dist-info licenses/third_party/*"
+   ],
+   "notice_files": [
+    "python/Lib/site-packages/torch-*.dist-info/licenses/*"
+   ]
+  },
+  "msvc-runtime": {
+   "title": "Microsoft Visual C++ runtime DLLs (vcruntime140*, msvcp140*, vcomp140) bundled by CPython and wheels",
+   "license": "Microsoft Visual Studio Distributable Code",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "unmodified; run only on Windows; terms at least as protective as Microsoft's (python/LICENSE.txt 'Additional Conditions for this Windows binary build')"
+   ],
+   "notice_files": [
+    "python/LICENSE.txt"
+   ]
+  },
+  "dejavu-font": {
+   "title": "DejaVu Sans Bold (Debian fonts-dejavu-core)",
+   "license": "Bitstream Vera / DejaVu (public domain changes)",
+   "disposition": "cleared_with_notice",
+   "obligations": [
+    "ship COPYRIGHT.fonts-dejavu-core beside the font"
+   ],
+   "notice_files": [
+    "assets/fonts/COPYRIGHT.fonts-dejavu-core"
+   ]
+  }
+ },
+ "distributions": {
+  "certifi": {
+   "version": "2026.10.23",
+   "component": "pypi-permissive"
+  },
+  "charset-normalizer": {
+   "version": "3.5.2",
+   "component": "pypi-permissive"
+  },
+  "cloudpickle": {
+   "version": "3.1.2",
+   "component": "pypi-permissive"
+  },
+  "colorama": {
+   "version": "0.4.6",
+   "component": "pypi-permissive"
+  },
+  "coloredlogs": {
+   "version": "15.0.1",
+   "component": "pypi-permissive"
+  },
+  "colorlog": {
+   "version": "6.12.0",
+   "component": "pypi-permissive"
+  },
+  "contourpy": {
+   "version": "1.4.0",
+   "component": "pypi-permissive"
+  },
+  "cycler": {
+   "version": "0.12.1",
+   "component": "pypi-permissive"
+  },
+  "filelock": {
+   "version": "4.2.9",
+   "component": "pypi-permissive"
+  },
+  "flatbuffers": {
+   "version": "25.12.19",
+   "component": "pypi-missing-license-text"
+  },
+  "fonttools": {
+   "version": "4.68.0",
+   "component": "pypi-permissive"
+  },
+  "fsspec": {
+   "version": "2026.9.0",
+   "component": "pypi-permissive"
+  },
+  "humanfriendly": {
+   "version": "10.0",
+   "component": "pypi-permissive"
+  },
+  "idna": {
+   "version": "3.20",
+   "component": "pypi-permissive"
+  },
+  "jinja2": {
+   "version": "3.1.6",
+   "component": "pypi-permissive"
+  },
+  "joblib": {
+   "version": "1.6.0",
+   "component": "pypi-permissive"
+  },
+  "kiwisolver": {
+   "version": "1.5.1",
+   "component": "pypi-permissive"
+  },
+  "markupsafe": {
+   "version": "3.0.4",
+   "component": "pypi-permissive"
+  },
+  "matplotlib": {
+   "version": "3.10.6",
+   "component": "pypi-permissive"
+  },
+  "mpmath": {
+   "version": "1.3.0",
+   "component": "pypi-permissive"
+  },
+  "narwhals": {
+   "version": "2.28.0",
+   "component": "pypi-permissive"
+  },
+  "networkx": {
+   "version": "3.7",
+   "component": "pypi-permissive"
+  },
+  "numpy": {
+   "version": "2.5.3",
+   "component": "pypi-permissive"
+  },
+  "omegaconf": {
+   "version": "2.4.0",
+   "component": "pypi-permissive"
+  },
+  "onnxruntime-gpu": {
+   "version": "1.24.4",
+   "component": "pypi-permissive"
+  },
+  "opencv-python": {
+   "version": "4.11.0.86",
+   "component": "pypi-permissive"
+  },
+  "opencv-python-headless": {
+   "version": "4.14.0.94",
+   "component": "pypi-permissive"
+  },
+  "packaging": {
+   "version": "26.3",
+   "component": "pypi-permissive"
+  },
+  "pillow": {
+   "version": "12.3.0",
+   "component": "pypi-permissive"
+  },
+  "protobuf": {
+   "version": "7.36.2",
+   "component": "pypi-permissive"
+  },
+  "psutil": {
+   "version": "7.2.2",
+   "component": "pypi-permissive"
+  },
+  "pyclipper": {
+   "version": "1.4.0",
+   "component": "pypi-permissive"
+  },
+  "pymupdf": {
+   "version": "1.26.4",
+   "component": "pymupdf"
+  },
+  "pyparsing": {
+   "version": "3.3.3",
+   "component": "pypi-permissive"
+  },
+  "pypdfium2": {
+   "version": "5.15.1",
+   "component": "pypi-permissive"
+  },
+  "pyreadline3": {
+   "version": "3.5.6",
+   "component": "pypi-permissive"
+  },
+  "python-dateutil": {
+   "version": "4.0.0",
+   "component": "pypi-permissive"
+  },
+  "pyyaml": {
+   "version": "6.0.3",
+   "component": "pypi-permissive"
+  },
+  "rapidocr": {
+   "version": "3.10.0",
+   "component": "pypi-permissive"
+  },
+  "rapidocr-onnxruntime": {
+   "version": "1.4.4",
+   "component": "pypi-missing-license-text"
+  },
+  "requests": {
+   "version": "2.34.2",
+   "component": "pypi-permissive"
+  },
+  "scikit-learn": {
+   "version": "1.9.1",
+   "component": "pypi-permissive"
+  },
+  "scipy": {
+   "version": "1.18.1",
+   "component": "pypi-permissive"
+  },
+  "setuptools": {
+   "version": "84.2.1",
+   "component": "setuptools",
+   "note": "installed by uv from PyPI as a required dependency of torch==2.14.0+cu126 (Requires-Dist: setuptools>=77.0.3); unlocked in build_portable.py; confirmed from win553 real build metadata and licenses"
+  },
+  "shapely": {
+   "version": "2.2.0",
+   "component": "pypi-permissive"
+  },
+  "six": {
+   "version": "1.17.0",
+   "component": "pypi-permissive"
+  },
+  "sympy": {
+   "version": "1.14.0",
+   "component": "pypi-permissive"
+  },
+  "threadpoolctl": {
+   "version": "3.8.0",
+   "component": "pypi-permissive"
+  },
+  "torch": {
+   "version": "2.14.0+cu126",
+   "component": "torch"
+  },
+  "torchvision": {
+   "version": "0.29.0+cu126",
+   "component": "torch"
+  },
+  "tqdm": {
+   "version": "4.70.1",
+   "component": "pypi-permissive"
+  },
+  "triton-windows": {
+   "version": "3.8.0.post29",
+   "component": "triton-recipient"
+  },
+  "types-pillow": {
+   "version": "10.2.0.20240822",
+   "component": "pypi-missing-license-text"
+  },
+  "typing-extensions": {
+   "version": "4.16.0",
+   "component": "pypi-permissive"
+  },
+  "tzdata": {
+   "version": "2026.6",
+   "component": "pypi-permissive"
+  },
+  "urllib3": {
+   "version": "2.8.0",
+   "component": "pypi-permissive"
+  },
+  "homr": {
+   "version": "0.1.0",
+   "component": "homr",
+   "note": "git 457e7c6518a10ba755db2e60883419e56c4d7369 built with POETRY_DYNAMIC_VERSIONING_BYPASS=0.1.0; confirmed from win553 real build metadata/direct_url.json"
+  },
+  "pip": {
+   "version": "25.3",
+   "component": "pypi-permissive",
+   "note": "bundled in python-build-standalone cpython-3.12.12+20251209 (python/BUILD; uv 0.9.17); MIT license and vendored license set verified on win553 (identical file set to 26.0.1); other python-build-standalone releases may ship other pip versions"
+  }
+ },
+ "file_rules": [
+  {
+   "pattern": "app/models/sr_x4/*.pth",
+   "component": "pdfscorebar-first-party",
+   "sha256": "3b6b37a3947c7960632175efa81d24b5efbfc29e621004df79361ce040d8a1a6"
+  },
+  {
+   "pattern": "app/models/mmr/mmr_classifier_best.pth",
+   "component": "mmr-weights",
+   "sha256": "f163fa2a7679d12c0f4fe6fc2fadc7ed1f144035779a18b83a303bfa6d35903a"
+  },
+  {
+   "pattern": "assets/model-cache/barline_cnn/*.pth",
+   "component": "barline-cnn-weights",
+   "sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd"
+  },
+  {
+   "pattern": "python/Lib/site-packages/pdfscorebar_addons.pth",
+   "component": "pdfscorebar-first-party"
+  },
+  {
+   "pattern": "assets/fonts/*.ttf",
+   "component": "dejavu-font",
+   "sha256": "d1c3ff99f1e1ce1827a33efd4dad81f40babda06bff9e43bd7591c86662a287b"
+  },
+  {
+   "pattern": "python/Lib/site-packages/homr/segmentation/*.onnx",
+   "component": "homr-segnet",
+   "sha256": "60f495496cb41473c0521d0811d8f44b9d5cff892d287974a8aebb3eaee2fa83"
+  },
+  {
+   "pattern": "python/Lib/site-packages/rapidocr/models/*.onnx",
+   "component": "paddleocr-models"
+  },
+  {
+   "pattern": "python/Lib/site-packages/rapidocr_onnxruntime/models/*.onnx",
+   "component": "paddleocr-models"
+  },
+  {
+   "pattern": "python/vcruntime140*.dll",
+   "component": "msvc-runtime"
+  },
+  {
+   "pattern": "python/Lib/site-packages/*msvcp140*.dll",
+   "component": "msvc-runtime"
+  },
+  {
+   "pattern": "python/Lib/site-packages/*vcomp140*.dll",
+   "component": "msvc-runtime"
+  },
+  {
+   "pattern": "python/Lib/site-packages/*vcruntime140*.dll",
+   "component": "msvc-runtime"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/nvperf_host.dll",
+   "component": "nvidia-unlisted"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cusolverMg64_*.dll",
+   "component": "nvidia-unlisted"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cudnn*64_9.dll",
+   "component": "nvidia-cudnn"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cudart64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cublas64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cublasLt64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cufft64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cufftw64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/curand64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cusolver64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cusparse64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/nvrtc64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/nvrtc-builtins64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/nvJitLink_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/cupti64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/nvToolsExt64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/cudart64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/nvjpeg64_*.dll",
+   "component": "nvidia-cuda-redistributable"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/libiomp*md.dll",
+   "component": "intel-openmp"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/uv.dll",
+   "component": "torch-native-misc"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/lib/zlibwapi.dll",
+   "component": "torch-native-misc"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/jpeg8.dll",
+   "component": "torch-native-misc"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/libpng16.dll",
+   "component": "torch-native-misc"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/libsharpyuv.dll",
+   "component": "torch-native-misc"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/libwebp.dll",
+   "component": "torch-native-misc"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/zlib.dll",
+   "component": "torch-native-misc"
+  },
+  {
+   "pattern": "python/Lib/site-packages/triton/*",
+   "component": "triton-recipient"
+  },
+  {
+   "pattern": "python/Lib/site-packages/cv2/opencv_videoio_ffmpeg*_64.dll",
+   "component": "opencv-ffmpeg"
+  },
+  {
+   "pattern": "python/Lib/site-packages/pymupdf/*",
+   "component": "pymupdf"
+  },
+  {
+   "pattern": "python/Lib/site-packages/fitz/*",
+   "component": "pymupdf"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torch/*",
+   "component": "torch"
+  },
+  {
+   "pattern": "python/Lib/site-packages/torchvision/*",
+   "component": "torch"
+  },
+  {
+   "pattern": "python/Lib/site-packages/functorch/*",
+   "component": "torch"
+  },
+  {
+   "pattern": "python/Lib/site-packages/homr/*",
+   "component": "homr"
+  },
+  {
+   "pattern": "python/Lib/site-packages/setuptools/*",
+   "component": "setuptools"
+  },
+  {
+   "pattern": "python/Lib/site-packages/*",
+   "component": "pypi-permissive"
+  },
+  {
+   "pattern": "python/*",
+   "component": "cpython"
+  }
+ ],
+ "source_instructions": [
+  "# Corresponding Source / 対応ソース",
+  "",
+  "- PDFScoreBar: `app/` of the portable folder is the complete application source; the builder (`tools/windows_portable/*`, `requirements-cu126.txt`, `assets.json`, `tools/materialize_distribution.py`, `tools/release_candidate.py`) at `builder_source_commit` is `supplemental/pdfscorebar-first-party/pdfscorebar-builder-<commit>.tar.gz`.",
+  "- HOMR (AGPL-3.0): `supplemental/homr/homr-457e7c6518a10ba755db2e60883419e56c4d7369.tar.gz` (upstream commit) plus `app/docker/patch_homr_onnx_provider.py` (modification, applied at build time; see `supplemental/homr/MODIFICATIONS.md`) and `app/docker/init_homr_segnet.py` (model initialization).",
+  "- PyMuPDF / MuPDF (AGPL-3.0): `supplemental/pymupdf/pymupdf-1.26.4.tar.gz` and `supplemental/pymupdf/mupdf-1.26.7-source.tar.gz` (the MuPDF release pinned by PyMuPDF 1.26.4).",
+  "- No LGPL binary is shipped: OpenCV's FFmpeg plugins are removed at build time and TinyCC comes with triton-windows, which the recipient installs from PyPI. setuptools' vendored autocommand 2.2.2 (LGPL-3.0) is shipped unmodified as Python source files under `python/Lib/site-packages/setuptools/_vendor/autocommand/` with its LGPL-3.0 notice and the incorporated GPL-3.0 text.",
+  "- All other Python packages are unmodified releases from PyPI / download.pytorch.org at the versions in `THIRD_PARTY_NOTICES.md`."
+ ]
+}

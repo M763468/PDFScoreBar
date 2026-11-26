@@ -321,11 +321,12 @@ def _incomplete_transaction_problem(root: Path) -> str | None:
                 "'PDFScoreBar.cmd setup' to recover"
             )
         return None
-    if previous.exists() and site.exists():
-        return (
-            "Incomplete add-on setup swap (.previous backup still exists): run "
-            "'PDFScoreBar.cmd setup' to recover"
-        )
+    if previous.exists() or previous.is_symlink():
+        if site.exists() or site.is_symlink() or not (root / STATE).is_file():
+            return (
+                "Incomplete add-on setup swap (.previous backup still exists): run "
+                "'PDFScoreBar.cmd setup' to recover"
+            )
     return None
 
 
@@ -435,29 +436,34 @@ def _record_files(site: Path) -> dict[str, list]:
 def _reconcile_without_transaction(root: Path) -> None:
     """Reconcile site-packages and .previous by full SHA-256 when no valid marker exists."""
 
-    site, previous = root / ADDONS_SITE, root / PREVIOUS
+    site, previous, state_path = root / ADDONS_SITE, root / PREVIOUS, root / STATE
     try:
         state = load_state(root)
     except SetupError:
         state = None
+
     if previous.is_dir():
-        if not site.exists() and not site.is_symlink():
-            previous.rename(site)
-        elif state is not None and _site_matches_state(site, state):
+        if state is not None and _site_matches_state(site, state):
             _remove_path(previous)
-        elif state is not None and _site_matches_state(previous, state):
+            return
+        if state is not None and _site_matches_state(previous, state):
             _remove_path(site)
             previous.rename(site)
-        else:
-            # Neither directory matches setup_state.json: drop both so setup reinstalls cleanly.
-            _remove_path(previous)
-            _remove_path(site)
-    else:
+            return
+        # Neither directory matches setup_state.json (or state is missing/unreadable).
+        # Drop site and state before .previous so an interruption never leaves .previous
+        # gone while stale state still matches a mismatched site by file size alone.
+        _remove_path(site)
+        _remove_path(state_path)
         _remove_path(previous)
-        if (site.exists() or site.is_symlink()) and (
-            state is None or not _site_matches_state(site, state)
-        ):
-            _remove_path(site)
+        return
+
+    if state is not None and _site_matches_state(site, state):
+        _remove_path(previous)
+        return
+    _remove_path(site)
+    _remove_path(state_path)
+    _remove_path(previous)
 
 
 def _recover(root: Path) -> None:

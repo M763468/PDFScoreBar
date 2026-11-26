@@ -1515,3 +1515,162 @@ def test_interrupted_rollback_is_idempotent(folder: Path, tmp_path: Path, monkey
     assert state_path.read_bytes() == old_state_bytes
     assert user_setup.addons_problems(folder, full=True) == []
     _assert_no_transaction_leftovers(folder)
+
+
+def _installed_site_copy(tmp_path: Path, name: str, wheel: Path) -> tuple[Path, bytes]:
+    other = tmp_path / name / "PDFScoreBar"
+    pth = other / user_setup.PTH_PATH
+    pth.parent.mkdir(parents=True)
+    pth.write_text(user_setup.PTH_LINE + "\n", encoding="utf-8")
+    _setup(other, Recorder(wheel), wheel_dir=wheel.parent, gpu_smoke=False)
+    return other / user_setup.ADDONS_SITE, (other / user_setup.STATE).read_bytes()
+
+
+def test_reconcile_without_transaction_interrupt_cannot_leave_mismatched_site_with_stale_state(
+    folder: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """Interrupting mismatch cleanup must not drop .previous while mismatched site+state remain."""
+
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel = _wheel(tmp_path / "wheel_a", version_text="3.8.0+AAA")
+    new_wheel = _wheel(tmp_path / "wheel_b", version_text="3.8.0+BBB")
+    bad_wheel = _wheel(tmp_path / "wheel_c", version_text="3.8.0+CCC")
+
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+    site = folder / user_setup.ADDONS_SITE
+    previous = folder / user_setup.PREVIOUS
+    state_path = folder / user_setup.STATE
+    old_state = json.loads(state_path.read_text(encoding="utf-8"))
+
+    new_site, _ = _installed_site_copy(tmp_path, "site_new", new_wheel)
+    bad_prev, _ = _installed_site_copy(tmp_path, "site_bad", bad_wheel)
+
+    # Both site-packages (BBB) and .previous (CCC) disagree with setup_state.json (AAA),
+    # while every file in site-packages has the exact same byte size as setup_state.json.
+    shutil.rmtree(site)
+    shutil.copytree(new_site, site)
+    shutil.copytree(bad_prev, previous)
+    assert {name: (site / name).stat().st_size for name in old_state["files"]} == {
+        name: size for name, (size, _digest) in old_state["files"].items()
+    }
+
+    # Inject interruption immediately after the first _remove_path call inside reconciliation.
+    real_remove = user_setup._remove_path
+    removed: list[Path] = []
+
+    def interrupt_after_first_remove(path: Path) -> None:
+        real_remove(path)
+        removed.append(path)
+        if len(removed) == 1:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(user_setup, "_remove_path", interrupt_after_first_remove)
+    with pytest.raises(KeyboardInterrupt):
+        user_setup._recover(folder)
+    monkeypatch.setattr(user_setup, "_remove_path", real_remove)
+
+    # After the interrupted first step, quick integrity and status must NOT report completed.
+    assert user_setup.addons_problems(folder, full=False)
+    assert user_setup.addons_problems(folder, full=False, required=False)
+    assert user_setup.status(folder)["completed"] is False
+
+    # Inject a second interruption after state_path is removed, before .previous is removed.
+    def interrupt_after_state_remove(path: Path) -> None:
+        real_remove(path)
+        if path == state_path:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(user_setup, "_remove_path", interrupt_after_state_remove)
+    with pytest.raises(KeyboardInterrupt):
+        user_setup._recover(folder)
+    monkeypatch.setattr(user_setup, "_remove_path", real_remove)
+
+    assert not site.exists() and not state_path.exists() and previous.exists()
+    assert user_setup.addons_problems(folder, full=False, required=True)
+    assert user_setup.addons_problems(folder, full=False, required=False)
+    assert user_setup.status(folder)["completed"] is False
+
+    # Final recovery drops .previous and leaves a clean pre-setup folder ready to reinstall.
+    user_setup._recover(folder)
+    assert not site.exists() and not previous.exists() and not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+    assert user_setup.addons_problems(folder, required=False) == []
+    _assert_no_transaction_leftovers(folder)
+
+    result, _ = _setup(folder, runner, gpu_smoke=True)
+    assert result["completed"] is True
+    assert user_setup.addons_problems(folder, full=True) == []
+
+
+def test_reconcile_without_transaction_does_not_blindly_restore_mismatched_previous_alone(
+    folder: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """A lone .previous directory must match setup_state.json by full SHA-256 before restore."""
+
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+    site = folder / user_setup.ADDONS_SITE
+    previous = folder / user_setup.PREVIOUS
+    state_path = folder / user_setup.STATE
+    old_state = json.loads(state_path.read_text(encoding="utf-8"))
+
+    # Replace site-packages with a lone .previous whose files have the same sizes as old_state
+    # but different contents (3.8.0+BBB instead of 3.8.0+AAA).
+    new_site, _ = _installed_site_copy(tmp_path, "site_new", new_wheel)
+    shutil.rmtree(site)
+    shutil.copytree(new_site, previous)
+    assert {name: (previous / name).stat().st_size for name in old_state["files"]} == {
+        name: size for name, (size, _digest) in old_state["files"].items()
+    }
+
+    user_setup._recover(folder)
+    assert not site.exists()
+    assert not previous.exists()
+    assert not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+    assert user_setup.addons_problems(folder, required=False) == []
+    assert user_setup.addons_problems(folder, required=True)
+    _assert_no_transaction_leftovers(folder)
+
+    # A lone .previous with a corrupt/unreadable state record is also dropped, not restored.
+    shutil.copytree(new_site, previous)
+    state_path.write_text("{corrupt", encoding="utf-8")
+    user_setup._recover(folder)
+    assert not site.exists() and not previous.exists() and not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+
+    # Re-running setup cleanly reinstalls and passes full integrity.
+    result, _ = _setup(folder, runner, gpu_smoke=True)
+    assert result["completed"] is True
+    assert user_setup.addons_problems(folder, full=True) == []
+
+
+def test_reconcile_without_transaction_drops_stale_state_when_dropping_invalid_site(
+    folder: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """Dropping an invalid site directory also removes stale setup_state.json (#556)."""
+
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+    site = folder / user_setup.ADDONS_SITE
+    state_path = folder / user_setup.STATE
+
+    new_site, _ = _installed_site_copy(tmp_path, "site_new", new_wheel)
+
+    # Case 1: corrupt transaction marker + mismatched site (no .previous) + stale old state.
+    shutil.rmtree(site)
+    shutil.copytree(new_site, site)
+    (folder / user_setup.TRANSACTION).write_text("{corrupt", encoding="utf-8")
+
+    user_setup._recover(folder)
+    assert not site.exists()
+    assert not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+    assert user_setup.addons_problems(folder, required=False) == []
+    assert user_setup.addons_problems(folder, required=True)
+    _assert_no_transaction_leftovers(folder)

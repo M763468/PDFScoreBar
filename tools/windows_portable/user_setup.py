@@ -41,6 +41,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 import subprocess
 import sys
@@ -49,12 +50,14 @@ from pathlib import Path, PurePosixPath
 
 SETUP_SCHEMA = "pdfscore.windows_portable.user_setup.v1"
 STATE_SCHEMA = "pdfscore.windows_portable.user_setup_state.v1"
+TRANSACTION_SCHEMA = "pdfscore.windows_portable.user_setup_transaction.v1"
 ADDONS = "addons"
 ADDONS_SITE = f"{ADDONS}/site-packages"
 DOWNLOADS = f"{ADDONS}/downloads"
 STATE = f"{ADDONS}/setup_state.json"
 STAGING = f"{ADDONS}/.staging"
 PREVIOUS = f"{ADDONS}/.previous"
+TRANSACTION = f"{ADDONS}/.transaction.json"
 # Shipped in python/ by the builder; relative to python/Lib/site-packages.
 PTH_PATH = "python/Lib/site-packages/pdfscorebar_addons.pth"
 PTH_LINE = "../../../addons/site-packages"
@@ -225,11 +228,115 @@ def load_state(root: Path) -> dict | None:
     return state
 
 
+def _remove_path(path: Path) -> None:
+    if not path.exists() and not path.is_symlink():
+        return
+    if path.is_symlink() or not path.is_dir():
+        path.unlink()
+    else:
+        shutil.rmtree(path)
+
+
+def _write_file(path: Path, data: bytes) -> None:
+    with path.open("wb") as stream:
+        stream.write(data)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def _load_transaction(root: Path) -> dict | None:
+    path = root / TRANSACTION
+    if not path.exists() and not path.is_symlink():
+        return None
+    try:
+        tx = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if (
+        not isinstance(tx, dict)
+        or tx.get("schema_version") != TRANSACTION_SCHEMA
+        or not isinstance(tx.get("transaction_id"), str)
+        or not tx["transaction_id"]
+        or not isinstance(tx.get("state_sha256"), str)
+        or not tx["state_sha256"]
+        or not isinstance(tx.get("had_site"), bool)
+    ):
+        return None
+    return tx
+
+
+def _state_matches_transaction(root: Path, tx: dict) -> bool:
+    state_path = root / STATE
+    if not state_path.is_file():
+        return False
+    try:
+        raw = state_path.read_bytes()
+        state = json.loads(raw.decode("utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(state, dict) or state.get("schema_version") != STATE_SCHEMA:
+        return False
+    return (
+        state.get("transaction_id") == tx["transaction_id"]
+        and hashlib.sha256(raw).hexdigest() == tx["state_sha256"]
+    )
+
+
+def _site_matches_state(site: Path, state: dict) -> bool:
+    if not site.is_dir() or state.get("spec_sha256") != spec_digest():
+        return False
+    files = state.get("files")
+    if not isinstance(files, dict):
+        return False
+    for package in SETUP_SPEC["packages"]:
+        for name in package["required_files"]:
+            if name not in files:
+                return False
+    for name, entry in files.items():
+        if not isinstance(name, str) or not isinstance(entry, list) or len(entry) != 2:
+            return False
+        size, digest = entry
+        if not isinstance(size, int) or not isinstance(digest, str):
+            return False
+        path = site / PurePosixPath(name)
+        if not path.is_file() or path.stat().st_size != size or sha256_file(path) != digest:
+            return False
+    return not toolchain_problems(site)
+
+
+def _incomplete_transaction_problem(root: Path) -> str | None:
+    """Return a problem when an add-on swap did not commit its setup record."""
+
+    tx_path, site, previous = root / TRANSACTION, root / ADDONS_SITE, root / PREVIOUS
+    if tx_path.exists() or tx_path.is_symlink():
+        tx = _load_transaction(root)
+        if tx is None:
+            return (
+                "Incomplete or unreadable add-on setup transaction: run "
+                "'PDFScoreBar.cmd setup' to recover"
+            )
+        if not _state_matches_transaction(root, tx):
+            return (
+                "Incomplete add-on setup transaction (state was not committed): run "
+                "'PDFScoreBar.cmd setup' to recover"
+            )
+        return None
+    if previous.exists() and site.exists():
+        return (
+            "Incomplete add-on setup swap (.previous backup still exists): run "
+            "'PDFScoreBar.cmd setup' to recover"
+        )
+    return None
+
+
 def addons_problems(root: Path, *, full: bool = False, required: bool = True) -> list[str]:
     """Problems with the user-installed add-ons. Quick: presence and sizes; full: digests."""
 
     if not (root / PTH_PATH).is_file():
         return [f"missing add-on path file: {PTH_PATH}"]
+    tx_problem = _incomplete_transaction_problem(root)
+    if tx_problem is not None:
+        return [tx_problem]
     try:
         state = load_state(root)
     except SetupError as error:
@@ -275,6 +382,8 @@ def compile_check_problems(root: Path) -> list[str]:
     letting the first job fail; a plain ``setup`` re-runs the check from the kept wheel.
     """
 
+    if _incomplete_transaction_problem(root) is not None:
+        return []  # reported by addons_problems
     try:
         state = load_state(root)
     except SetupError:
@@ -288,6 +397,17 @@ def compile_check_problems(root: Path) -> list[str]:
 
 
 def status(root: Path) -> dict:
+    tx_problem = _incomplete_transaction_problem(root)
+    if tx_problem is not None:
+        return {"completed": False, "error": tx_problem}
+    if (root / PREVIOUS).exists() and not (root / ADDONS_SITE).exists():
+        return {
+            "completed": False,
+            "error": (
+                "Incomplete add-on setup swap (.previous backup still exists): run "
+                "'PDFScoreBar.cmd setup' to recover"
+            ),
+        }
     try:
         state = load_state(root)
     except SetupError as error:
@@ -312,17 +432,67 @@ def _record_files(site: Path) -> dict[str, list]:
     }
 
 
+def _reconcile_without_transaction(root: Path) -> None:
+    """Reconcile site-packages and .previous by full SHA-256 when no valid marker exists."""
+
+    site, previous = root / ADDONS_SITE, root / PREVIOUS
+    try:
+        state = load_state(root)
+    except SetupError:
+        state = None
+    if previous.is_dir():
+        if not site.exists() and not site.is_symlink():
+            previous.rename(site)
+        elif state is not None and _site_matches_state(site, state):
+            _remove_path(previous)
+        elif state is not None and _site_matches_state(previous, state):
+            _remove_path(site)
+            previous.rename(site)
+        else:
+            # Neither directory matches setup_state.json: drop both so setup reinstalls cleanly.
+            _remove_path(previous)
+            _remove_path(site)
+    else:
+        _remove_path(previous)
+        if (site.exists() or site.is_symlink()) and (
+            state is None or not _site_matches_state(site, state)
+        ):
+            _remove_path(site)
+
+
 def _recover(root: Path) -> None:
-    """Undo an interrupted swap and drop leftovers of an interrupted setup."""
+    """Finish or roll back an interrupted add-on transaction and drop leftovers."""
 
     site, previous, staging = root / ADDONS_SITE, root / PREVIOUS, root / STAGING
-    if previous.is_dir():
-        if site.exists():
-            shutil.rmtree(previous)
+    tx_path = root / TRANSACTION
+    state_tmp = root / (STATE + ".tmp")
+    tx_tmp = root / (TRANSACTION + ".tmp")
+
+    if tx_path.exists() or tx_path.is_symlink():
+        tx = _load_transaction(root)
+        if tx is not None:
+            if _state_matches_transaction(root, tx):
+                # New setup record is committed: keep the new directory and drop the backup.
+                _remove_path(previous)
+            else:
+                # New setup record was not committed: restore the previous directory.
+                if previous.is_dir():
+                    _remove_path(site)
+                    previous.rename(site)
+                else:
+                    _remove_path(previous)
+                    if not tx["had_site"]:
+                        _remove_path(site)
         else:
-            previous.rename(site)
-    if staging.exists():
-        shutil.rmtree(staging)
+            _reconcile_without_transaction(root)
+    elif previous.is_dir() or previous.exists() or previous.is_symlink():
+        _reconcile_without_transaction(root)
+
+    _remove_path(staging)
+    _remove_path(state_tmp)
+    _remove_path(tx_tmp)
+    # Remove the transaction marker last so an interruption during cleanup stays idempotent.
+    _remove_path(tx_path)
 
 
 def _keep_wheel(wheel: Path, downloads: Path) -> None:
@@ -524,9 +694,9 @@ def run_setup(
         raise
 
     site, previous = root / ADDONS_SITE, root / PREVIOUS
-    if site.exists():
-        site.rename(previous)
-    target.rename(site)
+    tx_path = root / TRANSACTION
+    had_site = site.exists() or site.is_symlink()
+    tx_id = secrets.token_hex(16)
     state = {
         "schema_version": STATE_SCHEMA,
         "completed_at": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -536,9 +706,24 @@ def run_setup(
         "gpu_smoke": gpu_smoke,
         "packages": records,
         "files": files,
+        "transaction_id": tx_id,
     }
+    state_bytes = (json.dumps(state, indent=1) + "\n").encode("utf-8")
     temporary = root / (STATE + ".tmp")
-    temporary.write_text(json.dumps(state, indent=1) + "\n", encoding="utf-8")
+    _write_file(temporary, state_bytes)
+    tx_record = {
+        "schema_version": TRANSACTION_SCHEMA,
+        "transaction_id": tx_id,
+        "state_sha256": hashlib.sha256(state_bytes).hexdigest(),
+        "had_site": had_site,
+    }
+    tx_tmp = root / (TRANSACTION + ".tmp")
+    _write_file(tx_tmp, (json.dumps(tx_record, indent=1) + "\n").encode("utf-8"))
+    # Record the pending swap before mutating site-packages; os.replace(..., STATE) commits it.
+    os.replace(tx_tmp, tx_path)
+    if had_site:
+        site.rename(previous)
+    target.rename(site)
     os.replace(temporary, root / STATE)
     _recover(root)
     problems = addons_problems(root, full=False)

@@ -25,26 +25,121 @@ SECTIONS = (
 )
 
 
+OVERLAY_POLICY = "main_license_overlay_policy"
+OVERLAY_KEYS = {"schema_version", "overlay_id", "derived_from", "entries"}
+SHA256 = re.compile(r"[0-9a-f]{64}")
+
+
+def exact_path(path: object) -> bool:
+    if not isinstance(path, str):
+        return False
+    pure = PurePosixPath(path)
+    return not (
+        pure.is_absolute()
+        or ".." in pure.parts
+        or str(pure) != path
+        or any(c in path for c in "*?[")
+        or any(part.lower() == ".git" for part in pure.parts)
+        or path == PROVENANCE
+    )
+
+
 def selected_files(data: dict) -> list[str]:
     paths = []
     for section in SECTIONS:
         for entry in data[section]:
             path = entry["pattern"]
-            pure = PurePosixPath(path)
-            if (
-                pure.is_absolute()
-                or ".." in pure.parts
-                or str(pure) != path
-                or any(c in path for c in "*?[")
-                or any(part.lower() == ".git" for part in pure.parts)
-                or path == PROVENANCE
-                or not entry.get("role")
-            ):
+            if not exact_path(path) or not entry.get("role"):
                 raise ValueError(f"Invalid exact distribution entry: {entry}")
             paths.append(path)
     if len(paths) != len(set(paths)):
         raise ValueError("Duplicate distribution file")
     return sorted(paths)
+
+
+def canonical_json(value: object) -> bytes:
+    return (json.dumps(value, indent=2, sort_keys=True) + "\n").encode()
+
+
+def overlay_policy(data: dict) -> tuple[dict[str, bool], set[str]]:
+    """Main-only license additions (path -> required) and selected files they may modify.
+
+    The policy names paths only; the license material itself never lives on develop.
+    """
+    policy = data.get(OVERLAY_POLICY)
+    if policy is None:
+        return {}, set()
+    selected = set(selected_files(data))
+    additions: dict[str, bool] = {}
+    modifications: set[str] = set()
+    for entry in policy["additions"]:
+        path = entry.get("pattern")
+        if (
+            not exact_path(path)
+            or not entry.get("role")
+            or path in selected
+            or path in additions
+            or not isinstance(entry.get("required", False), bool)
+        ):
+            raise ValueError(f"Invalid main license overlay addition: {entry}")
+        additions[path] = entry.get("required", False)
+    for entry in policy["modifications"]:
+        path = entry.get("pattern")
+        if (
+            path not in selected
+            or path == MANIFEST
+            or not entry.get("role")
+            or path in modifications
+        ):
+            raise ValueError(f"Invalid main license overlay modification: {entry}")
+        modifications.add(path)
+    if not any(additions.values()):
+        raise ValueError("The main license overlay policy must require at least one file")
+    return additions, modifications
+
+
+def overlay_changes(spec: dict, data: dict) -> tuple[set[str], set[str]]:
+    """Validate a main license overlay against the manifest policy; return (added, modified)."""
+    additions, modifications = overlay_policy(data)
+    if not additions:
+        raise ValueError("The distribution manifest declares no main license overlay policy")
+    if not isinstance(spec, dict) or set(spec) != OVERLAY_KEYS or spec["schema_version"] != 1:
+        raise ValueError("Unsupported main license overlay; expected schema version 1")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", str(spec["overlay_id"])):
+        raise ValueError("Invalid main license overlay id")
+    derived = spec["derived_from"]
+    if (
+        not isinstance(derived, dict)
+        or set(derived) != {"base_commit", "license_commit", "source_commit"}
+        or not all(re.fullmatch(r"[0-9a-f]{40}", str(v)) for v in derived.values())
+    ):
+        raise ValueError("Main license overlay must record its frozen derivation commits")
+    entries = spec["entries"]
+    paths = [entry.get("path") if isinstance(entry, dict) else None for entry in entries or []]
+    if not paths or not all(exact_path(p) for p in paths) or paths != sorted(set(paths)):
+        raise ValueError("Main license overlay entries must be unique, sorted exact paths")
+    added, modified = set(), set()
+    for entry in entries:
+        path, operation = entry["path"], entry.get("operation")
+        keys = {"path", "operation", "sha256"} | (
+            {"base_sha256"} if operation == "modify" else set()
+        )
+        if set(entry) != keys or not all(
+            SHA256.fullmatch(str(entry[k])) for k in keys & {"sha256", "base_sha256"}
+        ):
+            raise ValueError(f"Invalid main license overlay entry: {entry}")
+        if operation == "add" and path in additions:
+            added.add(path)
+        elif operation == "modify" and path in modifications:
+            modified.add(path)
+        else:
+            raise ValueError(f"Main license overlay entry is outside the approved policy: {path}")
+    missing = {path for path, required in additions.items() if required} - added
+    if missing:
+        raise ValueError(
+            f"Main license overlay omits required main license files: {sorted(missing)}"
+        )
+    return added, modified
 
 
 def digest(path: Path) -> str:
@@ -57,6 +152,22 @@ def check_tree(
     data = json.loads((root / MANIFEST).read_text(encoding="utf-8"))
     selected = set(selected_files(data))
     errors = []
+    provenance_path = root / PROVENANCE
+    provenance = None
+    overlay_hashes: dict[str, str] = {}
+    if verify_provenance and provenance_path.is_file():
+        provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+        overlay = provenance.get("release", {}).get("main_overlay")
+        if overlay is not None:
+            try:
+                spec = overlay["spec"]
+                if overlay.get("spec_sha256") != hashlib.sha256(canonical_json(spec)).hexdigest():
+                    errors.append("Main license overlay identity differs from its recorded spec")
+                added, _ = overlay_changes(spec, data)
+                selected |= added
+                overlay_hashes = {entry["path"]: entry["sha256"] for entry in spec["entries"]}
+            except (KeyError, TypeError, AttributeError, ValueError) as exc:
+                errors.append(f"Invalid main license overlay: {exc}")
     for path in selected:
         file = root / path
         if (
@@ -121,14 +232,15 @@ def check_tree(
                 if not target.exists() or not target.resolve().is_relative_to(root.resolve()):
                     errors.append(f"Missing local document/UI reference: {path} -> {ref}")
     if verify_provenance:
-        provenance_path = root / PROVENANCE
-        if not provenance_path.is_file():
+        if provenance is None:
             errors.append("Distribution provenance is missing")
         else:
-            provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
             hashes = provenance.get("files", {})
             if set(hashes) != selected:
                 errors.append("Provenance file selection differs from manifest")
+            for path, expected in overlay_hashes.items():
+                if hashes.get(path) != expected:
+                    errors.append(f"Main license overlay hash differs from provenance: {path}")
             for path, expected in hashes.items():
                 if path in selected and (
                     not (root / path).is_file() or digest(root / path) != expected

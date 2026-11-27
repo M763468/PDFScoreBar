@@ -1043,5 +1043,69 @@
     "src/pipeline/detection/current_support_worker.py": {
       "src/pipeline/detection/current_sr_worker.py": "Develop-only explicit sr_mode=page_local subprocess; canonical batch_required mode requires precomputed_sr."
     }
+  },
+  "main_license_overlay_policy": {
+    "description": "Exact paths a sealed main-only license overlay may add to, or modify in, the develop extraction when tools/release_candidate.py builds a main candidate (#505, #550). The license material itself is never stored on develop; this policy only bounds it. Every other path stays exactly as develop selects it.",
+    "additions": [
+      {
+        "pattern": "LICENSE",
+        "role": "First-party license text conveyed with main",
+        "required": true
+      },
+      {
+        "pattern": "NOTICE",
+        "role": "Copyright, license scope and model-weight notices",
+        "required": true
+      },
+      {
+        "pattern": "THIRD_PARTY_NOTICES.md",
+        "role": "Third-party component licenses and modification notices",
+        "required": true
+      },
+      {
+        "pattern": "REUSE.toml",
+        "role": "Path-level SPDX declarations for the main tree",
+        "required": true
+      },
+      {
+        "pattern": "LICENSES/AGPL-3.0-or-later.txt",
+        "role": "SPDX text of the first-party license",
+        "required": true
+      },
+      {
+        "pattern": "LICENSES/AGPL-3.0-only.txt",
+        "role": "SPDX text for quoted HOMR fragments"
+      },
+      {
+        "pattern": "LICENSES/Apache-2.0.txt",
+        "role": "SPDX text for the vendored BasicSR architecture"
+      },
+      {
+        "pattern": "LICENSES/BSD-3-Clause.txt",
+        "role": "SPDX text for the vendored Real-ESRGAN upsampler"
+      }
+    ],
+    "modifications": [
+      {
+        "pattern": "README.md",
+        "role": "License section"
+      },
+      {
+        "pattern": "README.ja.md",
+        "role": "License section and translation source hash"
+      },
+      {
+        "pattern": "pyproject.toml",
+        "role": "Package license expression"
+      },
+      {
+        "pattern": "models/barline_cnn/manifest.json",
+        "role": "Model rights statement"
+      },
+      {
+        "pattern": "models/sr_x4/manifest.json",
+        "role": "Model rights statement"
+      }
+    ]
   }
 }

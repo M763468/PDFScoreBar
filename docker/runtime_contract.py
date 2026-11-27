@@ -156,8 +156,8 @@ def _main_license_overlay_additions(
 ) -> set[str]:
     """Main-only license files a release candidate adds within the manifest policy (#550).
 
-    Mirrors tools/materialize_distribution.py (overlay_policy / overlay_changes), which is not
-    shipped: same policy, canonical spec identity, structure, required files and source binding.
+    Mirrors the release checker's overlay_policy / overlay_changes, which is not shipped:
+    same policy, canonical spec identity, structure, required files and source binding.
     """
     release = provenance.get("release")
     overlay = release.get("main_overlay") if isinstance(release, dict) else None

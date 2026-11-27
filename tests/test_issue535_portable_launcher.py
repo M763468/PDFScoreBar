@@ -1153,3 +1153,524 @@ def test_preflight_refuses_a_setup_without_its_gpu_check(snap, tmp_path, monkeyp
         launcher.preflight(gpu=False)
     problems = json.loads(capsys.readouterr().out)["problems"]
     assert len(problems) == 1 and "--no-gpu-check" in problems[0], problems
+
+
+# --- #556: recover the add-on directory and setup record as one transaction -------------
+
+
+def _assert_no_transaction_leftovers(folder: Path) -> None:
+    tx_rel = getattr(user_setup, "TRANSACTION", f"{user_setup.ADDONS}/.transaction.json")
+    for rel in (
+        user_setup.PREVIOUS,
+        user_setup.STAGING,
+        user_setup.STATE + ".tmp",
+        tx_rel,
+        tx_rel + ".tmp",
+    ):
+        assert not (folder / rel).exists(), rel
+
+
+def _install_same_size_wheels(tmp_path: Path) -> tuple[Path, Path]:
+    # Equal-length directory names and version strings ensure every installed file, including
+    # pip's dist-info/direct_url.json and RECORD, has identical byte size with different SHA-256.
+    old_wheel = _wheel(tmp_path / "wheel_a", version_text="3.8.0+AAA")
+    new_wheel = _wheel(tmp_path / "wheel_b", version_text="3.8.0+BBB")
+    return old_wheel, new_wheel
+
+
+@pytest.mark.parametrize(
+    "fault_point, expected_outcome",
+    [
+        ("before_backup", "old"),
+        ("after_backup", "old"),
+        ("after_swap_before_commit", "old"),
+        ("after_commit_before_cleanup", "new"),
+    ],
+)
+def test_interrupted_force_setup_recovers_atomically_across_swap_points(
+    folder: Path, tmp_path: Path, monkeypatch, fault_point: str, expected_outcome: str
+) -> None:
+    """Interrupted swap/commit converges to either complete old or complete new state (#556)."""
+
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+
+    site = folder / user_setup.ADDONS_SITE
+    previous = folder / user_setup.PREVIOUS
+    state_path = folder / user_setup.STATE
+    old_state_bytes = state_path.read_bytes()
+    old_state = json.loads(old_state_bytes.decode("utf-8"))
+    old_init_bytes = (site / "triton/__init__.py").read_bytes()
+    assert old_state["gpu_smoke"] is True
+    assert user_setup.addons_problems(folder, full=True) == []
+    assert user_setup.compile_check_problems(folder) == []
+
+    real_rename = Path.rename
+    real_replace = os.replace
+
+    if fault_point == "before_backup":
+
+        def inject_rename(self: Path, target):
+            if self == site and Path(target) == previous:
+                raise KeyboardInterrupt
+            return real_rename(self, target)
+
+        monkeypatch.setattr(Path, "rename", inject_rename)
+    elif fault_point == "after_backup":
+
+        def inject_rename(self: Path, target):
+            if Path(target) == site and self != previous:
+                raise KeyboardInterrupt
+            return real_rename(self, target)
+
+        monkeypatch.setattr(Path, "rename", inject_rename)
+    elif fault_point == "after_swap_before_commit":
+
+        def inject_replace(src, dst):
+            if Path(dst) == state_path:
+                raise KeyboardInterrupt
+            return real_replace(src, dst)
+
+        monkeypatch.setattr(user_setup.os, "replace", inject_replace)
+    else:
+
+        def inject_replace(src, dst):
+            result = real_replace(src, dst)
+            if Path(dst) == state_path:
+                raise KeyboardInterrupt
+            return result
+
+        monkeypatch.setattr(user_setup.os, "replace", inject_replace)
+
+    # Reinstall with a same-size, different-content wheel and gpu_smoke=False so any stale
+    # state/file mix would misapply old hashes and old gpu_smoke=True to the new files.
+    with pytest.raises(KeyboardInterrupt):
+        _setup(folder, runner, force=True, wheel_dir=new_wheel.parent, gpu_smoke=False)
+
+    monkeypatch.setattr(Path, "rename", real_rename)
+    monkeypatch.setattr(user_setup.os, "replace", real_replace)
+
+    if fault_point == "after_swap_before_commit":
+        # Prove the replacement files have identical sizes but different bytes from old state.
+        new_sizes = {name: (site / name).stat().st_size for name in old_state["files"]}
+        old_sizes = {name: size for name, (size, _digest) in old_state["files"].items()}
+        assert new_sizes == old_sizes
+        assert (site / "triton/__init__.py").read_bytes() != old_init_bytes
+
+    if expected_outcome == "old":
+        # Before recovery, an uncommitted transaction must never be reported as completed.
+        assert user_setup.addons_problems(folder, full=False)
+        assert user_setup.addons_problems(folder, full=False, required=False)
+        assert user_setup.status(folder)["completed"] is False
+
+        # Re-running setup recovers the complete old installation without misapplying state.
+        result, lines = _setup(folder, runner, gpu_smoke=True)
+        assert result["completed"] is True
+        assert "already completed" in lines[-1]
+        assert (site / "triton/__init__.py").read_bytes() == old_init_bytes
+        assert state_path.read_bytes() == old_state_bytes
+        assert user_setup.addons_problems(folder, full=False) == []
+        assert user_setup.addons_problems(folder, full=True) == []
+        assert user_setup.compile_check_problems(folder) == []
+        _assert_no_transaction_leftovers(folder)
+    else:
+        # Committed before interruption: new files + new record (gpu_smoke=False) stay active.
+        assert user_setup.addons_problems(folder, full=True) == []
+        assert user_setup.compile_check_problems(folder)
+        assert user_setup.status(folder)["completed"] is True
+
+        # Re-running setup with --no-gpu-check cleans up leftovers and keeps the new state.
+        result, lines = _setup(folder, runner, gpu_smoke=False)
+        assert result["completed"] is True
+        assert "already completed" in lines[-1]
+        assert "3.8.0+BBB" in (site / "triton/__init__.py").read_text(encoding="utf-8")
+        new_state = json.loads(state_path.read_text(encoding="utf-8"))
+        assert new_state["gpu_smoke"] is False
+        assert user_setup.addons_problems(folder, full=True) == []
+        assert user_setup.compile_check_problems(folder)
+        _assert_no_transaction_leftovers(folder)
+
+
+@pytest.mark.parametrize(
+    "fault_point", ["before_swap", "after_swap_before_commit", "after_commit_before_cleanup"]
+)
+def test_interrupted_initial_setup_recovers_cleanly_before_and_after_commit(
+    folder: Path, tmp_path: Path, monkeypatch, fault_point: str
+) -> None:
+    """Initial setup (no prior site-packages) rolls back before commit and keeps after commit."""
+
+    runner = Recorder(_wheel(tmp_path / "pypi", version_text="3.8.0+AAA"))
+    site = folder / user_setup.ADDONS_SITE
+    state_path = folder / user_setup.STATE
+    real_rename = Path.rename
+    real_replace = os.replace
+
+    if fault_point == "before_swap":
+
+        def inject_rename(self: Path, target):
+            if Path(target) == site:
+                raise KeyboardInterrupt
+            return real_rename(self, target)
+
+        monkeypatch.setattr(Path, "rename", inject_rename)
+    else:
+
+        def inject_replace(src, dst):
+            if Path(dst) == state_path:
+                if fault_point == "after_swap_before_commit":
+                    raise KeyboardInterrupt
+                real_replace(src, dst)
+                raise KeyboardInterrupt
+            return real_replace(src, dst)
+
+        monkeypatch.setattr(user_setup.os, "replace", inject_replace)
+
+    with pytest.raises(KeyboardInterrupt):
+        _setup(folder, runner, gpu_smoke=False)
+    monkeypatch.setattr(Path, "rename", real_rename)
+    monkeypatch.setattr(user_setup.os, "replace", real_replace)
+
+    if fault_point in {"before_swap", "after_swap_before_commit"}:
+        assert user_setup.addons_problems(folder, full=False, required=True)
+        assert user_setup.addons_problems(folder, full=False, required=False)
+        assert user_setup.status(folder)["completed"] is False
+        result, _ = _setup(folder, runner, gpu_smoke=False)
+        assert result["completed"] is True
+        assert runner.downloads() == 1 and runner.installs() == 2
+    else:
+        assert user_setup.addons_problems(folder, full=True) == []
+        result, lines = _setup(folder, runner, gpu_smoke=False)
+        assert result["completed"] is True
+        assert "already completed" in lines[-1]
+        assert runner.downloads() == 1 and runner.installs() == 1
+
+    assert user_setup.addons_problems(folder, full=True) == []
+    _assert_no_transaction_leftovers(folder)
+
+
+def test_legacy_interrupted_swap_without_transaction_marker_reconciles_by_hash(
+    folder: Path, tmp_path: Path
+) -> None:
+    """Both .previous and site-packages without a marker reconcile by SHA-256, never by size."""
+
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=False)
+    site = folder / user_setup.ADDONS_SITE
+    previous = folder / user_setup.PREVIOUS
+    state_path = folder / user_setup.STATE
+    old_init_bytes = (site / "triton/__init__.py").read_bytes()
+    old_state_bytes = state_path.read_bytes()
+    old_state = json.loads(old_state_bytes.decode("utf-8"))
+
+    # Build a separate folder with the same-size replacement files, then simulate a pre-fix
+    # crash where .previous holds old files, site-packages holds new files, and state is old.
+    other = tmp_path / "other" / "PDFScoreBar"
+    pth = other / user_setup.PTH_PATH
+    pth.parent.mkdir(parents=True)
+    pth.write_text(user_setup.PTH_LINE + "\n", encoding="utf-8")
+    _setup(other, Recorder(new_wheel), wheel_dir=new_wheel.parent, gpu_smoke=False)
+    new_site = other / user_setup.ADDONS_SITE
+    new_state_bytes = (other / user_setup.STATE).read_bytes()
+    new_init_bytes = (new_site / "triton/__init__.py").read_bytes()
+
+    site.rename(previous)
+    shutil.copytree(new_site, site)
+    assert {name: (site / name).stat().st_size for name in old_state["files"]} == {
+        name: size for name, (size, _digest) in old_state["files"].items()
+    }
+    assert user_setup.addons_problems(folder, full=False)
+    assert user_setup.addons_problems(folder, full=False, required=False)
+    assert user_setup.status(folder)["completed"] is False
+
+    result, lines = _setup(folder, runner, gpu_smoke=False)
+    assert result["completed"] is True and "already completed" in lines[-1]
+    assert (site / "triton/__init__.py").read_bytes() == old_init_bytes
+    assert state_path.read_bytes() == old_state_bytes
+    assert user_setup.addons_problems(folder, full=True) == []
+    _assert_no_transaction_leftovers(folder)
+
+    # Mirror legacy case: state already matches the new site-packages while .previous remains.
+    site.rename(previous)
+    shutil.copytree(new_site, site)
+    state_path.write_bytes(new_state_bytes)
+    result, lines = _setup(folder, runner, gpu_smoke=False)
+    assert result["completed"] is True and "already completed" in lines[-1]
+    assert (site / "triton/__init__.py").read_bytes() == new_init_bytes
+    assert state_path.read_bytes() == new_state_bytes
+    assert user_setup.addons_problems(folder, full=True) == []
+    _assert_no_transaction_leftovers(folder)
+
+    # Corrupt transaction marker also falls back to SHA-256 reconciliation and restores old.
+    _setup(folder, Recorder(old_wheel), wheel_dir=old_wheel.parent, force=True, gpu_smoke=False)
+    old_state_bytes = state_path.read_bytes()
+    site.rename(previous)
+    shutil.copytree(new_site, site)
+    (folder / user_setup.TRANSACTION).write_text("{corrupt", encoding="utf-8")
+    assert user_setup.addons_problems(folder, full=False)
+    assert user_setup.status(folder)["completed"] is False
+    result, lines = _setup(folder, runner, gpu_smoke=False)
+    assert result["completed"] is True and "already completed" in lines[-1]
+    assert (site / "triton/__init__.py").read_bytes() == old_init_bytes
+    assert state_path.read_bytes() == old_state_bytes
+    assert user_setup.addons_problems(folder, full=True) == []
+    _assert_no_transaction_leftovers(folder)
+
+
+def test_uncommitted_transaction_is_refused_by_verify_and_preflight(
+    snap, tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """verify and preflight refuse an uncommitted swap even when file sizes match (#556)."""
+
+    root = tmp_path / "PDFScoreBar"
+    _portable(snap, root)
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(root, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+
+    state_path = root / user_setup.STATE
+    old_state = json.loads(state_path.read_text(encoding="utf-8"))
+    real_replace = os.replace
+
+    def inject_replace(src, dst):
+        if Path(dst) == state_path:
+            raise KeyboardInterrupt
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(user_setup.os, "replace", inject_replace)
+    with pytest.raises(KeyboardInterrupt):
+        _setup(root, runner, force=True, wheel_dir=new_wheel.parent, gpu_smoke=False)
+    monkeypatch.setattr(user_setup.os, "replace", real_replace)
+
+    site = root / user_setup.ADDONS_SITE
+    assert {name: (site / name).stat().st_size for name in old_state["files"]} == {
+        name: size for name, (size, _digest) in old_state["files"].items()
+    }
+    monkeypatch.setattr(launcher, "ROOT", root)
+    monkeypatch.setattr(launcher, "check_location", lambda: [])
+    assert launcher.command_verify(SimpleArgs(full=False)) == 1
+    verify_report = json.loads(capsys.readouterr().out)
+    assert verify_report["setup"]["completed"] is False
+    assert verify_report["problems"]
+
+    with pytest.raises(launcher.LauncherError):
+        launcher.preflight(gpu=False)
+    preflight_report = json.loads(capsys.readouterr().out)
+    assert preflight_report["setup"]["completed"] is False
+    assert preflight_report["problems"]
+
+    # Recovering via setup restores the valid old state for both verify and preflight.
+    _setup(root, runner, gpu_smoke=True)
+    assert launcher.command_verify(SimpleArgs(full=True)) == 0
+    assert json.loads(capsys.readouterr().out)["problems"] == []
+    launcher.preflight(gpu=False)
+    assert json.loads(capsys.readouterr().out)["problems"] == []
+
+
+def test_interrupted_rollback_is_idempotent(folder: Path, tmp_path: Path, monkeypatch) -> None:
+    """Crashing mid-rollback still converges cleanly to the old installation on retry."""
+
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=False)
+    site = folder / user_setup.ADDONS_SITE
+    previous = folder / user_setup.PREVIOUS
+    state_path = folder / user_setup.STATE
+    old_init_bytes = (site / "triton/__init__.py").read_bytes()
+    old_state_bytes = state_path.read_bytes()
+
+    real_replace = os.replace
+
+    def inject_replace(src, dst):
+        if Path(dst) == state_path:
+            raise KeyboardInterrupt
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(user_setup.os, "replace", inject_replace)
+    with pytest.raises(KeyboardInterrupt):
+        _setup(folder, runner, force=True, wheel_dir=new_wheel.parent, gpu_smoke=False)
+    monkeypatch.setattr(user_setup.os, "replace", real_replace)
+
+    # Simulate an interruption right after previous was restored to site, before removing the
+    # transaction marker.
+    real_rename = Path.rename
+
+    def interrupt_after_restore(self: Path, target):
+        result = real_rename(self, target)
+        if self == previous and Path(target) == site:
+            raise KeyboardInterrupt
+        return result
+
+    monkeypatch.setattr(Path, "rename", interrupt_after_restore)
+    with pytest.raises(KeyboardInterrupt):
+        user_setup._recover(folder)
+    monkeypatch.setattr(Path, "rename", real_rename)
+
+    # A second recovery finishes cleanly without discarding the restored old directory.
+    user_setup._recover(folder)
+    assert (site / "triton/__init__.py").read_bytes() == old_init_bytes
+    assert state_path.read_bytes() == old_state_bytes
+    assert user_setup.addons_problems(folder, full=True) == []
+    _assert_no_transaction_leftovers(folder)
+
+
+def _installed_site_copy(tmp_path: Path, name: str, wheel: Path) -> tuple[Path, bytes]:
+    other = tmp_path / name / "PDFScoreBar"
+    pth = other / user_setup.PTH_PATH
+    pth.parent.mkdir(parents=True)
+    pth.write_text(user_setup.PTH_LINE + "\n", encoding="utf-8")
+    _setup(other, Recorder(wheel), wheel_dir=wheel.parent, gpu_smoke=False)
+    return other / user_setup.ADDONS_SITE, (other / user_setup.STATE).read_bytes()
+
+
+def test_reconcile_without_transaction_interrupt_cannot_leave_mismatched_site_with_stale_state(
+    folder: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """Interrupting mismatch cleanup must not drop .previous while mismatched site+state remain."""
+
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel = _wheel(tmp_path / "wheel_a", version_text="3.8.0+AAA")
+    new_wheel = _wheel(tmp_path / "wheel_b", version_text="3.8.0+BBB")
+    bad_wheel = _wheel(tmp_path / "wheel_c", version_text="3.8.0+CCC")
+
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+    site = folder / user_setup.ADDONS_SITE
+    previous = folder / user_setup.PREVIOUS
+    state_path = folder / user_setup.STATE
+    old_state = json.loads(state_path.read_text(encoding="utf-8"))
+
+    new_site, _ = _installed_site_copy(tmp_path, "site_new", new_wheel)
+    bad_prev, _ = _installed_site_copy(tmp_path, "site_bad", bad_wheel)
+
+    # Both site-packages (BBB) and .previous (CCC) disagree with setup_state.json (AAA),
+    # while every file in site-packages has the exact same byte size as setup_state.json.
+    shutil.rmtree(site)
+    shutil.copytree(new_site, site)
+    shutil.copytree(bad_prev, previous)
+    assert {name: (site / name).stat().st_size for name in old_state["files"]} == {
+        name: size for name, (size, _digest) in old_state["files"].items()
+    }
+
+    # Inject interruption immediately after the first _remove_path call inside reconciliation.
+    real_remove = user_setup._remove_path
+    removed: list[Path] = []
+
+    def interrupt_after_first_remove(path: Path) -> None:
+        real_remove(path)
+        removed.append(path)
+        if len(removed) == 1:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(user_setup, "_remove_path", interrupt_after_first_remove)
+    with pytest.raises(KeyboardInterrupt):
+        user_setup._recover(folder)
+    monkeypatch.setattr(user_setup, "_remove_path", real_remove)
+
+    # After the interrupted first step, quick integrity and status must NOT report completed.
+    assert user_setup.addons_problems(folder, full=False)
+    assert user_setup.addons_problems(folder, full=False, required=False)
+    assert user_setup.status(folder)["completed"] is False
+
+    # Inject a second interruption after state_path is removed, before .previous is removed.
+    def interrupt_after_state_remove(path: Path) -> None:
+        real_remove(path)
+        if path == state_path:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(user_setup, "_remove_path", interrupt_after_state_remove)
+    with pytest.raises(KeyboardInterrupt):
+        user_setup._recover(folder)
+    monkeypatch.setattr(user_setup, "_remove_path", real_remove)
+
+    assert not site.exists() and not state_path.exists() and previous.exists()
+    assert user_setup.addons_problems(folder, full=False, required=True)
+    assert user_setup.addons_problems(folder, full=False, required=False)
+    assert user_setup.status(folder)["completed"] is False
+
+    # Final recovery drops .previous and leaves a clean pre-setup folder ready to reinstall.
+    user_setup._recover(folder)
+    assert not site.exists() and not previous.exists() and not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+    assert user_setup.addons_problems(folder, required=False) == []
+    _assert_no_transaction_leftovers(folder)
+
+    result, _ = _setup(folder, runner, gpu_smoke=True)
+    assert result["completed"] is True
+    assert user_setup.addons_problems(folder, full=True) == []
+
+
+def test_reconcile_without_transaction_does_not_blindly_restore_mismatched_previous_alone(
+    folder: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """A lone .previous directory must match setup_state.json by full SHA-256 before restore."""
+
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+    site = folder / user_setup.ADDONS_SITE
+    previous = folder / user_setup.PREVIOUS
+    state_path = folder / user_setup.STATE
+    old_state = json.loads(state_path.read_text(encoding="utf-8"))
+
+    # Replace site-packages with a lone .previous whose files have the same sizes as old_state
+    # but different contents (3.8.0+BBB instead of 3.8.0+AAA).
+    new_site, _ = _installed_site_copy(tmp_path, "site_new", new_wheel)
+    shutil.rmtree(site)
+    shutil.copytree(new_site, previous)
+    assert {name: (previous / name).stat().st_size for name in old_state["files"]} == {
+        name: size for name, (size, _digest) in old_state["files"].items()
+    }
+
+    user_setup._recover(folder)
+    assert not site.exists()
+    assert not previous.exists()
+    assert not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+    assert user_setup.addons_problems(folder, required=False) == []
+    assert user_setup.addons_problems(folder, required=True)
+    _assert_no_transaction_leftovers(folder)
+
+    # A lone .previous with a corrupt/unreadable state record is also dropped, not restored.
+    shutil.copytree(new_site, previous)
+    state_path.write_text("{corrupt", encoding="utf-8")
+    user_setup._recover(folder)
+    assert not site.exists() and not previous.exists() and not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+
+    # Re-running setup cleanly reinstalls and passes full integrity.
+    result, _ = _setup(folder, runner, gpu_smoke=True)
+    assert result["completed"] is True
+    assert user_setup.addons_problems(folder, full=True) == []
+
+
+def test_reconcile_without_transaction_drops_stale_state_when_dropping_invalid_site(
+    folder: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """Dropping an invalid site directory also removes stale setup_state.json (#556)."""
+
+    monkeypatch.setattr(user_setup, "GPU_SMOKE", "print('ok')")
+    old_wheel, new_wheel = _install_same_size_wheels(tmp_path)
+    runner = Recorder(old_wheel)
+    _setup(folder, runner, wheel_dir=old_wheel.parent, gpu_smoke=True)
+    site = folder / user_setup.ADDONS_SITE
+    state_path = folder / user_setup.STATE
+
+    new_site, _ = _installed_site_copy(tmp_path, "site_new", new_wheel)
+
+    # Case 1: corrupt transaction marker + mismatched site (no .previous) + stale old state.
+    shutil.rmtree(site)
+    shutil.copytree(new_site, site)
+    (folder / user_setup.TRANSACTION).write_text("{corrupt", encoding="utf-8")
+
+    user_setup._recover(folder)
+    assert not site.exists()
+    assert not state_path.exists()
+    assert user_setup.status(folder) == {"completed": False}
+    assert user_setup.addons_problems(folder, required=False) == []
+    assert user_setup.addons_problems(folder, required=True)
+    _assert_no_transaction_leftovers(folder)

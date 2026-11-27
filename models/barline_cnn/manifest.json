@@ -27,5 +27,12 @@
       "vov_threshold": 0.5,
       "xdist_threshold": 12.0
     }
+  },
+  "rights": {
+    "license": "AGPL-3.0-or-later",
+    "scope": "Covers the owner's rights in the fine-tuned checkpoint (Copyright (C) 2025-2026 Masaki Muramatsu); does not relicense any third-party rights in initialization weights or training data (Issues #505, #550, #553).",
+    "initialization": "torchvision EfficientNet-B0 IMAGENET1K_V1 (efficientnet_b0_rwightman-7f5810bc.pth, ported from timm; torchvision is BSD-3-Clause; timm notes ImageNet dataset terms should be assumed to apply)",
+    "training_data": "Candidate crops from evaluation score pages (not distributed) and DeepScoresV2 dense crops (L. Tuggener et al., 2020, doi:10.5281/zenodo.4012193, CC BY 4.0)",
+    "release_asset_notice": "See LICENSE, NOTICE, THIRD_PARTY_NOTICES.md, and the GitHub release notes for tag model-barline-cnn-issue296-d27-v1"
   }
 }

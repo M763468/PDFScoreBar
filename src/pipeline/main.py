@@ -45,6 +45,9 @@ def run_pipeline(
     clear_image_cache()
 
     config = load_yaml(config_path)
+    from src.pipeline.detection.config import resolve_detector_route
+
+    resolve_detector_route(config.get("detection"))
     run_id_value = run_id or get_nested(config, "run", "run_id")
     if not run_id_value:
         run_id_value = dt.datetime.now().strftime("%Y%m%d_%H%M%S")

@@ -4,13 +4,18 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import json
+import logging
 import mimetypes
 import os
+import re
+import socket
 import sys
 import tempfile
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -24,7 +29,49 @@ from src.pipeline.review.manual_correction_handoff import (  # noqa: E402
     load_manual_correction_handoff,
 )
 from tools.review_correction.application import CorrectionApplication, preview_numbering
+from tools.review_correction.history import (
+    CheckpointStore,
+    atomic_bytes,
+    package_path,
+    safe_http_error_message,
+    safe_recorded_error,
+)
+from tools.review_correction.legacy import import_attempt, list_attempts
+from tools.review_correction.resume import create_session
 from tools.review_correction.state import CorrectionState
+
+LOGGER = logging.getLogger(__name__)
+
+
+class _ReviewHTTPError(Exception):
+    def __init__(self, status: int, message: str) -> None:
+        super().__init__(message)
+        self.status = status
+        self.message = message
+
+
+_POST_CLIENT_ERROR = {
+    "/api/save": "Could not save correction",
+    "/api/checkpoints": "Could not save checkpoint",
+    "/api/legacy/import": "Could not import legacy attempt",
+    "/api/resume": "Could not resume review session",
+    "/api/export_movement_boundaries": "Could not export movement boundaries",
+    "/api/state/pending": "Could not update review state",
+    "/api/state/pending/clear": "Could not update review state",
+    "/api/apply": "Could not start corrected PDF generation",
+    "/api/preview_numbering": "Could not preview numbering",
+}
+_POST_STORAGE_ERROR = {
+    "/api/save": "Could not save correction",
+    "/api/checkpoints": "Could not save checkpoint",
+    "/api/legacy/import": "Could not import legacy attempt",
+    "/api/resume": "Could not resume review session",
+    "/api/export_movement_boundaries": "Could not export movement boundaries",
+    "/api/state/pending": "Could not update review state",
+    "/api/state/pending/clear": "Could not update review state",
+    "/api/apply": "Could not start corrected PDF generation",
+    "/api/preview_numbering": "Could not preview numbering",
+}
 
 
 def _inside(path: Path, root: Path) -> bool:
@@ -56,6 +103,7 @@ class ReviewPackage:
         for page in self.pages:
             for key in (
                 "image",
+                "display_image",
                 "numbering",
                 "mmr",
                 "barlines",
@@ -75,7 +123,15 @@ class ReviewPackage:
 
         if set(self.reads.values()) & set(self.writes.values()):
             raise ValueError("Correction outputs overlap review artifacts")
+        payload = load_manual_correction_handoff(handoff)
+        if payload.get("resume"):
+            rel = payload["resume"]["input_pdf"]
+            self.reads[rel] = package_path(self.root, rel)
+            if payload["resume"].get("background_pdf"):
+                rel = payload["resume"]["background_pdf"]
+                self.reads[rel] = package_path(self.root, rel)
         self.state = CorrectionState(self.root, self.pages, handoff)
+        self.history = CheckpointStore(self)
 
     def _resolve(self, rel: str) -> Path:
         if not isinstance(rel, str) or Path(rel).is_absolute():
@@ -112,6 +168,41 @@ class ReviewPackage:
         return self.writable(rel)
 
     def record_correction(self, page: object, kind: object, items: object) -> dict:
+        """Save and publish its immutable checkpoint in one serialized transition."""
+        with self.history.transaction():
+            previous = {
+                rel: path.read_bytes() if path.is_file() else None
+                for rel in self.writes
+                for path in [self.writable(rel)]
+            }
+            pending = dict(self.state.pending)
+            try:
+                result = self._record_correction(page, kind, items)
+                result["checkpoint_id"] = self.history.capture()
+                return result
+            except Exception as exc:
+                for rel, data in previous.items():
+                    path = self.writable(rel)
+                    if data is not None:
+                        atomic_bytes(path, data)
+                    elif path.exists():
+                        path.unlink()
+                self.state.pending = pending
+                try:
+                    self.state.note_record_error(
+                        page,
+                        kind,
+                        safe_recorded_error(
+                            exc,
+                            "Could not save correction",
+                            forbidden_roots=(self.root, self.root.parent),
+                        ),
+                    )
+                except ValueError:
+                    pass
+                raise
+
+    def _record_correction(self, page: object, kind: object, items: object) -> dict:
         """Record any correction type through one package-bound atomic transition.
 
         Explicit Save and immediate movement confirmation are UI triggers for the
@@ -165,7 +256,15 @@ class ReviewPackage:
                 _atomic_write(self.writable(config["movement_boundary_resolved_output"]), resolved)
         except (ValueError, OSError, KeyError, TypeError) as exc:
             try:
-                self.state.note_record_error(page, kind, str(exc))
+                self.state.note_record_error(
+                    page,
+                    kind,
+                    safe_recorded_error(
+                        exc,
+                        "Could not save correction",
+                        forbidden_roots=(self.root, self.root.parent),
+                    ),
+                )
             except ValueError:
                 pass
             raise
@@ -292,27 +391,111 @@ class ReviewHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _review_context(self):
+        return self.server
+
+    def _context(self):
+        context = self._review_context()
+        ids = parse_qs(urlparse(self.path).query, keep_blank_values=True).get("session", [])
+        if not ids:
+            return context.package, context.application
+        if len(ids) != 1 or not re.fullmatch(r"s_[0-9a-f]{32}", ids[0]):
+            LOGGER.warning(
+                "Rejected invalid review session parameter on %s",
+                urlparse(self.path).path,
+            )
+            raise _ReviewHTTPError(400, "Invalid review session")
+        session = ids[0]
+        if session not in context.sessions:
+            try:
+                path = package_path(
+                    context.package.root,
+                    f"resumed_sessions/{session}/review/manual_correction_input.json",
+                )
+            except (ValueError, OSError):
+                LOGGER.exception("Rejected unsafe review session path for %s", session)
+                raise _ReviewHTTPError(404, "Review session not found") from None
+            if not path.is_file():
+                LOGGER.warning("Unknown review session requested: %s", session)
+                raise _ReviewHTTPError(404, "Review session not found")
+            try:
+                package = ReviewPackage(path)
+                application = CorrectionApplication(package, path)
+            except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError):
+                LOGGER.exception("Failed to open review session %s", session)
+                raise _ReviewHTTPError(404, "Review session unavailable") from None
+            context.sessions[session] = (package, application)
+        return context.sessions[session]
+
     def do_GET(self) -> None:
         if not self._trusted_host():
             return
         parsed = urlparse(self.path)
-        package = self.server.package
         assets = {
             "/": "index.html",
             "/app.js": "app.js",
+            "/history.js": "history.js",
             "/app_manual.js": "app.js",
             "/strings.js": "strings.js",
             "/correction_state.js": "correction_state.js",
         }
         if parsed.path in assets:
-            self._file(UI_ROOT / assets[parsed.path])
+            try:
+                self._file(UI_ROOT / assets[parsed.path])
+            except FileNotFoundError:
+                LOGGER.warning("Review interface asset missing for %s", parsed.path)
+                self.send_error(404, "Not found")
+            except OSError:
+                LOGGER.exception("Could not read review interface asset for %s", parsed.path)
+                self.send_error(500, "Could not load review interface")
+            return
+        try:
+            package, application = self._context()
+        except _ReviewHTTPError as exc:
+            self.send_error(exc.status, exc.message)
+            return
+        if parsed.path == "/api/checkpoints":
+            try:
+                self._json(
+                    {
+                        "checkpoints": package.history.list(),
+                        "applications": package.history.list_applications(),
+                        "legacy_attempts": list_attempts(package),
+                    }
+                )
+            except FileNotFoundError:
+                LOGGER.exception("Review history file missing")
+                self.send_error(404, "Review history is unavailable")
+            except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError):
+                LOGGER.exception("Failed to load review history")
+                self.send_error(500, "Review history is unavailable")
             return
         if parsed.path == "/api/result":
             try:
-                result_path = self.server.application.result()
+                result_path = application.result()
                 self._file(result_path, download_filename=result_path.name)
-            except (ValueError, OSError, KeyError) as exc:
-                self.send_error(400, str(exc))
+            except FileNotFoundError:
+                LOGGER.warning("Corrected final PDF file missing")
+                self.send_error(404, "The corrected final PDF is unavailable")
+            except ValueError as exc:
+                message = str(exc)
+                if message in {
+                    "No corrected final PDF has been generated",
+                    "The corrected final PDF is unavailable",
+                }:
+                    self.send_error(404, message)
+                elif message in {
+                    "The corrected final PDF changed after generation",
+                    "The validated numbering sidecar changed",
+                }:
+                    LOGGER.warning("Corrected final PDF verification failed: %s", message)
+                    self.send_error(409, message)
+                else:
+                    LOGGER.exception("Could not resolve corrected final PDF")
+                    self.send_error(404, "The corrected final PDF is unavailable")
+            except (OSError, KeyError):
+                LOGGER.exception("Could not read corrected final PDF")
+                self.send_error(500, "Could not read the corrected final PDF")
             return
         if parsed.path == "/api/pages":
             self._json({"pages": package.pages})
@@ -320,8 +503,12 @@ class ReviewHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/state":
             try:
                 self._json(package.state.snapshot())
-            except (ValueError, OSError, json.JSONDecodeError) as exc:
-                self.send_error(400, str(exc))
+            except FileNotFoundError:
+                LOGGER.exception("Review state file missing")
+                self.send_error(404, "Review state is unavailable")
+            except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError):
+                LOGGER.exception("Failed to load review state")
+                self.send_error(500, "Review state is unavailable")
             return
         if parsed.path == "/api/manual_corrections":
             query = parse_qs(parsed.query)
@@ -329,14 +516,33 @@ class ReviewHandler(BaseHTTPRequestHandler):
             page = query.get("page", [None])[0]
             try:
                 path = package.output(page, kind)
+            except ValueError as exc:
+                if str(exc) == "Unknown page or correction type":
+                    self.send_error(400, "Unknown page or correction type")
+                else:
+                    LOGGER.warning("Rejected manual corrections output lookup")
+                    self.send_error(403, "Correction output is not allowed")
+                return
+            except OSError:
+                LOGGER.exception("Failed to resolve correction output path")
+                self.send_error(500, "Could not load saved corrections")
+                return
+            try:
                 self._json(_payload(kind, _load_items(path, kind)))
-            except (ValueError, OSError, json.JSONDecodeError) as exc:
-                self.send_error(400, str(exc))
+            except FileNotFoundError:
+                LOGGER.warning("Saved correction file missing")
+                self.send_error(404, "Saved corrections are unavailable")
+            except OSError:
+                LOGGER.exception("Could not read saved corrections")
+                self.send_error(500, "Could not load saved corrections")
+            except (ValueError, json.JSONDecodeError):
+                LOGGER.exception("Saved corrections file is invalid")
+                self.send_error(400, "Saved corrections are invalid")
             return
         if parsed.path in {"/file", "/api/template", "/api/boxes"}:
             rel = parse_qs(parsed.query).get("path", [None])[0]
             allowed_fields = {
-                "/file": {"image", "review_overlay"},
+                "/file": {"image", "display_image", "review_overlay"},
                 "/api/template": {"numbering", "mmr", "movement_boundary_evidence"},
                 "/api/boxes": {"barlines"},
             }
@@ -349,56 +555,126 @@ class ReviewHandler(BaseHTTPRequestHandler):
                 return
             try:
                 path = package.readable(rel)
+            except ValueError as exc:
+                if str(exc) == "Declared artifact is unavailable":
+                    LOGGER.warning("Declared artifact missing for %s", parsed.path)
+                    self.send_error(404, "Declared artifact is unavailable")
+                else:
+                    LOGGER.warning("Rejected unsafe artifact access on %s", parsed.path)
+                    self.send_error(403, "Artifact is not allowed")
+                return
+            except OSError:
+                LOGGER.exception("Failed to resolve declared artifact on %s", parsed.path)
+                self.send_error(500, "Could not read declared artifact")
+                return
+            try:
                 if parsed.path == "/api/boxes":
                     self._json({"boxes": _load_boxes(path)})
                 else:
                     self._file(path, json_type=parsed.path == "/api/template")
-            except (ValueError, OSError) as exc:
-                self.send_error(403, str(exc))
+            except FileNotFoundError:
+                LOGGER.warning("Declared artifact file disappeared on %s", parsed.path)
+                self.send_error(404, "Declared artifact is unavailable")
+            except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                LOGGER.exception("Failed to serve declared artifact on %s", parsed.path)
+                self.send_error(500, "Could not read declared artifact")
             return
         self.send_error(404, "Not found")
 
+    def _record_movement_export_error(
+        self,
+        parsed_path: str,
+        package: ReviewPackage | None,
+        config: dict | None,
+        message: str,
+    ) -> None:
+        if parsed_path != "/api/export_movement_boundaries" or package is None or config is None:
+            return
+        try:
+            package.state.note_record_error(config["page"], "movement_boundary", message)
+        except (KeyError, ValueError):
+            pass
+
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path not in {
-            "/api/save",
-            "/api/export_movement_boundaries",
-            "/api/state/pending",
-            "/api/state/pending/clear",
-            "/api/apply",
-            "/api/preview_numbering",
-        }:
+        if parsed.path not in _POST_CLIENT_ERROR:
             self.send_error(404, "Not found")
             return
         if not self._trusted_write():
             return
-        package = self.server.package
+        package: ReviewPackage | None = None
+        config: dict | None = None
         try:
-            size = int(self.headers.get("Content-Length", "0"))
-            if size < 0 or size > 10_000_000:
-                raise ValueError("Invalid request size")
-            payload = json.loads(self.rfile.read(size))
+            package, application = self._context()
+            raw_size = self.headers.get("Content-Length", "0")
+            if not re.fullmatch(r"[0-9]{1,12}", raw_size):
+                raise _ReviewHTTPError(400, "Invalid request size")
+            size = int(raw_size)
+            limit = 43_000_000 if parsed.path == "/api/resume" else 10_000_000
+            if size < 0 or size > limit:
+                raise _ReviewHTTPError(400, "Invalid request size")
+            try:
+                payload = json.loads(self.rfile.read(size))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                raise _ReviewHTTPError(400, "Invalid JSON request body") from None
             if not isinstance(payload, dict):
-                raise ValueError("Request body must be an object")
+                raise _ReviewHTTPError(400, "Request body must be an object")
+            if parsed.path in {"/api/checkpoints", "/api/legacy/import", "/api/resume"}:
+                snap = package.state.snapshot()
+                if snap["package"]["counts"]["pending"] or package.state.record_errors:
+                    raise ValueError("Save or resolve current edits before history operations")
+            if parsed.path == "/api/legacy/import":
+                if set(payload) != {"attempt_id"}:
+                    raise ValueError("Legacy import accepts only an attempt ID")
+                with package.history.transaction():
+                    checkpoint = import_attempt(package, payload["attempt_id"])
+                self._json({"checkpoint_id": checkpoint})
+                return
+            if parsed.path == "/api/checkpoints":
+                if set(payload) - {"label"}:
+                    raise ValueError("Checkpoint accepts only a label")
+                with package.history.transaction():
+                    checkpoint = package.history.capture(label=payload.get("label", ""), force=True)
+                self._json({"checkpoint_id": checkpoint})
+                return
+            if parsed.path == "/api/resume":
+                if set(payload) != {"checkpoint_id", "pdf_base64"}:
+                    raise ValueError("Resume requires a checkpoint ID and uploaded PDF")
+                if not isinstance(payload.get("pdf_base64"), str):
+                    raise _ReviewHTTPError(400, "Invalid base64 payload")
+                try:
+                    data = base64.b64decode(payload["pdf_base64"], validate=True)
+                except (binascii.Error, ValueError):
+                    raise _ReviewHTTPError(400, "Invalid base64 payload") from None
+                with package.history.transaction():
+                    session = create_session(
+                        package,
+                        payload["checkpoint_id"],
+                        data,
+                        session_root=self._review_context().package.root,
+                        ownership_package=self._review_context().package,
+                    )
+                self._json({"session": session, "url": "/?session=" + session})
+                return
             if parsed.path == "/api/apply":
                 if payload:
                     raise ValueError(
                         "Apply uses the active review package and accepts no paths or options"
                     )
-                self._json(self.server.application.start())
+                self._json(application.start())
                 return
             if parsed.path == "/api/preview_numbering":
                 if payload:
                     raise ValueError(
                         "Numbering preview uses saved corrections and accepts no options"
                     )
-                if self.server.application.lock.locked():
+                if application.lock.locked():
                     raise ValueError(
                         "Wait for corrected PDF generation before previewing numbering"
                     )
                 self._json(preview_numbering(package.handoff_path))
                 return
-            if self.server.application.lock.locked():
+            if application.lock.locked():
                 raise ValueError("Wait for corrected PDF generation before editing corrections")
             if parsed.path in {"/api/state/pending", "/api/state/pending/clear"}:
                 page = payload.get("page")
@@ -432,33 +708,109 @@ class ReviewHandler(BaseHTTPRequestHandler):
             if not review.is_file():
                 raise ValueError("Save movement review decisions before export")
             evidence_bytes = evidence.read_bytes()
+            review_bytes = review.read_bytes()
             resolved = build_resolved_movement_boundaries(
                 evidence=json.loads(evidence_bytes.decode("utf-8")),
-                review=json.loads(review.read_text(encoding="utf-8")),
+                review=json.loads(review_bytes),
                 evidence_artifact=evidence_rel,
                 evidence_sha256=hashlib.sha256(evidence_bytes).hexdigest(),
             )
-            _atomic_write(output, resolved)
-            package.state.note_record_success(config["page"], "movement_boundary")
+            with package.history.transaction():
+                if evidence.read_bytes() != evidence_bytes or review.read_bytes() != review_bytes:
+                    raise ValueError("Movement inputs changed during finalization")
+                output = package.writable(output_rel)
+                previous = output.read_bytes() if output.exists() else None
+                try:
+                    _atomic_write(output, resolved)
+                    checkpoint = package.history.capture()
+                    package.state.note_record_success(config["page"], "movement_boundary")
+                except Exception:
+                    if previous is None:
+                        output.unlink(missing_ok=True)
+                    else:
+                        atomic_bytes(output, previous)
+                    raise
             self._json(
                 {
                     "output": str(output),
                     "count": len(resolved.get("boundaries", [])),
+                    "checkpoint_id": checkpoint,
                     "schema_version": resolved.get("schema_version"),
                 }
             )
-        except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
-            if parsed.path == "/api/export_movement_boundaries" and "config" in locals():
-                try:
-                    package.state.note_record_error(config["page"], "movement_boundary", str(exc))
-                except (KeyError, ValueError):
-                    pass
-            self.send_error(400, str(exc))
+        except _ReviewHTTPError as exc:
+            self.send_error(exc.status, exc.message)
+        except FileNotFoundError:
+            LOGGER.warning("Required review file missing during POST %s", parsed.path)
+            self._record_movement_export_error(
+                parsed.path, package, config, "Required review file is unavailable"
+            )
+            self.send_error(404, "Required review file is unavailable")
+        except OSError as exc:
+            LOGGER.exception("Storage error during POST %s", parsed.path)
+            fallback = _POST_STORAGE_ERROR.get(parsed.path, "Could not complete review request")
+            roots = (package.root, package.root.parent) if package is not None else ()
+            self._record_movement_export_error(
+                parsed.path,
+                package,
+                config,
+                safe_recorded_error(exc, fallback, forbidden_roots=roots),
+            )
+            self.send_error(500, fallback)
+        except (
+            ValueError,
+            KeyError,
+            TypeError,
+            binascii.Error,
+            json.JSONDecodeError,
+        ) as exc:
+            if isinstance(exc, ValueError) and str(exc) == "Declared artifact is unavailable":
+                LOGGER.warning("Declared artifact unavailable during POST %s", parsed.path)
+                self._record_movement_export_error(
+                    parsed.path, package, config, "Declared artifact is unavailable"
+                )
+                self.send_error(404, "Declared artifact is unavailable")
+                return
+            fallback = _POST_CLIENT_ERROR.get(parsed.path, "Could not complete review request")
+            roots = (package.root, package.root.parent) if package is not None else ()
+            message = safe_http_error_message(exc, fallback, forbidden_roots=roots)
+            if message == fallback:
+                LOGGER.exception("Rejected POST %s with sanitized error", parsed.path)
+            else:
+                LOGGER.warning("Rejected POST %s: %s", parsed.path, message)
+            self._record_movement_export_error(parsed.path, package, config, message)
+            self.send_error(400, message)
+
+
+class _ExclusivePort:
+    """Refuse a port that another server already listens on (#535).
+
+    http.server enables SO_REUSEADDR. On Windows that lets a second server bind a port in
+    use, so two review/browser servers answered the same address nondeterministically.
+    Windows binds with SO_EXCLUSIVEADDRUSE instead; POSIX keeps SO_REUSEADDR, which
+    never allows two listeners there.
+    """
+
+    allow_reuse_address = os.name != "nt"
+
+    def server_bind(self):
+        if os.name == "nt":
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
+class LocalHTTPServer(_ExclusivePort, HTTPServer):
+    pass
+
+
+class LocalThreadingHTTPServer(_ExclusivePort, ThreadingHTTPServer):
+    pass
 
 
 def create_server(handoff: Path, *, port: int = 8010) -> HTTPServer:
     package = ReviewPackage(handoff)
-    server = HTTPServer(("127.0.0.1", port), ReviewHandler)
+    server = LocalHTTPServer(("127.0.0.1", port), ReviewHandler)
+    server.sessions = {}
     server.package = package
     server.application = CorrectionApplication(package, handoff)
     return server

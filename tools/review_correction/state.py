@@ -4,13 +4,29 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
 from typing import Any
 
+from src.common.file_lock import lock_exclusive_nonblocking, open_lock_file
+from tools.review_correction.history import (
+    IDENTITY_VERSION,
+    canonical_manifest_identity,
+    identity_matches,
+    identity_record_version,
+    now,
+    package_path,
+    retained_source_manifests,
+    semantic_identity_digest,
+)
+
 SCHEMA_VERSION = 1
+LOGGER = logging.getLogger(__name__)
 STATE_FILENAME = ".correction_state.json"
+# Handoff fields that name outputs without affecting what is computed from the review.
+HANDOFF_OUTPUT_METADATA = frozenset({"output_name"})
 CORRECTION_TYPES = (
     "mmr_measure_span",
     "measure_construction",
@@ -49,6 +65,22 @@ def _file_identity(path: Path) -> str | None:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _semantic_handoff_identity(data: bytes | None) -> str | None:
+    """Digest parsed handoff content without output metadata (identity v2).
+
+    Content that is not a JSON object stays distinct through its exact bytes.
+    """
+    if data is None:
+        return None
+    try:
+        payload = json.loads(data)
+    except ValueError:
+        payload = None
+    if not isinstance(payload, dict):
+        return _digest({"unparsed_handoff_sha256": hashlib.sha256(data).hexdigest()})
+    return _digest({k: v for k, v in payload.items() if k not in HANDOFF_OUTPUT_METADATA})
+
+
 class CorrectionState:
     """Track page/type edits and successful result provenance for one review package."""
 
@@ -59,7 +91,14 @@ class CorrectionState:
         self.source_paths = {
             rel: (self.root / rel).resolve()
             for page in pages
-            for field in ("image", "numbering", "mmr", "barlines", "movement_boundary_evidence")
+            for field in (
+                "image",
+                "display_image",
+                "numbering",
+                "mmr",
+                "barlines",
+                "movement_boundary_evidence",
+            )
             if (rel := page.get(field))
         }
         self.pending: dict[tuple[str, str], str] = {}
@@ -72,6 +111,9 @@ class CorrectionState:
         if self.metadata_path.is_symlink():
             raise ValueError("Correction state metadata must not be a symlink")
         self._metadata = self._read_metadata()
+        self._own_apply = False
+        self._unpersisted_error = False
+        self._sync_application()
 
     def _read_metadata(self) -> dict:
         path = self.metadata_path
@@ -87,7 +129,47 @@ class CorrectionState:
             raise ValueError("Unsupported correction state metadata")
         if not isinstance(data.get("last_successful_result"), (dict, type(None))):
             raise ValueError("Invalid last successful result metadata")
+        if data.get("last_successful_result") is not None:
+            identity_record_version(data["last_successful_result"])
+        if not isinstance(data.get("last_application"), (dict, type(None))):
+            raise ValueError("Invalid application state metadata")
         return data
+
+    def _sync_application(self):
+        if self._own_apply or self._unpersisted_error:
+            return
+        self._metadata = self._read_metadata()
+        last = self._metadata.get("last_application") or {}
+        self.applying = False
+        if last.get("status") == "running":
+            # Hold the process lock while recovering. A separate server may
+            # finish or start an application between the first read and lock.
+            path = package_path(self.root, "application_runs/.apply.lock")
+            path.parent.mkdir(exist_ok=True)
+            descriptor = open_lock_file(path)
+            with os.fdopen(descriptor, "r+") as stream:
+                try:
+                    lock_exclusive_nonblocking(stream)
+                except BlockingIOError:
+                    self.applying = True
+                else:
+                    self._metadata = self._read_metadata()
+                    last = self._metadata.get("last_application") or {}
+                    if last.get("status") == "running":
+                        last = {
+                            **last,
+                            "status": "interrupted",
+                            "error": "Previous PDF generation was interrupted",
+                            "finished_at": now(),
+                        }
+                        self._metadata["last_application"] = last
+                        try:
+                            self._safe_write_metadata()
+                        except Exception:
+                            self._unpersisted_error = True
+        self.apply_error = (
+            last.get("error") if last.get("status") in {"failed", "interrupted"} else None
+        )
 
     def _safe_write_metadata(self) -> None:
         path = self.metadata_path
@@ -155,25 +237,81 @@ class CorrectionState:
             raise ValueError("Declared source artifact changed its package path")
         return _file_identity(path)
 
-    def capture_identity(self) -> dict:
+    def capture_identity(self, version: int = IDENTITY_VERSION) -> dict:
+        return self.capture_identities()[version]
+
+    def capture_identities(self) -> dict[int, dict]:
+        """Current identity under each rule stored records may use.
+
+        Version 1 hashes the whole handoff file and must stay byte-for-byte reproducible for
+        existing records. Version 2 excludes output metadata from the handoff. Version 3
+        (#543) additionally hashes the source manifest without the job's absolute location
+        (`canonical_manifest_identity`), so moving a job does not change it. The source and
+        correction inputs are otherwise the same under every version.
+        """
+        return self._identities()[0]
+
+    def relocated_identities(self):
+        """v1/v2 identities of this package under each relocation-equivalent manifest.
+
+        v1/v2 records hashed the source manifest's exact bytes, which a job move rewrites.
+        A checkpoint retains the exact manifest bytes it was saved with. Each one whose
+        location-independent identity equals the current manifest's differs only in the
+        job location, so substituting its digest reproduces what v1/v2 would have recorded
+        for the current, otherwise unchanged inputs. A record still has to match the whole
+        identity; nothing is rewritten.
+        """
+        _, manifest = self._identities()
+        if manifest is None:
+            return
+        current, canonical = manifest
+        for data in retained_source_manifests(self.root / "history"):
+            sha = hashlib.sha256(data).hexdigest()
+            if sha != current and canonical_manifest_identity(data) == canonical:
+                yield self._identities(manifest_sha256=sha)[0]
+
+    def _identities(self, manifest_sha256: str | None = None):
         source_files: dict[str, str | None] = {}
         for page in self.pages:
-            for field in ("image", "numbering", "mmr", "barlines", "movement_boundary_evidence"):
+            for field in (
+                "image",
+                "display_image",
+                "numbering",
+                "mmr",
+                "barlines",
+                "movement_boundary_evidence",
+            ):
                 rel = page.get(field)
                 if rel:
                     source_files[rel] = self._source_identity(rel)
         if self.handoff_path.is_symlink():
             raise ValueError("Review handoff must not be a symlink")
-        source_files[self.handoff_path.name] = _file_identity(self.handoff_path)
+        handoff_bytes = self.handoff_path.read_bytes() if self.handoff_path.is_file() else None
         try:
-            handoff_data = json.loads(self.handoff_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+            handoff_data = json.loads(handoff_bytes)
+        except (TypeError, ValueError):
+            handoff_data = {}
+        if not isinstance(handoff_data, dict):
             handoff_data = {}
         from src.pipeline.review.apply_corrections import _resolve_source_manifest_path
 
         manifest_path = _resolve_source_manifest_path(handoff_data, self.root)
+        manifest = None
         if manifest_path.is_file():
-            source_files["source_manifest"] = _file_identity(manifest_path)
+            manifest_bytes = manifest_path.read_bytes()
+            manifest = (
+                hashlib.sha256(manifest_bytes).hexdigest(),
+                canonical_manifest_identity(manifest_bytes),
+            )
+            source_files["source_manifest"] = manifest_sha256 or manifest[0]
+        if handoff_data.get("resume"):
+            source_files["resume_input_pdf"] = _file_identity(
+                package_path(self.root, handoff_data["resume"]["input_pdf"])
+            )
+        if handoff_data.get("resume", {}).get("background_pdf"):
+            source_files["resume_background_pdf"] = _file_identity(
+                package_path(self.root, handoff_data["resume"]["background_pdf"])
+            )
         correction_files: dict[str, Any] = {}
         for page in self.pages:
             page_id = str(page.get("page", page.get("name", page.get("page_id", ""))))
@@ -192,13 +330,44 @@ class CorrectionState:
                         for path in paths
                     ],
                 }
-        source = _digest(source_files)
         corrections = _digest(correction_files)
-        return {
-            "source_identity": source,
-            "corrections_identity": corrections,
-            "identity": _digest({"source": source, "corrections": corrections}),
+        source_v1 = _digest(
+            {
+                **source_files,
+                self.handoff_path.name: None
+                if handoff_bytes is None
+                else hashlib.sha256(handoff_bytes).hexdigest(),
+            }
+        )
+        semantic_handoff = _semantic_handoff_identity(handoff_bytes)
+        source_v2 = _digest(
+            {**source_files, "identity_version": 2, "semantic_handoff": semantic_handoff}
+        )
+        identities = {
+            1: {
+                "source_identity": source_v1,
+                "corrections_identity": corrections,
+                "identity": _digest({"source": source_v1, "corrections": corrections}),
+            },
+            2: {
+                "identity_version": 2,
+                "source_identity": source_v2,
+                "corrections_identity": corrections,
+                "identity": semantic_identity_digest(source_v2, corrections, 2),
+            },
         }
+        if manifest is not None:
+            source_files["source_manifest"] = {"canonical": manifest[1]}
+        source_v3 = _digest(
+            {**source_files, "identity_version": 3, "semantic_handoff": semantic_handoff}
+        )
+        identities[3] = {
+            "identity_version": 3,
+            "source_identity": source_v3,
+            "corrections_identity": corrections,
+            "identity": semantic_identity_digest(source_v3, corrections, 3),
+        }
+        return identities, manifest
 
     def set_pending(self, page: object, kind: object, items: list) -> None:
         key = self._key(page, kind)
@@ -236,6 +405,19 @@ class CorrectionState:
             or any(state["edit_status"] == "pending" for state in snap["states"])
         ):
             raise ValueError("Resolve pending edits or errors before generating a corrected result")
+        previous = self._metadata.get("last_application")
+        self._metadata["last_application"] = {
+            "status": "running",
+            "identity": identity,
+            "started_at": now(),
+        }
+        try:
+            self._safe_write_metadata()
+        except Exception:
+            self._metadata["last_application"] = previous
+            raise
+        self._own_apply = True
+        self._unpersisted_error = False
         self.applying = True
         self.apply_error = None
         return identity
@@ -256,12 +438,24 @@ class CorrectionState:
         ):
             self.fail_apply("Review inputs changed while corrected result was generated")
             raise ValueError(self.apply_error)
+        # Absolute paths stay as provenance of where the result was generated; runtime
+        # lookups use the package-relative form, which survives a job move (#543).
+        locations = {
+            f"{key}_package_path": self._package_relative(value)
+            for key, value in (
+                ("corrected_run", corrected_run),
+                ("final_pdf", final_pdf),
+                ("number_layer_sidecar", identity.get("number_layer_sidecar")),
+            )
+            if value is not None and self._package_relative(value) is not None
+        }
         result = {
             **identity,
+            **locations,
             "result_identity": result_identity
             or _digest(
                 {
-                    "run": corrected_run,
+                    "run": locations.get("corrected_run_package_path", corrected_run),
                     "final_pdf_sha256": final_pdf_sha256,
                     "consumed": identity["identity"],
                 }
@@ -271,25 +465,62 @@ class CorrectionState:
             "final_pdf_sha256": final_pdf_sha256,
         }
         previous = self._metadata.get("last_successful_result")
+        previous_application = self._metadata.get("last_application")
         self._metadata["last_successful_result"] = result
+        self._metadata["last_application"] = {
+            **(previous_application or {}),
+            "status": "succeeded",
+            "finished_at": now(),
+            "result_identity": result["result_identity"],
+        }
         try:
             self._safe_write_metadata()
-        except Exception as exc:
+        except Exception:
+            LOGGER.exception("Could not record corrected result identity")
             self._metadata["last_successful_result"] = previous
-            self.fail_apply(f"Could not record corrected result identity: {exc}")
+            self._metadata["last_application"] = previous_application
+            self.fail_apply("Could not record corrected result identity")
             raise
         self.applying = False
+        self._own_apply = False
         self.apply_error = None
         return result
 
+    def _package_relative(self, value: str) -> str | None:
+        """A result path inside this package as a package-relative path, else None."""
+        path = Path(value)
+        if not path.is_absolute() or not path.is_relative_to(self.root):
+            return None
+        relative = path.relative_to(self.root).as_posix()
+        try:
+            if package_path(self.root, relative).resolve() != path.resolve():
+                return None
+        except ValueError:
+            return None
+        return relative
+
     def fail_apply(self, error: str) -> None:
         self.applying = False
+        self._own_apply = False
         self.apply_error = str(error)[:500]
+        self._metadata["last_application"] = {
+            **(self._metadata.get("last_application") or {}),
+            "status": "failed",
+            "error": self.apply_error,
+            "finished_at": now(),
+        }
+        try:
+            self._safe_write_metadata()
+            self._unpersisted_error = False
+        except Exception:
+            self._unpersisted_error = True
 
     def snapshot(self) -> dict:
-        current = self.capture_identity()
+        self._sync_application()
+        identities = self.capture_identities()
+        current = identities[IDENTITY_VERSION]
         last = self._metadata.get("last_successful_result")
-        matched = bool(last and last.get("identity") == current["identity"])
+        matched = bool(last and identity_matches(last, identities, self.relocated_identities()))
         states = []
         counts = {
             "pending": 0,
@@ -367,6 +598,7 @@ class CorrectionState:
                 "current_result": last if matched else None,
                 "last_successful_result": last,
                 "current_identity": current,
+                "last_application": self._metadata.get("last_application"),
             },
             "states": states,
             "labels": LABELS,

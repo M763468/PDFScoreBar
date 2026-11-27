@@ -1,12 +1,71 @@
 # PDFScoreBar user guide
 
+[日本語](USER_GUIDE.ja.md)
+
+## Obtain the distribution
+
+`main` is the stable minimal distribution; `develop` is the development integration
+branch. A change merged to `develop` does not appear on `main` until a separate release
+promotion. In particular, this guide's updates reach `main` only after promotion. If you
+already have a verified extracted distribution, use its root directory instead of cloning.
+
+On the Linux host, install Git using your distribution's package manager or the
+[Git installation instructions](https://git-scm.com/install/linux). Then open a terminal:
+
+```bash
+git clone --branch main --single-branch https://github.com/M763468/PDFScoreBar.git
+cd PDFScoreBar
+```
+
+All following commands run from this distribution root on the host. The Git checkout
+may be inspected with Git; extracted distributions instead include provenance metadata.
+For the documentation currently on `develop`, use a development checkout deliberately;
+it is not the stable distribution.
+
+## Prepare the host
+
+Use Linux with an NVIDIA GPU and a compatible NVIDIA driver. Install the driver using
+[the NVIDIA driver instructions](https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/choose-an-installation-method.html)
+and your distribution's guidance. Install [Docker Engine for Linux](https://docs.docker.com/engine/install/),
+start its daemon, then install and configure the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+for Docker. Follow the instructions appropriate to your Linux distribution and privileges;
+these links do not imply that every OS or GPU combination is supported by PDFScoreBar.
+Install host Python 3.12 or later using your distribution's packages or
+[Python's downloads](https://www.python.org/downloads/); if `python3` points to an older
+version, use the 3.12+ executable in every command below instead.
+
+Check the host and Docker access (the last command downloads a test image if needed):
+
+```bash
+python3 --version
+nvidia-smi
+docker info
+docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
+```
+
+The last command follows NVIDIA's [sample workload](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/sample-workload.html).
+If host `nvidia-smi` fails, check the driver and GPU first; if it works but the container
+fails, check toolkit installation, Docker runtime configuration and daemon restart. If
+`docker info` cannot connect, start the daemon or resolve socket permissions using
+[Docker's Linux post-install guide](https://docs.docker.com/engine/install/linux-postinstall/).
+Membership in the `docker` group grants root-level privileges; understand that choice
+before enabling it. The launcher invokes Docker as the current user. Its containers can
+write files owned by the container user (often root), so ensure the output filesystem
+has space and that you can retain and read the resulting files; consult your administrator
+about ownership rather than recursively changing unrelated files.
+
+These checks establish host and container access only, not PDFScoreBar compatibility.
+Build requires network access and enough disk space for image layers and models; processing
+also needs space for rendered pages and retained artifacts. No minimum VRAM is claimed.
+
 ## Requirements and installation
 
 The primary installation route is Docker on Linux with an NVIDIA GPU, a working NVIDIA
 Container Toolkit, host Python 3.12 or later, and sufficient disk space for CUDA/model
 images and rendered PDF pages. Build needs network access; normal runs are offline.
-The runtime image owns Python dependencies, maintained HOMR models, Real-ESRGAN models,
-and the hash-verified barline CNN. The distribution contains the MMR checkpoint.
+The runtime image owns Python dependencies, maintained [HOMR](https://github.com/liebharc/homr)
+models and the hash-verified barline CNN. The distribution contains the MMR checkpoint and the
+first-party x4 super-resolution model (`models/sr_x4`).
 
 From the distribution root:
 
@@ -16,20 +75,57 @@ python3 docker/distribution.py build
 
 Use `--image YOUR_TAG` before the command to select a separate image. The launcher checks
 its production asset label, immutable image ID, and runtime compatibility fingerprint.
-A successful build preserves source commit and fingerprint labels in the image.
+A successful build preserves source commit and fingerprint labels in the image. An image
+is the built runtime template, not the temporary container created for a command. The
+default image tag is `pdfscore_pipeline_gpu`; when choosing another tag, pass the same
+`--image YOUR_TAG` before each `build`, `preflight`, `run` and `review` subcommand.
 
-OMR-DLN is an operator-supplied model. Obtain the selected `YOLOv8m_Measures.pt` from
-the official model folder recorded in `models/omr_dln/manifest.json`. Import it once:
+No operator-supplied model is required. Since #522 the detector no longer uses the external
+OMR-DLN measure detector (`YOLOv8m_Measures.pt`); do not download or mount it. Run preflight:
 
 ```bash
-python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /absolute/path/YOLOv8m_Measures.pt
 python3 docker/distribution.py preflight
 ```
 
-Import checks the manifest SHA-256 before publishing to the host model cache. Preflight
+Preflight
 checks CUDA, the ONNX CUDA provider, required models, and pinned HOMR runtime provenance.
-The external weight is mounted read-only into the runtime. To share a cache, set
-`PDFSCOREBAR_MODEL_CACHE` on the host. Changing model bytes requires a new manifest/version.
+All required models are image-owned or tracked manifests verified by SHA-256; changing model
+bytes requires a new manifest/version. Build success alone does not check the GPU;
+preflight checks it but does not certify score accuracy.
+
+## Start the browser workspace
+
+After building the Docker image, start PDFScoreBar on the computer with the NVIDIA GPU.
+
+```bash
+python3 docker/distribution.py serve --output /absolute/path/results
+```
+
+Open `http://127.0.0.1:8010/` on that computer. If the port is occupied, pass
+`--port 8011` and open the URL printed by the launcher. The workspace uses the
+same runtime preflight as the CLI. It listens on loopback and is intended for
+one local operator. Keep the results directory private and use a single
+launcher for that directory.
+
+1. Choose a score PDF and, optionally, enter page numbers such as `1, 2, 5`.
+   Click **Start numbering**. The upload limit is 256 MiB and the engine
+   checks the PDF, page selection, and render limits before processing.
+2. The job list shows queued and running jobs, the current engine stage when
+   available, and failures. Numbering completion makes a PDF available for review.
+3. Open or download the numbered PDF. Click **Open correction GUI** for the
+   same job to save edits, generate a corrected PDF, and open that result.
+4. Return to the workspace and select the same job to continue editing.
+   Use the review GUI's **Saved history / resume** panel to restore a checkpoint
+   in a separate session. This requires a job covering all original pages in
+   source order. Select the original PDF used for the job.
+   Use the same results directory after restarting the launcher. An interrupted
+   numbering job can be submitted again as a new job.
+
+Closing the browser leaves the launcher processing in the background. Stop it
+with Ctrl+C in the terminal. The results directory contains the source uploads,
+numbered PDFs, review packages, and correction history. Keep it to revisit
+past jobs. Prepared CLI jobs with a verified result in the same directory can
+also be opened from the list. The CLI commands below remain available.
 
 ## Process a PDF
 
@@ -37,16 +133,24 @@ The external weight is mounted read-only into the runtime. To share a cache, set
 python3 docker/distribution.py run /absolute/path/score.pdf --output /absolute/path/results
 ```
 
-Optionally add `--pages 1 2` to process selected one-based PDF pages. Each job gets a new
+Replace the PDF and output examples with absolute paths on your host. The output directory
+must be writable and outside the distribution root. Optionally add `--pages 1 2` to process selected one-based PDF pages. Each job gets a new
 directory under the output root. Its `final/` directory contains the numbered PDF;
 `review/manual_correction_input.json` opens the correction application. `result.json`
 records status, warnings, artifact hashes, and source provenance. Review-required status
-means the generated result needs user attention.
+means the generated result needs user attention. The command prints JSON containing
+`job_id`; use that value as `JOB_ID` below. If needed, list the output root with
+`ls -lt /absolute/path/results` and inspect a job with
+`cat /absolute/path/results/JOB_ID/result.json`. A failure before a job is created may
+have no `result.json`; read the terminal error. Do not assume the newest directory is the
+right job without checking its result.
 
 Choose an output directory outside the distribution checkout or extracted directory,
 such as `/absolute/path/results`. The launcher rejects an output directory inside the
 distribution before creating files or starting Docker, so subsequent review can verify
-the original distribution inventory. Selected-page reviews show the original PDF page
+the original distribution inventory. A development checkout without
+`DISTRIBUTION_PROVENANCE.json` may also use a Git-ignored directory such as `temp/results`.
+Selected-page reviews show the original PDF page
 numbers. A failed PDF input check also saves its job's `result.json` with the error details.
 
 Numbered PDFs retain the source PDF's visible page size, including cropping and
@@ -75,9 +179,16 @@ python3 docker/distribution.py review --output /absolute/path/results \
   --handoff /absolute/path/results/JOB_ID/review/manual_correction_input.json
 ```
 
+Replace `JOB_ID` with the printed ID and use the same output root as `run`.
 Open `http://127.0.0.1:8010` in a browser on the same Linux host. Add `--port 8011` when
-that port is occupied. The application binds only to localhost and uses Linux Docker host
+that port is occupied, then open `http://127.0.0.1:8011`. The application binds only to localhost and uses Linux Docker host
 networking. It is intended for local use. Select English or Japanese using the language control.
+
+Docker Desktop has no shared host network with WSL or Windows, so the launcher detects it
+and instead publishes the port on host loopback only, through a relay in the container.
+Run from WSL2 and open the same URL in a Windows or WSL browser. The application still binds
+to container loopback and validates Host/Origin. This route has been checked on Windows with
+WSL2 and an NVIDIA GPU only; Docker Engine for Linux remains the primary installation route.
 
 Review page images and numbering. Record barline, measure, or MMR changes using Save;
 confirm any supplied movement-boundary evidence and finalize it before applying.
@@ -103,8 +214,8 @@ rest can also be mistaken for its count.
    the selection shows the page, system, measure and original/current counts.
    Visible system/measure indices start at 1 and are locations, not musical numbers.
 3. Choose **Set rest measure count** (**複数小節休符の小節数を設定**), enter the
-   printed count, choose **Add change** (**修正を追加**), then **Save changes**
-   (**変更を保存**). Use the same operation for a missed rest shown as 1 and a
+   printed count, choose **Add change** (**修正を追加**), then **Save this page**
+   (**このページを保存**). Use the same operation for a missed rest shown as 1 and a
    misread rest. If a normal measure was falsely treated as a multi-measure rest,
    choose **Do not treat as multi-measure rest** instead. Do not reset a movement
    or insert barlines merely to compensate for a rest-count error.
@@ -128,12 +239,58 @@ stores immutable input copies and consumed-input provenance under `application_r
 Successful corrected PDFs are in each attempt's `corrected/final/` directory. Previous
 successful output remains available after a failed attempt. Stop the server with Ctrl+C.
 
+To continue a saved correction state on an annotated copy of the original PDF, open
+**Saved history / resume** (**保存履歴・再開**). Save pending edits, optionally give the
+checkpoint a name, and choose **Save checkpoint**. Select a saved checkpoint, choose
+an annotated PDF (up to 32 MB), then choose **Resume in new session**. The original
+review remains separate; the browser URL identifies the resumed session and can be
+reopened after server restart. Saves also retain checkpoints automatically.
+For jobs created before checkpoints were introduced, select an entry under **Saved
+inputs from earlier versions** and choose **Import selected saved inputs**. The app
+verifies the original source and recorded correction identities before making a
+checkpoint. An unavailable entry includes a validation reason. Import certifies the
+saved inputs; it does not certify an old PDF as a successful current result.
+You can also choose a checkpoint from a resumed session and resume another annotated
+copy; each new URL remains separate and uses the original review's ownership evidence.
+The panel's **PDF generation history** records successful, failed and interrupted
+attempts; a later success does not remove an earlier failure.
+
+The resumed canvas shows the uploaded annotations. PDF generation recalculates numbering
+from the retained recognition artifacts and adds uniformly sized 9 pt row numbers near
+the staff. It preserves the annotated PDF's CropBoxes, original annotations and background.
+If there is no safe placement, generation reports an error; it does not erase handwriting.
+Keep the review package, its `history/`, `resumed_sessions/`, retained source artifacts,
+and generated `.layer.json` files together. History checks external retained dependencies;
+it does not create a portable archive of all recognition artifacts.
+
+Currently supported resume inputs contain all original pages in order, have zero rotation
+and unchanged MediaBoxes/background image bytes, and use native Ink, Circle, Square,
+Stamp, FreeText or Highlight annotations. CropBox changes are supported.
+An annotation-only MobileSheets re-export of a numbered PDF can also be resumed
+from the review that generated it, while its successful PDF and `.layer.json` remain
+available. The application verifies the complete page content, owned numbering streams,
+background and rendering against that saved result, removes only its old numbers, and
+preserves the new handwriting. Internal PDF object numbers may change. A rewritten
+background, changed page content or missing provenance is rejected.
+
+Partial/reordered pages, flattened/re-encoded backgrounds and other interactive PDF
+shapes require further validation. Export a copy with the original background and
+native annotations. The application does not import MSF files or infer which handwritten numbers it may delete.
+A supplied 15-page MobileSheets annotation-only roundtrip has been checked; other
+versions/export settings and physical printing remain unverified.
+
 ## Troubleshooting and provenance
 
+- Git failure: check Git installation, repository URL, network and access; retry the clone.
 - Build failure: retain the build output; check network access and disk space.
+- Docker permission failure: check daemon/socket access and the ownership of output files.
+- Output rejected: choose an absolute output path outside the distribution root.
+- Port occupied: choose an unused `--port` and open that port on localhost.
+- Review URL does not open: on Docker Desktop, check that the port is free on both Windows and
+  WSL. Other Docker setups whose host network is not shared with the browser are unsupported.
 - Missing GPU/provider: verify GPU access in Docker and rerun preflight. Host GPU detection
   alone does not establish container CUDA availability.
-- Missing or corrupt model: use the selected manifest and repeat verified import. A hash
+- Missing or corrupt model: rebuild the image or restore the tracked manifest artifact. A hash
   mismatch fails rather than selecting another model.
 - Runtime mismatch: build this distribution with a separate image tag, then use that tag.
 - Review/apply failure: preserve the entire job directory and read the reported application

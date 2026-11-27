@@ -2,6 +2,7 @@
 name = "pdfscore-pipeline"
 version = "0.1.0"
 description = "PDF Score Barline Pipeline"
+license = "AGPL-3.0-or-later"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -14,8 +15,16 @@ dependencies = [
     "scikit-learn==1.9.1",
     "matplotlib==3.10.6",
     "coloredlogs==15.0.1",
-    "ultralytics==8.3.239",
     "rapidocr-onnxruntime==1.4.4",
+    "psutil==7.2.2",
+    # Otherwise unpinned transitive deps (HOMR/Real-ESRGAN); keep the #416-accepted runtime.
+    "torch==2.14.0",
+    "torchvision==0.29.0",
+    # Issue #533: transitive deps (torch / cuda-bindings / HOMR) pinned to the #504
+    # audited image so rebuilding after the SR dependency removal does not drift.
+    "filelock==4.2.9",
+    "cuda-pathfinder==1.8.6",
+    "pypdfium2==5.15.1",
 ]
 
 [tool.ruff]

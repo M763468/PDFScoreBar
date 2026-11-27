@@ -686,6 +686,16 @@ def _reuse_auto_mmr_overrides(
     return list(reused.values())
 
 
+def _source_used_mmr_support(
+    manifest_page: Dict[str, Any], *, source_root: Path, page_id: str
+) -> bool:
+    """Re-apply MMR the same way the reviewed source run did (with or without x4 support)."""
+    return (
+        isinstance(manifest_page.get("mmr_support"), dict)
+        or (source_root / "intermediate" / page_id / "mmr_support.json").is_file()
+    )
+
+
 def _current_homr_staff_mask(
     manifest_page: Dict[str, Any],
     *,
@@ -800,10 +810,10 @@ def _run_retained_artifact_correction(
         get_nested(source_config, "numbering", "force_single_system", default=False)
     )
     mmr_enabled = bool(get_nested(source_config, "steps", "mmr_overrides", default=False))
-    dense_mmr = (
-        str(get_nested(source_config, "detection", "detector_route", default="standard"))
-        == "dense_full_pipeline"
-    )
+    # #522: correction never reruns detection, so the source run's recorded
+    # detector_route is history, not a setting to apply. Review packages produced by
+    # the removed standard route stay correctable; MMR is re-applied in the source
+    # run's mode (see _source_used_mmr_support).
 
     states: List[Dict[str, Any]] = []
     execution_user_overrides: List[Dict[str, Any]] = []
@@ -994,7 +1004,9 @@ def _run_retained_artifact_correction(
         output_paths: List[Path] = []
         for state in mmr_states:
             support = None
-            if dense_mmr:
+            if _source_used_mmr_support(
+                state["manifest_page"], source_root=source_root, page_id=state["page_id"]
+            ):
                 from src.pipeline.mmr_support_reuse import build_mmr_support_data
 
                 current_mask = _current_homr_staff_mask(
@@ -1319,7 +1331,7 @@ def apply_corrections_and_rerun(
         return new_run_dir
 
     # 6. Execute only the downstream correction boundary against retained
-    # reviewed artifacts. Do not regenerate PDF images, detector/HOMR/SR/OMR-DLN,
+    # reviewed artifacts. Do not regenerate PDF images, detector/HOMR/SR,
     # probe candidates, or CNN scores.
     if source_manifest is None:
         raise FileNotFoundError(

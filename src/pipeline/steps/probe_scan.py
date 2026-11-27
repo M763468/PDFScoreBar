@@ -257,7 +257,6 @@ def _load_bands_for_image(
         bands_from / current_score_name / stem / "pipeline2_no_peak_scored.json",
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
         bands_from / "hybrid_results" / f"{stem}_hybrid.json",
-        bands_from / "omr_sr" / stem / "predictions.json",
         bands_from / f"{stem}.json",
         bands_from / f"{run_subdir}_scored.json",
     ]

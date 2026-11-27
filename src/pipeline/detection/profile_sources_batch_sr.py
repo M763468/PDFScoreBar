@@ -1,9 +1,9 @@
 """Verified hybrid detector with all-pages current-x4 SR phase batching.
 
-The accepted two-HOMR route stays page-local for verified baseline HOMR,
-current-x4 HOMR, and OMR-DLN.  Only Real-ESRGAN is lifted into a dedicated
-all-pages phase so its model/import/CUDA lifetime is reused and then released
-before any page's HOMR/OMR work begins.
+The accepted two-HOMR route stays page-local for verified baseline HOMR and
+current-x4 HOMR.  Only Real-ESRGAN is lifted into a dedicated all-pages phase so
+its model/import/CUDA lifetime is reused and then released before any page's
+HOMR work begins.
 """
 
 from __future__ import annotations
@@ -16,13 +16,12 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from tqdm import tqdm
-
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.perf_trace import span
 
 from .current_support_worker import _require_precomputed_sr
 from .profile_sources import ProfileHybridDetector
+from .source_concurrency import SourceJobs, available_resources, select_workers
 
 _MAX_RETAINED_WORKER_LOG_BYTES = 64 * 1024
 _MAX_RETAINED_WORKER_LOG_LINES = 80
@@ -41,6 +40,21 @@ def _bounded_worker_log_tail(log_path: Path) -> bytes:
             tail = tail[first_line_end + 1 :]
     lines = tail.splitlines(keepends=True)
     return b"".join(lines[-_MAX_RETAINED_WORKER_LOG_LINES:])
+
+
+def _retain_source_diagnostics(worker_output: Path) -> None:
+    """Keep bounded failure evidence outside disposable engine scratch."""
+    work_root = next((p for p in worker_output.parents if p.name == ".engine-work"), None)
+    if work_root is None:
+        return
+    for name in ("admission.json", "failure.json"):
+        path = worker_output / name
+        if path.is_file():
+            (work_root.parent / f"failed-source-{name}").write_bytes(path.read_bytes())
+    for log in worker_output.glob("*/*/worker.log"):
+        (work_root.parent / f"failed-source-page-{log.parent.name}.log").write_bytes(
+            _bounded_worker_log_tail(log)
+        )
 
 
 class BatchSRProfileHybridDetector(ProfileHybridDetector):
@@ -148,17 +162,14 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             precomputed_sr=precomputed_sr,
         )
         sr_image = Path(str(payload["sr_image"])).resolve()
-        omr = Path(str(payload["current_omr"])).resolve()
         current_sr_detection = self._current_detection_path(payload)
-        for path in (sr_image, omr):
-            if not path.is_file():
-                raise FileNotFoundError(path)
+        if not sr_image.is_file():
+            raise FileNotFoundError(sr_image)
         commands.append(support_command)
 
         return {
             "sr_image": str(sr_image),
             "current_sr_detection": str(current_sr_detection),
-            "current_omr": str(omr),
             "commands": commands,
             "historical_detector_artifact_runtime_input": False,
             "homr_neural_inference_count": 2,
@@ -209,9 +220,15 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         env["PYTHONPATH"] = os.pathsep.join(
             [str(self.project_root), env.get("PYTHONPATH", "")]
         ).strip(os.pathsep)
+        threads = self.det_cfg.get("source_concurrency", {}).get("threads_per_worker")
+        if threads is not None:
+            if type(threads) is not int or threads < 1:
+                raise ValueError("threads_per_worker must be a positive integer")
+            env["OMP_NUM_THREADS"] = str(threads)
+            env["MKL_NUM_THREADS"] = str(threads)
         log_path = page_root / "worker.log"
         with log_path.open("w", encoding="utf-8") as log_file:
-            process = subprocess.run(
+            process = getattr(self, "_source_jobs", SourceJobs(900)).run(
                 command,
                 cwd=self.project_root,
                 env=env,
@@ -331,6 +348,10 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             sr_image = Path(str(raw.get("sr_image", ""))).resolve()
             if not image.is_file() or not sr_image.is_file():
                 raise FileNotFoundError(sr_image if image.is_file() else image)
+            if image in by_image:
+                raise ValueError(f"Duplicate SR output: {image}")
+            if image not in {p.resolve() for p in self.images}:
+                raise ValueError(f"Unexpected SR output: {image}")
             by_image[image] = dict(raw)
         missing = [str(image) for image in self.images if image.resolve() not in by_image]
         if missing:
@@ -342,9 +363,8 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         *,
         baseline_output: Path,
         support_output: Path,
-    ) -> tuple[dict[Path, Path], dict[Path, Path], list[list[str]]]:
+    ) -> tuple[dict[Path, Path], list[list[str]]]:
         current_sr_detections: dict[Path, Path] = {}
-        omr_predictions: dict[Path, Path] = {}
         commands: list[list[str]] = []
 
         if self.dry_run:
@@ -358,7 +378,6 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                     / image.stem
                     / f"{image.stem}_detections.json"
                 )
-                omr_predictions[image] = page_root / "omr_sr" / image.stem / "predictions.json"
                 commands.extend(
                     [
                         ["verified-source-page-worker", str(image)],
@@ -366,7 +385,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
                         ["current-support-precomputed-sr", str(image)],
                     ]
                 )
-            return current_sr_detections, omr_predictions, commands
+            return current_sr_detections, commands
 
         precomputed_by_image, batch_command, batch_payload = self._batch_sr_worker(
             support_output=support_output
@@ -375,26 +394,96 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         commands.append(batch_command)
 
         worker_output = baseline_output.parent / "source_page_workers"
-        for image in tqdm(self.images, desc="Two-HOMR source generation", unit="page"):
-            payload, worker_command = self._source_page_worker(
+        policy = dict(self.det_cfg.get("source_concurrency", {}))
+        ram, vram, device = available_resources()
+        worker_output.mkdir(parents=True, exist_ok=True)
+        try:
+            self._source_admission = select_workers(
+                policy,
+                self.images,
+                available_ram_gib=ram,
+                available_vram_gib=vram,
+                device=device,
+            )
+        except Exception as error:
+            (worker_output / "admission.json").write_text(
+                json.dumps(
+                    {
+                        "status": "rejected",
+                        "reason": str(error),
+                        "policy": policy,
+                        "available_ram_gib": ram,
+                        "available_vram_gib": vram,
+                        "device": device,
+                        "uid": getattr(os, "getuid", lambda: None)(),
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
+            _retain_source_diagnostics(worker_output)
+            raise
+        (worker_output / "admission.json").write_text(
+            json.dumps(
+                {
+                    **self._source_admission,
+                    "policy": policy,
+                    "sr_status": batch_payload.get("status"),
+                    "uid": getattr(os, "getuid", lambda: None)(),
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        self._source_jobs = SourceJobs(policy.get("timeout_sec", 900))
+
+        def execute(image):
+            return self._source_page_worker(
                 image=image,
                 worker_output=worker_output,
                 baseline_output=baseline_output,
                 support_output=support_output,
                 precomputed_sr=precomputed_by_image[image.resolve()],
             )
-            current_sr_detection = self._current_detection_path(payload)
-            omr = Path(str(payload["current_omr"])).resolve()
-            if not omr.is_file():
-                raise FileNotFoundError(omr)
-            current_sr_detections[image] = current_sr_detection
-            omr_predictions[image] = omr
+
+        jobs = self._source_jobs.ordered(
+            self.images,
+            execute,
+            self._source_admission["selected_workers"],
+            worker_output / "schedule.jsonl",
+        )
+        try:
+            return self._consume_source_jobs(jobs, current_sr_detections, commands)
+        except BaseException as error:
+            jobs.close()
+            (worker_output / "failure.json").write_text(
+                json.dumps(
+                    {
+                        "status": "failed",
+                        "error_type": type(error).__name__,
+                        "reason": str(error),
+                        "policy": policy,
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
+            _retain_source_diagnostics(worker_output)
+            raise
+        finally:
+            jobs.close()
+
+    def _consume_source_jobs(self, jobs, current_sr_detections, commands):
+        for image, (payload, worker_command) in jobs:
+            if Path(str(payload.get("image", ""))).resolve() != image.resolve():
+                raise ValueError(f"Wrong source result identity: {image}")
+            current_sr_detections[image] = self._current_detection_path(payload)
             commands.append(worker_command)
             child_commands = payload.get("commands")
             if isinstance(child_commands, list):
                 commands.extend(child_commands)
 
-        return current_sr_detections, omr_predictions, commands
+        return current_sr_detections, commands
 
     def run(self) -> dict[str, Any]:
         result = super().run()
@@ -402,19 +491,19 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
             {
                 "source_generation_scope": "dedicated_sr_batch_then_top_level_python_per_page",
                 "sr_model_lifetime": "one_per_detection_call",
-                "sr_memory_boundary": "batch_process_exits_before_homr_omr",
+                "sr_memory_boundary": "batch_process_exits_before_homr",
                 "source_generation_phases": [
                     "current_x4_sr_batch_all_pages",
                     "sr_batch_process_exit",
                     "verified_source_page_worker_per_page",
                     "verified_baseline_per_page",
                     "current_x4_homr_from_precomputed_sr_per_page",
-                    "omr_dln_from_precomputed_sr_per_page",
                     "current_x4_detection_reused_for_consensus",
                     "current_consensus",
                 ],
             }
         )
+        result["source_concurrency"] = getattr(self, "_source_admission", None)
         if self._last_sr_batch_result is not None:
             result["current_sr_batch"] = {
                 key: self._last_sr_batch_result.get(key)

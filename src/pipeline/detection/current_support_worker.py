@@ -1,9 +1,10 @@
-"""Generate current x4/HOMR/OMR support for one detector page.
+"""Generate current x4/HOMR support for one detector page.
 
 The current support path preserves connector-semantic HOMR artifacts.  SR may be
 materialized by a dedicated all-pages SR process before this worker starts; the
-current HOMR and OMR-DLN phases remain page-local and process-isolated so no
-Real-ESRGAN model state overlaps their GPU lifetime.
+current HOMR phase remains page-local and process-isolated so no Real-ESRGAN model
+state overlaps its GPU lifetime.  Hybrid support comes from x4 HOMR alone (see
+``hybrid_consensus``).
 """
 
 from __future__ import annotations
@@ -17,7 +18,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from src.pipeline.core import run_with_logging
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.perf_trace import set_context, span
 
@@ -42,11 +42,32 @@ def _load_completed_result(path: Path, *, name: str) -> dict[str, Any]:
     return dict(payload)
 
 
+SCORE_PAGE = "score"
+NON_SCORE_PAGE = "non_score_page"
+
+
 def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
-    """Validate the current-HOMR artifacts owned by canonical x4 support."""
+    """Validate the current-HOMR artifacts owned by canonical x4 support.
+
+    A score page requires the complete connector semantic pair. A page that the
+    current HOMR worker declared a non-score page (cover/blank, #532) requires the
+    validated declaration instead and must not carry any connector artifact; x4
+    support still runs for it and publishes its empty detection and staff mask.
+    """
+
+    page_content = payload.get("page_content", SCORE_PAGE)
+    if page_content == NON_SCORE_PAGE:
+        return _require_non_score_page_bundle(payload)
+    if page_content != SCORE_PAGE:
+        raise ValueError(f"Unknown current-HOMR page_content: {page_content!r}")
 
     if payload.get("connector_complete") is not True:
-        raise RuntimeError("Current x4 support requires a complete connector semantic pair")
+        present = payload.get("connector_present")
+        raise RuntimeError(
+            "Current x4 support requires a complete connector semantic pair: current HOMR "
+            "returned a score-page result but its connector artifacts are incomplete "
+            f"(present={present!r}, image={payload.get('image')})"
+        )
 
     required_fields = (
         "current_sr_detection",
@@ -54,6 +75,44 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
         "connector_symbols",
         "connector_brace_dot",
     )
+    return _require_artifact_files(payload, required_fields)
+
+
+def _require_non_score_page_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
+    from src.common.connector_artifacts import read_non_score_page_marker
+
+    if payload.get("connector_complete") is not False or any(
+        payload.get(name) for name in ("connector_symbols", "connector_brace_dot")
+    ):
+        raise RuntimeError(
+            "Current HOMR declared a non-score page but also reported connector artifacts: "
+            f"{payload.get('image')}"
+        )
+    empty_detection = payload.get("empty_detection")
+    if (
+        not isinstance(empty_detection, Mapping)
+        or empty_detection.get("classification") != NON_SCORE_PAGE
+    ):
+        raise RuntimeError(
+            "Current HOMR declared a non-score page without non-score evidence: "
+            f"{payload.get('image')}"
+        )
+    paths = _require_artifact_files(
+        payload, ("current_sr_detection", "staff_mask", "non_score_page_marker")
+    )
+    stem = Path(str(payload.get("image", ""))).stem
+    read_non_score_page_marker(paths["non_score_page_marker"], stem=stem)
+    detections = json.loads(paths["current_sr_detection"].read_text(encoding="utf-8"))
+    if not isinstance(detections, Mapping) or detections.get("predictions") != []:
+        raise RuntimeError(
+            f"Current HOMR declared a non-score page with barline predictions: {stem}"
+        )
+    return paths
+
+
+def _require_artifact_files(
+    payload: Mapping[str, Any], required_fields: tuple[str, ...]
+) -> dict[str, Path]:
     missing_fields = [name for name in required_fields if not payload.get(name)]
     if missing_fields:
         raise ValueError(
@@ -67,6 +126,10 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
             "Current x4 support HOMR artifacts missing: " + ", ".join(missing_files)
         )
     return paths
+
+
+def _optional_path(paths: Mapping[str, Path], name: str) -> str | None:
+    return str(paths[name]) if name in paths else None
 
 
 def _require_precomputed_sr(request: Mapping[str, Any], *, image: Path) -> dict[str, Any] | None:
@@ -219,12 +282,12 @@ def run(request_path: Path, result_path: Path) -> Path:
                 env=env,
             )
         sr_execution_scope = "page_subprocess"
-        memory_phase_boundaries = ["sr", "current_homr", "omr_dln"]
+        memory_phase_boundaries = ["sr", "current_homr"]
     else:
         sr_payload = precomputed_sr
         sr_command = ["precomputed-current-x4-sr", str(sr_payload["sr_image"])]
         sr_execution_scope = "dedicated_sr_batch_process"
-        memory_phase_boundaries = ["sr_batch_process_exited", "current_homr", "omr_dln"]
+        memory_phase_boundaries = ["sr_batch_process_exited", "current_homr"]
 
     actual_sr = Path(str(sr_payload["sr_image"])).resolve()
     if precomputed_sr is None and actual_sr != sr_image.resolve():
@@ -251,29 +314,8 @@ def run(request_path: Path, result_path: Path) -> Path:
     )
     homr_paths = _require_current_homr_bundle(homr_payload)
 
-    omr_output = output_root / "omr_sr"
-    # The batch worker writes the same stable per-page SR layout used by the old
-    # page-local SR worker. The production OMR-DLN worker accepts that persisted
-    # path directly; experiment/evaluation code is no longer part of runtime.
-    sr_directory = actual_sr.parent.parent
-    omr_cmd = get_pipeline_python("omr_dln") + [
-        "-m",
-        "src.pipeline.detection.omr_dln_worker",
-        "--images",
-        str(image),
-        "--output-dir",
-        str(omr_output),
-        "--pre-computed-sr",
-        str(sr_directory),
-    ]
-    run_with_logging(omr_cmd, env=env, check=True)
-
-    omr_predictions = omr_output / stem / "predictions.json"
-    if not omr_predictions.is_file():
-        raise FileNotFoundError(omr_predictions)
-
     payload = {
-        "schema_version": "pipeline.current_x4_support.v3",
+        "schema_version": "pipeline.current_x4_support.v4",
         "status": "completed",
         "image": str(image),
         "sr_scale": 4,
@@ -282,16 +324,18 @@ def run(request_path: Path, result_path: Path) -> Path:
         "sr_execution_scope": sr_execution_scope,
         "current_sr_detection": str(homr_paths["current_sr_detection"]),
         "current_homr_staff_mask": str(homr_paths["staff_mask"]),
-        "connector_complete": True,
-        "connector_symbols": str(homr_paths["connector_symbols"]),
-        "connector_brace_dot": str(homr_paths["connector_brace_dot"]),
+        "page_content": homr_payload.get("page_content", SCORE_PAGE),
+        "connector_complete": "connector_symbols" in homr_paths,
+        "connector_symbols": _optional_path(homr_paths, "connector_symbols"),
+        "connector_brace_dot": _optional_path(homr_paths, "connector_brace_dot"),
+        "non_score_page_marker": _optional_path(homr_paths, "non_score_page_marker"),
+        "empty_detection": homr_payload.get("empty_detection"),
         "homr_api_compat": homr_payload.get("homr_api_compat"),
-        "current_omr": str(omr_predictions),
         "support_root": str(output_root),
         "current_homr_executed": True,
         "memory_phase_boundaries": memory_phase_boundaries,
         "historical_detector_artifact_runtime_input": False,
-        "commands": [sr_command, homr_command, omr_cmd],
+        "commands": [sr_command, homr_command],
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(

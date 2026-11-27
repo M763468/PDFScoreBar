@@ -48,6 +48,7 @@ from src.homr_runtime.barline_candidates import (
 from src.homr_runtime.barline_candidates import (
     generate_vertical_run_candidates_weak as generate_vertical_run_candidates_weak,
 )
+from src.homr_runtime.empty_detection import HomrEmptyDetectionError, segmentation_evidence
 from src.homr_runtime.end_barlines import recover_end_barlines as recover_end_barlines
 from src.homr_runtime.filtering import count_staff_crossings as count_staff_crossings
 from src.homr_runtime.filtering import (
@@ -56,6 +57,21 @@ from src.homr_runtime.filtering import (
 from src.homr_runtime.transforms import autocrop_bounds as autocrop_bounds
 from src.homr_runtime.transforms import compute_transform_info as compute_transform_info
 from src.homr_runtime.utils import eprint
+
+
+def start_title_detection(config: Any, debug: Any, top_staff: Any) -> Future[str]:
+    """Start HOMR title OCR only when ``config.title_detection`` asks for it (as homr.main).
+
+    PDFScoreBar disables it (``api_compat``). Starting it anyway leaves an OCR thread
+    reading its temporary input while the SegNet-only path already removes HOMR's
+    temporary files, which fails on Windows with a sharing violation (#535).
+    """
+
+    if getattr(config, "title_detection", True):
+        return detect_title(debug, top_staff)
+    done: Future[str] = Future()
+    done.set_result("")
+    return done
 
 
 def detect_staffs_with_barlines(
@@ -154,7 +170,10 @@ def detect_staffs_with_barlines(
     debug.write_bounding_boxes_alternating_colors("notehead_with_stems", noteheads_with_stems)
     eprint("Found " + str(len(noteheads_with_stems)) + " noteheads")
     if len(noteheads_with_stems) == 0:
-        raise RuntimeError("No noteheads found")
+        raise HomrEmptyDetectionError(
+            "No noteheads found",
+            segmentation_evidence(predictions.staff, symbols.staff_fragments, notehead_count=0),
+        )
 
     average_note_head_height = float(
         np.median([notehead.notehead.size[1] for notehead in noteheads_with_stems])
@@ -232,9 +251,16 @@ def detect_staffs_with_barlines(
         debug, predictions.staff, symbols.staff_fragments, symbols.clefs_keys, bar_line_boxes
     )
     if len(staffs) == 0:
-        raise RuntimeError("No staffs found")
+        raise HomrEmptyDetectionError(
+            "No staffs found",
+            segmentation_evidence(
+                predictions.staff,
+                symbols.staff_fragments,
+                notehead_count=len(noteheads_with_stems),
+            ),
+        )
 
-    title_future = detect_title(debug, staffs[0])
+    title_future = start_title_detection(config, debug, staffs[0])
     debug.write_bounding_boxes_alternating_colors("staffs", staffs)
 
     brace_dot_img = prepare_brace_dot_image(predictions.symbols, predictions.staff)

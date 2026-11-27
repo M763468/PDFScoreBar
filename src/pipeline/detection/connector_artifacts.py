@@ -13,7 +13,6 @@ from typing import Any, Iterator
 import numpy as np
 
 from src.common.connector_artifacts import (
-    connector_masks_complete,
     invalidate_connector_masks,
     write_connector_masks,
 )
@@ -26,7 +25,6 @@ _CAPTURE_CONTEXT: ContextVar[dict[str, np.ndarray] | None] = ContextVar(
 _HOOK_LOCK = Lock()
 _PREDICT_PATCH_MARKER = "_pdfscore_connector_artifact_capture"
 _DEBUG_PATCH_MARKER = "_pdfscore_connector_debug_capture"
-_SKIP_PATCH_MARKER = "_pdfscore_connector_skip_guard"
 
 
 def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = None) -> bool:
@@ -79,44 +77,6 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
 
     setattr(predict_with_connector_artifacts, _PREDICT_PATCH_MARKER, True)
     predictor_cls.predict = predict_with_connector_artifacts
-    return True
-
-
-def install_homr_skip_existing_guard(detector_cls: type[Any] | None = None) -> bool:
-    """Require semantic connector pairs before treating HOMR outputs as complete."""
-
-    if detector_cls is None:
-        try:
-            from .hybrid import HybridDetector
-        except ImportError:
-            return False
-        detector_cls = HybridDetector
-
-    original_check = detector_cls._all_stems_exist
-    if getattr(original_check, _SKIP_PATCH_MARKER, False):
-        return True
-
-    @wraps(original_check)
-    def check_with_connector_artifacts(
-        self: Any,
-        base_dir: Path,
-        stems_to_check: list[str],
-        glob_pattern: str,
-    ) -> bool:
-        if not original_check(self, base_dir, stems_to_check, glob_pattern):
-            return False
-        if glob_pattern != "batch/*/*.json":
-            return True
-        complete = connector_masks_complete(base_dir, stems_to_check)
-        if not complete:
-            logger.info(
-                "HOMR outputs under %s predate the connector semantic contract; rerunning them.",
-                base_dir,
-            )
-        return complete
-
-    setattr(check_with_connector_artifacts, _SKIP_PATCH_MARKER, True)
-    detector_cls._all_stems_exist = check_with_connector_artifacts
     return True
 
 

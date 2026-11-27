@@ -44,6 +44,11 @@ candidate from frozen source and main commit identities with
 `tools/release_candidate.py`; its only parent is the selected main commit and its
 tree contains the manifest-selected distribution plus generated provenance.
 The tool creates an independent local repository and never updates shared branches.
+develop never carries the formal license. Once main does, each candidate applies a sealed
+main-only license overlay to that extraction, limited to the paths named by the manifest's
+`main_license_overlay_policy`; the license is not synchronized back to develop, and the tool
+refuses a candidate that would drop it or overwrite newer develop files. See
+[REPOSITORY_LICENSE_OPTIONS.md §7](../licensing/REPOSITORY_LICENSE_OPTIONS.md).
 Its static validation is preparation evidence, not release acceptance or permission
 to merge. Record runtime, manual-correction and semantic acceptance against that exact
 candidate commit before opening a promotion PR from the candidate branch to main. Changed candidates require

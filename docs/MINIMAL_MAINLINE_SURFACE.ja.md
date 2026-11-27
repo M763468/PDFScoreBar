@@ -1,12 +1,14 @@
 # 最小配布面
 
-<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"ddcf7fc36c47574cc5d686e27e004acb173feade86d3b3b6fee1e7dbfb48b097"},"state":"reviewed"} -->
+<!-- translation: {"original":"MINIMAL_MAINLINE_SURFACE.md","source":{"sha256":"21ccde6682b7288ec2ad1e3674f07dc0913db3dc90f9b9d89c253016543ac05a"},"state":"reviewed"} -->
 
 [English / 原文](MINIMAL_MAINLINE_SURFACE.md)（英語正本）
 
-翻訳元: same PR / SHA-256 `ddcf7fc36c47574cc5d686e27e004acb173feade86d3b3b6fee1e7dbfb48b097`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
+翻訳元: same PR / SHA-256 `21ccde6682b7288ec2ad1e3674f07dc0913db3dc90f9b9d89c253016543ac05a`。状態: `reviewed`。原文との意味・制約・例外と日本語の可読性を確認済み。
 
 配布候補は、[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json) にある **135個の追跡ファイル**です。内訳は `src/` 配下の99ファイルと、本番の config・モデル・Docker・パッケージのファイル、パッケージに含める利用者向け補正アプリケーション、最小限の利用者向け文書、チェックアウト用の ignore 規則です。正確な配布物は、`runtime_bundle_patterns`、`distribution_support_patterns`、`distribution_metadata_patterns` の和集合です。生成される `DISTRIBUTION_PROVENANCE.json` は、ソースの識別情報、dirty の状態、配布する各ファイルのハッシュを記録します。
+
+`main_license_overlay_policy` は配布の選定には含まれません。main 候補を作るときに、封印済みの main 専用ライセンス overlay が抽出結果へ追加できるパス（ライセンス・通知ファイル）と変更できるパス（README、パッケージとモデル manifest のライセンス表示）だけを列挙します。その素材は develop に置きません（#505、#550）。[REPOSITORY_LICENSE_OPTIONS.md §7](licensing/REPOSITORY_LICENSE_OPTIONS.md) を参照してください。
 
 この選定は Issue #100 と #409 で定め、#410（リリース候補 RC4、PR #442）で初めて `main` へ昇格しました。`develop` の変更が `main` に届くのは、[ブランチ方針](dev/BRANCH_POLICY.ja.md)に従った後のリリース昇格を通じてだけです。過去の各候補サイズでの受入の証拠は、[#409 の受入履歴](releases/issue409/ACCEPTANCE_HISTORY.md)（英語）に残しています。
 

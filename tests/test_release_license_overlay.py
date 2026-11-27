@@ -8,6 +8,7 @@ develop changes. The license texts below are synthetic placeholders, not license
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -26,6 +27,7 @@ from tools.release_candidate import (
 )
 
 TOOLS = Path(__file__).resolve().parents[1] / "tools"
+RUNTIME_CONTRACT = TOOLS.parent / "docker" / "runtime_contract.py"
 README = "# Distribution\n\nInstall with Docker.\n\nRun the browser application.\n"
 PYPROJECT = '[project]\nname = "example"\nversion = "0.1.0"\nreadme = "README.md"\n'
 LICENSE_SECTION = "\n## Placeholder terms\n\nSee [LICENSE](LICENSE) and [NOTICE](NOTICE).\n"
@@ -423,3 +425,47 @@ def test_cli_derive_create_check_round_trip(repo, tmp_path):
         == created
     )
     assert created["license_overlay"]["overlay_id"] == "cli-overlay"
+
+
+def runtime_validator():
+    spec = importlib.util.spec_from_file_location("overlay_runtime_contract", RUNTIME_CONTRACT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.validate_distribution_provenance
+
+
+def test_shipped_runtime_validator_accepts_overlay_candidate_within_policy(repo, tmp_path):
+    """Docker build/preflight trust the candidate identity through docker/runtime_contract.py."""
+    _, candidate, _, _ = first_release(repo, tmp_path)
+    validate = runtime_validator()
+    identity = validate(candidate)
+    assert {"LICENSE", "NOTICE", "LICENSES/Example.txt"} <= set(identity["files"])
+    plain = tmp_path / "plain"
+    create_candidate(repo["root"], plain, repo["source"], repo["main"], "release/plain-rc1")
+    assert "LICENSE" not in validate(plain)["files"]
+
+
+@pytest.mark.parametrize("kind", ["outside-policy", "hash", "unrecorded-file"])
+def test_shipped_runtime_validator_rejects_overlay_outside_policy(repo, tmp_path, kind):
+    _, candidate, _, _ = first_release(repo, tmp_path)
+    provenance = json.loads((candidate / PROVENANCE).read_text())
+    entries = provenance["release"]["main_overlay"]["spec"]["entries"]
+    if kind == "outside-policy":
+        value = b"print('unreviewed')\n"
+        (candidate / "src/extra.py").write_bytes(value)
+        digest = hashlib.sha256(value).hexdigest()
+        entries.append({"path": "src/extra.py", "operation": "add", "sha256": digest})
+        provenance["files"]["src/extra.py"] = digest
+        provenance["release"]["file_modes"]["src/extra.py"] = "100644"
+        match = "outside the manifest policy"
+    elif kind == "hash":
+        next(e for e in entries if e["path"] == "LICENSE")["sha256"] = "0" * 64
+        match = "overlay hash differs"
+    else:
+        provenance["release"]["main_overlay"]["spec"]["entries"] = [
+            e for e in entries if e["path"] != "NOTICE"
+        ]
+        match = "file selection differs"
+    (candidate / PROVENANCE).write_text(json.dumps(provenance, indent=2) + "\n")
+    with pytest.raises(ValueError, match=match):
+        runtime_validator()(candidate)

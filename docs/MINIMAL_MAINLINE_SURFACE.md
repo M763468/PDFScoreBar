@@ -10,6 +10,12 @@ application, minimum user documentation, and checkout-local ignore rules. The ex
 `distribution_metadata_patterns`. A generated `DISTRIBUTION_PROVENANCE.json` records
 source identity, dirty status, and each shipped file's hash.
 
+`main_license_overlay_policy` is not part of the selection. It names the only paths a sealed
+main-only license overlay may add to (license and notice files) or modify in (README, package
+and model-manifest license statements) the extraction when a main candidate is built; develop
+never carries that material (#505, #550). See
+[REPOSITORY_LICENSE_OPTIONS.md §7](licensing/REPOSITORY_LICENSE_OPTIONS.md).
+
 This selection was defined by Issues #100 and #409 and first promoted to `main` through
 #410 (release candidate RC4, PR #442). Changes on `develop` reach `main` only through a later
 release promotion under the [branch policy](dev/BRANCH_POLICY.md). The acceptance evidence for

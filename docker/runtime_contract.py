@@ -43,6 +43,7 @@ RUNTIME_MODULES = ("homr",)
 EXCLUDED_RUNTIME_MODULES = ("basicsr", "realesrgan", "gfpgan", "facexlib")
 PROVENANCE_NAME = "DISTRIBUTION_PROVENANCE.json"
 MANIFEST_NAME = "docs/MINIMAL_MAINLINE_SURFACE.json"
+OVERLAY_POLICY_NAME = "main_license_overlay_policy"
 MANIFEST_SECTIONS = (
     "runtime_bundle_patterns",
     "distribution_support_patterns",
@@ -136,6 +137,37 @@ def source_fingerprint(root: Path) -> str:
     return digest.hexdigest()
 
 
+def _main_license_overlay_additions(
+    provenance: dict, manifest: dict, selected: set[str]
+) -> set[str]:
+    """Main-only license files a release candidate adds within the manifest policy (#550)."""
+    release = provenance.get("release")
+    overlay = release.get("main_overlay") if isinstance(release, dict) else None
+    if overlay is None:
+        return set()
+    policy = manifest.get(OVERLAY_POLICY_NAME)
+    spec = overlay.get("spec") if isinstance(overlay, dict) else None
+    entries = spec.get("entries") if isinstance(spec, dict) else None
+    hashes = provenance.get("files")
+    if not isinstance(policy, dict) or not isinstance(entries, list) or not entries:
+        raise ValueError("invalid main license overlay in distribution provenance")
+    allowed = {
+        section: {e.get("pattern") for e in policy.get(section, []) if isinstance(e, dict)}
+        for section in ("additions", "modifications")
+    }
+    added: set[str] = set()
+    for entry in entries:
+        path = entry.get("path") if isinstance(entry, dict) else None
+        operation = entry.get("operation") if isinstance(entry, dict) else None
+        if operation == "add" and path in allowed["additions"] and path not in selected:
+            added.add(path)
+        elif not (operation == "modify" and path in allowed["modifications"] and path in selected):
+            raise ValueError(f"main license overlay entry outside the manifest policy: {path!r}")
+        if not isinstance(hashes, dict) or hashes.get(path) != entry.get("sha256"):
+            raise ValueError(f"main license overlay hash differs from provenance: {path!r}")
+    return added
+
+
 def validate_distribution_provenance(workspace: Path) -> dict | None:
     """Verify all manifest-selected bytes before trusting a frozen identity."""
     provenance_path = workspace / PROVENANCE_NAME
@@ -180,6 +212,7 @@ def validate_distribution_provenance(workspace: Path) -> dict | None:
             selected.add(relative)
     if MANIFEST_NAME not in selected:
         raise ValueError("distribution manifest must include itself")
+    selected |= _main_license_overlay_additions(provenance, manifest, selected)
 
     hashes = provenance.get("files")
     if not isinstance(hashes, dict) or set(hashes) != selected:

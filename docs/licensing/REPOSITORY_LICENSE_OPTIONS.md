@@ -181,14 +181,17 @@ revert や Close によってそれらの効力が消えたとは断定しない
   `MAIN_LICENSE_OVERLAY.json`（各ファイルの SHA-256、変更では封印時の `develop` 側 SHA-256、導出元 3 commit）と `files/`。
 - `create` / `check` の `--license-overlay`: `develop` の抽出結果に overlay を適用する。manifest は `develop` の bytes のまま。
   provenance の `release.main_overlay` に spec と spec SHA-256 を記録し、`files` / `file_modes` は最終構成を記録する。
-  `check` は `develop` から再導出し、パス・mode・hash・単一 parent・決定的な commit identity を照合する。`--license-overlay` を省くと、
-  候補が記録した overlay を `develop` の選定と policy に対して再検証する。承認済み overlay の identity と結び付けるには指定する。
-  レポートの `license_overlay` に `develop` 選定ファイル数、追加・変更パスが出る。
-- fail closed: policy 外のパス、`required` の追加ファイルの欠落、封印時と異なる `develop` 側ファイル（古い overlay による新しい
+  `check` は `develop` と承認済み overlay から再導出し、パス・mode・hash・単一 parent・決定的な commit identity を照合する。
+  候補が overlay を記録している場合、`check` は承認済みの `--license-overlay` の指定を必須とし、候補自身の申告を承認根拠にしない。
+  overlay は封印時の source commit（`derived_from.source_commit`）に結び付き、別の source には使えない（許可変更対象外のファイルだけが
+  変わった source でも再導出が必要）。レポートの `license_overlay` に `develop` 選定ファイル数、追加・変更パスが出る。
+- fail closed: policy 外のパス、`required` の追加ファイルの欠落、封印時と異なる source commit または `develop` 側ファイル（古い overlay による新しい
   `develop` 変更の上書き）、`main` parent にあるライセンス素材（前回 overlay の全 entry、policy の追加パス、`LICENSE` / `NOTICE` /
   `COPYING` / `LICENSES/`）を overlay なしで、または overlay で落とす候補、spec・ファイルの改変、余分なファイル、非正規の JSON。
 - 互換: `main` parent にライセンス素材がなく overlay を指定しない場合は、従来と同一の候補（provenance・commit message も同じ形式）になる。
-- 配布物の `docker/runtime_contract.py` の provenance 検証も、policy 内の overlay 追加ファイルを受け付ける（build / preflight）。
+- 配布物の `docker/runtime_contract.py` の provenance 検証（build / preflight）は、`tools/materialize_distribution.py` と同じ契約
+  （policy、spec SHA-256、構造、`required` の存在、source commit との一致、hash）で overlay を検査する。両者の一致は
+  `tests/test_release_license_overlay.py` の共通の負例で確認する。
 
 ### 7.2 手順
 

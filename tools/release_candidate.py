@@ -185,6 +185,17 @@ def snapshot(
     else:
         spec, overlay_content = overlay
         added, modified = overlay_changes(spec, manifest)
+        # The overlay identity is bound to the exact source it was sealed for; per-file base
+        # hashes alone would accept an overlay sealed for another source whose policy files
+        # happen to match. Derivation commits must also be real commits in this repository.
+        derived = spec["derived_from"]
+        if derived["source_commit"] != source_commit:
+            raise ValueError(
+                f"License overlay was sealed for source {derived['source_commit']}, not "
+                f"{source_commit}; derive it for this source"
+            )
+        for role in ("base_commit", "license_commit"):
+            commit_id(repository, derived[role])
         dropped = required - added - modified
         if dropped:
             raise ValueError(
@@ -261,21 +272,6 @@ def load_overlay(directory: Path) -> tuple[dict, dict[str, bytes]]:
     if unexpected:
         raise ValueError(f"Unexpected license overlay files: {sorted(unexpected)}")
     return spec, contents
-
-
-def candidate_overlay(candidate: Path) -> tuple[dict, dict[str, bytes]] | None:
-    """Rebuild the overlay a candidate declares, so check can re-derive it from develop."""
-    provenance = json.loads((candidate / PROVENANCE).read_text(encoding="utf-8"))
-    overlay = provenance.get("release", {}).get("main_overlay")
-    if overlay is None:
-        return None
-    contents = {}
-    for entry in overlay["spec"]["entries"]:
-        file = candidate / entry["path"]
-        if not exact_path(entry["path"]) or not file.is_file() or file.is_symlink():
-            raise ValueError(f"Candidate is missing license overlay file: {entry['path']}")
-        contents[entry["path"]] = file.read_bytes()
-    return overlay["spec"], contents
 
 
 def merge_three_way(path: str, current: bytes, base: bytes, licensed: bytes) -> bytes:
@@ -496,15 +492,21 @@ def check_candidate(
     main_commit: str,
     license_overlay: Path | None = None,
 ) -> dict:
-    """Re-derive the candidate from develop (plus its overlay) and compare every identity.
+    """Re-derive the candidate from develop plus the approved overlay; compare every identity.
 
-    Without ``license_overlay`` the overlay the candidate declares is re-validated against the
-    develop selection and policy; pass the approved overlay to also bind its exact identity.
+    A candidate's own overlay declaration is never the approval basis: when it records one,
+    the approved overlay package must be passed and must reproduce it exactly.
     """
     candidate = candidate.resolve()
     if Path(git(candidate, "rev-parse", "--show-toplevel").decode().strip()).resolve() != candidate:
         raise ValueError("Candidate must be the root of its own Git checkout")
-    overlay = load_overlay(license_overlay) if license_overlay else candidate_overlay(candidate)
+    overlay = load_overlay(license_overlay) if license_overlay else None
+    if overlay is None:
+        declared = json.loads((candidate / PROVENANCE).read_text(encoding="utf-8"))
+        if declared.get("release", {}).get("main_overlay") is not None:
+            raise ValueError(
+                "Candidate declares a main license overlay; pass the approved --license-overlay"
+            )
     content, expected = snapshot(repository, source_commit, main_commit, overlay)
     errors = check_tree(candidate, git_checkout=True)
     if errors:

@@ -164,6 +164,8 @@ def check_tree(
                 if overlay.get("spec_sha256") != hashlib.sha256(canonical_json(spec)).hexdigest():
                     errors.append("Main license overlay identity differs from its recorded spec")
                 added, _ = overlay_changes(spec, data)
+                if spec["derived_from"]["source_commit"] != provenance.get("source_commit"):
+                    errors.append("Main license overlay was sealed for a different source commit")
                 selected |= added
                 overlay_hashes = {entry["path"]: entry["sha256"] for entry in spec["entries"]}
             except (KeyError, TypeError, AttributeError, ValueError) as exc:

@@ -137,34 +137,111 @@ def source_fingerprint(root: Path) -> str:
     return digest.hexdigest()
 
 
+def _overlay_exact_path(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    path = PurePosixPath(value)
+    return not (
+        path.is_absolute()
+        or ".." in path.parts
+        or str(path) != value
+        or any(char in value for char in "*?[")
+        or any(part.lower() == ".git" for part in path.parts)
+        or value == PROVENANCE_NAME
+    )
+
+
 def _main_license_overlay_additions(
     provenance: dict, manifest: dict, selected: set[str]
 ) -> set[str]:
-    """Main-only license files a release candidate adds within the manifest policy (#550)."""
+    """Main-only license files a release candidate adds within the manifest policy (#550).
+
+    Mirrors tools/materialize_distribution.py (overlay_policy / overlay_changes), which is not
+    shipped: same policy, canonical spec identity, structure, required files and source binding.
+    """
     release = provenance.get("release")
     overlay = release.get("main_overlay") if isinstance(release, dict) else None
     if overlay is None:
         return set()
+
+    def invalid(reason: str) -> ValueError:
+        return ValueError(f"invalid main license overlay in distribution provenance: {reason}")
+
     policy = manifest.get(OVERLAY_POLICY_NAME)
     spec = overlay.get("spec") if isinstance(overlay, dict) else None
-    entries = spec.get("entries") if isinstance(spec, dict) else None
+    if not isinstance(policy, dict) or not isinstance(spec, dict):
+        raise invalid("missing manifest policy or spec")
+    canonical = (json.dumps(spec, indent=2, sort_keys=True) + "\n").encode()
+    if overlay.get("spec_sha256") != hashlib.sha256(canonical).hexdigest():
+        raise invalid("spec SHA-256 differs from the recorded spec")
+    if (
+        set(spec) != {"schema_version", "overlay_id", "derived_from", "entries"}
+        or spec.get("schema_version") != 1
+    ):
+        raise invalid("unsupported spec schema")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", str(spec["overlay_id"])):
+        raise invalid("overlay id")
+    derived = spec["derived_from"]
+    if (
+        not isinstance(derived, dict)
+        or set(derived) != {"base_commit", "license_commit", "source_commit"}
+        or not all(re.fullmatch(r"[0-9a-f]{40}", str(v)) for v in derived.values())
+    ):
+        raise invalid("derivation commits")
+    if derived["source_commit"] != provenance.get("source_commit"):
+        raise invalid("overlay was sealed for a different source commit")
+
+    additions: dict[str, bool] = {}
+    for entry in policy.get("additions", []):
+        path = entry.get("pattern") if isinstance(entry, dict) else None
+        required = entry.get("required", False) if isinstance(entry, dict) else None
+        if (
+            not _overlay_exact_path(path)
+            or not entry.get("role")
+            or path in selected
+            or path in additions
+            or not isinstance(required, bool)
+        ):
+            raise invalid(f"policy addition {path!r}")
+        additions[path] = required
+    modifications: set[str] = set()
+    for entry in policy.get("modifications", []):
+        path = entry.get("pattern") if isinstance(entry, dict) else None
+        if (
+            path not in selected
+            or path == MANIFEST_NAME
+            or not entry.get("role")
+            or path in modifications
+        ):
+            raise invalid(f"policy modification {path!r}")
+        modifications.add(path)
+    if not any(additions.values()):
+        raise invalid("policy requires no file")
+
+    entries = spec["entries"]
+    paths = [e.get("path") if isinstance(e, dict) else None for e in entries or []]
+    if not paths or not all(_overlay_exact_path(p) for p in paths) or paths != sorted(set(paths)):
+        raise invalid("entries must be unique, sorted exact paths")
     hashes = provenance.get("files")
-    if not isinstance(policy, dict) or not isinstance(entries, list) or not entries:
-        raise ValueError("invalid main license overlay in distribution provenance")
-    allowed = {
-        section: {e.get("pattern") for e in policy.get(section, []) if isinstance(e, dict)}
-        for section in ("additions", "modifications")
-    }
     added: set[str] = set()
     for entry in entries:
-        path = entry.get("path") if isinstance(entry, dict) else None
-        operation = entry.get("operation") if isinstance(entry, dict) else None
-        if operation == "add" and path in allowed["additions"] and path not in selected:
+        path, operation = entry["path"], entry.get("operation")
+        keys = {"path", "operation", "sha256"} | (
+            {"base_sha256"} if operation == "modify" else set()
+        )
+        if set(entry) != keys or not all(
+            re.fullmatch(r"[0-9a-f]{64}", str(entry[k])) for k in keys & {"sha256", "base_sha256"}
+        ):
+            raise invalid(f"entry {path!r}")
+        if operation == "add" and path in additions:
             added.add(path)
-        elif not (operation == "modify" and path in allowed["modifications"] and path in selected):
+        elif not (operation == "modify" and path in modifications):
             raise ValueError(f"main license overlay entry outside the manifest policy: {path!r}")
-        if not isinstance(hashes, dict) or hashes.get(path) != entry.get("sha256"):
+        if not isinstance(hashes, dict) or hashes.get(path) != entry["sha256"]:
             raise ValueError(f"main license overlay hash differs from provenance: {path!r}")
+    missing = {path for path, required in additions.items() if required} - added
+    if missing:
+        raise invalid(f"required main license files missing: {sorted(missing)}")
     return added
 
 

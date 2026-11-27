@@ -192,13 +192,14 @@ def test_first_application_is_develop_extraction_plus_sealed_overlay(repo, tmp_p
     assert readme["base_sha256"] == hashlib.sha256(README.encode()).hexdigest()
     assert report["license_overlay"]["develop_selected_files"] == 4
     assert "Main license overlay SHA-256" in git(candidate, "show", "-s", "--format=%B", "HEAD")
-    # Reproducible, and checkable with or without the private overlay package.
+    # Reproducible; check binds the approved overlay and never trusts the self-declaration.
     second = create_candidate(
         root, tmp_path / "again", repo["source"], repo["main"], "release/again-rc1", overlay
     )
     assert second == report
-    assert check_candidate(root, candidate, repo["source"], repo["main"]) == report
     assert check_candidate(root, candidate, repo["source"], repo["main"], overlay) == report
+    with pytest.raises(ValueError, match="pass the approved --license-overlay"):
+        check_candidate(root, candidate, repo["source"], repo["main"])
     assert check_tree(candidate, git_checkout=True) == []
     assert git(root, "rev-parse", "HEAD") == repo["source"]
     assert not (root / "LICENSE").exists()
@@ -226,8 +227,8 @@ def test_next_promotion_keeps_license_and_newer_develop_changes(repo, tmp_path):
     with pytest.raises(ValueError, match="main-only license material"):
         create_candidate(repo["root"], tmp_path / "lost", source2, main1, "release/lost-rc2")
     assert not (tmp_path / "lost").exists()
-    # The old overlay was sealed against the older develop pyproject: refuse to overwrite it.
-    with pytest.raises(ValueError, match="stale for pyproject.toml"):
+    # The old overlay was sealed for the older develop source: refuse to reuse it.
+    with pytest.raises(ValueError, match="sealed for source"):
         create_candidate(
             repo["root"],
             tmp_path / "stale",
@@ -385,7 +386,7 @@ def test_candidate_check_rejects_overlay_tampering(repo, tmp_path, kind):
             check_candidate(root, candidate, repo["source"], repo["main"], overlay)
         return
     with pytest.raises(ValueError):
-        check_candidate(root, candidate, repo["source"], repo["main"])
+        check_candidate(root, candidate, repo["source"], repo["main"], overlay)
 
 
 def test_cli_derive_create_check_round_trip(repo, tmp_path):
@@ -465,7 +466,119 @@ def test_shipped_runtime_validator_rejects_overlay_outside_policy(repo, tmp_path
         provenance["release"]["main_overlay"]["spec"]["entries"] = [
             e for e in entries if e["path"] != "NOTICE"
         ]
-        match = "file selection differs"
+        match = "required main license files missing"
+    _reseal(provenance["release"]["main_overlay"])
     (candidate / PROVENANCE).write_text(json.dumps(provenance, indent=2) + "\n")
     with pytest.raises(ValueError, match=match):
         runtime_validator()(candidate)
+
+
+def _reseal(record):
+    record["spec_sha256"] = hashlib.sha256(canonical_json(record["spec"])).hexdigest()
+
+
+def _mutate(candidate, kind):
+    """Inject exactly one overlay defect while keeping the rest of the identity consistent."""
+    path = candidate / PROVENANCE
+    provenance = json.loads(path.read_text())
+    record = provenance["release"]["main_overlay"]
+    entries = record["spec"]["entries"]
+    if kind == "required-removed-everywhere":
+        record["spec"]["entries"] = [e for e in entries if e["path"] != "NOTICE"]
+        del provenance["files"]["NOTICE"]
+        del provenance["release"]["file_modes"]["NOTICE"]
+        (candidate / "NOTICE").unlink()
+        _reseal(record)
+    elif kind == "spec-sha256":
+        record["spec_sha256"] = "0" * 64
+    elif kind == "duplicate-entry":
+        entries.insert(0, dict(entries[0]))
+        _reseal(record)
+    elif kind == "unsorted-entries":
+        entries.reverse()
+        _reseal(record)
+    elif kind == "extra-entry-key":
+        entries[0]["mode"] = "100644"
+        _reseal(record)
+    elif kind == "unknown-operation":
+        next(e for e in entries if e["path"] == "LICENSE")["operation"] = "replace"
+        _reseal(record)
+    elif kind == "source-identity":
+        record["spec"]["derived_from"]["source_commit"] = "f" * 40
+        _reseal(record)
+    elif kind == "schema":
+        record["spec"]["schema_version"] = 2
+        _reseal(record)
+    path.write_text(json.dumps(provenance, indent=2) + "\n")
+
+
+OVERLAY_DEFECTS = [
+    "required-removed-everywhere",
+    "spec-sha256",
+    "duplicate-entry",
+    "unsorted-entries",
+    "extra-entry-key",
+    "unknown-operation",
+    "source-identity",
+    "schema",
+]
+
+
+@pytest.mark.parametrize("kind", OVERLAY_DEFECTS)
+def test_materialize_and_runtime_validators_agree_on_overlay_defects(repo, tmp_path, kind):
+    """The release checker and the shipped runtime validator enforce one overlay contract."""
+    _, candidate, _, _ = first_release(repo, tmp_path)
+    assert check_tree(candidate, git_checkout=True) == []
+    runtime_validator()(candidate)
+    _mutate(candidate, kind)
+    assert check_tree(candidate, git_checkout=True), kind
+    with pytest.raises(ValueError):
+        runtime_validator()(candidate)
+
+
+def test_overlay_is_bound_to_the_exact_source_it_was_sealed_for(repo, tmp_path):
+    """Matching per-file base hashes must not let an overlay sealed for another source pass."""
+    overlay = tmp_path / "overlay"
+    derive(repo, overlay, repo["source"], repo["license"], repo["source"])
+    # Only a file outside the overlay policy changes, so every base_sha256 still matches.
+    source2 = develop_change(repo, {"src/runtime.py": "print('only non-policy change')\n"})
+    with pytest.raises(ValueError, match="sealed for source"):
+        create_candidate(
+            repo["root"], tmp_path / "other", source2, repo["main"], "release/other-rc1", overlay
+        )
+    assert not (tmp_path / "other").exists()
+    # Re-deriving for the new source is the supported path and succeeds.
+    overlay2 = tmp_path / "overlay2"
+    derive(repo, overlay2, repo["source"], repo["license"], source2)
+    report = create_candidate(
+        repo["root"], tmp_path / "ok", source2, repo["main"], "release/ok-rc1", overlay2
+    )
+    assert check_candidate(repo["root"], tmp_path / "ok", source2, repo["main"], overlay2) == report
+    # A candidate checked against a different approved overlay is rejected.
+    with pytest.raises(ValueError, match="sealed for source"):
+        check_candidate(repo["root"], tmp_path / "ok", source2, repo["main"], overlay)
+
+
+def test_overlay_derivation_commits_must_exist(repo, tmp_path):
+    overlay = tmp_path / "overlay"
+    derive(repo, overlay, repo["source"], repo["license"], repo["source"])
+    rewrite_spec(overlay, lambda s: s["derived_from"].update(license_commit="f" * 40))
+    with pytest.raises((ValueError, subprocess.CalledProcessError)):
+        create_candidate(
+            repo["root"], tmp_path / "bad", repo["source"], repo["main"], "release/bad-rc1", overlay
+        )
+    assert not (tmp_path / "bad").exists()
+
+
+def test_stale_base_hash_is_still_rejected_when_source_identity_is_forged(repo, tmp_path):
+    """Defense in depth: a spec relabelled for a newer source keeps its old base hashes."""
+    _, first, _, _ = first_release(repo, tmp_path)
+    main1 = promote(repo, first)
+    newer = PYPROJECT.replace('version = "0.1.0"', 'version = "0.2.0"')
+    source2 = develop_change(repo, {"pyproject.toml": newer})
+    overlay = tmp_path / "first-overlay"
+    rewrite_spec(overlay, lambda s: s["derived_from"].update(source_commit=source2))
+    with pytest.raises(ValueError, match="stale for pyproject.toml"):
+        create_candidate(
+            repo["root"], tmp_path / "stale", source2, main1, "release/stale-rc2", overlay
+        )

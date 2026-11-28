@@ -76,7 +76,7 @@
     "docker/review_relay.py": "Docker-network relay imported only in container mode of tools/browser_jobs; the Windows server binds 127.0.0.1 directly"
   },
   "rights_pending_required": {
-    "models/mmr/mmr_classifier_best.pth": "Required production MMR weight, listed NotLicensed in docs/licensing/REPOSITORY_LICENSE_OPTIONS.md section 3; shipped exactly as in main, rights/notice gate unresolved (#505/#508)"
+    "models/mmr/mmr_classifier_best.pth": "Required production MMR weight, shipped exactly as in main. No longer NotLicensed: the owner's rights in it are licensed AGPL-3.0-or-later on main (2026-11-27 model plan A, PR #559, docs/licensing/REPOSITORY_LICENSE_OPTIONS.md section 3); third-party rights in its initialization weights and score-derived training data are not relicensed (NOTICE, THIRD_PARTY_NOTICES.md). Kept in this register so the rights basis of this shipped weight stays recorded with the payload audit, which requires every entry to name a selected file; a portable build is distributed only from a formally licensed version or under a separate written grant (#505/#508/#553)"
   },
   "forbidden_payload_patterns": [
     {"pattern": "data/evaluation2/*", "category": "not_licensed", "reason": "Evaluation/GT data derived from third-party scores"},

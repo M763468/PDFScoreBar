@@ -232,6 +232,7 @@ def run_mmr_batch_detection(
         return
 
     enable_rotation_tta = bool(get_nested(self.config, "mmr", "enable_rotation_tta", default=False))
+    rapidocr_provider = str(get_nested(self.config, "mmr", "rapidocr_provider", default="auto"))
     model_path = get_nested(self.config, "mmr", "model_path")
     model_path = Path(model_path) if model_path else None
     debug_root = get_nested(self.config, "mmr", "debug_root")
@@ -303,6 +304,7 @@ def run_mmr_batch_detection(
             debug_root=debug_root,
             classifier=self._mmr_persistence[classifier_key],
             ocr_engine=self._mmr_persistence[ocr_key],
+            rapidocr_provider=rapidocr_provider,
             support_data=mmr_support_data,
         )
         if device.type == "cuda":

@@ -1438,7 +1438,7 @@ function loadPage() {
     resetView();
     draw();
   };
-  image.src = `/file?path=${encodeURIComponent(currentPage.image)}`;
+  image.src = (window.reviewURL || (url => url))(`/file?path=${encodeURIComponent(currentPage.display_image || currentPage.image)}`);
 
   Promise.all([
     loadNumbering(currentPage.numbering),

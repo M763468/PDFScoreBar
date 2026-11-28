@@ -13,6 +13,10 @@
       "role": "required by pyproject readme during package installation"
     },
     {
+      "pattern": "README.ja.md",
+      "role": "Japanese translation of the distribution entry point"
+    },
+    {
       "pattern": "configs/dense_full_pipeline.yaml",
       "role": "canonical dense algorithm configuration used as the engine base"
     },
@@ -25,6 +29,10 @@
       "role": "HOMR runtime compatibility patch"
     },
     {
+      "pattern": "docker/init_homr_segnet.py",
+      "role": "Build-time SegNet-only HOMR model materialization with hash check (#533)"
+    },
+    {
       "pattern": "docker/runtime_contract.py",
       "role": "runtime dependency/provenance preflight"
     },
@@ -33,12 +41,16 @@
       "role": "production barline CNN artifact manifest"
     },
     {
-      "pattern": "models/mmr/mmr_classifier_best.pth",
-      "role": "production MMR classifier checkpoint"
+      "pattern": "models/sr_x4/manifest.json",
+      "role": "First-party x4 SR model identity, architecture, hash and training provenance (#533)"
     },
     {
-      "pattern": "models/omr_dln/manifest.json",
-      "role": "production OMR-DLN artifact manifest"
+      "pattern": "models/sr_x4/pdfscorebar_sr_x4_issue533_s1r.pth",
+      "role": "First-party x4 SR weights trained from random initialization on synthetic notation (#533)"
+    },
+    {
+      "pattern": "models/mmr/mmr_classifier_best.pth",
+      "role": "production MMR classifier checkpoint"
     },
     {
       "pattern": "pyproject.toml",
@@ -57,8 +69,44 @@
       "role": "Connector evidence artifact loading for system grouping"
     },
     {
+      "pattern": "src/common/file_lock.py",
+      "role": "Cross-platform non-blocking lock files for the correction application (#535)"
+    },
+    {
       "pattern": "src/common/model_artifacts.py",
       "role": "Verified model identities, download/cache and image/external asset resolution"
+    },
+    {
+      "pattern": "src/common/process_tree.py",
+      "role": "Owned child-process trees killed as a unit (POSIX session group, Windows Job Object) (#535)"
+    },
+    {
+      "pattern": "src/third_party/__init__.py",
+      "role": "Package marker for third-party source vendored with its upstream license"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/__init__.py",
+      "role": "Vendored Real-ESRGAN inference subset exports; replaces basicsr/realesrgan/gfpgan/facexlib (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/rrdbnet.py",
+      "role": "RRDBNet derived from BasicSR 1.4.2 (Apache-2.0) without the BasicSR import graph (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/upsampler.py",
+      "role": "RealESRGANer derived from Real-ESRGAN a4abfb29 (BSD-3-Clause) (#533)"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-BasicSR.txt",
+      "role": "Apache-2.0 license text for the vendored BasicSR code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/LICENSE-Real-ESRGAN.txt",
+      "role": "BSD-3-Clause license text for the vendored Real-ESRGAN code"
+    },
+    {
+      "pattern": "src/third_party/realesrgan_sr/README.md",
+      "role": "Provenance, modifications and equivalence contract of the vendored SR code"
     },
     {
       "pattern": "src/common/thin_barline_finder.py",
@@ -71,6 +119,10 @@
     {
       "pattern": "src/homr_runtime/barline_candidates.py",
       "role": "Production barline candidates implementation used by maintained dense processing"
+    },
+    {
+      "pattern": "src/homr_runtime/empty_detection.py",
+      "role": "Production evidence and classification of empty HOMR results (cover/blank pages, #532)"
     },
     {
       "pattern": "src/homr_runtime/end_barlines.py",
@@ -169,6 +221,10 @@
       "role": "detector config helpers"
     },
     {
+      "pattern": "src/pipeline/detection/model_selection.py",
+      "role": "Shared model selection policy and path resolution"
+    },
+    {
       "pattern": "src/pipeline/detection/connector_artifacts.py",
       "role": "connector artifact capture"
     },
@@ -183,6 +239,14 @@
     {
       "pattern": "src/pipeline/detection/current_sr_runtime.py",
       "role": "x4 SR runtime"
+    },
+    {
+      "pattern": "src/pipeline/detection/ort_session_audit.py",
+      "role": "Records real ONNX Runtime sessions and fails closed on CUDA-to-CPU fallback (#535)"
+    },
+    {
+      "pattern": "src/pipeline/detection/sr_compiler_cache.py",
+      "role": "Opt-in SR compiler-cache identity, integrity, ownership and exclusive lifetime leases"
     },
     {
       "pattern": "src/pipeline/detection/current_support_worker.py",
@@ -217,10 +281,6 @@
       "role": "Production maintained source page worker implementation used by maintained dense processing"
     },
     {
-      "pattern": "src/pipeline/detection/omr_dln_worker.py",
-      "role": "formal production OMR-DLN worker"
-    },
-    {
       "pattern": "src/pipeline/detection/profile_contract.py",
       "role": "Production profile contract implementation used by maintained dense processing"
     },
@@ -231,6 +291,10 @@
     {
       "pattern": "src/pipeline/detection/profile_sources_batch_sr.py",
       "role": "Production profile sources batch sr implementation used by maintained dense processing"
+    },
+    {
+      "pattern": "src/pipeline/detection/source_concurrency.py",
+      "role": "Resource-admitted ordered page-source scheduling and process cleanup"
     },
     {
       "pattern": "src/pipeline/detection/utils.py",
@@ -383,6 +447,10 @@
     {
       "pattern": "src/pipeline/steps/staff_strokes.py",
       "role": "Maintained dense CNN input adapter using current producer evidence"
+    },
+    {
+      "pattern": "src/pipeline/review/number_layer.py",
+      "role": "Production annotation-preserving numbering layer and returned-PDF ownership validation"
     }
   ],
   "development_validation_patterns": [
@@ -409,6 +477,16 @@
     {
       "pattern": "tools/verification/**",
       "role": "verification tooling; production candidate helpers now live under src",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/issue441/**",
+      "role": "Retained Issue441 experiment/provenance reproducers; private inputs and generated outputs remain outside git",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/review_correction/*acceptance*",
+      "role": "Developer-only real-artifact and browser acceptance runners",
       "include_in_runtime_bundle": false
     }
   ],
@@ -463,11 +541,6 @@
     {
       "pattern": "tools/issue120/**",
       "role": "Issue #120 reproduction",
-      "include_in_runtime_bundle": false
-    },
-    {
-      "pattern": "docker/Dockerfile.stage-e",
-      "role": "historical Stage-E reproduction image extension",
       "include_in_runtime_bundle": false
     },
     {
@@ -568,8 +641,8 @@
   "reference_checks": [
     {
       "path": "src/pipeline/detection/current_support_worker.py",
-      "contains": "src.pipeline.detection.omr_dln_worker",
-      "not_contains": "experiments/models/eval_omr_dln.py"
+      "contains": "src.pipeline.detection.current_homr_worker",
+      "not_contains": "omr_dln"
     },
     {
       "path": "src/pipeline/detection/__init__.py",
@@ -607,13 +680,7 @@
     "src/homr_eval_scripts/core/utils.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/homr_eval_scripts/homr_evaluator.py": "historical/evaluation CLI; maintained workers use production-owned src/homr_runtime directly",
     "src/homr_eval_scripts/segnet_cache.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/homr_profile.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detection/homr_profile_compat.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/hybrid.py": "older hybrid orchestration path; canonical dense dispatcher uses dense_orchestrator_batch_sr",
-    "src/pipeline/detection/orchestrator.py": "standard detector route; outside the selected dense engine path",
-    "src/pipeline/detection/profile_hybrid.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/profile_hybrid_batch_sr.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
-    "src/pipeline/detection/verified_source_page_worker.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detector_routes/dense_probe_candidate.py": "Issue #120 candidate route; not called by canonical dense route",
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
@@ -633,17 +700,17 @@
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "docs/ENGINE_JOB_LIFECYCLE.md",
+      "pattern": "docs/contracts/ENGINE_JOB_LIFECYCLE.md",
       "role": "normative one-job lifecycle contract",
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "docs/ENGINE_INPUT_SAFETY.md",
+      "pattern": "docs/contracts/ENGINE_INPUT_SAFETY.md",
       "role": "normative engine input safety contract",
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "docs/ENGINE_TELEMETRY.md",
+      "pattern": "docs/contracts/ENGINE_TELEMETRY.md",
       "role": "normative engine telemetry contract",
       "include_in_runtime_bundle": false
     }
@@ -659,15 +726,8 @@
       "configs/cnn_barline_runs/**",
       "configs/detector_profiles/stage_e_verified_homr.json",
       "configs/detector_routes/issue120_dense_probe_candidate_route.yaml",
-      "configs/evaluation2_bypass_sr.yaml",
-      "configs/evaluation2_bypass_sr_batch.yaml",
       "configs/evaluation2_e2e_subset.yaml",
-      "configs/evaluation2_sr_x2.yaml",
-      "configs/evaluation2_sr_x4.yaml",
-      "configs/issue120_stage_e_full_pipeline.yaml",
-      "configs/issue333_provenance_smoke.yaml",
-      "configs/issue43_ab_*.yaml",
-      "configs/toy_symphony.yaml"
+      "configs/issue43_ab_*.yaml"
     ]
   },
   "test_module_groups": {
@@ -696,7 +756,14 @@
       "tests/test_issue43_full68_harness.py"
     ],
     "validation_harness": [
+      "tests/test_doc_translations.py",
+      "tests/test_doc_links.py",
+      "tests/test_configuration_reference.py",
+      "tests/test_experiment_model_selection.py",
+      "tests/test_homr_evaluator_sr.py",
       "tests/test_release_candidate.py",
+      "tests/test_release_license_overlay.py",
+      "tests/test_git_env_isolation.py",
       "tests/test_cnn_scoring_model_path.py",
       "tests/test_docker_runtime_contract.py",
       "tests/test_engine_service_readiness.py",
@@ -709,9 +776,13 @@
       "tests/test_issue355_trusted_accuracy_smoke.py",
       "tests/test_issue415_numbering_audit.py",
       "tests/test_model_artifacts.py",
-      "tests/test_verify_detector_full68.py"
+      "tests/test_verify_detector_full68.py",
+      "tests/test_issue454_analysis.py",
+      "tests/test_issue545_replay_support_compat.py"
     ],
     "developer_tool": [
+      "tests/test_issue447_profiling_tools.py",
+      "tests/test_issue447_source_scheduling.py",
       "tests/test_manual_gui_server.py",
       "tests/test_movement_boundary_candidates.py",
       "tests/test_movement_boundary_cli_provenance.py",
@@ -726,22 +797,26 @@
       "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
+      "tests/test_issue533_first_party_sr.py",
+      "tests/test_issue533_license_reduction.py",
       "tests/test_apply_corrections.py",
       "tests/test_apply_corrections_existing_overrides.py",
       "tests/test_apply_corrections_final_output.py",
       "tests/test_apply_corrections_mmr_suppressions.py",
       "tests/test_barline_units.py",
+      "tests/test_clipped_system_end.py",
       "tests/test_corrected_final_output.py",
       "tests/test_current_homr_worker.py",
       "tests/test_detection_config.py",
       "tests/test_detector_input_contract.py",
       "tests/test_detector_orchestrator_input_contract.py",
+      "tests/test_browser_jobs.py",
+      "tests/test_distribution_surface.py",
       "tests/test_engine_contract.py",
       "tests/test_engine_input_safety.py",
       "tests/test_engine_telemetry.py",
       "tests/test_final_pdf_page_size.py",
       "tests/test_homr_barline_candidates.py",
-      "tests/test_clipped_system_end.py",
       "tests/test_homr_profile.py",
       "tests/test_issue100_runtime_surface.py",
       "tests/test_issue115_runtime_boundaries.py",
@@ -771,6 +846,14 @@
       "tests/test_issue283_thin_barline_vectorization.py",
       "tests/test_issue284_sr_batch_contract.py",
       "tests/test_issue333_movement_boundary_fixture.py",
+      "tests/test_issue409_failure_contracts.py",
+      "tests/test_issue413_system_identity.py",
+      "tests/test_issue441_annotated_layer.py",
+      "tests/test_issue441_mobilesheets_roundtrip.py",
+      "tests/test_issue458_source_concurrency.py",
+      "tests/test_issue532_empty_page_contract.py",
+      "tests/test_issue535_portable_launcher.py",
+      "tests/test_issue535_windows_native_support.py",
       "tests/test_job_lifecycle.py",
       "tests/test_manual_correction_handoff.py",
       "tests/test_manual_correction_materializer.py",
@@ -781,7 +864,6 @@
       "tests/test_mmr_rapidocr_provider.py",
       "tests/test_numbering_geometry_scale.py",
       "tests/test_numbering_overrides.py",
-      "tests/test_omr_dln_worker.py",
       "tests/test_pdf_to_images_progress.py",
       "tests/test_pipeline_detection.py",
       "tests/test_pipeline_integration.py",
@@ -792,14 +874,17 @@
       "tests/test_probe_x_domain.py",
       "tests/test_probe_x_domain_route.py",
       "tests/test_python_env.py",
+      "tests/test_review_correction_history.py",
+      "tests/test_review_correction_identity_v2.py",
+      "tests/test_review_correction_identity_v3.py",
+      "tests/test_reviewed_movement_apply.py",
       "tests/test_source_page_provenance.py",
+      "tests/test_sr_compiler_cache.py",
+      "tests/test_staff_strokes.py",
       "tests/test_subprocess_utils.py",
       "tests/test_thin_barline_finder.py",
-      "tests/test_reviewed_movement_apply.py",
-      "tests/test_distribution_surface.py",
-      "tests/test_issue409_failure_contracts.py",
-      "tests/test_issue413_system_identity.py",
-      "tests/test_staff_strokes.py"
+      "tests/test_x4_staff_piece_support.py",
+      "tests/test_detection_config_keys.py"
     ]
   },
   "test_support_patterns": [
@@ -808,18 +893,6 @@
     "tests/fixtures/**"
   ],
   "runtime_optional_source_imports": {
-    "src/pipeline/detection/__init__.py": {
-      "src/pipeline/detection/orchestrator.py": "Lazy standard-route compatibility only; the selected engine uses dense_full_pipeline."
-    },
-    "src/pipeline/detection/connector_artifacts.py": {
-      "src/pipeline/detection/hybrid.py": "Lazy default skip-existing hook for the unselected standard route; maintained workers supply their predictor class explicitly."
-    },
-    "src/pipeline/detection/dense_orchestrator.py": {
-      "src/pipeline/detection/profile_hybrid.py": "Explicit non-maintained profile selection loads the historical backend lazily; maintained_original never imports it."
-    },
-    "src/pipeline/detection/dense_orchestrator_batch_sr.py": {
-      "src/pipeline/detection/profile_hybrid_batch_sr.py": "Explicit non-maintained profile selection loads historical batch-SR execution lazily; excluded from the maintained bundle."
-    },
     "src/common/__init__.py": {
       "src/common/barline_evaluation.py": "Lazy compatibility exports for development evaluation callers only; production callers use barline_geometry."
     },
@@ -863,6 +936,22 @@
       "role": "Supported package-bound correction English/Japanese browser UI asset"
     },
     {
+      "pattern": "tools/browser_jobs/jobs.py",
+      "role": "Local v1 job and result adapter"
+    },
+    {
+      "pattern": "tools/browser_jobs/server.py",
+      "role": "Loopback job server and package-bound correction routing"
+    },
+    {
+      "pattern": "tools/browser_jobs/index.html",
+      "role": "Browser job launcher"
+    },
+    {
+      "pattern": "tools/browser_jobs/jobs.js",
+      "role": "English and Japanese job launcher client"
+    },
+    {
       "pattern": "docker/distribution.py",
       "role": "Host build, verified preflight, PDF job and local correction launcher without development Makefile"
     },
@@ -871,12 +960,36 @@
       "role": "Thin command adapter for existing v1 PDF engine"
     },
     {
+      "pattern": "docker/review_relay.py",
+      "role": "Docker Desktop published-port relay to the loopback correction application"
+    },
+    {
       "pattern": "docs/USER_GUIDE.md",
       "role": "Install, model registration, processing, review and troubleshooting"
     },
     {
+      "pattern": "docs/USER_GUIDE.ja.md",
+      "role": "Japanese translation of the user guide"
+    },
+    {
       "pattern": ".dockerignore",
       "role": "Keep user data and generated output outside production build context"
+    },
+    {
+      "pattern": "tools/review_correction/history.py",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/resume.py",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/history.js",
+      "role": "Supported immutable review history and annotated PDF resume"
+    },
+    {
+      "pattern": "tools/review_correction/legacy.py",
+      "role": "Validated import of pre-checkpoint saved correction inputs"
     }
   ],
   "distribution_metadata_patterns": [
@@ -892,27 +1005,29 @@
   "documentation_audiences": {
     "user_release": [
       "README.md",
-      "docs/USER_GUIDE.md"
+      "README.ja.md",
+      "docs/USER_GUIDE.md",
+      "docs/USER_GUIDE.ja.md"
     ],
     "operator_reference": [
       "docs/MINIMAL_MAINLINE_SURFACE.json"
     ],
     "developer": [
       "docs/*.md",
+      "docs/architecture/**",
+      "docs/contracts/**",
       "docs/dev/**",
       "docs/ai-workflow/**"
     ],
     "historical_investigation": [
       "docs/refactors/**",
-      "docs/issue*",
-      "docs/ISSUE*",
       "docs/history/**"
     ]
   },
   "distribution_policy": {
     "default": "Every tracked file outside the exact selected lists stays develop-only. Audience patterns are advisory; only exact distribution lists authorize shipping.",
     "tests": "All regression suites and fixtures stay develop-only; operational preflight is shipped instead.",
-    "models": "MMR checkpoint tracked; CNN downloaded and hash-verified during Docker build; OMR-DLN operator-supplied under manifest, never silently redistributed.",
+    "models": "MMR checkpoint tracked; CNN downloaded and hash-verified during Docker build; no operator-supplied OMR-DLN weight since #522.",
     "supported_platform": "Linux Docker with NVIDIA GPU; Docker primary installation route.",
     "exceptions": {
       "src/pipeline/probe_detector/debug.py": "Normal candidate scan still writes diagnostic artifacts through this production renderer; no evaluation or GT imports. Debug outputs are part of retained pipeline provenance.",
@@ -929,5 +1044,69 @@
     "src/pipeline/detection/current_support_worker.py": {
       "src/pipeline/detection/current_sr_worker.py": "Develop-only explicit sr_mode=page_local subprocess; canonical batch_required mode requires precomputed_sr."
     }
+  },
+  "main_license_overlay_policy": {
+    "description": "Exact paths a sealed main-only license overlay may add to, or modify in, the develop extraction when tools/release_candidate.py builds a main candidate (#505, #550). The license material itself is never stored on develop; this policy only bounds it. Every other path stays exactly as develop selects it.",
+    "additions": [
+      {
+        "pattern": "LICENSE",
+        "role": "First-party license text conveyed with main",
+        "required": true
+      },
+      {
+        "pattern": "NOTICE",
+        "role": "Copyright, license scope and model-weight notices",
+        "required": true
+      },
+      {
+        "pattern": "THIRD_PARTY_NOTICES.md",
+        "role": "Third-party component licenses and modification notices",
+        "required": true
+      },
+      {
+        "pattern": "REUSE.toml",
+        "role": "Path-level SPDX declarations for the main tree",
+        "required": true
+      },
+      {
+        "pattern": "LICENSES/AGPL-3.0-or-later.txt",
+        "role": "SPDX text of the first-party license",
+        "required": true
+      },
+      {
+        "pattern": "LICENSES/AGPL-3.0-only.txt",
+        "role": "SPDX text for quoted HOMR fragments"
+      },
+      {
+        "pattern": "LICENSES/Apache-2.0.txt",
+        "role": "SPDX text for the vendored BasicSR architecture"
+      },
+      {
+        "pattern": "LICENSES/BSD-3-Clause.txt",
+        "role": "SPDX text for the vendored Real-ESRGAN upsampler"
+      }
+    ],
+    "modifications": [
+      {
+        "pattern": "README.md",
+        "role": "License section"
+      },
+      {
+        "pattern": "README.ja.md",
+        "role": "License section and translation source hash"
+      },
+      {
+        "pattern": "pyproject.toml",
+        "role": "Package license expression"
+      },
+      {
+        "pattern": "models/barline_cnn/manifest.json",
+        "role": "Model rights statement"
+      },
+      {
+        "pattern": "models/sr_x4/manifest.json",
+        "role": "Model rights statement"
+      }
+    ]
   }
 }

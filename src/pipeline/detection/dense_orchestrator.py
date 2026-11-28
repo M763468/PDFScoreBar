@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -11,15 +12,21 @@ from src.common.model_artifacts import (
     ModelArtifactManifest,
     load_model_artifact_manifest,
     resolve_model_artifact,
+    sha256_file,
 )
 from src.pipeline.core import ensure_dir, split_score_page_from_composite_stem
 
-from .config import get_cnn_apply_nms, get_probe_x_domain_kwargs
-from .input_contract import build_detector_input_contract
+from .config import (
+    DENSE_ROUTE_NAME,
+    get_cnn_apply_nms,
+    get_probe_x_domain_kwargs,
+    resolve_detector_route,
+)
+from .input_contract import require_fresh_detector_input_contract
 from .maintained_profile_hybrid import VerifiedProfileHybridDetector
+from .model_selection import model_observation, model_validation_mode, resolve_cnn_candidate
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DENSE_ROUTE_NAME = "dense_full_pipeline"
 
 
 def _first_existing(directory: Path, names: tuple[str, ...], *, description: str) -> Path:
@@ -130,20 +137,25 @@ class DetectorOrchestrator:
         self.dry_run = dry_run
         self.in_memory_images = in_memory_images
         self.det_cfg = dict(config.get("detection") or {})
-        self.detector_route = str(self.det_cfg.get("detector_route", "standard"))
+        self.detector_route = resolve_detector_route(self.det_cfg)
         self.homr_profile = self.det_cfg.get("homr_profile")
-        self.skip_existing = bool(self.det_cfg.get("probe_skip_existing", False))
-        self.input_contract = build_detector_input_contract(self.det_cfg)
+        self.model_validation = model_validation_mode(self.det_cfg)
+        self.skip_existing = (
+            bool(self.det_cfg.get("probe_skip_existing", False))
+            if self.model_validation == "production"
+            else False
+        )
+        if self.model_validation != "production" and self.homr_profile != "maintained_original":
+            raise ValueError("Candidate selection currently supports maintained_original HOMR only")
+        # Candidate-source overrides belong to the separate dense_probe_candidate_route
+        # evaluation tool; the production route never silently ignores them.
+        self.input_contract = require_fresh_detector_input_contract(self.det_cfg)
         self.input_contract_path = self.run_dir / "intermediate" / "detector_input_contract.json"
         self.hybrid_output_dir: Path | None = None
         self.probe_output_dir: Path | None = None
         self._dense_route: Any | None = None
         self._staff_stroke_units: dict[str, float] | None = None
 
-        if self.detector_route != DENSE_ROUTE_NAME:
-            raise ValueError(
-                f"Verified Stage E orchestrator requires detector_route={DENSE_ROUTE_NAME}"
-            )
         if not self.homr_profile:
             raise ValueError("Verified Stage E production route requires detection.homr_profile")
         if in_memory_images:
@@ -161,10 +173,6 @@ class DetectorOrchestrator:
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
         detector_cls = VerifiedProfileHybridDetector
-        if self.homr_profile != "maintained_original":
-            from .profile_hybrid import VerifiedProfileHybridDetector as HistoricalProfileDetector
-
-            detector_cls = HistoricalProfileDetector
         detector = detector_cls(
             det_cfg=self.det_cfg,
             images=self.images,
@@ -296,11 +304,12 @@ class DetectorOrchestrator:
         if self._dense_route is None and not self.dry_run:
             raise RuntimeError("Dense detector route was not reconstructed before CNN scoring")
         cnn_model_manifest = self.det_cfg.get("cnn_model_manifest")
-        if not cnn_model_manifest:
+        production = self.model_validation == "production"
+        if production and not cnn_model_manifest:
             raise ValueError(
                 "Verified Stage E detector route requires explicit detection.cnn_model_manifest"
             )
-        if self.det_cfg.get("cnn_model_path"):
+        if production and self.det_cfg.get("cnn_model_path"):
             raise ValueError(
                 "Verified Stage E detector route does not accept detection.cnn_model_path; "
                 "use detection.cnn_model_manifest so model identity and SHA-256 are verified"
@@ -310,6 +319,8 @@ class DetectorOrchestrator:
                 "Verified Stage E detector route requires explicit detection.cnn_threshold"
             )
         cnn_threshold = float(self.det_cfg["cnn_threshold"])
+        if not math.isfinite(cnn_threshold) or not 0 <= cnn_threshold <= 1:
+            raise ValueError("detection.cnn_threshold must be finite and between 0 and 1")
         if "cnn_apply_nms" not in self.det_cfg:
             raise ValueError(
                 "Verified Stage E detector route requires explicit detection.cnn_apply_nms=false"
@@ -331,9 +342,10 @@ class DetectorOrchestrator:
             # workers and verified HOMR profile runs have completed.
             from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
 
-            model_path = _resolve_verified_cnn_artifact(
-                cnn_model_manifest,
-                cnn_threshold=cnn_threshold,
+            model_path = (
+                _resolve_verified_cnn_artifact(cnn_model_manifest, cnn_threshold=cnn_threshold)
+                if production
+                else resolve_cnn_candidate(self.det_cfg, PROJECT_ROOT)
             )
             run_cnn_scoring_batch(
                 probe_output_root=self.probe_output_dir,
@@ -356,6 +368,11 @@ class DetectorOrchestrator:
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
                 apply_nms_enabled=False,
                 stroke_dedup_units=self._staff_stroke_units,
+                **(
+                    {"device_name": self.det_cfg.get("cnn_device", "cuda")}
+                    if not production
+                    else {}
+                ),
                 in_memory_images=self.in_memory_images,
             )
         return {
@@ -364,8 +381,12 @@ class DetectorOrchestrator:
                     "inprocess:cnn_scoring",
                     "--route",
                     DENSE_ROUTE_NAME,
-                    "--model-manifest",
-                    str(cnn_model_manifest),
+                    "--model-manifest" if production else "--model-path",
+                    str(
+                        cnn_model_manifest
+                        if production
+                        else self.det_cfg.get("cnn_model_path", cnn_model_manifest)
+                    ),
                     "--bands-from",
                     str(bands_from),
                     "--input-image-scale",
@@ -377,6 +398,30 @@ class DetectorOrchestrator:
         }
 
     def run_detection(self) -> Dict[str, Any]:
+        observation = None
+        if not self.dry_run and self.model_validation != "production":
+            observation = model_observation(self.det_cfg, PROJECT_ROOT)
+            ensure_dir(self.run_dir)
+            from docker.runtime_contract import runtime_fingerprint, source_fingerprint
+
+            (self.run_dir / "model_selection.json").write_text(
+                json.dumps(
+                    {
+                        "status": "selected",
+                        "model_validation": self.model_validation,
+                        "models": observation,
+                        "config": self.config,
+                        "inputs": [{"path": str(p), "sha256": sha256_file(p)} for p in self.images],
+                        "runtime_fingerprint": runtime_fingerprint(PROJECT_ROOT),
+                        "source_fingerprint": source_fingerprint(PROJECT_ROOT),
+                        "source_commit": os.environ.get("PDFSCORE_HOST_SOURCE_COMMIT"),
+                        "image_id": os.environ.get("PDFSCORE_DOCKER_IMAGE_ID"),
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
         contract_path = self._record_input_contract()
         commands: list[list[str]] = []
 
@@ -388,8 +433,12 @@ class DetectorOrchestrator:
         self.probe_output_dir = Path(dense_result["probe_output_dir"])
         commands.extend(dense_result.get("commands", []))
 
+        if observation is not None and model_observation(self.det_cfg, PROJECT_ROOT) != observation:
+            raise RuntimeError("Selected model changed during detection; repeat with stable bytes")
         cnn_result = self._run_cnn_scoring()
         commands.extend(cnn_result.get("commands", []))
+        if observation is not None and model_observation(self.det_cfg, PROJECT_ROOT) != observation:
+            raise RuntimeError("Selected model changed during CNN scoring; results are invalid")
 
         return {
             "commands": commands,

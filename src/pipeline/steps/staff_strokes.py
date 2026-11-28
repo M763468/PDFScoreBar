@@ -12,7 +12,7 @@ import cv2
 from src.common.barline_strokes import StaffRegion, normalize_staff_stroke
 from src.measure_numbering.pipeline import StaffExtractor
 from src.pipeline.core import build_probe_run_id
-from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.steps.hybrid_consensus import apply_x4_iou_consensus_filter, load_json_boxes
 
 
 def _support_result_path(hybrid_root: Path, image_path: Path) -> Path:
@@ -88,7 +88,6 @@ def prepare_staff_stroke_candidates(
             raise ValueError(f"Stroke support image identity mismatch: {support_path}")
         baseline = Path(record["run_dir"]) / f"{image_path.stem}_detections.json"
         sr = Path(support["current_sr_detection"])
-        omr = Path(support["current_omr"])
         changes = []
         candidates = set()
         for raw in original_candidates:
@@ -102,10 +101,9 @@ def prepare_staff_stroke_candidates(
             pieces = normalize_staff_stroke(box, regions)
             if pieces != [(-1, box)]:
                 seed_pieces.extend(piece for _, piece in pieces)
-        agreed = apply_hybrid_consensus_filter(
+        agreed = apply_x4_iou_consensus_filter(
             baseline_boxes=seed_pieces,
             sr_boxes=load_json_boxes(sr),
-            omr_boxes=load_json_boxes(omr),
         )
         candidates.update(tuple(box) for box in agreed)
         audit = {
@@ -119,7 +117,7 @@ def prepare_staff_stroke_candidates(
             "agreed_seeds": agreed,
             "input_sha256": {
                 str(p): hashlib.sha256(p.read_bytes()).hexdigest()
-                for p in (image_path, mask, baseline, sr, omr, support_path)
+                for p in (image_path, mask, baseline, sr, support_path)
             },
         }
         target.with_name("pipeline2_no_peak_staff_strokes.json").write_text(

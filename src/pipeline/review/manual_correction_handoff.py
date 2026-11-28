@@ -258,6 +258,7 @@ def validate_manual_correction_handoff(
             "source_image",
             "numbering_final",
             "review_overlay",
+            "display_image",
             "mmr_overrides",
             "barlines_review",
         ):
@@ -317,6 +318,8 @@ def build_manual_gui_config(
             gui_page["mmr"] = page["mmr_overrides"]
         if not _is_missing(page.get("barlines_review")):
             gui_page["barlines"] = page["barlines_review"]
+        if not _is_missing(page.get("display_image")):
+            gui_page["display_image"] = page["display_image"]
         if not _is_missing(page.get("review_overlay")):
             gui_page["review_overlay"] = page["review_overlay"]
         if not _is_missing(normalized.get("movement_boundary_evidence")):

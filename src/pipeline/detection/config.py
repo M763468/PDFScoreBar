@@ -101,3 +101,96 @@ def get_probe_x_domain_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
 def get_cnn_apply_nms(det_cfg: Dict[str, Any]) -> bool:
     """Return explicit CNN NMS setting, defaulting to False (opt-in)."""
     return bool(det_cfg.get("cnn_apply_nms", DEFAULT_CNN_APPLY_NMS))
+
+
+DENSE_ROUTE_NAME = "dense_full_pipeline"
+REMOVED_DETECTOR_ROUTES = ("standard",)
+
+
+# Shared contract for newly executed detection settings. Persisted review manifests
+# are provenance and must not be passed through this validator.
+DETECTION_KEYS = frozenset(PROBE_SCAN_KWARG_KEYS) | frozenset(
+    (
+        "band_cluster_max_dist",
+        "barline_max_width_factor",
+        "barline_min_height_factor",
+        "candidate_filter_kwargs",
+        "cnn_apply_nms",
+        "cnn_bands_from",
+        "cnn_device",
+        "cnn_model_manifest",
+        "cnn_model_path",
+        "cnn_threshold",
+        "container_name",
+        "crop_recenter_max_shift_unit_ratio",
+        "crop_recenter_on_bbox_ink",
+        "detector_route",
+        "enable_cache",
+        "enable_debug",
+        "enable_heuristic_filters",
+        "enable_sr",
+        "homr_profile",
+        "hybrid_output_root",
+        "ink_threshold",
+        "min_height_ratio",
+        "min_ratio",
+        "min_width_ratio",
+        "model_sha256",
+        "model_validation",
+        "precomputed_probe_candidates_root",
+        "probe_scan_collect_stats",
+        "probe_score_name",
+        "probe_skip_existing",
+        "probe_use_original_images",
+        "source_concurrency",
+        "sr_channels_last",
+        "sr_compile_mode",
+        "sr_fp32",
+        "sr_scale",
+        "sr_tile",
+        "sr_tile_pad",
+        "staff_mask_dir",
+        "staff_vov_threshold",
+        "write_staff_positions",
+    )
+)
+
+
+def validate_detection_config(det_cfg: Dict[str, Any] | None) -> None:
+    """Reject unknown settings by presence, independently of their values."""
+    if det_cfg is None:
+        return
+    if not isinstance(det_cfg, dict):
+        raise ValueError("detection must be a mapping")
+    unknown = set(det_cfg) - DETECTION_KEYS
+    if unknown:
+        paths = ", ".join(f"detection.{key}" for key in sorted(unknown, key=str))
+        raise ValueError(f"Unknown configuration key(s): {paths}")
+
+
+def resolve_detector_route(det_cfg: Dict[str, Any] | None) -> str:
+    """Return the single supported detector route (#522).
+
+    ``dense_full_pipeline`` is the only route; an omitted key selects it. The former
+    ``standard`` route (and any other value) is rejected instead of being reinterpreted.
+    """
+    validate_detection_config(det_cfg)
+    profile = (det_cfg or {}).get("homr_profile", "maintained_original")
+    if profile != "maintained_original":
+        raise ValueError(
+            "Unsupported detection.homr_profile; only maintained_original is available. "
+            "Reproduce historical Stage-E runs from commit f6bbd1c0."
+        )
+    route = (det_cfg or {}).get("detector_route", DENSE_ROUTE_NAME)
+    if route == DENSE_ROUTE_NAME:
+        return DENSE_ROUTE_NAME
+    if route in REMOVED_DETECTOR_ROUTES:
+        raise ValueError(
+            f"detection.detector_route={route!r} was removed in #522; the only detector "
+            f"route is {DENSE_ROUTE_NAME!r}. Delete the key or set it to {DENSE_ROUTE_NAME!r}; "
+            "reproduce historical standard-route runs from commit 4f1594bc."
+        )
+    raise ValueError(
+        f"Unknown detection.detector_route={route!r}; the only detector route is "
+        f"{DENSE_ROUTE_NAME!r}"
+    )

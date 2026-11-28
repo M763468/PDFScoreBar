@@ -294,7 +294,13 @@ class PipelineJobExecutor:
 
         detection = config.get("detection")
         if isinstance(detection, dict):
-            detection["hybrid_output_root"] = str(work_root / "runs" / job_id / "hybrid_output")
+            # Windows: keep the deepest detector paths under MAX_PATH (260) for
+            # OpenCV/ONNX Runtime. POSIX keeps the established layout.
+            detection["hybrid_output_root"] = str(
+                work_root / "h"
+                if os.name == "nt"
+                else work_root / "runs" / job_id / "hybrid_output"
+            )
 
         review = outputs.setdefault("review", {})
         if not isinstance(review, dict):

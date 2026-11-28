@@ -442,74 +442,84 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-WEIGHTS_ENVIRONMENT_VARIABLE = "PDFSCORE_REALESRGAN_WEIGHTS_DIR"
+FIRST_PARTY_SR_MANIFEST = Path("models/sr_x4/manifest.json")
+FIRST_PARTY_SR_SCHEMA = "pdfscorebar.first_party_sr.v1"
 
 
-IMAGE_WEIGHTS_DIR = Path("/opt/pdfscore-assets/realesrgan")
+@dataclass(frozen=True)
+class FirstPartySRModel:
+    """Identity of the first-party x4 SR weights (Issue #533)."""
+
+    path: Path
+    sha256: str
+    model_id: str
+    version: str
+    scale: int
+    num_feat: int
+    num_block: int
+    num_grow_ch: int
+    state_dict_key: str
+
+    def rrdbnet_kwargs(self) -> dict[str, int]:
+        return {
+            "num_in_ch": 3,
+            "num_out_ch": 3,
+            "scale": self.scale,
+            "num_feat": self.num_feat,
+            "num_block": self.num_block,
+            "num_grow_ch": self.num_grow_ch,
+        }
 
 
-SUPPORTED_MODELS = frozenset({"RealESRGAN_x2plus", "RealESRGAN_x4plus"})
+def resolve_first_party_sr(*, project_root: Path, verify: bool = True) -> FirstPartySRModel:
+    """Load the tracked first-party SR manifest and (by default) verify the weight bytes.
 
-
-def resolve_realesrgan_weight(
-    model_name: str,
-    *,
-    project_root: Path,
-    environment: Mapping[str, str] | None = None,
-) -> Path:
-    """Return the configured image-owned weight or the legacy local checkout path."""
-    if model_name not in SUPPORTED_MODELS:
-        raise ValueError(f"Unsupported Real-ESRGAN model: {model_name}")
-
-    configured_environment = os.environ if environment is None else environment
-    configured_dir = configured_environment.get(WEIGHTS_ENVIRONMENT_VARIABLE)
-    if configured_dir:
-        return Path(configured_dir).expanduser() / f"{model_name}.pth"
-
-    image_weight = IMAGE_WEIGHTS_DIR / f"{model_name}.pth"
-    if image_weight.is_file():
-        return image_weight
-
-    return project_root / "external" / "realesrgan" / "weights" / f"{model_name}.pth"
-
-
-MODEL_ENVIRONMENT_VARIABLE = "OMR_DLN_MODEL_PATH"
-
-
-MODEL_RELATIVE_PATH = Path("external/omr_dln/models/public_models/YOLOv8m_Measures.pt")
-
-
-OFFICIAL_OMR_REPOSITORY = "https://github.com/dmgonzalez8/OMR"
-
-
-OFFICIAL_MODEL_FOLDER = (
-    "https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing"
-)
-
-
-def resolve_omr_dln_model_path(
-    *,
-    repository_root: Path,
-    environment: Mapping[str, str] | None = None,
-) -> Path:
-    """Return the explicit model override or the compatible repository default."""
-    configured_environment = os.environ if environment is None else environment
-    override = configured_environment.get(MODEL_ENVIRONMENT_VARIABLE)
-    if override:
-        return Path(override).expanduser()
-    return repository_root / MODEL_RELATIVE_PATH
-
-
-def omr_dln_model_missing_message(path: Path) -> str:
-    """Explain how to provide the only supported OMR-DLN measure detector weight."""
-    return (
-        f"OMR-DLN measure detector model was not found at {path}.\n"
-        "Use YOLOv8m_Measures.pt (YOLOv8m, measure detection) from the official "
-        f"dmgonzalez8/OMR repository: {OFFICIAL_OMR_REPOSITORY}\n"
-        f"Official model folder: {OFFICIAL_MODEL_FOLDER}\n"
-        f"Set {MODEL_ENVIRONMENT_VARIABLE} to the existing read-only model path, or place it at "
-        f"{MODEL_RELATIVE_PATH}. Do not substitute a generic Ultralytics or symbol model."
+    The Real-ESRGAN release weights are no longer used (Issue #533); this model is
+    trained from random initialization on procedural synthetic notation only.
+    """
+    manifest_path = Path(project_root) / FIRST_PARTY_SR_MANIFEST
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise ModelArtifactManifestError(
+            f"First-party SR manifest not found: {manifest_path}"
+        ) from exc
+    if payload.get("schema_version") != FIRST_PARTY_SR_SCHEMA:
+        raise ModelArtifactManifestError(
+            f"Unsupported first-party SR manifest schema in {manifest_path}"
+        )
+    arch = payload.get("architecture")
+    if not isinstance(arch, dict) or arch.get("name") != "RRDBNet":
+        raise ModelArtifactManifestError(
+            f"First-party SR manifest needs an RRDBNet architecture: {manifest_path}"
+        )
+    weights = _validate_relative_cache_path(
+        _require_text(payload, "weights", manifest_path=manifest_path), manifest_path=manifest_path
     )
+    digest = _require_text(payload, "sha256", manifest_path=manifest_path).lower()
+    if not _SHA256_RE.fullmatch(digest):
+        raise ModelArtifactManifestError(f"Manifest {manifest_path} has invalid sha256: {digest!r}")
+    model = FirstPartySRModel(
+        path=Path(project_root) / weights,
+        sha256=digest,
+        model_id=_require_text(payload, "model_id", manifest_path=manifest_path),
+        version=_require_text(payload, "version", manifest_path=manifest_path),
+        scale=int(arch["scale"]),
+        num_feat=int(arch["num_feat"]),
+        num_block=int(arch["num_block"]),
+        num_grow_ch=int(arch["num_grow_ch"]),
+        state_dict_key=_require_text(payload, "state_dict_key", manifest_path=manifest_path),
+    )
+    if verify:
+        if not model.path.is_file():
+            raise FileNotFoundError(f"First-party SR weights not found: {model.path}")
+        actual = sha256_file(model.path)
+        if actual != digest:
+            raise ModelArtifactIntegrityError(
+                f"First-party SR weight digest mismatch for {model.path}: "
+                f"expected={digest} actual={actual}"
+            )
+    return model
 
 
 if __name__ == "__main__":

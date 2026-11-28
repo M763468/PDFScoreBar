@@ -24,15 +24,26 @@ SOURCE_CONTRACT_FILES = (
     Path("tools/review_correction/server.py"),
     Path("tools/review_correction/application.py"),
     Path("tools/review_correction/state.py"),
+    Path("tools/review_correction/history.py"),
+    Path("tools/review_correction/legacy.py"),
+    Path("tools/review_correction/resume.py"),
+    Path("tools/review_correction/history.js"),
+    Path("src/pipeline/review/number_layer.py"),
     Path("tools/review_correction/index.html"),
     Path("tools/review_correction/app.js"),
     Path("tools/review_correction/strings.js"),
     Path("tools/review_correction/correction_state.js"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml", ".yaml", ".yml", ".json", ".pth"})
-RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
+RUNTIME_MODULES = ("homr",)
+# Issue #533: the SR runtime is vendored in the bind-mounted source tree at
+# src/third_party/realesrgan_sr (Apache-2.0 RRDBNet + BSD-3 RealESRGANer).
+# These distributions carry non-commercial (NVIDIA Source Code License-NC,
+# CC BY-NC-SA) code and must not return to the production image.
+EXCLUDED_RUNTIME_MODULES = ("basicsr", "realesrgan", "gfpgan", "facexlib")
 PROVENANCE_NAME = "DISTRIBUTION_PROVENANCE.json"
 MANIFEST_NAME = "docs/MINIMAL_MAINLINE_SURFACE.json"
+OVERLAY_POLICY_NAME = "main_license_overlay_policy"
 MANIFEST_SECTIONS = (
     "runtime_bundle_patterns",
     "distribution_support_patterns",
@@ -47,6 +58,7 @@ RUNTIME_CONTRACT_FILES = (
     Path("Dockerfile"),
     Path("pyproject.toml"),
     Path("docker/patch_homr_onnx_provider.py"),
+    Path("docker/init_homr_segnet.py"),
     Path("models/barline_cnn/manifest.json"),
     Path("src/common/model_artifacts.py"),
     Path("src/common/__init__.py"),
@@ -125,6 +137,114 @@ def source_fingerprint(root: Path) -> str:
     return digest.hexdigest()
 
 
+def _overlay_exact_path(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    path = PurePosixPath(value)
+    return not (
+        path.is_absolute()
+        or ".." in path.parts
+        or str(path) != value
+        or any(char in value for char in "*?[")
+        or any(part.lower() == ".git" for part in path.parts)
+        or value == PROVENANCE_NAME
+    )
+
+
+def _main_license_overlay_additions(
+    provenance: dict, manifest: dict, selected: set[str]
+) -> set[str]:
+    """Main-only license files a release candidate adds within the manifest policy (#550).
+
+    Mirrors the release checker's overlay_policy / overlay_changes, which is not shipped:
+    same policy, canonical spec identity, structure, required files and source binding.
+    """
+    release = provenance.get("release")
+    overlay = release.get("main_overlay") if isinstance(release, dict) else None
+    if overlay is None:
+        return set()
+
+    def invalid(reason: str) -> ValueError:
+        return ValueError(f"invalid main license overlay in distribution provenance: {reason}")
+
+    policy = manifest.get(OVERLAY_POLICY_NAME)
+    spec = overlay.get("spec") if isinstance(overlay, dict) else None
+    if not isinstance(policy, dict) or not isinstance(spec, dict):
+        raise invalid("missing manifest policy or spec")
+    canonical = (json.dumps(spec, indent=2, sort_keys=True) + "\n").encode()
+    if overlay.get("spec_sha256") != hashlib.sha256(canonical).hexdigest():
+        raise invalid("spec SHA-256 differs from the recorded spec")
+    if (
+        set(spec) != {"schema_version", "overlay_id", "derived_from", "entries"}
+        or spec.get("schema_version") != 1
+    ):
+        raise invalid("unsupported spec schema")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", str(spec["overlay_id"])):
+        raise invalid("overlay id")
+    derived = spec["derived_from"]
+    if (
+        not isinstance(derived, dict)
+        or set(derived) != {"base_commit", "license_commit", "source_commit"}
+        or not all(re.fullmatch(r"[0-9a-f]{40}", str(v)) for v in derived.values())
+    ):
+        raise invalid("derivation commits")
+    if derived["source_commit"] != provenance.get("source_commit"):
+        raise invalid("overlay was sealed for a different source commit")
+
+    additions: dict[str, bool] = {}
+    for entry in policy.get("additions", []):
+        path = entry.get("pattern") if isinstance(entry, dict) else None
+        required = entry.get("required", False) if isinstance(entry, dict) else None
+        if (
+            not _overlay_exact_path(path)
+            or not entry.get("role")
+            or path in selected
+            or path in additions
+            or not isinstance(required, bool)
+        ):
+            raise invalid(f"policy addition {path!r}")
+        additions[path] = required
+    modifications: set[str] = set()
+    for entry in policy.get("modifications", []):
+        path = entry.get("pattern") if isinstance(entry, dict) else None
+        if (
+            path not in selected
+            or path == MANIFEST_NAME
+            or not entry.get("role")
+            or path in modifications
+        ):
+            raise invalid(f"policy modification {path!r}")
+        modifications.add(path)
+    if not any(additions.values()):
+        raise invalid("policy requires no file")
+
+    entries = spec["entries"]
+    paths = [e.get("path") if isinstance(e, dict) else None for e in entries or []]
+    if not paths or not all(_overlay_exact_path(p) for p in paths) or paths != sorted(set(paths)):
+        raise invalid("entries must be unique, sorted exact paths")
+    hashes = provenance.get("files")
+    added: set[str] = set()
+    for entry in entries:
+        path, operation = entry["path"], entry.get("operation")
+        keys = {"path", "operation", "sha256"} | (
+            {"base_sha256"} if operation == "modify" else set()
+        )
+        if set(entry) != keys or not all(
+            re.fullmatch(r"[0-9a-f]{64}", str(entry[k])) for k in keys & {"sha256", "base_sha256"}
+        ):
+            raise invalid(f"entry {path!r}")
+        if operation == "add" and path in additions:
+            added.add(path)
+        elif not (operation == "modify" and path in modifications):
+            raise ValueError(f"main license overlay entry outside the manifest policy: {path!r}")
+        if not isinstance(hashes, dict) or hashes.get(path) != entry["sha256"]:
+            raise ValueError(f"main license overlay hash differs from provenance: {path!r}")
+    missing = {path for path, required in additions.items() if required} - added
+    if missing:
+        raise invalid(f"required main license files missing: {sorted(missing)}")
+    return added
+
+
 def validate_distribution_provenance(workspace: Path) -> dict | None:
     """Verify all manifest-selected bytes before trusting a frozen identity."""
     provenance_path = workspace / PROVENANCE_NAME
@@ -169,6 +289,7 @@ def validate_distribution_provenance(workspace: Path) -> dict | None:
             selected.add(relative)
     if MANIFEST_NAME not in selected:
         raise ValueError("distribution manifest must include itself")
+    selected |= _main_license_overlay_additions(provenance, manifest, selected)
 
     hashes = provenance.get("files")
     if not isinstance(hashes, dict) or set(hashes) != selected:
@@ -400,40 +521,75 @@ def run_preflight(
 
     sys.path.insert(0, str(workspace))
 
-    import onnxruntime as ort
-    import torch
     import yaml
 
     from src.common.model_artifacts import (
+        resolve_first_party_sr,
         resolve_model_artifact,
-        resolve_omr_dln_model_path,
-        resolve_realesrgan_weight,
     )
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     inputs = config.get("inputs") or {}
     detection = config.get("detection") or {}
     mmr = config.get("mmr") or {}
+    from src.pipeline.detection.model_selection import (
+        model_validation_mode,
+        resolve_cnn_candidate,
+    )
+
+    try:
+        mode = model_validation_mode(detection)
+    except ValueError as exc:
+        print(json.dumps({"status": "fail", "errors": [str(exc)]}), file=sys.stderr)
+        return 2
+    if mode != "production" and (workspace / PROVENANCE_NAME).exists():
+        print(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "errors": ["Frozen distributions require production model validation"],
+                }
+            ),
+            file=sys.stderr,
+        )
+        return 2
+
+    import onnxruntime as ort
+    import torch
+
+    # Probe the native runtime before candidate libraries initialize or alter
+    # CUDA visibility/device-count caches.
+    cuda_available = torch.cuda.is_available()
+    device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
+    onnx_providers = ort.get_available_providers()
 
     input_path = _resolve_input_path(workspace, inputs.get("pdf_path"))
     if input_path is not None:
         _require_file(input_path, role="configured smoke input", errors=errors)
 
-    sr_weights = {}
-    for model_name in ("RealESRGAN_x2plus", "RealESRGAN_x4plus"):
-        path = resolve_realesrgan_weight(model_name, project_root=workspace)
-        _require_file(path, role=f"image-owned {model_name} weight", errors=errors)
-        sr_weights[model_name] = str(path)
-
-    omr_model = resolve_omr_dln_model_path(repository_root=workspace)
-    _require_file(omr_model, role="OMR-DLN external model", errors=errors)
+    # Issue #533: first-party x4 SR weights tracked in the source tree, hash-verified.
+    sr_weights: dict[str, str] = {}
+    try:
+        sr_model = resolve_first_party_sr(project_root=workspace)
+        sr_weights[f"{sr_model.model_id}:{sr_model.version}"] = str(sr_model.path)
+    except Exception as exc:
+        errors.append(f"first-party SR model is unavailable: {exc}")
 
     cnn_model = detection.get("cnn_model_path")
     cnn_model_path = _resolve_input_path(workspace, cnn_model)
     if cnn_model_path is not None:
         _require_file(cnn_model_path, role="configured CNN model", errors=errors)
 
-    cnn_manifest = detection.get("cnn_model_manifest")
+    if mode != "production":
+        try:
+            from src.pipeline.steps.cnn_scoring import validate_cnn_candidate
+
+            cnn_model_path = resolve_cnn_candidate(detection, workspace)
+            validate_cnn_candidate(cnn_model_path, detection.get("cnn_device", "cuda"))
+        except Exception as exc:
+            errors.append(f"CNN candidate is incompatible: {exc}")
+
+    cnn_manifest = detection.get("cnn_model_manifest") if mode == "production" else None
     resolved_manifest_model = None
     if cnn_manifest:
         manifest_path = _resolve_input_path(workspace, cnn_manifest)
@@ -459,17 +615,20 @@ def run_preflight(
             module_origins[module_name] = None
         else:
             module_origins[module_name] = spec.origin
+    for module_name in EXCLUDED_RUNTIME_MODULES:
+        spec = importlib.util.find_spec(module_name)
+        if spec is not None:
+            errors.append(
+                f"excluded non-commercial-licensed module is installed: {module_name} "
+                f"({spec.origin})"
+            )
 
     # Canonical preflight shares the maintained profile's pinned marker contract.
     # Historical profile validation belongs to its explicit reproduction runner.
     _validate_production_provenance(workspace, errors)
 
-    cuda_available = torch.cuda.is_available()
     if not cuda_available:
         errors.append("CUDA is not available inside the canonical Docker runtime")
-    device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
-
-    onnx_providers = ort.get_available_providers()
     if "CUDAExecutionProvider" not in onnx_providers:
         errors.append(
             "onnxruntime CUDAExecutionProvider is unavailable inside the canonical Docker runtime"
@@ -486,10 +645,10 @@ def run_preflight(
             else None
         ),
         "host_provenance": host_provenance,
+        "model_validation": mode,
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
-        "realesrgan_weights": sr_weights,
-        "omr_dln_model": str(omr_model),
+        "sr_weights": sr_weights,
         "cnn_model": (
             str(cnn_model_path) if cnn_model_path is not None else resolved_manifest_model
         ),

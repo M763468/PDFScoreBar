@@ -6,11 +6,25 @@ import argparse
 import hashlib
 import json
 import os
+import re
+import uuid
 from dataclasses import replace
 from pathlib import Path
 
-from src.pipeline.engine_contract import JobRequest, JobStatus, OutputProfile
+from src.pipeline.engine_contract import JobRequest, JobResult, JobStatus, OutputProfile
 from src.pipeline.engine_executor import PipelineJobExecutor
+from tools.review_correction.history import atomic_bytes
+
+
+def _references_to(value, root: str) -> list[str]:
+    """Strings that still mention ``root`` after relocation (embedded or unrelocated)."""
+    if isinstance(value, dict):
+        return [item for child in value.values() for item in _references_to(child, root)]
+    if isinstance(value, list):
+        return [item for child in value for item in _references_to(child, root)]
+    if isinstance(value, str) and root in value:
+        return [value]
+    return []
 
 
 def prepare_local_review(package: Path) -> str:
@@ -39,23 +53,50 @@ def prepare_local_review(package: Path) -> str:
 
     # Rewrite only absolute paths rooted at the former work directory. Every
     # numerical/config value and the original retained manifest remain intact.
+    # Both separators are accepted because a Windows-native engine writes "\".
+    separators = ("/", "\\")
+    relocated: list[str] = []
+
     def relocate(value):
         if isinstance(value, dict):
             return {key: relocate(item) for key, item in value.items()}
         if isinstance(value, list):
             return [relocate(item) for item in value]
-        if isinstance(value, str) and (value == old_root or value.startswith(old_root + "/")):
-            return str(retained) + value[len(old_root) :]
+        if isinstance(value, str) and (
+            value == old_root or any(value.startswith(old_root + sep) for sep in separators)
+        ):
+            rest = value[len(old_root) :].lstrip("/\\")
+            target = retained.joinpath(*[part for part in re.split(r"[\\/]", rest) if part])
+            relocated.append(str(target))
+            return str(target)
         return value
 
     local = original.with_name("local_manifest.json")
     normalized = relocate(source)
+    leftover = _references_to(normalized, old_root)
+    relocated_run = retained / "runs" / job_id
+    if not relocated or str(relocated_run) not in relocated or not relocated_run.is_dir():
+        raise ValueError(
+            f"Local review relocation is incomplete: relocated {len(relocated)} paths; "
+            f"retained run present={relocated_run.is_dir()}"
+        )
+    if leftover:
+        raise ValueError(
+            f"Local review relocation left {len(leftover)} references to the former work root"
+        )
+    missing = [path for path in relocated if not Path(path).exists()]
+    normalized["local_distribution_relocation"] = {
+        "relocated_path_count": len(relocated),
+        "missing_relocated_path_count": len(missing),
+    }
     normalized["local_distribution_source"] = {
         "original_manifest_sha256": hashlib.sha256(raw).hexdigest(),
         "original_manifest": "manifest.json",
         "source_job_id": job_id,
     }
-    local.write_text(json.dumps(normalized, indent=2) + "\n", encoding="utf-8")
+    # These files are written with LF on every platform, so a review prepared on Windows
+    # has the same bytes (and digests) as on Linux (#535).
+    local.write_text(json.dumps(normalized, indent=2) + "\n", encoding="utf-8", newline="\n")
     payload["source_manifest"] = "../" + local.relative_to(package).as_posix()
     if not (isinstance(payload.get("output_name"), str) and payload["output_name"].strip()):
         final_dir = package / "final"
@@ -78,7 +119,9 @@ def prepare_local_review(package: Path) -> str:
                     and recovered_name.lower() != "score"
                 ):
                     payload["output_name"] = recovered_name
-    handoff.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    handoff.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
     sha = hashlib.sha256(handoff.read_bytes()).hexdigest()
     result_path = package / "result.json"
     if result_path.is_file():
@@ -86,37 +129,46 @@ def prepare_local_review(package: Path) -> str:
         for artifact in result["artifacts"]:
             if artifact["reference"] == "review/manual_correction_input.json":
                 artifact["sha256"] = sha
-        result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8", newline="\n")
     return sha
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("pdf", type=Path, nargs="?")
-    parser.add_argument("--prepare-review", type=Path)
-    parser.add_argument("--output", type=Path)
-    parser.add_argument("--pages", type=int, nargs="+")
-    args = parser.parse_args()
-    if args.prepare_review:
-        prepare_local_review(args.prepare_review)
-        return 0
-    if args.pdf is None or args.output is None:
-        parser.error("pdf and --output are required for a PDF job")
-    pdf = args.pdf.resolve()
-    overrides = {"pages": args.pages} if args.pages else {}
-    executor = PipelineJobExecutor(
+def _windows_job_id() -> str:
+    """Shorter job id for Windows: the id appears several times in internal paths, and
+    MAX_PATH (260) applies to OpenCV/ONNX Runtime even when Python itself is long-path
+    aware. 48 random bits keep collisions negligible for local per-user output roots."""
+    return f"job-{uuid.uuid4().hex[:12]}"
+
+
+def run_local_job(
+    pdf: Path,
+    output_root: Path,
+    pages: list[int] | None = None,
+    *,
+    job_id_factory=None,
+    on_progress=None,
+    executor_factory=None,
+) -> JobResult:
+    """Run one v1 job and publish its prepared local review once."""
+    if job_id_factory is None and os.name == "nt":
+        job_id_factory = _windows_job_id
+    pdf = pdf.absolute()
+    output_root = output_root.resolve()
+    factory = executor_factory or PipelineJobExecutor
+    executor = factory(
         input_root=pdf.parent,
-        artifact_root=args.output,
+        artifact_root=output_root,
         source_commit=os.environ.get("PDFSCORE_HOST_SOURCE_COMMIT"),
+        **({"job_id_factory": job_id_factory} if job_id_factory is not None else {}),
     )
     result = executor(
         JobRequest(
             input={"kind": "local_path", "reference": pdf.name},
             output_profile=OutputProfile.REVIEW,
-            config_overrides=overrides,
-        )
+            config_overrides={"pages": pages} if pages else {},
+        ),
+        on_progress=on_progress,
     )
-    output_root = args.output.resolve()
     output = output_root / result.job_id
     if output.is_symlink() or output.resolve().parent != output_root:
         raise ValueError("Job result directory must stay inside the output root")
@@ -132,7 +184,23 @@ def main() -> int:
             ),
         )
     output.mkdir(parents=True, exist_ok=True)
-    (output / "result.json").write_text(result.to_json() + "\n", encoding="utf-8")
+    atomic_bytes(output / "result.json", (result.to_json() + "\n").encode("utf-8"))
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("pdf", type=Path, nargs="?")
+    parser.add_argument("--prepare-review", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--pages", type=int, nargs="+")
+    args = parser.parse_args()
+    if args.prepare_review:
+        prepare_local_review(args.prepare_review)
+        return 0
+    if args.pdf is None or args.output is None:
+        parser.error("pdf and --output are required for a PDF job")
+    result = run_local_job(args.pdf.resolve(), args.output, args.pages)
     print(result.to_json(include_debug_context=True))
     return 0 if result.status in {JobStatus.SUCCEEDED, JobStatus.REVIEW_REQUIRED} else 1
 

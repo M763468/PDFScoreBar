@@ -27,20 +27,70 @@ jobs:
         run: python3 tools/check_repository_surface.py
       - name: Install release-tool test dependency
         run: python3 -m pip install pytest
-      - name: Test pinned release creation and corruption rejection
-        run: python3 -m pytest -q tests/test_release_candidate.py
+      - name: Test pinned release creation, license overlay and corruption rejection
+        run: >-
+          python3 -m pytest -q tests/test_release_candidate.py
+          tests/test_release_license_overlay.py tests/test_ci_main_license_commit.py
+      # main carries license material that develop never does (#505/#558): a plain candidate is
+      # refused. CI replays main's license material onto this source as an unreferenced,
+      # deterministic fixture commit, so ordinary develop PRs (README edits included) need no
+      # re-authored private license commit; the strict derive for real promotions is unchanged.
       - name: Generate and check independent minimal Git candidates
         shell: bash
         run: |
           source_commit=$(git rev-parse HEAD)
           main_commit=$(git rev-parse origin/main)
+          fixture=tools/verification/ci_main_license_commit.py
           for run in a b; do
+            python3 "$fixture" commit --source-commit "$source_commit" \
+              --main-commit "$main_commit" --report "$RUNNER_TEMP/license-fixture-$run.json"
+          done
+          cmp "$RUNNER_TEMP/license-fixture-a.json" "$RUNNER_TEMP/license-fixture-b.json"
+          license_commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["license_commit"] or "")' \
+            "$RUNNER_TEMP/license-fixture-a.json")
+          if [ -n "$license_commit" ]; then
+            # Regression guard: a candidate without the overlay must still be refused.
+            if python3 tools/release_candidate.py create "$RUNNER_TEMP/plain" \
+              --source-commit "$source_commit" --main-commit "$main_commit" \
+              --branch release/ci-plain 2> "$RUNNER_TEMP/plain.err"; then
+              echo "::error::Candidate without the license overlay was accepted on a licensed main"
+              exit 1
+            fi
+            grep -q "main-only license material" "$RUNNER_TEMP/plain.err"
+            test ! -e "$RUNNER_TEMP/plain"
+            python3 - "$RUNNER_TEMP/license-fixture-a.json" <<'PY'
+          import json, sys
+          paths = json.load(open(sys.argv[1]))["union_merged"]
+          if paths:
+              print("::notice::A real main promotion of this source must re-author the private "
+                    "license commit for: " + ", ".join(paths))
+          PY
+          fi
+          for run in a b; do
+            overlay_args=()
+            if [ -n "$license_commit" ]; then
+              python3 tools/release_candidate.py derive-overlay "$RUNNER_TEMP/overlay-$run" \
+                --base-commit "$source_commit" --license-commit "$license_commit" \
+                --source-commit "$source_commit" --overlay-id ci-main-license-fixture \
+                --report "$RUNNER_TEMP/overlay-$run.json"
+              overlay_args=(--license-overlay "$RUNNER_TEMP/overlay-$run")
+            fi
             python3 tools/release_candidate.py create "$RUNNER_TEMP/candidate-$run" \
               --source-commit "$source_commit" --main-commit "$main_commit" \
-              --branch "release/ci-$run" --report "$RUNNER_TEMP/candidate-$run.json"
+              --branch "release/ci-$run" --report "$RUNNER_TEMP/candidate-$run.json" \
+              "${overlay_args[@]}"
+            python3 tools/release_candidate.py check "$RUNNER_TEMP/candidate-$run" \
+              --source-commit "$source_commit" --main-commit "$main_commit" "${overlay_args[@]}"
             python3 tools/materialize_distribution.py check "$RUNNER_TEMP/candidate-$run" --git-checkout
+            if [ -n "$license_commit" ]; then
+              python3 "$fixture" verify "$RUNNER_TEMP/candidate-$run" --main-commit "$main_commit"
+            fi
           done
           cmp "$RUNNER_TEMP/candidate-a.json" "$RUNNER_TEMP/candidate-b.json"
+          if [ -n "$license_commit" ]; then
+            cmp "$RUNNER_TEMP/overlay-a/MAIN_LICENSE_OVERLAY.json" \
+              "$RUNNER_TEMP/overlay-b/MAIN_LICENSE_OVERLAY.json"
+          fi
       - name: Retain static candidate identities (not release acceptance)
         uses: actions/upload-artifact@v4
         with:
@@ -49,3 +99,6 @@ jobs:
             ${{ runner.temp }}/candidate-a.json
             ${{ runner.temp }}/candidate-b.json
             ${{ runner.temp }}/candidate-a/DISTRIBUTION_PROVENANCE.json
+            ${{ runner.temp }}/license-fixture-a.json
+            ${{ runner.temp }}/overlay-a.json
+            ${{ runner.temp }}/overlay-a/MAIN_LICENSE_OVERLAY.json

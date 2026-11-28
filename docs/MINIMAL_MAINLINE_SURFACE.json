@@ -763,6 +763,7 @@
       "tests/test_homr_evaluator_sr.py",
       "tests/test_release_candidate.py",
       "tests/test_release_license_overlay.py",
+      "tests/test_ci_main_license_commit.py",
       "tests/test_git_env_isolation.py",
       "tests/test_cnn_scoring_model_path.py",
       "tests/test_docker_runtime_contract.py",

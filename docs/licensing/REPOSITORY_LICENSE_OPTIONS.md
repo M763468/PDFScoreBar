@@ -246,6 +246,26 @@ revert や Close によってそれらの効力が消えたとは断定しない
 新規の tag・Release は作成していない。Windows 限定試用版（#508 / #553）は試用ビルド限定の許諾のまま変更していない。
 次回の `main` 昇格では、手順 2 のとおり現在の `main` から overlay を導出する。
 
+### 7.4 CI（`repository-surface`）での昇格候補の検証
+
+`main` が overlay を記録した後は、overlay なしの候補を `release_candidate.py` が拒否する（§7.1）。CI は PR ごとに実際の
+非公開 license commit を作り直さずに、次の手順で昇格形の候補を生成・検査する（PR #560）。
+
+1. `tools/verification/ci_main_license_commit.py commit` が、現在の `main` のライセンス素材を PR の source `S` に重ねた
+   **CI 専用の fixture commit** を作る。ref・index・作業ツリーは変更せず、作成者・日時を固定した参照されないオブジェクトだけを書く。
+   policy の追加パスは `main` の bytes をそのまま複製する。変更パスは `main` の provenance が記録する base から `main` への差分を
+   `S` へ 3-way merge し、PR 自身の変更と衝突する箇所（例: README の翻訳元 hash 行）は両側の行を残す（`--union`）。
+   該当パスは CI の notice に出し、そのパスについては実際の昇格で §7.2 手順 2 の再作成が必要になることを示す。
+   `main` にライセンス素材があるのに overlay の記録がない場合、policy 外のライセンス素材がある場合は失敗する。
+2. 回帰ガード: 同じ `S` と `main` から overlay なしで `create` を実行し、拒否されることを確認する。
+3. fixture commit から、変更していない `derive-overlay`（初回適用の形）、`create`、`check`、`materialize_distribution.py check
+   --git-checkout` を 2 回独立に行い、fixture・overlay spec・候補レポートが一致することを確認する。各候補について
+   `ci_main_license_commit.py verify` で、`main` のライセンスパスがすべて残り、追加ファイルが `main` と同一であることを確認する。
+
+fixture commit と CI の overlay は**リリース入力ではない**。実際の昇格は §7.2 のとおり非公開 license commit または昇格済みの
+`main` から厳密な `derive-overlay` で導出し、衝突は失敗する。したがって通常の `develop` 向け PR では許諾差分の手動調整は不要で、
+調整は昇格時にだけ行う。回帰テストは `tests/test_ci_main_license_commit.py`。
+
 ## 8. 履歴: 2026-11-07 のライセンス比較（取り下げ済みの推奨を含む）
 
 以下は初版の比較の要約で、**現在の方針ではない**。Apache-2.0 の推奨は 2026-11-08 のオーナー決定で置き換えた。

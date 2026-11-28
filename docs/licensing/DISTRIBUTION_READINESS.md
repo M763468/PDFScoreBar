@@ -5,7 +5,7 @@
 
 > **法的助言ではない。** ライセンス本文・上流の表示・実物（wheel、checkpoint、データ）から確認した事実と、
 > それに基づく分類を記録する。「法的判断が必要」とした論点は推測で埋めず、§5 に必要資料とともに示す。
-> この文書自体はライセンスを付与しない。試用ビルド限定の許諾本文は compliance bundle 内の `LICENSE` / `FIRST_PARTY_NOTICE.md` にある。リポジトリ全体の LICENSE 公開は別判断（#505）。
+> この文書自体はライセンスを付与しない。試用ビルド限定の許諾本文は compliance bundle 内の `LICENSE` / `FIRST_PARTY_NOTICE.md` にある。`main` 最小配布と barline CNN Release への正式許諾は 2026-11-28 に適用済みで、その本文は `main` の `LICENSE` 一式と Release 添付ファイルにある（#505、[REPOSITORY_LICENSE_OPTIONS.md §7.3](REPOSITORY_LICENSE_OPTIONS.md)）。
 
 前提として再利用した記録：[#504 監査](THIRD_PARTY_LICENSE_AUDIT.md) §0.8–§0.11（Linux image の Python・OS・NVIDIA、
 HOMR、BasicSR/GFPGAN の除去、SR 重みの first-party 化）、[#505](REPOSITORY_LICENSE_OPTIONS.md)（first-party は
@@ -26,13 +26,13 @@ Docker image の配布は選定されていない（§4.3）。
 | 配布候補 | 判定 | 理由（詳細は §3・§4） |
 | --- | --- | --- |
 | **Windows 限定試用** | **GO-ready**（試用GOの正式判断・受領者同意・受渡しは#508で管理）。固定manifestの最終照合はerror 0 / blocked 0 / `handoff_ready=true`、Windows実機受入Passed | NVIDIA 非列挙ファイルは非同梱に変更。MMR・barline CNN は現行 checkpoint を維持し、出典・条件をNOTICEに記録（§2）。学習用楽譜画像・PDF・学習用切り抜きは配布しない。両モデルに固有の明示的な配布禁止条項は今回特定されておらず、独立したブロッカーとはしない。2026-11-24に本試用ビルドに限定してfirst-party AGPL-3.0-or-laterを許諾済み（#505） |
-| **main 最小配布** | **判断待ち**（#505 正式適用） | 第三者バイナリは配布しない。MMR重み・barline CNN release assetの出典と学習条件を記録し、現行モデルを維持する。必要な第三者通知と対応ソースの準備は§4。モデル固有の禁止条項が新たに確認された場合のみ追加対応する |
+| **main 最小配布** | **正式適用済み**（2026-11-28、PR #559 / `main@237fb66d`。#505 §7.3） | 第三者バイナリは配布しない。MMR重み・barline CNN release assetの出典と学習条件を記録し、現行モデルを維持する。必要な第三者通知と対応ソースの準備は§4。モデル固有の禁止条項が新たに確認された場合のみ追加対応する |
 
-Windows試用ビルドは技術・complianceゲートを通過し、**オーナーの#508試用GO判断と受領者の条件同意・受渡しだけが残る**。`main`昇格、リポジトリ全体へのLICENSE公開、tag/releaseは未実施。今後は#550で`main`昇格と同時にライセンスを適用する方針（オーナー指示2026-11-25）で、これらを今回の試用許諾と混同しない。
+Windows試用ビルドは技術・complianceゲートを通過し、**オーナーの#508試用GO判断と受領者の条件同意・受渡しだけが残る**。`main`最小配布への正式ライセンス適用は2026-11-28にPR #559で完了し、既存barline CNN Releaseにも許諾情報と`LICENSE` / `MODEL_LICENSE_NOTICE.txt`を添付した（#505 §7.3）。新規tag/Releaseは作成していない。Windows試用ビルドの許諾は試用ビルド限定のまま変更しておらず、`main`の正式許諾と混同しない。
 
 ## 2. モデル重みの lineage と判断
 
-**今回のモデル重みの配布方針（2026-11-24）：** 学習に用いた楽譜PDF・ページ画像・切り抜きは配布しない（オーナー確認）。MMR / barline CNN は本人によるfine-tune済みcheckpointを現行のまま使用する。初期化重みの元と利用上の注意、DeepScoresV2の帰属はNOTICEへ反映し、確認されていない禁止を推定してモデル置換・再学習を配布前提にしない。この分類は第三者が保有する権利を消滅させる判断ではなく、**試用ビルドについては#505でfirst-party部分の許諾が実際に適用済み**であり、mainへの一般的なLICENSE公開は将来の別作業である。
+**今回のモデル重みの配布方針（2026-11-24）：** 学習に用いた楽譜PDF・ページ画像・切り抜きは配布しない（オーナー確認）。MMR / barline CNN は本人によるfine-tune済みcheckpointを現行のまま使用する。初期化重みの元と利用上の注意、DeepScoresV2の帰属はNOTICEへ反映し、確認されていない禁止を推定してモデル置換・再学習を配布前提にしない。この分類は第三者が保有する権利を消滅させる判断ではなく、**試用ビルドについては#505でfirst-party部分の許諾が実際に適用済み**であり、`main`最小配布と barline CNN Release へは2026-11-28に正式適用した（#505 §7.3。第三者権利は再許諾しない）。
 
 ### 2.1 確認した事実
 
@@ -77,11 +77,11 @@ ImageNet データセットの利用契約の当事者でもない。**事前学
 | SR x4 | **cleared**（first-party。#505 適用で AGPL） | 同左 |
 | HOMR SegNet 308 | **cleared_with_notice**（AGPL、DeepScoresV2 帰属） | 受領者が取得（当方は配布しない） |
 | PP-OCR ONNX | **cleared_with_notice**（Apache-2.0、MODEL_LICENSES.md を同梱） | 受領者が取得 |
-| MMR | **cleared_with_notice**（モデル固有の禁止条件は未特定、現行重み維持）。ResNet18初期重み・first-party学習・楽譜非同梱を表示。**試用ビルドでは#505の2026-11-24付許諾が適用済み。main公開には別途適用** | 同左。上流の具体的な拘束条件が新たに判明した場合のみ対象を特定して再評価 |
-| barline CNN | **cleared_with_notice**（モデル固有の禁止条件は未特定、現行D27重み維持）。EfficientNet-B0/timmの注意事項とDeepScoresV2のCC BY 4.0帰属を表示。**試用ビルドでは#505の2026-11-24付許諾が適用済み。main公開には別途適用** | 同左。注意書きは保持するが、明示的な不適合がない限り置換を配布前提としない |
+| MMR | **cleared_with_notice**（モデル固有の禁止条件は未特定、現行重み維持）。ResNet18初期重み・first-party学習・楽譜非同梱を表示。**試用ビルドでは#505の2026-11-24付許諾が適用済み。`main`最小配布には2026-11-28に正式適用済み** | 同左。上流の具体的な拘束条件が新たに判明した場合のみ対象を特定して再評価 |
+| barline CNN | **cleared_with_notice**（モデル固有の禁止条件は未特定、現行D27重み維持）。EfficientNet-B0/timmの注意事項とDeepScoresV2のCC BY 4.0帰属を表示。**試用ビルドでは#505の2026-11-24付許諾が適用済み。Release `model-barline-cnn-issue296-d27-v1` には2026-11-28に正式適用済み（重み bytes 不変）** | 同左。注意書きは保持するが、明示的な不適合がない限り置換を配布前提としない |
 
 なお MMR 重みは 2026-01-12 から公開リポジトリに、barline CNN は GitHub release に、ライセンス表示なし（＝許諾なし）で既に置かれている。
-これらの過去の公開だけでは許諾の根拠にならなかったが、今回の試用ビルドには2026-11-24付のfirst-party許諾を別途適用済み（#505）。
+これらの過去の公開だけでは許諾の根拠にならなかったが、試用ビルドには2026-11-24付のfirst-party許諾を、`main`最小配布と barline CNN Release には2026-11-28付の正式許諾を別途適用済み（#505）。
 
 ### 2.5 オーナーに確認していただく事項（楽譜スキャン）
 
@@ -118,7 +118,7 @@ Attachment A に名前がないことは「再配布禁止」を意味しない�
 
 | 構成物 | 条件 | 判定 | 根拠・残作業 |
 | --- | --- | --- | --- |
-| PDFScoreBar（`app/`、`launcher/`、SR 重み、`pdfscorebar_addons.pth`） | AGPL-3.0-or-later（2026-11-24、manifest `1173dfb4…`の試用ビルド限定） | **cleared_with_notice** | #505でオーナーが許諾済み。`LICENSE`・`FIRST_PARTY_NOTICE.md`・対応ソースを隣接bundleに同梱。mainの正式適用は別途 #550 とともに進める |
+| PDFScoreBar（`app/`、`launcher/`、SR 重み、`pdfscorebar_addons.pth`） | AGPL-3.0-or-later（2026-11-24、manifest `1173dfb4…`の試用ビルド限定） | **cleared_with_notice** | #505でオーナーが許諾済み。`LICENSE`・`FIRST_PARTY_NOTICE.md`・対応ソースを隣接bundleに同梱。mainへの正式適用は2026-11-28に完了（PR #559、#505 §7.3）。試用ビルドの許諾は変更しない |
 | MMR / barline CNN 重み | §2 | **cleared_with_notice**（モデル固有の再配布禁止は未特定） | First-party重みとしての出典・ImageNet初期化・DeepScoresV2帰属・学習用楽譜非同梱を通知。対象試用ビルド限定のfirst-party許諾は#505で適用済み |
 | CPython 3.12.12（`python-build-standalone` `20251209`；OpenSSL、SQLite、libffi、Tcl/Tk、`vcruntime140*.dll`） | PSF-2.0 ほか。`python/LICENSE.txt` に同梱物と Microsoft Distributable Code の条件 | cleared_with_notice | 同梱の `LICENSE.txt` を保持 |
 | Microsoft VC++ ランタイム（`msvcp140*`、`vcomp140`、`vcruntime140*`） | Visual Studio Distributable Code | cleared_with_notice | 未改変、Windows 上でのみ使用 |

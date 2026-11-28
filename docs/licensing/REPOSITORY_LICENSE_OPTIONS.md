@@ -3,13 +3,15 @@
 [#505](https://github.com/M763468/PDFScoreBar/issues/505) の方針・準備記録。原文は日本語（正本）。英語版は未作成。
 第三者部品の義務は [第三者ライセンス監査（#504）](THIRD_PARTY_LICENSE_AUDIT.md) を入力とし、ここでは重複しない。
 
-> **本文書はライセンスの許諾ではない。** 本文書の記述、および本文書を含む `develop` / `main` のどの版によっても、
+> **本文書はライセンスの許諾ではない。** 本文書の記述、および `develop` のどの版によっても、
 > PDFScoreBar の first-party のコード・文書・その他の資料について、利用・改変・再配布の許諾は与えられない。
-> リポジトリには `LICENSE` がなく、正式な許諾は将来の `main` リリースで `LICENSE` 一式を追加した版から始まる。
+> 正式な許諾は、2026-11-28 に適用した `main` の最小配布構成（`main@237fb66d` 以降の版に含まれる `LICENSE` 一式）と、
+> barline CNN Release `model-barline-cnn-issue296-d27-v1` に添付した `LICENSE` / `MODEL_LICENSE_NOTICE.txt` だけによる（§7.3）。
+> 許諾の範囲と条件はそれらのファイルの記載が正本であり、本文書は適用の状態を記録するだけである。
 > `develop` には正式適用後も `LICENSE` 一式を追加・同期しない（2026-11-27 方針訂正、§7）。
 > 法的助言ではない。
 
-## 1. 現在の方針と状態（2026-11-13、`develop@04c16674d7e6`）
+## 1. 現在の方針と状態（2026-11-28 更新。`main` 最小配布と指定 barline CNN Release に正式適用済み）
 
 オーナー決定（#505、2026-11-08 以降のコメント）:
 
@@ -19,9 +21,13 @@
 4. 正式適用は、`develop` から抽出した `main` の最小配布構成（と指定の barline CNN release asset）に対してだけ行う（§7）。
 5. 第三者のコード・重み・データを first-party のライセンスで再許諾しない。
 
-現状:
+現状（2026-11-28）:
 
-- ルートに `LICENSE` / `NOTICE` / `COPYING` / `REUSE.toml` はなく、`pyproject.toml` に `license` 欄はない。
+- **`main`**: PR #559（RC4、merge commit `237fb66d`）で最小配布構成に `AGPL-3.0-or-later` を正式適用した。MMR 重みと
+  first-party SR 重みのオーナー保有権利部分を含む（モデル案 A）。第三者の権利は再許諾しない。詳細は §7.3。
+- **barline CNN Release**（`model-barline-cnn-issue296-d27-v1`）: 説明文に `License & Rights` 節を追記し、`LICENSE` と
+  `MODEL_LICENSE_NOTICE.txt` を添付した。checkpoint `cnn_classifier_epoch_9.pth` の bytes・SHA-256 は変更していない（§7.3）。
+- **`develop`**: ルートに `LICENSE` / `NOTICE` / `COPYING` / `REUSE.toml` はなく、`pyproject.toml` に `license` 欄はない（方針どおり）。
 - GitHub で公開されていることだけでは、利用・改変・再配布の一般的な許諾にならない（GitHub 利用規約に基づく GitHub 上での閲覧・fork を除く）。
 - そのため、`develop` を基にした実行物を第三者へ配布・提供するには、#504 の第三者義務とは別に first-party の権利処理が必要である。
   限定試用（[#508](https://github.com/M763468/PDFScoreBar/issues/508)）との関係は §6 を参照。
@@ -49,6 +55,7 @@ AGPL についての注意（オーナー方針の前提。2026-11-08 の #505 �
 | 2026-11-27 | モデル案 A（MMR・barline CNN のオーナー保有権利部分を AGPL-3.0-or-later の対象に含める）を確定。非公開の後継候補 RC3 を準備 |
 | 2026-11-27 | **方針訂正**: `develop` には適用・同期しない。`develop` から抽出した `main` の最小配布構成に main 専用ライセンスを重ねる。旧 §7 の方式 A / B と `develop` 同期、RC3 報告の同期手順は廃止 |
 | 2026-11-28 | `tools/release_candidate.py` に main 専用ライセンス overlay を実装（#550）。RC3 の非公開素材で初回適用と次回昇格をローカルでリハーサル（§7） |
+| 2026-11-28 | **正式適用。** PR #559（RC4 `e1e76382`）をオーナーが `main` にマージ（`237fb66d`）。既存 barline CNN Release に許諾情報を追記し `LICENSE` / `MODEL_LICENSE_NOTICE.txt` を添付（§7.3） |
 
 公開済みの commit `966ce854`・`c091ad48` は、ブランチ履歴、PR の記録、取得済みの複製やフォークに残り得る。
 revert や Close によってそれらの効力が消えたとは断定しない。必要であれば法律の専門家に確認する。
@@ -65,8 +72,8 @@ revert や Close によってそれらの効力が消えたとは断定しない
 | 補正 GUI | `tools/review_correction/*.html` / `*.js` 等 | first-party。外部ライブラリ・CDN を含まない | `AGPL-3.0-or-later` | 同上 |
 | HOMR の引用断片 | `docker/patch_homr_onnx_provider.py` 内の置換対象として引用した数行 | HOMR 作者（上流は `AGPL-3.0` と表示し、only / or-later を明示しない） | ファイル全体を `AGPL-3.0-or-later AND AGPL-3.0-only` と宣言。断片は再許諾しない | `NOTICE`、`THIRD_PARTY_NOTICES.md` |
 | 第三者コード（未同梱） | HOMR、PyMuPDF、Real-ESRGAN、BasicSR 等。build 時に取得 | 各上流 | 対象外 | `THIRD_PARTY_NOTICES.md`（HOMR・BasicSR の改変表示を含む） |
-| first-party 重み: MMR | `models/mmr/mmr_classifier_best.pth`（git 管理、配布物に含まれる） | オーナーが学習。torchvision の ImageNet 事前学習重みから初期化。学習データは楽譜由来 | `NotLicensed` | `NOTICE` |
-| first-party 重み: barline CNN | 本リポジトリの GitHub release。git には `models/barline_cnn/manifest.json` のみ | オーナーが学習 | git 管理外のため `REUSE.toml` の対象外。重み自体は許諾しない（`NOTICE` に記載） | `NOTICE`、`THIRD_PARTY_NOTICES.md` |
+| first-party 重み: MMR | `models/mmr/mmr_classifier_best.pth`（git 管理、配布物に含まれる） | オーナーが学習。torchvision の ImageNet 事前学習重みから初期化。学習データは楽譜由来 | オーナー保有権利部分に `AGPL-3.0-or-later`（2026-11-27 モデル案 A、`main` で適用済み）。初期化元・学習データの第三者権利は再許諾しない | `NOTICE`、`THIRD_PARTY_NOTICES.md` |
+| first-party 重み: barline CNN | 本リポジトリの GitHub release。git には `models/barline_cnn/manifest.json` のみ | オーナーが学習。EfficientNet-B0 `IMAGENET1K_V1` から初期化。学習データは楽譜由来の切り抜きと DeepScoresV2（CC BY 4.0） | git 管理外のため `REUSE.toml` の対象外。オーナー保有権利部分に `AGPL-3.0-or-later`（モデル案 A。Release 添付の `LICENSE` / `MODEL_LICENSE_NOTICE.txt` で適用済み）。第三者権利は再許諾しない | `NOTICE`、`THIRD_PARTY_NOTICES.md`、Release 添付の `MODEL_LICENSE_NOTICE.txt` |
 | 第三者重み | HOMR ONNX、Real-ESRGAN、RapidOCR 同梱モデル | 各上流（#504 §0.3） | 対象外。git には manifest と SHA-256 のみ | `THIRD_PARTY_NOTICES.md` |
 | 初期化元・学習データ | ImageNet（torchvision 事前学習重み）、楽譜画像 | 第三者 | 本リポジトリに含めない。重みへの条件の波及は未確定（§4） | — |
 | 評価・GT データ | `data/evaluation2/**`（GT 座標 JSON 等）、`configs/cnn_barline_runs/issue44_baseline_v1/fixtures/**`、`experiments/issue333/{corpus.json,phase25_ground_truth.json,results/**}` | ラベルは first-party。元の楽譜は第三者著作物（保護期間内の作品を含む） | `NotLicensed` | `NOTICE` |
@@ -107,10 +114,9 @@ revert や Close によってそれらの効力が消えたとは断定しない
 
 残るオーナー判断・専門家確認（いずれも `LICENSE` 適用自体のブロッカーではない）:
 
-- [ ] **適用するリリースの決定**（§7 の手順の開始）。
-- [ ] **MMR 重みの扱い。** 配布物に含まれ実行に必要だが `NotLicensed` のため、正式リリースの受領者は MMR 重みの許諾を得ない。
-  ImageNet 事前学習重みと楽譜由来の学習データの条件が重みに及ぶかは未確定。ライセンスを付けるか、PDFScoreBar の実行に限る許諾を付けるか、
-  現状のままとするかを、配布・試用の前に判断する（§6）。barline CNN の release asset も同じ。
+- [x] **適用するリリースの決定**（§7 の手順の開始）。RC4 を PR #559 で `main` に昇格し、2026-11-28 に適用済み（§7.3）。
+- [x] **MMR 重みの扱い。** 2026-11-27 のモデル案 A で、MMR 重みと barline CNN release asset のオーナー保有権利部分を
+  `AGPL-3.0-or-later` の対象とした。2026-11-28 に適用済み。ImageNet 事前学習重みと学習データの第三者権利は再許諾しない（§3）。
 - [ ] GT ラベル（座標）に別ライセンスを付けるか（後日。付けるまで `NotLicensed`）。
 - [ ] 外部の寄与を受け始める前に DCO / CLA を決める（別管理。first-party の別商用条件を維持するなら CLA 等が必要）。
 - 専門家確認（必要に応じて）: 上記の重み・データの条件、AI エージェント生成部分の表示、公開済み #521 commit の効力。
@@ -220,6 +226,25 @@ revert や Close によってそれらの効力が消えたとは断定しない
 
 最終リリース対象に依存する検証（対象 commit との fingerprint 一致、最終イメージ内の通知、第三者部品の版）は、その時点で再実施する。
 2026-11-13 時点の方式 A（ライセンスのない昇格の後にライセンスだけの候補）・方式 B（`L` を source とする昇格）と手順 6（`develop` 同期）は廃止した。
+
+### 7.3 適用結果（2026-11-28）
+
+初回の正式適用は手順 1〜8 で完了した。ゲート G1〜G8 の結果は RC4 の記録（#550、PR #559）にある。
+
+| 項目 | 値 |
+| --- | --- |
+| `main` merge commit / tree | `237fb66d63048602022f4bf5a218250afc22fe36` / `625ad72d9118cd059088560e3c4eb6466af7f024`（parent: 旧 `main` `d8c54148`、RC4 `e1e76382`） |
+| 検証済み候補との一致 | RC4 `e1e7638201025e23ddc8faa13b4f755a7892a89b` とのファイル差分 0（tree 一致） |
+| source / overlay | accepted `develop` `e2b9e10c`、overlay `issue505-agpl-main-20261128-rc4`（`DISTRIBUTION_PROVENANCE.json` の `release.main_overlay`） |
+| `main` の許諾ファイル | `LICENSE`（GNU 公式 `agpl-3.0.txt`、SHA-256 `0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0`）、`LICENSES/`、`NOTICE`、`REUSE.toml`、`THIRD_PARTY_NOTICES.md` |
+| barline CNN Release | `model-barline-cnn-issue296-d27-v1`。説明文の既存メタデータ行を保持したまま `License & Rights` 節を追記。tag・名前・target commit は不変 |
+| Release 添付 | `LICENSE`（SHA-256 `0d96a4ff…abcb0`、`main` の `LICENSE` と同一）、`MODEL_LICENSE_NOTICE.txt`（SHA-256 `360373ad11af22aaf80e4734c564525b517d4fc7aaec4a517fcb52b4b49d40c1`） |
+| checkpoint | `cnn_classifier_epoch_9.pth`。asset ID・digest `f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd`・size `16339553`・更新日時はいずれも変更前と同一。再ダウンロードした bytes の SHA-256 も一致 |
+| `develop` | `LICENSE` 一式なし（同期しない）。本文書等の状態記録だけを更新 |
+| 証跡（git 管理外） | `logs/issue505/release-asset-licensing/20261128-barline-cnn/`（Release の変更前・変更後の JSON、添付ファイルの再取得） |
+
+新規の tag・Release は作成していない。Windows 限定試用版（#508 / #553）は試用ビルド限定の許諾のまま変更していない。
+次回の `main` 昇格では、手順 2 のとおり現在の `main` から overlay を導出する。
 
 ## 8. 履歴: 2026-11-07 のライセンス比較（取り下げ済みの推奨を含む）
 
